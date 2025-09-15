@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+*.log
+*.tsbuildinfo
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+build/
+dist/
+.coverage
+pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
