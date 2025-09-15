@@ -2,6 +2,34 @@
 import re
 
 
+def call_chatgpt(prompt: str, model: str = "gpt-4o-mini") -> str:
+    """
+    Call OpenAI ChatGPT with the given prompt and return the response text.
+    
+    Args:
+        prompt: The text prompt to send to ChatGPT
+        model: The model to use (default: gpt-4o-mini)
+    
+    Returns:
+        The text response from ChatGPT
+        
+    Raises:
+        RuntimeError: If no OpenAI client is available
+    """
+    from .openai_client import get_client
+    
+    client = get_client()
+    if client is None:
+        raise RuntimeError("OpenAI client is not available")
+    
+    try:
+        # Use the interface expected by the test: client.responses.create
+        response = client.responses.create(model=model, input=prompt)
+        return response.get("output_text", "")
+    except Exception as e:
+        raise RuntimeError(f"Error calling ChatGPT: {str(e)}")
+
+
 def _clean(t: str) -> str:
     return re.sub(r"\s+", " ", (t or "").strip())
 
