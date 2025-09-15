@@ -1,0 +1,40 @@
+### Health
+GET http://localhost:8088/v1/health
+
+### Disease
+GET http://localhost:8088/v1/disease?q=cancer
+
+### PubMed
+GET http://localhost:8088/v1/pubmed/search?q=COPD%20exacerbation%20patient%20education&max_results=5
+
+### Clinical Trials
+GET http://localhost:8088/v1/clinicaltrials/search?condition=breast%20cancer&status=recruiting&max_results=5
+
+### MedlinePlus
+GET http://localhost:8088/v1/medlineplus/summary?topic=asthma
+
+### SBAR (summarize)
+POST http://localhost:8088/v1/summarize/sbar
+Content-Type: application/json
+
+{
+  "notes": "S: Pt c/o shortness of breath since last night. B: Hx COPD, former smoker. A: RR 22, SpO2 91% RA, scattered wheezes. R: Monitor, notify clinician of worsening symptoms."
+}
+
+### Patient Education
+POST http://localhost:8088/v1/patient-education
+Content-Type: application/json
+
+{
+  "topic": "asthma",
+  "level": 7,
+  "lang": "en"
+}
+
+### Readability
+POST http://localhost:8088/v1/readability/check
+Content-Type: application/json
+
+{
+  "text": "This is a short, simple example. It should be easy to read."
+}
