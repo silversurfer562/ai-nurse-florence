@@ -1,5 +1,6 @@
 # python
 import re
+from .openai_client import get_client
 
 
 def _clean(t: str) -> str:
@@ -50,6 +51,27 @@ def _extract_sbar_parts(notes: str):
     A = " ".join(sentences[2 * q : 3 * q]) if len(sentences) > 2 * q else ""
     R = " ".join(sentences[3 * q :]) if len(sentences) > 3 * q else ""
     return _clean(S), _clean(B), _clean(A), _clean(R)
+
+
+def call_chatgpt(prompt: str, model: str = "gpt-4o-mini") -> str:
+    """
+    Call OpenAI ChatGPT with the given prompt.
+    Raises RuntimeError if the client is not configured.
+    """
+    client = get_client()
+    if client is None:
+        raise RuntimeError("OpenAI client not configured. Set OPENAI_API_KEY.")
+    
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=1500
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise RuntimeError(f"OpenAI API call failed: {str(e)}")
 
 
 def sbar_from_notes(notes: str):
