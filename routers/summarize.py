@@ -4,8 +4,27 @@ from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
+from models.schemas import SBARRequest, SBAR
+from utils.guardrails import educational_banner
 
 router = APIRouter(prefix="/summarize", tags=["summarize"])
+
+
+@router.post("/sbar", response_model=SBAR)
+def sbar_from_notes(payload: SBARRequest):
+    """
+    POST /summarize/sbar
+    Extract SBAR (Situation, Background, Assessment, Recommendation) from clinical notes.
+    """
+    sbar_data = summarize_service.sbar_from_notes(payload.notes)
+    return SBAR(
+        banner=educational_banner(),
+        situation=sbar_data.get("situation", ""),
+        background=sbar_data.get("background", ""),
+        assessment=sbar_data.get("assessment", ""),
+        recommendation=sbar_data.get("recommendation", ""),
+        references=[]
+    )
 
 
 @router.post("/chat")

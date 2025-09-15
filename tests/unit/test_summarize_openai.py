@@ -14,6 +14,11 @@ def test_call_chatgpt_returns_text(monkeypatch):
 
     # patch get_client to return our fake
     monkeypatch.setattr("services.openai_client.get_client", lambda: FakeClient())
+    
+    # Force reload of the module to pick up the patch
+    import sys
+    if 'services.summarize_service' in sys.modules:
+        del sys.modules['services.summarize_service']
 
     from services.summarize_service import call_chatgpt
 
@@ -24,6 +29,11 @@ def test_call_chatgpt_returns_text(monkeypatch):
 def test_call_chatgpt_raises_when_no_client(monkeypatch):
     # patch get_client to return None
     monkeypatch.setattr("services.openai_client.get_client", lambda: None)
+    
+    # Force reload of the module to pick up the patch
+    import sys
+    if 'services.summarize_service' in sys.modules:
+        del sys.modules['services.summarize_service']
 
     from services.summarize_service import call_chatgpt
 
