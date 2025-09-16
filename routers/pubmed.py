@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from models.schemas import PubMedSearchResponse, PubMedArticle
-from services.pubmed_service import search_pubmed
+from services.pubmed_service import search
 from utils.guardrails import educational_banner
 
 router = APIRouter(prefix="/v1", tags=["pubmed"])
@@ -27,7 +27,7 @@ def pubmed_search(
     q: str = Query(..., description="Query string"),
     max_results: int = Query(10, ge=1, le=50),
 ):
-    raw = search_pubmed(q, max_results=max_results)
+    raw = search(q, max_results=max_results)
     results = [
         PubMedArticle(
             pmid=r.get("pmid"),
@@ -35,6 +35,6 @@ def pubmed_search(
             abstract=r.get("abstract"),
             url=r.get("url"),
         )
-        for r in raw
+        for r in raw.get("results", [])
     ]
     return PubMedSearchResponse(banner=educational_banner(), query=q, results=results)
