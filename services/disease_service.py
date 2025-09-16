@@ -1,47 +1,32 @@
+import os
 from typing import Dict, Any
-from models.schemas import Reference
 
-try:
-    import live_mydisease as mydisease_live
-except Exception:
-    mydisease_live = None
-try:
-    import medlineplus as medlineplus_mod
-except Exception:
-    medlineplus_mod = None
+LIVE = str(os.getenv("USE_LIVE", "0")).lower() in {"1", "true", "yes", "on"}
 
+mydisease_live = None
+if LIVE:
+    try:
+        import live_mydisease as mydisease_live
+    except Exception:
+        mydisease_live = None
 
-def lookup_disease(term: str) -> Dict[str, Any]:
-    if mydisease_live and hasattr(mydisease_live, "lookup"):
+def lookup(term: str) -> Dict[str, Any]:
+    banner = "Draft for clinician review — not medical advice. No PHI stored."
+    if LIVE and mydisease_live and hasattr(mydisease_live, "lookup"):
         try:
-            data = mydisease_live.lookup(term)
-            refs = [Reference(**r) for r in data.get("references", [])]
-            return {
-                "name": data.get("name"),
-                "summary": data.get("summary"),
-                "references": [r.model_dump() for r in refs],
-            }
-        except Exception:
-            pass
-    if medlineplus_mod and hasattr(medlineplus_mod, "summary"):
-        try:
-            s, refs = medlineplus_mod.summary(term)
-            return {
-                "name": term.title(),
-                "summary": s,
-                "references": [
-                    {
-                        "title": r.get("title"),
-                        "url": r.get("url"),
-                        "source": "MedlinePlus",
-                    }
-                    for r in (refs or [])
-                ],
-            }
+            data: Dict[str, Any] = mydisease_live.lookup(term)
+            data.setdefault("banner", banner)
+            data.setdefault("query", term)
+            data.setdefault("references", [])
+            if "name" not in data:
+                data["name"] = term.title() if term else None
+            return data
         except Exception:
             pass
     return {
-        "name": term.title(),
+        "banner": banner,
+        "query": term,
+        "name": term.title() if term else None,
         "summary": f"No live connector found. Placeholder for '{term}'.",
         "references": [],
     }

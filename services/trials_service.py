@@ -1,40 +1,36 @@
-from typing import List, Dict, Any, Optional
+import os
+from typing import Dict, Any, List, Optional
 
-try:
-    import live_clinicaltrials as trials_live
-except Exception:
-    trials_live = None
-try:
-    import clinicaltrials as trials_mod
-except Exception:
-    trials_mod = None
+LIVE = str(os.getenv("USE_LIVE", "0")).lower() in {"1", "true", "yes", "on"}
 
+trials_live = None
+if LIVE:
+    try:
+        import live_clinicaltrials as trials_live
+    except Exception:
+        trials_live = None
 
-def search_trials(
-    condition: str, status: Optional[str] = None, max_results: int = 10
-) -> List[Dict[str, Any]]:
-    if trials_live and hasattr(trials_live, "search"):
+def search(condition: str, status: Optional[str] = None, max_results: int = 10) -> Dict[str, Any]:
+    banner = "Draft for clinician review — not medical advice. No PHI stored."
+    if LIVE and trials_live and hasattr(trials_live, "search"):
         try:
-            return trials_live.search(
-                condition=condition, status=status, max_results=max_results
-            )
+            results: List[Dict[str, Any]] = trials_live.search(condition=condition, status=status, max_results=max_results)
+            return {"banner": banner, "condition": condition, "status": status, "results": results}
         except Exception:
             pass
-    if trials_mod and hasattr(trials_mod, "search"):
-        try:
-            return trials_mod.search(
-                condition=condition, status=status, max_results=max_results
-            )
-        except Exception:
-            pass
-    return [
-        {
-            "nct_id": None,
-            "title": f"Stub trial for '{condition}'",
-            "status": status or "unknown",
-            "conditions": [condition],
-            "locations": [],
-            "url": None,
-        }
-        for _ in range(min(max_results, 3))
-    ]
+    return {
+        "banner": banner,
+        "condition": condition,
+        "status": status,
+        "results": [
+            {
+                "nct_id": None,
+                "title": f"Stub trial for '{condition}'",
+                "status": status,
+                "conditions": [condition],
+                "locations": [],
+                "url": None,
+            }
+            for _ in range(max_results)
+        ],
+    }
