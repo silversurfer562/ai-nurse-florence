@@ -4,3 +4,11 @@ python-dotenv>=1.0.0
 openai>=1.0.0
 redis>=4.5.1
 prometheus-client>=0.17.0
+prometheus-fastapi-instrumentator
+celery
+sqlalchemy
+alembic
+asyncpg
+aiosqlite
+python-jose[cryptography]
+passlib[bcrypt]

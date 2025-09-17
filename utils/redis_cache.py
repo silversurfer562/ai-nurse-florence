@@ -10,6 +10,7 @@ import os
 from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union
 import redis
 from utils.logging import get_logger
+from utils.config import settings
 
 # Conditional import for metrics
 try:
@@ -42,7 +43,9 @@ class RedisCache:
         Args:
             redis_url: Redis connection URL (default: from REDIS_URL env var)
         """
-        self._redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        self._redis_url = redis_url or settings.REDIS_URL
+        if not self._redis_url:
+            raise ValueError("Redis URL not provided or configured in settings.")
         self._redis = redis.from_url(self._redis_url)
         logger.info(f"Connected to Redis at {self._redis_url}")
         
@@ -143,12 +146,11 @@ def get_cache() -> Union[RedisCache, 'CacheService']:
     Returns:
         A cache instance (Redis-based if REDIS_URL is set, in-memory otherwise)
     """
-    redis_url = os.getenv("REDIS_URL")
-    if redis_url:
+    if settings.REDIS_URL:
         # Use Redis cache
         try:
             from redis import Redis
-            return RedisCache(redis_url)
+            return RedisCache(settings.REDIS_URL)
         except ImportError:
             logger.warning("Redis package not installed; falling back to in-memory cache")
     

@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 import hashlib
 import os
 from utils.logging import get_logger
+from utils.config import settings
 
 logger = get_logger(__name__)
 
@@ -35,9 +36,8 @@ class RateLimiter(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        requests_per_minute: int = 60,
+        requests_per_minute: int,
         exempt_paths: Optional[Set[str]] = None,
-        redis_url: Optional[str] = None
     ):
         """
         Initialize the rate limiter.
@@ -46,12 +46,11 @@ class RateLimiter(BaseHTTPMiddleware):
             app: The FastAPI application
             requests_per_minute: Maximum requests per minute per client
             exempt_paths: Paths that should not be rate limited
-            redis_url: Optional Redis URL for distributed rate limiting
         """
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.exempt_paths = exempt_paths or set()
-        self.redis_url = redis_url or os.getenv("REDIS_URL")
+        self.redis_url = settings.REDIS_URL
         
         # Use Redis for distributed rate limiting if available
         if self.redis_url and _redis_available:

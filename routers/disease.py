@@ -3,8 +3,9 @@ from fastapi.responses import JSONResponse
 from models.schemas import DiseaseSummary
 from services.disease_service import lookup_disease
 from utils.guardrails import educational_banner
+from utils.api_responses import create_success_response, create_error_response
 
-router = APIRouter(prefix="/v1", tags=["disease"])
+router = APIRouter(prefix="/disease", tags=["disease"])
 example = {
     "banner": "Draft for clinician review — not medical advice. No PHI stored.",
     "query": "cancer",
@@ -14,7 +15,7 @@ example = {
 }
 
 @router.get(
-    "/disease",
+    "/",
     response_model=DiseaseSummary,
     responses={200: {"content": {"application/json": {"example": example}}}},
     summary="Get disease information",
@@ -47,7 +48,7 @@ def disease_lookup(
             "copd": {"summary": "Search for information about COPD"}
         }
     )
-) -> DiseaseSummary:
+):
     """
     Lookup information about a disease or medical condition.
     
@@ -58,21 +59,20 @@ def disease_lookup(
         A DiseaseSummary object containing name, summary, and references
         
     Examples:
-        /v1/disease?q=diabetes
-        /v1/disease?q=asthma
+        /api/v1/disease?q=diabetes
+        /api/v1/disease?q=asthma
     """
     result = lookup_disease(q)
     
-    # If clarification is needed, return a 422 response
+    # If clarification is needed, return a standardized error response
     if result.get("needs_clarification"):
-        return JSONResponse(
+        return create_error_response(
+            message="The search query is too vague. Please provide more details.",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={
-                "detail": {
-                    "needs_clarification": True,
-                    "clarification_question": result["clarification_question"],
-                    "original_query": result["query"]
-                }
+            code="clarification_needed",
+            details={
+                "clarification_question": result["clarification_question"],
+                "original_query": result["query"]
             }
         )
     
@@ -80,4 +80,9 @@ def disease_lookup(
     if not result.get("banner"):
         result["banner"] = educational_banner
         
-    return result
+    # Add HATEOAS link to the advanced search wizard
+    links = {
+        "advanced_search": f"/api/v1/wizards/disease-search/start?topic={q}"
+    }
+    
+    return create_success_response(result, links=links)

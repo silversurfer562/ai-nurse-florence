@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, status
 from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
+from services.tasks import summarize_text_task # Import the new Celery task
+from celery.result import AsyncResult
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
-from utils.background_tasks import schedule_task, get_task_status
+from utils.api_responses import create_success_response, create_error_response
 
 router = APIRouter(prefix="/summarize", tags=["summarize"])
 logger = get_logger(__name__)
@@ -34,7 +36,7 @@ logger = get_logger(__name__)
     The response contains the summarized text.
     """
 )
-async def chat_endpoint(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+async def chat_endpoint(payload: Dict[str, Any], request: Request):
     """
     POST /summarize/chat
     Body example: {"prompt": "Summarize this...", "model": "gpt-4o-mini"}
@@ -48,7 +50,11 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request) -> Dict[str, 
             "Missing prompt in request", 
             extra={"request_id": request_id}
         )
-        raise HTTPException(status_code=400, detail="Missing 'prompt' in body")
+        return create_error_response(
+            message="Missing 'prompt' in request body.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="missing_prompt"
+        )
     
     try:
         logger.info(
@@ -60,22 +66,21 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request) -> Dict[str, 
         
         # Check if clarification is needed
         if result.get("needs_clarification"):
-            return JSONResponse(
-                status_code=422,  # Unprocessable Entity
-                content={
-                    "detail": {
-                        "needs_clarification": True,
-                        "clarification_question": result["clarification_question"],
-                        "original_prompt": result["original_prompt"]
-                    }
+            return create_error_response(
+                message="The prompt is too vague. Please provide more details.",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                code="clarification_needed",
+                details={
+                    "clarification_question": result["clarification_question"],
+                    "original_prompt": result["original_prompt"]
                 }
             )
         
-        # Return the normal response
-        return result
+        # Return the normal success response
+        return create_success_response(result)
         
     except ExternalServiceException as exc:
-        # This will be caught by our exception handler and returned with proper formatting
+        # This will be caught by our global exception handler
         raise
     except Exception as exc:
         logger.error(
@@ -83,32 +88,21 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request) -> Dict[str, 
             extra={"request_id": request_id, "error": str(exc)},
             exc_info=True
         )
-        # For unexpected errors, still return a 500
-        raise HTTPException(status_code=500, detail="An unexpected error occurred")
-
+        # For unexpected errors, use the standardized error response
+        return create_error_response(
+            message="An unexpected error occurred while processing the summary.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="internal_error"
+        )
 
 @router.post("/chat/async",
-    summary="Asynchronously summarize text",
+    summary="Summarize text asynchronously",
     description="""
     Process text summarization asynchronously.
     
-    This endpoint is ideal for longer texts or when you want to avoid waiting for the 
-    processing to complete. It returns a task ID that can be used to check the status
-    or result later.
-    
-    Request body should include:
-    - prompt: The text to summarize
-    - model: (Optional) The AI model to use (default: gpt-4o-mini)
-    - callback_url: (Optional) URL to receive the result when processing completes
-    
-    Example request:
-    ```json
-    {
-        "prompt": "The patient is a 45-year-old male with a history of hypertension...",
-        "model": "gpt-4o-mini",
-        "callback_url": "https://example.com/webhook"
-    }
-    ```
+    This endpoint offloads the summarization task to a background worker and
+    immediately returns a `task_id`. Use the `/tasks/{task_id}` endpoint
+    to check the status and retrieve the result.
     
     The response contains a task_id and status information.
     """
@@ -116,87 +110,86 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request) -> Dict[str, 
 async def chat_endpoint_async(
     payload: Dict[str, Any], 
     request: Request, 
-    background_tasks: BackgroundTasks
-) -> Dict[str, Any]:
+):
     """
     POST /summarize/chat/async
     
-    Asynchronously summarize text using ChatGPT.
-    
-    Body example: {
-        "prompt": "Summarize this...", 
-        "model": "gpt-4o-mini",
-        "callback_url": "https://example.com/callback"  # Optional
-    }
-    
-    Returns a task ID that can be used to check the status of the operation.
-    
-    Args:
-        payload: The request payload
-        request: The FastAPI request object
-        background_tasks: FastAPI background tasks object
-        
-    Returns:
-        A dictionary with task_id and status
+    Dispatches a summarization task to the Celery worker.
     """
     request_id = getattr(request.state, "request_id", None)
     prompt = payload.get("prompt", "")
     model = payload.get("model", "gpt-4o-mini")
-    callback_url = payload.get("callback_url")
     
     if not prompt:
         logger.warning(
             "Missing prompt in request", 
             extra={"request_id": request_id}
         )
-        raise HTTPException(status_code=400, detail="Missing 'prompt' in body")
+        return create_error_response(
+            message="Missing 'prompt' in request body.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            code="missing_prompt"
+        )
     
     logger.info(
-        f"Scheduling async summarization with model {model}",
-        extra={"request_id": request_id, "model": model}
+        f"Dispatching summarization task for request {request_id}",
+        extra={"request_id": request_id}
     )
     
-    return schedule_task(
-        background_tasks,
-        summarize_service.summarize_text,
-        prompt,
-        model=model,
-        callback_url=callback_url
+    # Dispatch the task to Celery
+    task = summarize_text_task.delay(prompt, model=model)
+    
+    task_info = {"task_id": task.id, "status": task.status}
+    
+    return create_success_response(
+        data=task_info,
+        links={"status": f"/api/v1/summarize/tasks/{task.id}"}
     )
 
 
 @router.get("/tasks/{task_id}",
-    summary="Get task status",
+    summary="Get async task status",
     description="""
-    Check the status of an asynchronous summarization task.
+    Retrieve the status and result of an asynchronous summarization task.
     
-    This endpoint returns the current status of a task and, if completed,
-    the result of the summarization.
+    Possible statuses are: PENDING, STARTED, SUCCESS, FAILURE.
     
-    Possible status values:
-    - scheduled: Task has been queued
-    - running: Task is currently being processed
-    - completed: Task has finished successfully
-    - failed: Task encountered an error
-    
-    For completed tasks, the response will include the result.
+    For successful tasks, the response will include the summarization result.
     For failed tasks, the response will include the error message.
     """
 )
-async def get_task(task_id: str) -> Dict[str, Any]:
+async def get_task(task_id: str):
     """
     GET /summarize/tasks/{task_id}
     
-    Get the status of a background task.
+    Checks the status of a Celery task.
     
-    Args:
-        task_id: The ID of the task
-        
     Returns:
         A dictionary with task status information
     """
-    result = get_task_status(task_id)
-    if result["status"] == "not_found":
-        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    task_result = AsyncResult(task_id)
     
-    return result
+    if task_result.status == "SUCCESS":
+        result = task_result.get()
+        response_data = {"task_id": task_id, "status": task_result.status, "result": result}
+    elif task_result.status == "FAILURE":
+        result = task_result.get(propagate=False) # Get exception without raising it
+        response_data = {
+            "task_id": task_id,
+            "status": task_result.status,
+            "error": {"type": type(result).__name__, "message": str(result)}
+        }
+    else:
+        # For PENDING, STARTED, etc.
+        response_data = {"task_id": task_id, "status": task_result.status}
+
+    if not task_result.ready() and task_result.status != 'PENDING' and task_result.status != 'STARTED':
+         # This condition handles cases where the task ID might not be in the backend
+        if not task_result.backend.get(task_id):
+             return create_error_response(
+                f"Task {task_id} not found",
+                status.HTTP_404_NOT_FOUND,
+                "task_not_found"
+            )
+
+    return create_success_response(response_data)

@@ -1,0 +1,151 @@
+"""
+A wizard for generating SBAR (Situation, Background, Assessment, Recommendation) reports.
+
+This multi-step wizard guides users through creating a structured SBAR report,
+which is a standard communication tool in healthcare settings.
+"""
+from fastapi import APIRouter, Body, HTTPException, status
+from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional
+
+from utils.api_responses import create_success_response, create_error_response
+from services.openai_client import get_client
+from utils.logging import get_logger
+
+router = APIRouter(prefix="/wizards/sbar-report", tags=["wizards"])
+logger = get_logger(__name__)
+
+# In-memory storage for wizard state. In production, use Redis or a database.
+wizard_sessions: Dict[str, Dict[str, str]] = {}
+
+# --- Pydantic Models for Wizard Steps ---
+
+class StartSbarResponse(BaseModel):
+    wizard_id: str
+    message: str
+    next_step: str
+
+class SbarStepInput(BaseModel):
+    wizard_id: str = Field(..., description="The unique ID for this wizard session.")
+    text: str = Field(..., description="The text content for the current step.")
+
+class SbarStepResponse(BaseModel):
+    wizard_id: str
+    next_step: str
+    message: str
+
+class GenerateSbarInput(BaseModel):
+    wizard_id: str = Field(..., description="The unique ID for this wizard session.")
+    recommendation: str = Field(..., description="The 'Recommendation' text.")
+
+class GenerateSbarResponse(BaseModel):
+    wizard_id: str
+    sbar_report: str
+
+# --- Wizard Endpoints ---
+
+@router.post("/start", response_model=StartSbarResponse, summary="Step 1: Start the SBAR wizard")
+async def start_sbar_wizard():
+    """
+    Initializes a new SBAR report wizard session and returns a unique `wizard_id`.
+    """
+    import uuid
+    wizard_id = str(uuid.uuid4())
+    wizard_sessions[wizard_id] = {}
+    logger.info(f"Started SBAR wizard session: {wizard_id}")
+    
+    return create_success_response({
+        "wizard_id": wizard_id,
+        "message": "SBAR wizard started. Please proceed to add the 'Situation'.",
+        "next_step": "situation"
+    })
+
+def _update_step(wizard_id: str, step_name: str, text: str, next_step_name: str):
+    """Helper function to update a step in the wizard session."""
+    if wizard_id not in wizard_sessions:
+        return create_error_response("Wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
+    
+    wizard_sessions[wizard_id][step_name] = text
+    logger.info(f"Updated SBAR session {wizard_id} with step: {step_name}")
+    
+    return create_success_response({
+        "wizard_id": wizard_id,
+        "message": f"'{step_name.capitalize()}' received. Please proceed to add the '{next_step_name.capitalize()}'.",
+        "next_step": next_step_name
+    })
+
+@router.post("/situation", response_model=SbarStepResponse, summary="Step 2: Add Situation")
+async def add_situation(step_input: SbarStepInput):
+    """Adds the **Situation** component to the SBAR report."""
+    return _update_step(step_input.wizard_id, "situation", step_input.text, "background")
+
+@router.post("/background", response_model=SbarStepResponse, summary="Step 3: Add Background")
+async def add_background(step_input: SbarStepInput):
+    """Adds the **Background** component to the SBAR report."""
+    return _update_step(step_input.wizard_id, "background", step_input.text, "assessment")
+
+@router.post("/assessment", response_model=SbarStepResponse, summary="Step 4: Add Assessment")
+async def add_assessment(step_input: SbarStepInput):
+    """Adds the **Assessment** component to the SBAR report."""
+    return _update_step(step_input.wizard_id, "assessment", step_input.text, "recommendation")
+
+@router.post("/generate", response_model=GenerateSbarResponse, summary="Step 5: Add Recommendation and Generate Report")
+async def generate_sbar_report(step_input: GenerateSbarInput):
+    """
+    Adds the final **Recommendation** component and generates the complete,
+    formatted SBAR report using an AI model.
+    """
+    wizard_id = step_input.wizard_id
+    if wizard_id not in wizard_sessions:
+        return create_error_response("Wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
+
+    session_data = wizard_sessions[wizard_id]
+    session_data["recommendation"] = step_input.recommendation
+
+    # Verify all parts are present
+    required_parts = ["situation", "background", "assessment", "recommendation"]
+    if not all(part in session_data for part in required_parts):
+        missing = [part for part in required_parts if part not in session_data]
+        return create_error_response(
+            f"Cannot generate report. Missing parts: {', '.join(missing)}",
+            status.HTTP_400_BAD_REQUEST,
+            "missing_sbar_parts"
+        )
+
+    prompt = f"""
+    Format the following clinical information into a clear and concise SBAR report.
+    Use clear headings for each section (Situation, Background, Assessment, Recommendation).
+    Ensure the language is professional and suitable for a clinical handoff.
+
+    Situation: {session_data['situation']}
+    Background: {session_data['background']}
+    Assessment: {session_data['assessment']}
+    Recommendation: {session_data['recommendation']}
+    """
+
+    try:
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert nursing assistant specializing in clinical communication."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        sbar_report = response.choices[0].message.content
+        logger.info(f"Successfully generated SBAR report for session {wizard_id}")
+        
+        # Clean up the session
+        del wizard_sessions[wizard_id]
+        
+        return create_success_response({
+            "wizard_id": wizard_id,
+            "sbar_report": sbar_report
+        })
+    except Exception as e:
+        logger.error(f"SBAR report generation failed for session {wizard_id}: {e}", exc_info=True)
+        return create_error_response(
+            "Failed to generate SBAR report from AI model.",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "generation_failed"
+        )

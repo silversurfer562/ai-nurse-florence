@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
+import uuid
 
 EDU_BANNER = "Draft for clinician review — not medical advice. No PHI stored."
 
@@ -12,11 +13,10 @@ class Reference(BaseModel):
 
 
 class DiseaseSummary(BaseModel):
-    banner: str = Field(default=EDU_BANNER)
+    banner: str
     query: str
-    name: Optional[str] = None
-    summary: Optional[str] = None
-    references: List[Reference] = []
+    summary: str
+    references: List[Reference]
 
 
 class PubMedArticle(BaseModel):
@@ -99,3 +99,23 @@ class ReadabilityResponse(BaseModel):
     words: int
     syllables: int
     suggestions: List[str] = []
+
+
+# --- Schemas for User and Token Handling ---
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    provider_user_id: str | None = None
+
+
+class User(BaseModel):
+    id: uuid.UUID
+    provider: str
+    provider_user_id: str
+
+    class Config:
+        orm_mode = True

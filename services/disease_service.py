@@ -1,11 +1,11 @@
-import os
 from typing import Dict, Any, List, Optional
 
 from utils.exceptions import ExternalServiceException
 from utils.types import DiseaseResult, ReferenceDict
 from utils.logging import get_logger
-from utils.redis_cache import cached  # Updated to use redis_cache
+from utils.redis_cache import cached
 from services.prompt_enhancement import enhance_prompt
+from utils.config import settings
 
 # Conditional import for metrics
 try:
@@ -14,15 +14,13 @@ try:
 except ImportError:
     _has_metrics = False
     # Stub implementations if metrics module isn't available
-    def record_external_request(service: str, operation: str) -> None:
-        pass
-    def record_external_error(service: str, operation: str, error_type: str) -> None:
+    def record_external_request(service: str, action: str) -> None:
         pass
 
-logger = get_logger(__name__)
+# Determine if we are in "live" mode from settings
+LIVE = settings.USE_LIVE
 
-LIVE = str(os.getenv("USE_LIVE", "0")).lower() in {"1", "true", "yes", "on"}
-
+# Lazy-load the live connector to avoid import errors if it's not installed
 mydisease_live = None
 if LIVE:
     try:
