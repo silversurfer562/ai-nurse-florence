@@ -26,7 +26,7 @@ example = {
 def pubmed_search(
     q: str = Query(..., description="Query string"),
     max_results: int = Query(10, ge=1, le=50),
-):
+) -> PubMedSearchResponse:
     raw = search_pubmed(q, max_results=max_results)
     results = [
         PubMedArticle(

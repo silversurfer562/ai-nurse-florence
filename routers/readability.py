@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from models.schemas import ReadabilityRequest, ReadabilityResponse
-from services.readability_service import analyze
+from services.readability_service import analyze_readability
 from utils.guardrails import educational_banner
 
 router = APIRouter(prefix="/v1", tags=["readability"])
@@ -21,5 +21,5 @@ example = {
     responses={200: {"content": {"application/json": {"example": example}}}},
 )
 def readability_check(payload: ReadabilityRequest):
-    m = analyze(payload.text or "")
+    m = analyze_readability(payload.text or "")
     return ReadabilityResponse(banner=educational_banner(), **m)

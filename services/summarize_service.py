@@ -4,11 +4,18 @@ import json
 import re
 
 from services.openai_client import get_client
+from services.prompt_enhancement import enhance_prompt
+from utils.exceptions import ExternalServiceException
+from utils.logging import get_logger
 
-__all__ = ["call_chatgpt", "sbar_from_notes"]
+__all__ = ["call_chatgpt", "sbar_from_notes", "summarize_text"]
 
-class ChatGPTError(RuntimeError):
-    pass
+logger = get_logger(__name__)
+
+class ChatGPTError(ExternalServiceException):
+    """Exception raised when the ChatGPT API fails."""
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(message, service_name="openai", details=details)
 
 def _extract_text(resp: Any) -> str:
     """
@@ -52,10 +59,26 @@ def call_chatgpt(
     """
     client = get_client()
     if not client:
-        raise ChatGPTError("OpenAI client is not configured")
+        logger.error("OpenAI client configuration failed")
+        raise ChatGPTError(
+            "OpenAI client is not configured", 
+            details={"model": model}
+        )
 
-    resp = client.responses.create(model=model, input=prompt, **kwargs)
-    return _extract_text(resp)
+    try:
+        logger.info(f"Calling OpenAI API with model {model}", extra={"model": model})
+        resp = client.responses.create(model=model, input=prompt, **kwargs)
+        return _extract_text(resp)
+    except Exception as e:
+        logger.error(
+            f"OpenAI API call failed: {str(e)}", 
+            extra={"model": model, "error": str(e)},
+            exc_info=True
+        )
+        raise ChatGPTError(
+            f"OpenAI API call failed: {str(e)}", 
+            details={"model": model, "error": str(e)}
+        )
 
 _SBARK = ("situation", "background", "assessment", "recommendation")
 
@@ -142,3 +165,47 @@ NOTES:
 
     # If model (or fake) returned a text block with headings, parse that
     return _parse_sbar_from_headings(raw)
+
+def summarize_text(text: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
+    """
+    Summarize the given text using ChatGPT.
+    
+    This function first enhances the prompt if needed, then sends it to ChatGPT.
+    If the prompt is unclear, it returns a clarification question instead.
+    
+    Args:
+        text: The text to summarize
+        model: The model to use
+        
+    Returns:
+        A dictionary with the summary or clarification information
+    """
+    # Enhance the prompt
+    effective_prompt, needs_clarification, clarification_question = enhance_prompt(text, "summarize")
+    
+    # If clarification is needed, return that info
+    if needs_clarification:
+        logger.info(f"Clarification needed for summarize prompt: '{text}'")
+        return {
+            "text": None,
+            "needs_clarification": True,
+            "clarification_question": clarification_question,
+            "original_prompt": text
+        }
+    
+    # Log if we enhanced the prompt
+    was_enhanced = effective_prompt != text
+    if was_enhanced:
+        logger.info(f"Using enhanced prompt for summarization: '{text}' -> '{effective_prompt}'")
+    
+    # Call ChatGPT with the effective prompt
+    summary = call_chatgpt(effective_prompt, model=model)
+    
+    # Return the result with enhancement info if relevant
+    result = {"text": summary}
+    if was_enhanced:
+        result["prompt_enhanced"] = True
+        result["original_prompt"] = text
+        result["enhanced_prompt"] = effective_prompt
+    
+    return result

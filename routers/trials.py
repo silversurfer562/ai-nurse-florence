@@ -12,7 +12,7 @@ def clinical_trials(
     condition: str = Query(...),
     status: Optional[str] = Query(None, pattern="^(recruiting|active|completed)$"),
     max_results: int = Query(10, ge=1, le=50),
-):
+) -> ClinicalTrialsResponse:
     raw = search_trials(condition=condition, status=status, max_results=max_results)
     results = [
         ClinicalTrial(

@@ -1,12 +1,12 @@
 import pytest
-from services.readability_service import analyze
+from services.readability_service import analyze_readability
 
 def test_analyze_returns_dict_for_empty_text():
-    out = analyze("")
+    out = analyze_readability("")
     assert isinstance(out, dict)
 
 def test_analyze_handles_simple_text():
-    out = analyze("This is a short sentence.")
+    out = analyze_readability("This is a short sentence.")
     assert isinstance(out, dict)
     # if implementation exposes a numeric score, ensure a numeric type
     if "score" in out:
@@ -20,5 +20,5 @@ def test_analyze_handles_simple_text():
     ],
 )
 def test_analyze_varied_texts(text):
-    out = analyze(text)
+    out = analyze_readability(text)
     assert isinstance(out, dict)

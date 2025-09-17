@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, status
+from fastapi.responses import JSONResponse
 from models.schemas import DiseaseSummary
 from services.disease_service import lookup_disease
 from utils.guardrails import educational_banner
@@ -12,18 +13,71 @@ example = {
     "references": [],
 }
 
-
 @router.get(
     "/disease",
     response_model=DiseaseSummary,
     responses={200: {"content": {"application/json": {"example": example}}}},
+    summary="Get disease information",
+    description="""
+    Retrieve information about a disease or medical condition.
+    
+    This endpoint provides a summary of a specified disease or condition,
+    including key information and references where available.
+    
+    The response includes:
+    - The original query term
+    - The disease name (may be normalized or corrected)
+    - A detailed summary of the disease
+    - References to medical literature (when available)
+    
+    Example queries:
+    - diabetes
+    - hypertension
+    - multiple sclerosis
+    - alzheimer's disease
+    """
 )
-def disease_lookup(q: str = Query(..., description="Disease term or ID")):
-    data = lookup_disease(q)
-    return DiseaseSummary(
-        banner=educational_banner(),
-        query=q,
-        name=data.get("name"),
-        summary=data.get("summary"),
-        references=data.get("references", []),
+def disease_lookup(
+    q: str = Query(
+        ..., 
+        description="Disease term or ID",
+        examples={
+            "diabetes": {"summary": "Search for information about diabetes"},
+            "alzheimer": {"summary": "Search for information about Alzheimer's disease"},
+            "copd": {"summary": "Search for information about COPD"}
+        }
     )
+) -> DiseaseSummary:
+    """
+    Lookup information about a disease or medical condition.
+    
+    Args:
+        q: The disease term or identifier to search for
+        
+    Returns:
+        A DiseaseSummary object containing name, summary, and references
+        
+    Examples:
+        /v1/disease?q=diabetes
+        /v1/disease?q=asthma
+    """
+    result = lookup_disease(q)
+    
+    # If clarification is needed, return a 422 response
+    if result.get("needs_clarification"):
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "detail": {
+                    "needs_clarification": True,
+                    "clarification_question": result["clarification_question"],
+                    "original_query": result["query"]
+                }
+            }
+        )
+    
+    # Add educational banner if missing
+    if not result.get("banner"):
+        result["banner"] = educational_banner
+        
+    return result

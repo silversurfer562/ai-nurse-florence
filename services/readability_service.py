@@ -24,7 +24,7 @@ def _syll(w):
     return max(1, c)
 
 
-def analyze(text: str):
+def analyze_readability(text: str):
     s = _split_s(text)
     w = _split_w(text)
     syl = sum(_syll(x) for x in w) if w else 0
