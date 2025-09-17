@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/v1", tags=["health"])
+router = APIRouter(tags=["health"])
 
 
 @router.get(
-    "/health",
+    "/v1/health",
     responses={200: {"content": {"application/json": {"example": {"status": "ok"}}}}},
 )
 def health():

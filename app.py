@@ -32,6 +32,7 @@ from routers.wizards.clinical_trials import router as clinical_trials_wizard_rou
 from routers.wizards.disease_search import router as disease_search_wizard_router
 from routers.pubmed import router as pubmed_router
 from routers.auth import router as auth_router # Import the new auth router
+from routers.healthcheck import router as health_router
 
 # Do NOT import OpenAI at module import time; make it optional / lazy
 client = None
@@ -108,10 +109,20 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request ID and logging middleware
 app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(LoggingMiddleware)
 
 # Set up metrics
 setup_metrics(app)
+
+# Define paths that should be exempt from rate limiting
+EXEMPT_PATHS = {
+    "/health",
+    "/v1/health", 
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+    "/metrics",
+}
 
 # Add rate limiting
 app.add_middleware(
@@ -139,6 +150,9 @@ api_router.include_router(pubmed_router)
 
 # The auth router is unprotected and handles the login flow
 unprotected_router.include_router(auth_router)
+
+# The health router should also be unprotected for monitoring
+unprotected_router.include_router(health_router)
 
 # Include the main versioned router into the app
 app.include_router(api_router)

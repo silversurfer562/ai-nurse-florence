@@ -3,11 +3,19 @@ from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
-from services.tasks import summarize_text_task # Import the new Celery task
-from celery.result import AsyncResult
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
 from utils.api_responses import create_success_response, create_error_response
+
+# Optional Celery import - only if Redis is configured
+try:
+    from services.tasks import summarize_text_task
+    from celery.result import AsyncResult
+    CELERY_AVAILABLE = True
+except (ImportError, RuntimeError):
+    CELERY_AVAILABLE = False
+    summarize_text_task = None
+    AsyncResult = None
 
 router = APIRouter(prefix="/summarize", tags=["summarize"])
 logger = get_logger(__name__)
@@ -116,6 +124,13 @@ async def chat_endpoint_async(
     
     Dispatches a summarization task to the Celery worker.
     """
+    if not CELERY_AVAILABLE:
+        return create_error_response(
+            message="Async processing is not available. Redis/Celery not configured.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="service_unavailable"
+        )
+    
     request_id = getattr(request.state, "request_id", None)
     prompt = payload.get("prompt", "")
     model = payload.get("model", "gpt-4o-mini")
@@ -167,6 +182,13 @@ async def get_task(task_id: str):
     Returns:
         A dictionary with task status information
     """
+    if not CELERY_AVAILABLE:
+        return create_error_response(
+            message="Async processing is not available. Redis/Celery not configured.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="service_unavailable"
+        )
+    
     task_result = AsyncResult(task_id)
     
     if task_result.status == "SUCCESS":
