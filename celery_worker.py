@@ -8,18 +8,31 @@ outcomes.
 """
 from celery import Celery
 from utils.config import settings
+import os
 
-# Ensure Redis URL is configured
-if not settings.REDIS_URL:
+# Allow skipping Redis for testing
+TESTING = os.getenv("TESTING", "false").lower() == "true"
+
+# Ensure Redis URL is configured (unless in testing mode)
+if not TESTING and not settings.REDIS_URL:
     raise RuntimeError("REDIS_URL must be configured in settings to use Celery.")
 
 # Create the Celery application instance
-celery_app = Celery(
-    "worker",
-    broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL,
-    include=["services.tasks"]  # List of modules to import when the worker starts
-)
+if TESTING or not settings.REDIS_URL:
+    # Use in-memory broker for testing
+    celery_app = Celery(
+        "worker",
+        broker="memory://",
+        backend="cache+memory://",
+        include=["services.tasks"]
+    )
+else:
+    celery_app = Celery(
+        "worker",
+        broker=settings.REDIS_URL,
+        backend=settings.REDIS_URL,
+        include=["services.tasks"]  # List of modules to import when the worker starts
+    )
 
 # Optional Celery configuration
 celery_app.conf.update(
