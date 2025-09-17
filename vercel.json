@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.12"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ],
+  "env": {
+    "API_BEARER": "@api_bearer",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "CORS_ORIGINS": "https://chat.openai.com,https://chatgpt.com",
+    "LOG_LEVEL": "INFO",
+    "USE_LIVE": "1",
+    "RATE_LIMIT_PER_MINUTE": "60",
+    "DATABASE_URL": "@database_url",
+    "REDIS_URL": "@redis_url",
+    "JWT_SECRET_KEY": "@jwt_secret_key",
+    "OAUTH_CLIENT_ID": "@oauth_client_id",
+    "OAUTH_CLIENT_SECRET": "@oauth_client_secret"
+  },
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  }
+}

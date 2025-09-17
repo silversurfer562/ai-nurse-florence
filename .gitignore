@@ -25,6 +25,18 @@ pytest_cache/
 .mypy_cache/
 .ipynb_checkpoints
 
+# Environment files
+.env
+.env.local
+.env.production
+.env.test
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+test.db
+
 # VS Code
 .vscode/*
 !.vscode/extensions.json
