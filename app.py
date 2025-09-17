@@ -23,6 +23,15 @@ load_dotenv()
 # Set up logger
 logger = get_logger(__name__)
 
+# Define paths exempt from rate limiting
+EXEMPT_PATHS = {
+    "/health",
+    "/docs",
+    "/openapi.json",
+    "/metrics",
+    "/redoc"
+}
+
 # --- Routers ---
 from routers.summarize import router as summarize_router
 from routers.disease import router as disease_router
@@ -32,6 +41,7 @@ from routers.wizards.clinical_trials import router as clinical_trials_wizard_rou
 from routers.wizards.disease_search import router as disease_search_wizard_router
 from routers.pubmed import router as pubmed_router
 from routers.auth import router as auth_router # Import the new auth router
+from routers.healthcheck import router as healthcheck_router
 
 # Do NOT import OpenAI at module import time; make it optional / lazy
 client = None
@@ -108,7 +118,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request ID and logging middleware
 app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(LoggingMiddleware)
 
 # Set up metrics
 setup_metrics(app)
@@ -143,6 +153,9 @@ unprotected_router.include_router(auth_router)
 # Include the main versioned router into the app
 app.include_router(api_router)
 app.include_router(unprotected_router)
+
+# Include healthcheck at root level for monitoring
+app.include_router(healthcheck_router)
 
 # --- Event Handlers ---
 
@@ -214,4 +227,7 @@ async def shutdown_event() -> None:
     """
     logger.info("Nurses API shutting down")
     # Add any cleanup actions here
+
+# Vercel handler - export the app for serverless deployment
+handler = app
 

@@ -3,11 +3,27 @@ from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
-from services.tasks import summarize_text_task # Import the new Celery task
-from celery.result import AsyncResult
+from services.tasks import summarize_text_task # Import the task (which may be sync or async)
+from celery_worker import celery_app  # Check if Celery is available
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
 from utils.api_responses import create_success_response, create_error_response
+
+# Only import AsyncResult if Celery is available
+if celery_app:
+    from celery.result import AsyncResult
+else:
+    # Mock AsyncResult for when Celery is not available
+    class AsyncResult:
+        def __init__(self, task_id):
+            self.id = task_id
+            self.state = "SUCCESS"
+        
+        def get(self, timeout=None):
+            return {"error": "Celery not available"}
+        
+        def ready(self):
+            return True
 
 router = APIRouter(prefix="/summarize", tags=["summarize"])
 logger = get_logger(__name__)
