@@ -11,26 +11,42 @@ from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-@celery_app.task(bind=True)
-def summarize_text_task(self, prompt: str, model: str = "gpt-4o-mini"):
-    """
-    A Celery task to perform text summarization.
-    
-    The `bind=True` argument makes `self` available, which provides access
-    to the task instance for things like updating state.
-    """
-    try:
-        logger.info(f"Starting summarization task {self.request.id} for prompt: '{prompt[:30]}...'")
-        # We call the core summarization logic, which is now separate from the task definition.
-        # Note: The original summarize_text function returns a dictionary.
-        # We might want to refactor it to return just the text or handle the dict here.
-        # For now, we'll assume it returns the full dictionary.
-        summary_result = summarize_service.summarize_text(prompt, model=model)
+# Only define Celery tasks if celery_app is available
+if celery_app:
+    @celery_app.task(bind=True)
+    def summarize_text_task(self, prompt: str, model: str = "gpt-4o-mini"):
+        """
+        A Celery task to perform text summarization.
         
-        logger.info(f"Completed summarization task {self.request.id}")
-        return summary_result
-        
-    except Exception as e:
-        logger.error(f"Task {self.request.id} failed: {e}", exc_info=True)
-        # Reraise the exception to mark the task as failed in Celery
-        raise
+        The `bind=True` argument makes `self` available, which provides access
+        to the task instance for things like updating state.
+        """
+        try:
+            logger.info(f"Starting summarization task {self.request.id} for prompt: '{prompt[:30]}...'")
+            # We call the core summarization logic, which is now separate from the task definition.
+            # Note: The original summarize_text function returns a dictionary.
+            # We might want to refactor it to return just the text or handle the dict here.
+            # For now, we'll assume it returns the full dictionary.
+            summary_result = summarize_service.summarize_text(prompt, model=model)
+            
+            logger.info(f"Completed summarization task {self.request.id}")
+            return summary_result
+            
+        except Exception as e:
+            logger.error(f"Task {self.request.id} failed: {e}", exc_info=True)
+            # Reraise the exception to mark the task as failed in Celery
+            raise
+else:
+    # Define a synchronous fallback function
+    def summarize_text_task(prompt: str, model: str = "gpt-4o-mini"):
+        """
+        Synchronous fallback for text summarization when Celery is not available.
+        """
+        logger.info(f"Running synchronous summarization for prompt: '{prompt[:30]}...'")
+        try:
+            summary_result = summarize_service.summarize_text(prompt, model=model)
+            logger.info("Completed synchronous summarization")
+            return summary_result
+        except Exception as e:
+            logger.error(f"Synchronous summarization failed: {e}", exc_info=True)
+            raise

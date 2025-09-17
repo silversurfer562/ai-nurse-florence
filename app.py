@@ -101,6 +101,9 @@ api_router = APIRouter(
 # A separate, unprotected router for authentication
 unprotected_router = APIRouter(prefix="/api/v1")
 
+# Rate limiting exempt paths
+EXEMPT_PATHS = ["/health", "/metrics", "/docs", "/redoc", "/openapi.json", "/api/v1/auth/token"]
+
 # --- Middleware Configuration ---
 
 # Add security headers middleware (should be one of the first)
@@ -108,7 +111,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request ID and logging middleware
 app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(LoggingMiddleware)
 
 # Set up metrics
 setup_metrics(app)

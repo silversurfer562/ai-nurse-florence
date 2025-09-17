@@ -12,3 +12,6 @@ asyncpg
 aiosqlite
 python-jose[cryptography]
 passlib[bcrypt]
+pydantic-settings>=2.0.0
+httpx>=0.24.0
+python-multipart>=0.0.6
