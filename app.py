@@ -113,6 +113,15 @@ app.add_middleware(LoggingMiddleware, logger=logger)
 # Set up metrics
 setup_metrics(app)
 
+# Define paths that should be exempt from rate limiting
+EXEMPT_PATHS = {
+    "/health",
+    "/metrics", 
+    "/docs",
+    "/redoc",
+    "/openapi.json"
+}
+
 # Add rate limiting
 app.add_middleware(
     RateLimiter,
@@ -164,10 +173,14 @@ async def startup_event() -> None:
     
     # Create database tables if they don't exist (for SQLite)
     # For PostgreSQL, we use Alembic migrations.
+    # Skip database initialization in serverless environments if it fails
     if "sqlite" in settings.DATABASE_URL:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database tables created for SQLite.")
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                logger.info("Database tables created for SQLite.")
+        except Exception as e:
+            logger.warning(f"Could not initialize database: {e}. This is normal in serverless environments.")
 
     # Initialize OpenAI client if key is available
     if settings.OPENAI_API_KEY:

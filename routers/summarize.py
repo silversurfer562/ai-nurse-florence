@@ -3,11 +3,17 @@ from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
-from services.tasks import summarize_text_task # Import the new Celery task
-from celery.result import AsyncResult
+from services.tasks import summarize_text_task # Import the function (works with or without Celery)
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
 from utils.api_responses import create_success_response, create_error_response
+
+# Optional Celery imports
+try:
+    from celery.result import AsyncResult
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
 
 router = APIRouter(prefix="/summarize", tags=["summarize"])
 logger = get_logger(__name__)

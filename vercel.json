@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ],
+  "env": {
+    "API_BEARER": "@api_bearer",
+    "CORS_ORIGINS": "@cors_origins",
+    "LOG_LEVEL": "@log_level",
+    "RATE_LIMIT_PER_MINUTE": "@rate_limit_per_minute"
+  },
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  }
+}
