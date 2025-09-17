@@ -5,7 +5,8 @@ This module defines a `Settings` class that loads configuration from environment
 variables and a `.env` file, providing a single, type-safe source of truth for
 all application settings.
 """
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 from functools import lru_cache
 
@@ -14,11 +15,17 @@ class Settings(BaseSettings):
     Application settings, loaded from environment variables.
     
     Pydantic's BaseSettings automatically reads from the environment.
-    The `Config` inner class tells it to also load from a .env file.
+    The model_config tells it to also load from a .env file.
     """
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"  # Ignore extra fields to prevent validation errors during development
+    )
+    
     # Core App Settings
     API_BEARER: str
-    CORS_ORIGINS_STR: str = Field("", env="CORS_ORIGINS")
+    CORS_ORIGINS_STR: str = Field("", alias="CORS_ORIGINS")
     LOG_LEVEL: str = "INFO"
     
     # OpenAI Settings
@@ -48,10 +55,6 @@ class Settings(BaseSettings):
     def CORS_ORIGINS(self) -> List[str]:
         """Parses the comma-separated string of origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 @lru_cache()
 def get_settings() -> Settings:
