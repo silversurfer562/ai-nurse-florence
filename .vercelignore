@@ -1,0 +1,37 @@
+# Vercel Deployment Files
+.venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+test.db
+*.log
+
+# Development files
+.git/
+.github/
+.vscode/
+*.md
+requirements-dev.txt
+pytest.ini
+Dockerfile
+docker-compose.yml
+run_dev.sh
+run_server.sh
+setup.sh
+git-update.sh
+
+# Documentation
+docs/
+grafana/
+
+# Test files
+tests/
+conftest.py
