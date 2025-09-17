@@ -5,7 +5,8 @@ This module defines a `Settings` class that loads configuration from environment
 variables and a `.env` file, providing a single, type-safe source of truth for
 all application settings.
 """
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 from typing import List, Optional
 from functools import lru_cache
 
@@ -17,7 +18,7 @@ class Settings(BaseSettings):
     The `Config` inner class tells it to also load from a .env file.
     """
     # Core App Settings
-    API_BEARER: str
+    API_BEARER: str = "default-bearer-token"
     CORS_ORIGINS_STR: str = Field("", env="CORS_ORIGINS")
     LOG_LEVEL: str = "INFO"
     

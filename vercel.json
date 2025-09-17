@@ -1,0 +1,24 @@
+{
+  "builds": [
+    {
+      "src": "app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": ".",
+    "API_BEARER": "vercel-default-bearer",
+    "CORS_ORIGINS": "https://*.vercel.app,http://localhost:3000"
+  },
+  "functions": {
+    "app.py": {
+      "runtime": "python3.12"
+    }
+  }
+}
