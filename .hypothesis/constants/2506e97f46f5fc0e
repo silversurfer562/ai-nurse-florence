@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/services/pubmed_service.py
+# hypothesis_version: 6.139.1
+
+[100, 1800, 'abstract', 'banner', 'error', 'mode', 'page', 'pmid', 'query', 'results', 'search', 'size', 'stub', 'title', 'total', 'url']

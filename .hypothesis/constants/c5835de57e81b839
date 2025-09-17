@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/celery_worker.py
+# hypothesis_version: 6.139.1
+
+[3600, 'TESTING', 'cache+memory://', 'false', 'memory://', 'services.tasks', 'true', 'worker']

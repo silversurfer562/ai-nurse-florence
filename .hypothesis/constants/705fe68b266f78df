@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/models/user.py
+# hypothesis_version: 6.139.1
+
+['openai', 'users']

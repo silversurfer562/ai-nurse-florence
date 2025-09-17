@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/app.py
+# hypothesis_version: 6.139.1
+
+['*', '/api/v1', '/docs', '/favicon.ico', '/health', '/metrics', '/openapi.json', '/redoc', '1.0.0', 'Nurses API', 'clinicaltrials', 'description', 'disease', 'error', 'medlineplus', 'name', 'pubmed', 'readability', 'redis_url', 'shutdown', 'sqlite', 'startup', 'summarize']

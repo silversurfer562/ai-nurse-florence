@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/wizards/sbar_report.py
+# hypothesis_version: 6.139.1
+
+['/assessment', '/background', '/generate', '/situation', '/start', '/wizards/sbar-report', 'assessment', 'background', 'content', 'generation_failed', 'gpt-4o-mini', 'message', 'missing_sbar_parts', 'next_step', 'recommendation', 'role', 'sbar_report', 'situation', 'system', 'user', 'wizard_id', 'wizard_not_found', 'wizards']

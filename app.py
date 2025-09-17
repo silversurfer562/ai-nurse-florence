@@ -108,7 +108,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request ID and logging middleware
 app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(LoggingMiddleware)
 
 # Set up metrics
 setup_metrics(app)

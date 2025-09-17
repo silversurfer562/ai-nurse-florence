@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/wizards/patient_education.py
+# hypothesis_version: 6.139.1
+
+['/result/{task_id}', '/step1-topic', '/step2-generate', '8th grade', 'Diagnosis', 'Generate the handout', 'Symptoms', 'Treatment Options', 'Type 2 Diabetes', 'What is it?', 'When to see a doctor', 'completed', 'content', 'custom_sections', 'failed', 'generation_task_id', 'gpt-4o-mini', 'message', 'patient', 'pending', 'role', 'selected_sections', 'suggested_sections', 'system', 'task_not_found', 'topic', 'user', 'wizard_id', 'wizard_not_found', 'wizards']

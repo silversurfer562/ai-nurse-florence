@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/wizards/disease_search.py
+# hypothesis_version: 6.139.1
+
+[', ', '/generate', '/start', 'Geriatric', 'Hypertension', 'Type 2 Diabetes', 'content', 'generation_failed', 'gpt-4o-mini', 'json_object', 'related_topics', 'report', 'role', 'suggested_next_steps', 'suggested_sections', 'system', 'topic', 'type', 'user', 'wizard_id', 'wizard_not_found', 'wizards']

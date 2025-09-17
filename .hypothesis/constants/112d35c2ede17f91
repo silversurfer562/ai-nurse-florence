@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/services/readability_service.py
+# hypothesis_version: 6.139.1
+
+[0.0, 0.39, 1.015, 11.8, 15.59, 84.6, 206.835, '(?<=[.!?])\\s+', 'aeiouy', 'e', 'flesch_kincaid_grade', 'flesch_reading_ease', 'sentences', 'suggestions', 'syllables', 'words']
