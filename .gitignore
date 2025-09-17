@@ -25,6 +25,10 @@ pytest_cache/
 .mypy_cache/
 .ipynb_checkpoints
 
+# Database files
+*.db
+test.db
+
 # VS Code
 .vscode/*
 !.vscode/extensions.json
