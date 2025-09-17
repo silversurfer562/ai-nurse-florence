@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/pagination.py
-# hypothesis_version: 6.139.1
-
-[100, 'Page number', 'Page size', 'first', 'last', 'next', 'page', 'prev', 'self', 'size']

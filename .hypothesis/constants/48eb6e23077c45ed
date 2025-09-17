@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/error_handlers.py
-# hypothesis_version: 6.139.1
-
-[400, 404, 'ExternalServiceError', 'NotFoundError', 'ValidationError', 'details', 'error', 'message', 'request_id', 'resource_id', 'resource_type', 'service', 'status_code', 'type', 'unknown']

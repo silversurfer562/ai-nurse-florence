@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/summarize.py
-# hypothesis_version: 6.139.1
-
-['/chat', '/chat/async', '/summarize', '/tasks/{task_id}', 'FAILURE', 'PENDING', 'STARTED', 'SUCCESS', 'Summarize text', 'clarification_needed', 'error', 'gpt-4o-mini', 'internal_error', 'message', 'missing_prompt', 'model', 'needs_clarification', 'original_prompt', 'prompt', 'request_id', 'result', 'status', 'summarize', 'task_id', 'task_not_found', 'type']

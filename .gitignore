@@ -22,8 +22,11 @@ build/
 dist/
 .coverage
 pytest_cache/
+.pytest_cache/
 .mypy_cache/
 .ipynb_checkpoints
+.hypothesis/
+htmlcov/
 
 # VS Code
 .vscode/*

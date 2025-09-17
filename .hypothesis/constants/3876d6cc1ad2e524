@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/middleware.py
-# hypothesis_version: 6.139.1
-
-[1000, 'X-Request-ID', 'client_ip', 'duration_ms', 'error', 'method', 'path', 'request_id', 'status_code', 'unknown']

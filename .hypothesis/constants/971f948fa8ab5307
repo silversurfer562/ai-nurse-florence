@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/api_responses.py
-# hypothesis_version: 6.139.1
-
-['_links', 'code', 'data', 'details', 'error', 'message', 'status', 'success']

@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/disease.py
-# hypothesis_version: 6.139.1
-
-[200, '/', '/disease', 'Cancer', 'Disease term or ID', 'advanced_search', 'alzheimer', 'application/json', 'banner', 'cancer', 'clarification_needed', 'content', 'copd', 'diabetes', 'disease', 'example', 'name', 'needs_clarification', 'original_query', 'query', 'references', 'summary']

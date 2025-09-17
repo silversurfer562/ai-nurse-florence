@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/auth.py
-# hypothesis_version: 6.139.1
-
-[200, '/api/v1/auth/token', 'Authorization', 'Bearer', 'WWW-Authenticate', 'authorization_code', 'client_id', 'client_secret', 'code', 'exp', 'grant_type', 'openai', 'redirect_uri', 'sub']

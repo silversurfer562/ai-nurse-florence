@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/wizards/clinical_trials.py
-# hypothesis_version: 6.139.1
-
-['/search', '/start', '/step2-condition', 'California, USA', 'Completed', 'Global', 'NCT123456', 'NCT789012', 'Osimertinib', 'Recruiting', 'USA', 'condition', 'intervention', 'location', 'locations', 'message', 'results', 'search_summary', 'status', 'title', 'trial_id', 'wizard_id', 'wizard_not_found', 'wizards']

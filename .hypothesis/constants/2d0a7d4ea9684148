@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/routers/auth.py
-# hypothesis_version: 6.139.1
-
-[400, '/auth', '/token', 'access_token', 'authentication', 'bearer', 'id', 'openai', 'sub', 'token_type']

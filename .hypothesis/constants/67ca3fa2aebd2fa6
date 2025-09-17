@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/metrics.py
-# hypothesis_version: 6.139.1
-
-['/metrics', 'Number of cache hits', 'api_cache_hit_count', 'api_cache_miss_count', 'api_error_count', 'api_request_count', 'cache_key', 'endpoint', 'error_type', 'exception_type', 'method', 'operation', 'service', 'status_code', 'text/plain']
