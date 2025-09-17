@@ -23,6 +23,16 @@ load_dotenv()
 # Set up logger
 logger = get_logger(__name__)
 
+# Rate limiting exempt paths - these endpoints don't require rate limiting
+EXEMPT_PATHS = [
+    "/docs",
+    "/redoc", 
+    "/openapi.json",
+    "/api/v1/health",
+    "/health",
+    "/api/v1/auth/login"
+]
+
 # --- Routers ---
 from routers.summarize import router as summarize_router
 from routers.disease import router as disease_router
@@ -101,6 +111,21 @@ api_router = APIRouter(
 # A separate, unprotected router for authentication
 unprotected_router = APIRouter(prefix="/api/v1")
 
+# Add a simple health check endpoint for Vercel
+@app.get("/health")
+def health_check():
+    """Simple health check endpoint for deployment monitoring."""
+    return {"status": "ok", "service": "ai-nurse-florence"}
+
+@app.get("/")
+def root():
+    """Root endpoint with basic API information."""
+    return {
+        "message": "AI Nurse Florence API", 
+        "status": "running",
+        "docs": "/docs"
+    }
+
 # --- Middleware Configuration ---
 
 # Add security headers middleware (should be one of the first)
@@ -108,7 +133,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request ID and logging middleware
 app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(LoggingMiddleware)
 
 # Set up metrics
 setup_metrics(app)
