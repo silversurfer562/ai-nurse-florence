@@ -1,3 +1,9 @@
+"""
+Main FastAPI application for the AI Nurse Florence project.
+
+This module sets up the FastAPI application, configures middleware,
+includes all routers, and defines startup/shutdown events.
+"""
 from fastapi import FastAPI, Request, APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,8 +19,8 @@ from utils.metrics import setup_metrics
 from utils.rate_limit import RateLimiter
 from utils.config import settings
 from utils.security import SecurityHeadersMiddleware
-from utils.auth import get_current_user # Import the new dependency
-from database import Base, engine # Import database components
+from utils.auth import get_current_user
+from database import Base, engine
 
 # Load environment variables
 # This is still useful for local development, Pydantic will override with actual env vars if they exist
@@ -31,77 +37,28 @@ from routers.wizards.sbar_report import router as sbar_report_wizard_router
 from routers.wizards.clinical_trials import router as clinical_trials_wizard_router
 from routers.wizards.disease_search import router as disease_search_wizard_router
 from routers.pubmed import router as pubmed_router
-from routers.auth import router as auth_router # Import the new auth router
+from routers.auth import router as auth_router
 
 # Do NOT import OpenAI at module import time; make it optional / lazy
 client = None
 
 app = FastAPI(
-    title="Nurses API",
-    description="""
-    AI-powered healthcare information API for nurses and healthcare professionals.
-    
-    This API provides access to medical information, research papers, clinical trials,
-    and AI-assisted summarization of medical text. It's designed to help healthcare
-    professionals access reliable information quickly.
-    
-    ## Features
-    
-    * Disease and condition information lookups
-    * PubMed article search
-    * Clinical trials search
-    * MedlinePlus health topic summaries
-    * Text summarization and SBAR generation
-    * Readability analysis
-    * Patient education materials
-    
-    ## Authentication
-    
-    Most endpoints require API key authentication using a Bearer token.
-    Include the token in the Authorization header: `Authorization: Bearer your-api-key`
-    """,
+    title="AI Nurse Florence",
+    description="A REST API for Florence, an AI healthcare assistant that helps nurses with patient education and clinical information needs.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_tags=[
         {
             "name": "disease",
-            "description": "Operations related to diseases and medical conditions"
-        },
-        {
-            "name": "pubmed",
-            "description": "Search for medical research articles in PubMed"
-        },
-        {
-            "name": "clinicaltrials",
-            "description": "Search for clinical trials"
-        },
-        {
-            "name": "medlineplus",
-            "description": "Access health information from MedlinePlus"
+            "description": "Operations for looking up disease information."
         },
         {
             "name": "summarize",
-            "description": "AI-powered text summarization services"
-        },
-        {
-            "name": "readability",
-            "description": "Analyze readability of medical texts"
+            "description": "Operations for summarizing text."
         }
     ]
 )
-
-'''# --- API Versioning Router ---
-# All API routes will be nested under this single router.
-# For now, make OAuth2 authentication optional to ensure backward compatibility
-# dependencies=[Depends(get_current_user)] is commented out until OAuth is fully configured
-api_router = APIRouter(
-    prefix="/api/v1",
-    # dependencies=[Depends(get_current_user)]  # Temporarily disabled for backward compatibility
-)
-'''
-# A separate, unprotected router for authentication
-unprotected_router = APIRouter(prefix="/api/v1")
 
 # --- Middleware Configuration ---
 
@@ -135,12 +92,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- API Versioning Router ---
+# All API routes will be nested under this single router.
+# For now, make OAuth2 authentication optional to ensure backward compatibility
+api_router = APIRouter(
+    prefix="/api/v1",
+    # dependencies=[Depends(get_current_user)]  # Temporarily disabled for backward compatibility
+)
+
+# A separate, unprotected router for authentication
+unprotected_router = APIRouter(prefix="/api/v1")
+
 # --- Include Routers into the Versioned API Router ---
 api_router.include_router(summarize_router)
 api_router.include_router(disease_router)
 api_router.include_router(patient_education_wizard_router)
 api_router.include_router(sbar_report_wizard_router)
 api_router.include_router(clinical_trials_wizard_router)
+api_router.include_router(disease_search_wizard_router)
 api_router.include_router(pubmed_router)
 
 # The auth router is unprotected and handles the login flow
@@ -197,16 +166,50 @@ async def startup_event() -> None:
             logger.error(f"Failed to create database tables: {str(e)}", exc_info=True)
             # Don't crash the app if DB init fails - we can still function without database
 
+    # Initialize OpenAI client if key is available
+    if settings.OPENAI_API_KEY:
+        try:
+            # lazy import so app can run without openai installed
+            from openai import OpenAI as OpenAIClient
+
+            client = OpenAIClient(api_key=settings.OPENAI_API_KEY)
+            logger.info("OpenAI client configured successfully")
+        except Exception as e:
+            logger.warning(
+                "OpenAI package not installed; set OPENAI_API_KEY and install 'openai' to enable client.",
+                extra={"error": str(e)}
+            )
+    else:
+        logger.warning("OPENAI_API_KEY not set; OpenAI calls will fail if used.")
+    
+    # Check Redis connection if REDIS_URL is set
+    if settings.REDIS_URL:
+        try:
+            import redis
+            r = redis.from_url(settings.REDIS_URL)
+            r.ping()
+            logger.info(f"Redis connection successful: {settings.REDIS_URL}")
+        except ImportError:
+            logger.warning("Redis package not installed; install 'redis' to enable redis support.")
+        except Exception as e:
+            logger.error(
+                f"Failed to connect to Redis: {str(e)}",
+                extra={"redis_url": settings.REDIS_URL, "error": str(e)},
+                exc_info=True
+            )
+
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """
-    FastAPI shutdown event handler that performs cleanup actions when the application stops.
-    
-    This function currently includes:
-    - Closing the Redis connection pool, if it was created.
-    
-    More actions can be added here in the future as needed.
+    Clean up resources on application shutdown.
     """
     logger.info("Nurses API shutting down")
-    # Add any cleanup actions here
+
+# Health check endpoint
+@app.get("/health", tags=["health"])
+async def health():
+    """
+    Simple health check endpoint.
+    """
+    return {"status": "ok"}
 
