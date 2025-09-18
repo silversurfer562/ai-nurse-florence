@@ -49,7 +49,7 @@ def _extract_text(resp: Any) -> str:
 def call_chatgpt(
     prompt: str,
     *,
-    model: str = "gpt-5.1-mini",
+    model: str = "gpt-4o-mini",
     **kwargs: Any,
 ) -> str:
     """
@@ -127,7 +127,7 @@ def sbar_from_notes(
     *,
     reading_level: str = "nurse",           # "nurse" default per your project
     max_words: int = 300,
-    model: str = "gpt-5.1-mini",
+    model: str = "gpt-4o-mini",
     llm: Optional[Callable[..., str]] = None,
     **kwargs: Any,
 ) -> Dict[str, str]:
