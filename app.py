@@ -1,215 +1,96 @@
-"""
-Main FastAPI application for the AI Nurse Florence project.
+# app.py — FastAPI entrypoint for Vercel (ASGI), safe config checks, rate limiting
+import time
+from typing import Dict, Any, Optional
 
-This module sets up the FastAPI application, configures middleware,
-includes all routers, and defines startup/shutdown events.
-"""
-from fastapi import FastAPI, Request, APIRouter, Depends
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, Response
-from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-import os
-from typing import Callable
 
-# New imports
-from utils.middleware import RequestIdMiddleware, LoggingMiddleware
-from utils.error_handlers import register_exception_handlers
-from utils.logging import get_logger
-from utils.metrics import setup_metrics
+from utils.config import get_settings
 from utils.rate_limit import RateLimiter
-from utils.config import settings
-from utils.security import SecurityHeadersMiddleware
-from utils.auth import get_current_user
-from database import Base, engine
-
-# Load environment variables
-# This is still useful for local development, Pydantic will override with actual env vars if they exist
-load_dotenv()
-
-# Set up logger
-logger = get_logger(__name__)
-
-# --- Routers ---
-from routers.summarize import router as summarize_router
-from routers.disease import router as disease_router
-from routers.wizards.patient_education import router as patient_education_wizard_router
-from routers.wizards.sbar_report import router as sbar_report_wizard_router
-from routers.wizards.clinical_trials import router as clinical_trials_wizard_router
-from routers.wizards.disease_search import router as disease_search_wizard_router
-from routers.pubmed import router as pubmed_router
-from routers.auth import router as auth_router
-
-# Do NOT import OpenAI at module import time; make it optional / lazy
-client = None
 
 app = FastAPI(
     title="AI Nurse Florence",
-    description="A REST API for Florence, an AI healthcare assistant that helps nurses with patient education and clinical information needs.",
     version="1.0.0",
-    docs_url="/docs",
+    docs_url="/docs",           # keep or disable in prod
     redoc_url="/redoc",
-    openapi_tags=[
-        {
-            "name": "disease",
-            "description": "Operations for looking up disease information."
-        },
-        {
-            "name": "summarize",
-            "description": "Operations for summarizing text."
-        }
-    ]
+    openapi_url="/openapi.json"
 )
 
-# --- Middleware Configuration ---
+# ---------- Helpers (no import-time crashes) ----------
 
-# Define paths exempt from authentication and rate limiting
-# Health and metrics are still public.
-PUBLIC_PATHS: set[str] = {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect", "/health", "/metrics"}
+def _missing_envs() -> list[str]:
+    s = get_settings()  # lazy; reads envs at first use
+    missing = []
+    if not s.OPENAI_API_KEY:
+        missing.append("OPENAI_API_KEY")
+    if not s.API_BEARER:
+        missing.append("API_BEARER")
+    return missing
 
-# Add security headers middleware (should be one of the first)
-app.add_middleware(SecurityHeadersMiddleware)
-
-# Add request ID and logging middleware
-app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
-
-# Set up metrics
-setup_metrics(app)
-
-# Add rate limiting
-app.add_middleware(
-    RateLimiter,
-    requests_per_minute=settings.RATE_LIMIT_PER_MINUTE,
-    exempt_paths=PUBLIC_PATHS
-)
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# --- API Versioning Router ---
-# All API routes will be nested under this single router.
-# For now, make OAuth2 authentication optional to ensure backward compatibility
-api_router = APIRouter(
-    prefix="/api/v1",
-    # dependencies=[Depends(get_current_user)]  # Temporarily disabled for backward compatibility
-)
-
-# A separate, unprotected router for authentication
-unprotected_router = APIRouter(prefix="/api/v1")
-
-# --- Include Routers into the Versioned API Router ---
-api_router.include_router(summarize_router)
-api_router.include_router(disease_router)
-api_router.include_router(patient_education_wizard_router)
-api_router.include_router(sbar_report_wizard_router)
-api_router.include_router(clinical_trials_wizard_router)
-api_router.include_router(disease_search_wizard_router)
-api_router.include_router(pubmed_router)
-
-# The auth router is unprotected and handles the login flow
-unprotected_router.include_router(auth_router)
-
-# Include the main versioned router into the app
-app.include_router(api_router)
-app.include_router(unprotected_router)
-
-# --- Authentication Middleware (FALLBACK) ---
-# Add back a simplified version of the old bearer token middleware
-# for backward compatibility during the transition to OAuth2
-@app.middleware("http")
-async def authentication_middleware(request: Request, call_next: Callable) -> Response:
-    path = request.url.path
-    
-    # Let exempt paths and OPTIONS requests pass through
-    if request.method == "OPTIONS" or path in PUBLIC_PATHS or path.startswith("/static"):
-        return await call_next(request)
-    
-    # Check for bearer token
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return JSONResponse(
-            status_code=401,
-            content={"detail": "Authorization header with Bearer token is required"},
+def require_config():
+    missing = _missing_envs()
+    if missing:
+        # Friendly 500 rather than a stack trace
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "misconfigured",
+                "missing": missing,
+                "how_to_fix": (
+                    "Vercel → Project → Settings → Environment Variables (Production) → "
+                    "add values → Redeploy."
+                ),
+            },
         )
-    
-    token = auth_header.split(" ")[1]
-    # Check against the default API key (now that API_BEARER is optional)
-    if settings.API_BEARER and token != settings.API_BEARER:
-        return JSONResponse(status_code=403, content={"detail": "Invalid API token"})
-    
-    return await call_next(request)
 
-# --- Event Handlers ---
+def rate_limit(request: Request, key: str = "global", per_minute: int = 60):
+    ip = request.client.host if request.client else "unknown"
+    limiter = RateLimiter()
+    if not limiter.allow(key, ip, limit=per_minute, window_sec=60):
+        raise HTTPException(status_code=429, detail="Too many requests")
 
-@app.on_event("startup")
-async def startup_event() -> None:
-    """
-    Initialize services on application startup.
-    """
-    global client
-    logger.info("Nurses API starting up")
-    
-    # Create database tables if they don't exist (for SQLite)
-    # For PostgreSQL, we use Alembic migrations.
-    if "sqlite" in settings.DATABASE_URL:
-        try:
-            async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-                logger.info("Database tables created for SQLite.")
-        except Exception as e:
-            logger.error(f"Failed to create database tables: {str(e)}", exc_info=True)
-            # Don't crash the app if DB init fails - we can still function without database
+# ---------- Minimal system routes ----------
 
-    # Initialize OpenAI client if key is available
-    if settings.OPENAI_API_KEY:
-        try:
-            # lazy import so app can run without openai installed
-            from openai import OpenAI as OpenAIClient
+@app.get("/favicon.ico")
+async def favicon() -> Response:
+    # Prevent browsers from turning favicon fetches into noisy 500s
+    return Response(status_code=204)
 
-            client = OpenAIClient(api_key=settings.OPENAI_API_KEY)
-            logger.info("OpenAI client configured successfully")
-        except Exception as e:
-            logger.warning(
-                "OpenAI package not installed; set OPENAI_API_KEY and install 'openai' to enable client.",
-                extra={"error": str(e)}
-            )
-    else:
-        logger.warning("OPENAI_API_KEY not set; OpenAI calls will fail if used.")
-    
-    # Check Redis connection if REDIS_URL is set
-    if settings.REDIS_URL:
-        try:
-            import redis
-            r = redis.from_url(settings.REDIS_URL)
-            r.ping()
-            logger.info(f"Redis connection successful: {settings.REDIS_URL}")
-        except ImportError:
-            logger.warning("Redis package not installed; install 'redis' to enable redis support.")
-        except Exception as e:
-            logger.error(
-                f"Failed to connect to Redis: {str(e)}",
-                extra={"redis_url": settings.REDIS_URL, "error": str(e)},
-                exc_info=True
-            )
+@app.get("/api/health")
+async def health() -> Dict[str, Any]:
+    return {"ok": True, "ts": int(time.time())}
 
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """
-    Clean up resources on application shutdown.
-    """
-    logger.info("Nurses API shutting down")
+@app.get("/", tags=["system"])
+async def root(request: Request, _=Depends(require_config)):
+    rate_limit(request, key="root", per_minute=30)
+    return {
+        "status": "ok",
+        "name": "AI Nurse Florence",
+        "message": "Server is live and configuration looks good.",
+    }
 
-# Health check endpoint
-@app.get("/health", tags=["health"])
-async def health():
-    """
-    Simple health check endpoint.
-    """
-    return {"status": "ok"}
+# ---------- Your domain routes (plug back in here) ----------
 
+# If you have existing routers, include them here, e.g.:
+#
+# from api.v1.disease import router as disease_router
+# app.include_router(disease_router, prefix="/v1", tags=["disease"])
+#
+# Or if you defined endpoints directly in this file previously,
+# paste them below. To protect a route with the same checks, add:
+#
+#   async def some_route(request: Request, _=Depends(require_config)):
+#       rate_limit(request, key="some_route", per_minute=60)
+#       ... your logic ...
+#
+
+# ---------- Local dev entry (ignored by Vercel) ----------
+
+if __name__ == "__main__":
+    # For local testing: uvicorn app:app --reload --port 8088
+    try:
+        import uvicorn  # type: ignore
+        uvicorn.run("app:app", host="0.0.0.0", port=8088, reload=True)
+    except Exception:
+        # uvicorn not required on Vercel; safe to ignore locally if missing
+        pass
