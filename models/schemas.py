@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import uuid
 
@@ -113,9 +113,8 @@ class TokenData(BaseModel):
 
 
 class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: uuid.UUID
     provider: str
     provider_user_id: str
-
-    class Config:
-        orm_mode = True

@@ -10,6 +10,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import uuid4
 import httpx
 
 from utils.config import settings
@@ -60,27 +61,29 @@ async def get_current_user(
     # First check if we're using the legacy API_BEARER token
     if settings.API_BEARER and token == settings.API_BEARER:
         # Create a temporary user object for compatibility
-        from uuid import uuid4
         temp_user = models_user.User(
             id=uuid4(),
             provider="legacy",
             provider_user_id="legacy_api_bearer"
         )
+        logger.debug("Created temporary user for legacy API_BEARER token")
         return temp_user
         
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         provider_user_id: str | None = payload.get("sub")
         if provider_user_id is None:
+            logger.debug("JWT token missing 'sub' claim")
             raise credentials_exception
         token_data = models_schemas.TokenData(provider_user_id=provider_user_id)
-    except JWTError:
+        logger.debug(f"Successfully decoded JWT token for provider_user_id: {provider_user_id}")
+    except JWTError as e:
+        logger.debug(f"JWT decode error: {e}")
         raise credentials_exception
     
     # Handle case where database is unavailable
     if db is None:
         # Create a temporary user object with the provider_user_id from the token
-        from uuid import uuid4
         temp_user = models_user.User(
             id=uuid4(),
             provider="openai",
@@ -99,12 +102,12 @@ async def get_current_user(
         except Exception as e:
             logger.error(f"Failed to create user: {str(e)}", exc_info=True)
             # Create a temporary user object
-            from uuid import uuid4
             temp_user = models_user.User(
                 id=uuid4(),
                 provider="openai",
                 provider_user_id=token_data.provider_user_id
             )
+            logger.warning(f"Created temporary user due to database creation failure")
             return temp_user
     
     return user

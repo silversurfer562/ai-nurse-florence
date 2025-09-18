@@ -63,15 +63,18 @@ app = FastAPI(
 # --- Middleware Configuration ---
 
 # Define paths exempt from authentication and rate limiting
-# Health and metrics are still public.
-PUBLIC_PATHS: set[str] = {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect", "/health", "/metrics"}
+# Health and metrics are still public, and auth endpoints should also be exempt.
+PUBLIC_PATHS: set[str] = {
+    "/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect", 
+    "/health", "/metrics", "/api/v1/auth/"
+}
 
 # Add security headers middleware (should be one of the first)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request ID and logging middleware
 app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware, logger=logger)
+app.add_middleware(LoggingMiddleware)
 
 # Set up metrics
 setup_metrics(app)
@@ -127,7 +130,10 @@ async def authentication_middleware(request: Request, call_next: Callable) -> Re
     path = request.url.path
     
     # Let exempt paths and OPTIONS requests pass through
-    if request.method == "OPTIONS" or path in PUBLIC_PATHS or path.startswith("/static"):
+    if (request.method == "OPTIONS" or 
+        path in PUBLIC_PATHS or 
+        path.startswith("/static") or 
+        path.startswith("/api/v1/auth/")):
         return await call_next(request)
     
     # Check for bearer token
@@ -139,11 +145,25 @@ async def authentication_middleware(request: Request, call_next: Callable) -> Re
         )
     
     token = auth_header.split(" ")[1]
-    # Check against the default API key (now that API_BEARER is optional)
-    if settings.API_BEARER and token != settings.API_BEARER:
-        return JSONResponse(status_code=403, content={"detail": "Invalid API token"})
     
-    return await call_next(request)
+    # If API_BEARER is configured, accept it for backward compatibility
+    if settings.API_BEARER and token == settings.API_BEARER:
+        return await call_next(request)
+    
+    # For JWT tokens, we need to validate them properly
+    # Rather than doing full JWT validation here (which would duplicate the get_current_user logic),
+    # we'll allow JWT-looking tokens to pass through and let the endpoint dependencies handle validation
+    try:
+        # Simple check if it looks like a JWT (has 3 parts separated by dots)
+        parts = token.split('.')
+        if len(parts) == 3:
+            # Looks like a JWT, let the endpoint handle validation
+            return await call_next(request)
+    except:
+        pass
+    
+    # If we get here, the token doesn't look like a JWT and doesn't match API_BEARER
+    return JSONResponse(status_code=403, content={"detail": "Invalid API token"})
 
 # --- Event Handlers ---
 
