@@ -91,7 +91,7 @@ app = FastAPI(
     ]
 )
 
-# --- API Versioning Router ---
+'''# --- API Versioning Router ---
 # All API routes will be nested under this single router.
 # For now, make OAuth2 authentication optional to ensure backward compatibility
 # dependencies=[Depends(get_current_user)] is commented out until OAuth is fully configured
@@ -99,7 +99,7 @@ api_router = APIRouter(
     prefix="/api/v1",
     # dependencies=[Depends(get_current_user)]  # Temporarily disabled for backward compatibility
 )
-
+'''
 # A separate, unprotected router for authentication
 unprotected_router = APIRouter(prefix="/api/v1")
 
