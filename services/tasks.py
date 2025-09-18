@@ -4,6 +4,8 @@ Celery tasks for background processing.
 This module defines the asynchronous tasks that can be executed by the Celery
 worker. By defining logic here, we offload long-running operations from the
 main API process, preventing them from blocking requests.
+
+If Celery is not configured, tasks will execute synchronously.
 """
 from celery_worker import celery_app
 from services import summarize_service
@@ -11,26 +13,31 @@ from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-@celery_app.task(bind=True)
-def summarize_text_task(self, prompt: str, model: str = "gpt-4o-mini"):
+def summarize_text_task(prompt: str, model: str = "gpt-4o-mini"):
     """
-    A Celery task to perform text summarization.
+    A function to perform text summarization.
     
-    The `bind=True` argument makes `self` available, which provides access
-    to the task instance for things like updating state.
+    If Celery is available, this will be decorated as a Celery task.
+    Otherwise, it will execute synchronously.
     """
     try:
-        logger.info(f"Starting summarization task {self.request.id} for prompt: '{prompt[:30]}...'")
-        # We call the core summarization logic, which is now separate from the task definition.
-        # Note: The original summarize_text function returns a dictionary.
-        # We might want to refactor it to return just the text or handle the dict here.
-        # For now, we'll assume it returns the full dictionary.
+        task_id = getattr(summarize_text_task, 'request', {}).get('id', 'sync')
+        logger.info(f"Starting summarization task {task_id} for prompt: '{prompt[:30]}...'")
+        
+        # Call the core summarization logic
         summary_result = summarize_service.summarize_text(prompt, model=model)
         
-        logger.info(f"Completed summarization task {self.request.id}")
+        logger.info(f"Completed summarization task {task_id}")
         return summary_result
         
     except Exception as e:
-        logger.error(f"Task {self.request.id} failed: {e}", exc_info=True)
-        # Reraise the exception to mark the task as failed in Celery
+        logger.error(f"Summarization task failed: {e}", exc_info=True)
+        # Reraise the exception to mark the task as failed
         raise
+
+# Only decorate with Celery task if celery_app is available
+if celery_app is not None:
+    summarize_text_task = celery_app.task(bind=True)(summarize_text_task)
+    logger.info("Summarization task registered with Celery")
+else:
+    logger.warning("Celery not available - summarization tasks will run synchronously")
