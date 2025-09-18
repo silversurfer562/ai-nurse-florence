@@ -1,7 +1,7 @@
 # utils/config.py  (Pydantic v2)
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Union
 
 class Settings(BaseSettings):
     # OpenAI Configuration
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     OAUTH_CLIENT_SECRET: str | None = Field(default=None, description="OAuth2 client secret for OpenAI")
     
     # CORS Configuration
-    CORS_ORIGINS: List[str] = Field(
+    CORS_ORIGINS: Union[List[str], str] = Field(
         default=["http://localhost:3000", "http://localhost:8000"],
         description="Allowed CORS origins"
     )
@@ -47,6 +47,23 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
+    
+    @field_validator('CORS_ORIGINS')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from comma-separated string or list."""
+        if isinstance(v, str):
+            # Split comma-separated string and strip whitespace
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
+    
+    @field_validator('RATE_LIMIT_PER_MINUTE')
+    @classmethod
+    def validate_rate_limit(cls, v):
+        """Validate rate limit is positive."""
+        if v <= 0:
+            raise ValueError('Rate limit must be positive')
+        return v
 
     # Pydantic v2 settings config
     model_config = SettingsConfigDict(
