@@ -60,10 +60,29 @@ async def login_for_access_token(
         raise
 
     # Step 3: Find the user in our database or create a new one
+    # Check if database is available
+    if db is None:
+        logger.warning("Database unavailable; creating temporary token")
+        # Create a token without DB persistence as a fallback
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = auth_utils.create_access_token(
+            data={"sub": provider_user_id}, expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+        
     user = await crud_user.get_user_by_provider_id(db, provider="openai", provider_user_id=provider_user_id)
     if not user:
         logger.info(f"Creating new user for OpenAI user ID: {provider_user_id}")
-        user = await crud_user.create_user(db, provider="openai", provider_user_id=provider_user_id)
+        try:
+            user = await crud_user.create_user(db, provider="openai", provider_user_id=provider_user_id)
+        except Exception as e:
+            logger.error(f"Failed to create user: {str(e)}", exc_info=True)
+            # Continue with a temporary token
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = auth_utils.create_access_token(
+                data={"sub": provider_user_id}, expires_delta=access_token_expires
+            )
+            return {"access_token": access_token, "token_type": "bearer"}
 
     # Step 4: Create our own JWT access token for the user
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

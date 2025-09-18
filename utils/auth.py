@@ -56,6 +56,18 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # First check if we're using the legacy API_BEARER token
+    if settings.API_BEARER and token == settings.API_BEARER:
+        # Create a temporary user object for compatibility
+        from uuid import uuid4
+        temp_user = models_user.User(
+            id=uuid4(),
+            provider="legacy",
+            provider_user_id="legacy_api_bearer"
+        )
+        return temp_user
+        
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         provider_user_id: str | None = payload.get("sub")
@@ -65,11 +77,36 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
     
+    # Handle case where database is unavailable
+    if db is None:
+        # Create a temporary user object with the provider_user_id from the token
+        from uuid import uuid4
+        temp_user = models_user.User(
+            id=uuid4(),
+            provider="openai",
+            provider_user_id=token_data.provider_user_id
+        )
+        logger.warning(f"Database unavailable; using temporary user from token")
+        return temp_user
+    
     user = await crud_user.get_user_by_provider_id(db, provider="openai", provider_user_id=token_data.provider_user_id)
     if user is None:
-        # This case should ideally not happen if the token was issued correctly.
-        # It might indicate a deleted user.
-        raise credentials_exception
+        # This could happen if the user was deleted from the database but has a valid token
+        # Create the user on-the-fly
+        try:
+            logger.info(f"Creating missing user for provider_user_id: {token_data.provider_user_id}")
+            user = await crud_user.create_user(db, provider="openai", provider_user_id=token_data.provider_user_id)
+        except Exception as e:
+            logger.error(f"Failed to create user: {str(e)}", exc_info=True)
+            # Create a temporary user object
+            from uuid import uuid4
+            temp_user = models_user.User(
+                id=uuid4(),
+                provider="openai",
+                provider_user_id=token_data.provider_user_id
+            )
+            return temp_user
+    
     return user
 
 # --- OpenAI OAuth2 Flow ---

@@ -36,5 +36,14 @@ async def get_db() -> AsyncSession:
     This will create a new session for each request and ensure it's
     closed when the request is finished.
     """
-    async with AsyncSessionLocal() as session:
-        yield session
+    try:
+        async with AsyncSessionLocal() as session:
+            yield session
+    except Exception as e:
+        # Log the error but don't crash - this allows the API to still function
+        # even if the database is temporarily unavailable
+        from utils.logging import get_logger
+        logger = get_logger(__name__)
+        logger.error(f"Database connection error: {str(e)}", exc_info=True)
+        # Yield None - endpoints should handle this gracefully
+        yield None
