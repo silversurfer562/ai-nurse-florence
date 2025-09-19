@@ -71,6 +71,10 @@ async def root(request: Request, _=Depends(require_config)):
 
 # ---------- Your domain routes (plug back in here) ----------
 
+# Include the patient education wizard router
+from routers.wizards.patient_education import router as patient_education_router
+app.include_router(patient_education_router, prefix="/v1", tags=["patient-education"])
+
 # If you have existing routers, include them here, e.g.:
 #
 # from api.v1.disease import router as disease_router

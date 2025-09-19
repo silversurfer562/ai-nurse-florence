@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional, List
 from utils.api_responses import create_success_response, create_error_response
 from services.openai_client import get_client
 from utils.logging import get_logger
+from utils.guardrails import educational_banner
 
 router = APIRouter(prefix="/wizards/patient-education", tags=["wizards"])
 logger = get_logger(__name__)
@@ -38,6 +39,7 @@ class Step2Response(BaseModel):
     message: str
 
 class GenerationResult(BaseModel):
+    banner: str = Field(default_factory=educational_banner)
     status: str
     handout_text: Optional[str] = None
     error: Optional[str] = None
@@ -127,7 +129,7 @@ async def get_generation_result(task_id: str):
     if not result:
         return create_error_response("Generation task not found.", status.HTTP_404_NOT_FOUND, "task_not_found")
     
-    return create_success_response(result)
+    return create_success_response(result.model_dump())
 
 # --- Helper Function ---
 
