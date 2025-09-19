@@ -71,6 +71,10 @@ async def root(request: Request, _=Depends(require_config)):
 
 # ---------- Your domain routes (plug back in here) ----------
 
+# Include webhook router for Notion-GitHub integration
+from routers.webhooks import router as webhook_router
+app.include_router(webhook_router)
+
 # If you have existing routers, include them here, e.g.:
 #
 # from api.v1.disease import router as disease_router

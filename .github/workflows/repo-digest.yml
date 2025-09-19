@@ -1,5 +1,5 @@
 
-name: Repo Digest
+name: Enhanced Repo Digest
 
 on:
   push:
@@ -22,12 +22,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Generate digest
         run: |
           python - <<'PY'
-          import os, subprocess, datetime
+          import os, subprocess, datetime, json
 
           # Safely compute before/after for this run
           before = os.environ.get("GITHUB_EVENT_BEFORE")
@@ -78,45 +78,173 @@ jobs:
           ref = os.environ.get("GITHUB_REF_NAME","branch")
           ts = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
+          # Enhanced markdown with better formatting
           md = []
-          md.append(f"# Repo Digest — {repo} @ {ref}")
-          md.append(f"_Generated: {ts}_\n")
-          md.append("## Summary")
-          md.append(f"- Commits in push: **{len(commits)}**")
+          md.append(f"# 📊 Repository Digest — {repo}")
+          md.append(f"**Branch:** {ref} | **Generated:** {ts}")
+          md.append("")
+          
+          # Summary with emojis
+          md.append("## 📈 Summary")
+          md.append(f"- 🔄 **Commits in push:** {len(commits)}")
           if file_rows:
             total_chg = sum(n for n,_,_,_ in file_rows)
-            md.append(f"- Files changed: **{len(file_rows)}** (top 20 below), total line changes: **{total_chg}**")
-          md.append("\n## Diffstat")
+            md.append(f"- 📁 **Files changed:** {len(file_rows)} files, {total_chg} total line changes")
+          md.append("")
+          
+          # Diffstat
+          md.append("## 📋 Diffstat")
+          md.append("```diff")
+          md.append(diffstat.strip() or "(no changes)")
           md.append("```")
-          md.append(diffstat.strip() or "(no diffstat)")
-          md.append("```")
-          md.append("\n## Commits")
-          for c in commits:
-            md.append(f"- `{c['short']}` {c['subject']} — {c['author']}  \n  {c['date']}  \n  https://github.com/{repo}/commit/{c['full']}")
+          md.append("")
+          
+          # Commits with better formatting
+          md.append("## 🔀 Commits")
+          for i, c in enumerate(commits, 1):
+            md.append(f"### {i}. {c['subject']}")
+            md.append(f"**Author:** {c['author']} | **Date:** {c['date']}")
+            md.append(f"**Link:** https://github.com/{repo}/commit/{c['full']}")
+            md.append("")
 
+          # Top files table
           if top_files:
-            md.append("\n## Top Changed Files")
-            md.append("| Rank | File | + | - | Δ |")
+            md.append("## 📂 Top Changed Files")
+            md.append("| Rank | File | Additions | Deletions | Total |")
             md.append("|---:|---|---:|---:|---:|")
             for i,(chg,ins,dele,path) in enumerate(top_files, start=1):
-              md.append(f"| {i} | `{path}` | {ins} | {dele} | {chg} |")
+              md.append(f"| {i} | `{path}` | +{ins} | -{dele} | {chg} |")
+            md.append("")
+
+          # Add metadata for Notion
+          metadata = {
+            "repository": repo,
+            "branch": ref,
+            "commit_count": len(commits),
+            "files_changed": len(file_rows),
+            "total_changes": sum(n for n,_,_,_ in file_rows) if file_rows else 0,
+            "timestamp": ts,
+            "commits": commits[:5]  # First 5 commits for Notion
+          }
 
           with open("digest.md","w", encoding="utf-8") as f:
             f.write("\n".join(md) + "\n")
-          print("Wrote digest.md")
+          
+          with open("digest-metadata.json","w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+            
+          print("✓ Generated enhanced digest with metadata")
           PY
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
 
-      # Always upload the digest as a build artifact (useful for debugging)
+      # Always upload the digest as a build artifact
       - name: Upload digest artifact
         uses: actions/upload-artifact@v4
         with:
-          name: repo-digest
-          path: digest.md
+          name: repo-digest-${{ github.sha }}
+          path: |
+            digest.md
+            digest-metadata.json
 
-      # ===== Option A: Email the digest (Gmail) =====
-      # Use repo/Org "Actions Variables": ENABLE_EMAIL=1 to enable
+      # ===== Enhanced Notion Integration =====
+      - name: Install Notion dependencies
+        if: ${{ vars.ENABLE_NOTION == '1' }}
+        run: pip install --upgrade requests
+
+      - name: Push Enhanced Digest to Notion
+        if: ${{ vars.ENABLE_NOTION == '1' }}
+        run: |
+          python - <<'PY'
+          import os, json, requests
+          from datetime import datetime
+          
+          token = os.environ["NOTION_TOKEN"]
+          database_id = os.environ["NOTION_DATABASE_ID"]
+          
+          # Load content and metadata
+          with open("digest.md","r",encoding="utf-8") as f:
+            content = f.read()
+          with open("digest-metadata.json","r",encoding="utf-8") as f:
+            metadata = json.load(f)
+
+          # Create structured Notion page
+          def create_rich_text(text):
+            return [{"type": "text", "text": {"content": text}}]
+
+          def create_text_block(text):
+            return {
+              "object": "block",
+              "type": "paragraph", 
+              "paragraph": {"rich_text": create_rich_text(text)}
+            }
+
+          # Create enhanced page properties
+          page = {
+            "parent": {"database_id": database_id},
+            "properties": {
+              "Title": {
+                "title": create_rich_text(f"📊 Repo Digest — {metadata['branch']} — {datetime.now().strftime('%Y-%m-%d')}")
+              },
+              "Type": {
+                "select": {"name": "Repository Digest"}
+              },
+              "Repository": {
+                "rich_text": create_rich_text(metadata["repository"])
+              },
+              "Branch": {
+                "rich_text": create_rich_text(metadata["branch"])
+              },
+              "Commit Count": {
+                "number": metadata["commit_count"]
+              },
+              "Date": {
+                "date": {"start": datetime.utcnow().isoformat()}
+              },
+              "URL": {
+                "url": f"https://github.com/{metadata['repository']}/commits/{metadata['branch']}"
+              }
+            },
+            "children": []
+          }
+
+          # Add summary
+          page["children"].append(create_text_block(f"📈 Summary: {metadata['commit_count']} commits, {metadata['files_changed']} files changed, {metadata['total_changes']} total line changes"))
+          page["children"].append(create_text_block(""))
+
+          # Add top commits
+          if metadata["commits"]:
+            page["children"].append(create_text_block("🔀 Recent Commits:"))
+            for commit in metadata["commits"]:
+              page["children"].append(create_text_block(f"• {commit['subject']} - {commit['author']}"))
+          
+          # Add full content in chunks
+          chunks = [content[i:i+1800] for i in range(0, len(content), 1800)]
+          for chunk in chunks:
+            page["children"].append(create_text_block(chunk))
+
+          # Send to Notion
+          response = requests.post(
+            "https://api.notion.com/v1/pages",
+            headers={
+              "Authorization": f"Bearer {token}",
+              "Notion-Version": "2022-06-28",
+              "Content-Type": "application/json",
+            },
+            json=page,
+            timeout=30,
+          )
+          response.raise_for_status()
+          
+          result = response.json()
+          print(f"✓ Created enhanced Notion page: {result.get('id')}")
+          print(f"📄 Page URL: {result.get('url', 'N/A')}")
+          PY
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+
+      # ===== Email Integration (Optional) =====
       - name: Send Digest Email
         if: ${{ vars.ENABLE_EMAIL == '1' }}
         uses: dawidd6/action-send-mail@v3
@@ -126,57 +254,15 @@ jobs:
           secure: true
           username: ${{ secrets.GMAIL_ADDRESS }}
           password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          subject: "[Repo Digest] ${{ github.repository }} @ ${{ github.ref_name }} — ${{ github.sha }}"
+          subject: "📊 [Repo Digest] ${{ github.repository }} @ ${{ github.ref_name }}"
           to: ${{ secrets.DIGEST_TO }}
           from: ${{ secrets.GMAIL_ADDRESS }}
           body: |
-            New push on ${{ github.repository }} @ ${{ github.ref_name }}.
-            See attached repo digest.
-          attachments: digest.md
-
-      # ===== Option B: Publish to Notion Database =====
-      # Use repo/Org "Actions Variables": ENABLE_NOTION=1 to enable
-      - name: Install Notion deps
-        if: ${{ vars.ENABLE_NOTION == '1' }}
-        run: pip install --upgrade requests
-
-      - name: Push Digest to Notion
-        if: ${{ vars.ENABLE_NOTION == '1' }}
-        run: |
-          python - <<'PY'
-          import os, json, requests
-          token = os.environ["NOTION_TOKEN"]
-          database_id = os.environ["NOTION_DATABASE_ID"]
-          with open("digest.md","r",encoding="utf-8") as f:
-            content = f.read()
-
-          chunks = [content[i:i+1900] for i in range(0, len(content), 1900)] or ["(empty)"]
-
-          def md_block(t):
-            return {"object":"block","paragraph":{"rich_text":[{"type":"text","text":{"content":t}}]}}
-
-          page = {
-            "parent": {"database_id": database_id},
-            "properties": {
-              "Name": {"title": [{"text": {"content": f"Repo Digest — {os.environ.get('GITHUB_REF_NAME','branch')} — {os.environ.get('GITHUB_SHA','')[:7]}"}}]},
-              "Repo": {"rich_text": [{"text":{"content": os.environ.get("GITHUB_REPOSITORY","")}}]},
-            },
-            "children": [md_block(c) for c in chunks]
-          }
-
-          r = requests.post(
-            "https://api.notion.com/v1/pages",
-            headers={
-              "Authorization": f"Bearer {token}",
-              "Notion-Version": "2022-06-28",
-              "Content-Type": "application/json",
-            },
-            data=json.dumps(page),
-            timeout=30,
-          )
-          r.raise_for_status()
-          print("Notion page created:", r.json().get("id"))
-          PY
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+            📊 New repository digest available for ${{ github.repository }} @ ${{ github.ref_name }}.
+            
+            🔗 View commit details: https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}
+            
+            See attached digest for full details.
+          attachments: |
+            digest.md
+            digest-metadata.json
