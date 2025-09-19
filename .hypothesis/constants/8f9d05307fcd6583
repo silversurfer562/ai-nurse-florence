@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/services/summarize_service.py
+# hypothesis_version: 6.139.2
+
+[300, ':', 'assessment', 'background', 'call_chatgpt', 'choices', 'content', 'enhanced_prompt', 'error', 'gpt-4o-mini', 'gpt-5.1-mini', 'message', 'model', 'needs_clarification', 'nurse', 'openai', 'original_prompt', 'output_text', 'prompt_enhanced', 'recommendation', 'sbar_from_notes', 'situation', 'summarize', 'summarize_text', 'text']

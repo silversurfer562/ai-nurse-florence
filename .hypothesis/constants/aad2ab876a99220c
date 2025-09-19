@@ -1,0 +1,4 @@
+# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/.venv/bin/pytest
+# hypothesis_version: 6.139.2
+
+['.exe', '__main__']
