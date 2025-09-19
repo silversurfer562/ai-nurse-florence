@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/utils/exceptions.py
-# hypothesis_version: 6.139.2
-
-[400, 401, 404, 500, 503, 'auth', 'resource_id', 'resource_type']

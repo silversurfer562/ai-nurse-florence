@@ -25,6 +25,9 @@ pytest_cache/
 .mypy_cache/
 .ipynb_checkpoints
 
+# Testing artifacts
+.hypothesis/
+
 # VS Code
 .vscode/*
 !.vscode/extensions.json
@@ -32,3 +35,9 @@ pytest_cache/
 !.vscode/launch.json
 ai-nurse-florence-plan-for dev.txt
 OPENAI_API_KEY.env
+
+# Production db
+*.db
+
+# Vercel
+.vercel

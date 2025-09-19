@@ -1,4 +1,0 @@
-# file: /home/runner/work/ai-nurse-florence/ai-nurse-florence/app.py
-# hypothesis_version: 6.139.2
-
-[204, 401, 429, 500, 8088, '/', '/admin/stats', '/api/health', '/docs', '/favicon.ico', '/openapi.json', '/redoc', '0.0.0.0', '1.0.0', 'AI Nurse Florence', 'API_BEARER', 'Bearer ', 'OPENAI_API_KEY', 'Too many requests', 'Unauthorized', '__main__', 'app:app', 'authorization', 'global', 'how_to_fix', 'message', 'misconfigured', 'missing', 'name', 'ok', 'root', 'status', 'system', 'ts', 'unknown']
