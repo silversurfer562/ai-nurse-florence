@@ -48,8 +48,8 @@ def create_app():
         # Add CORS middleware
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],  # Configure properly in production
-            allow_credentials=True,
+            allow_origins=["*"],  # Wildcard origins without credentials
+            allow_credentials=False,  # Cannot be True with wildcard origins
             allow_methods=["*"],
             allow_headers=["*"],
         )
