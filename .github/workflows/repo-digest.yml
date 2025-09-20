@@ -1,0 +1,22 @@
+name: Repo Digest
+
+on:
+  workflow_dispatch:        # lets you run it manually in Actions tab
+  schedule:
+    - cron: '0 12 * * *'    # daily @ 12:00 UTC
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate digest
+        run: |
+          mkdir -p .github
+          echo "# Repo Digest ($(date -u +%F))" > .github/digest.md
+          echo "## Last 7 days" >> .github/digest.md
+          git log --since='7 days' --pretty=format:'- %ad %h %s' --date=short >> .github/digest.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repo-digest
+          path: .github/digest.md
