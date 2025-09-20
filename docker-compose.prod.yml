@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # Main API Service
+  api:
+    build: .
+    container_name: florence-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - USE_LIVE=${USE_LIVE:-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://florence:${POSTGRES_PASSWORD:-florence}@postgres/florence_db
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-100}
+      - NCBI_API_KEY=${NCBI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - florence-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: florence-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - florence-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: florence-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=florence
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-florence}
+      - POSTGRES_DB=florence_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - florence-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U florence -d florence_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: florence-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - florence-network
+    depends_on:
+      - api
+
+  # Grafana dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: florence-grafana
+    restart: unless-stopped
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    networks:
+      - florence-network
+    depends_on:
+      - prometheus
+
+volumes:
+  redis-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  florence-network:
+    driver: bridge
