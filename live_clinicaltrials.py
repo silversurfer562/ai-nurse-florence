@@ -1,37 +1,70 @@
 import requests
 
-# Classic ClinicalTrials.gov v1 StudyFields API (simple, stable)
-BASE = "https://classic.clinicaltrials.gov/api/query/study_fields"
+# ClinicalTrials.gov API v2 (current stable API)
+BASE = "https://clinicaltrials.gov/api/v2/studies"
 
 def search(condition: str, status: str | None = None, max_results: int = 10):
-    expr = condition
-    if status in {"recruiting", "active", "completed"}:
-        # filter in expression if provided
-        expr = f"{condition} AND OverallStatus:{status}"
     params = {
-        "expr": expr,
-        "fields": "NCTId,BriefTitle,OverallStatus,Condition,LocationCountry",
-        "min_rnk": 1,
-        "max_rnk": max_results,
-        "fmt": "json",
+        'query.cond': condition,
+        'countTotal': 'true',
+        'pageSize': min(max_results, 1000)  # API max is 1000
     }
+    
+    # Note: API v2 status filtering is complex, so we'll filter results after retrieval
+    # if status is specified
+    
     r = requests.get(BASE, params=params, timeout=20)
     r.raise_for_status()
-    studies = r.json().get("StudyFieldsResponse", {}).get("StudyFields", [])
+    data = r.json()
+    
+    studies = data.get("studies", [])
     out = []
-    for s in studies:
-        nct = (s.get("NCTId") or [None])[0]
-        title = (s.get("BriefTitle") or [None])[0]
-        st = (s.get("OverallStatus") or [None])[0]
-        conds = s.get("Condition") or []
-        locs = s.get("LocationCountry") or []
-        url = f"https://clinicaltrials.gov/study/{nct}" if nct else None
+    
+    for study in studies:
+        protocol = study.get("protocolSection", {})
+        identification = protocol.get("identificationModule", {})
+        status_module = protocol.get("statusModule", {})
+        conditions_module = protocol.get("conditionsModule", {})
+        contacts_locations = protocol.get("contactsLocationsModule", {})
+        
+        nct_id = identification.get("nctId")
+        title = identification.get("briefTitle")
+        overall_status = status_module.get("overallStatus")
+        conditions = conditions_module.get("conditions", [])
+        
+        # Filter by status if specified (post-API filtering)
+        if status:
+            status_map = {
+                "recruiting": "RECRUITING",
+                "active": "ACTIVE_NOT_RECRUITING", 
+                "completed": "COMPLETED",
+                "not yet recruiting": "NOT_YET_RECRUITING"
+            }
+            target_status = status_map.get(status.lower(), status.upper())
+            if overall_status != target_status:
+                continue
+        
+        # Get locations/countries
+        locations = []
+        if contacts_locations.get("locations"):
+            for loc in contacts_locations["locations"]:
+                country = loc.get("country")
+                if country and country not in locations:
+                    locations.append(country)
+        
+        url = f"https://clinicaltrials.gov/study/{nct_id}" if nct_id else None
+        
         out.append({
-            "nct_id": nct,
+            "nct_id": nct_id,
             "title": title,
-            "status": st,
-            "conditions": conds,
-            "locations": locs,
+            "status": overall_status,
+            "conditions": conditions,
+            "locations": locations[:5],  # Limit to 5 countries
             "url": url,
         })
+        
+        # Stop when we have enough results after filtering
+        if len(out) >= max_results:
+            break
+    
     return out

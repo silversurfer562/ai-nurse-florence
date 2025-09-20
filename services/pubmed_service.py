@@ -60,9 +60,9 @@ def search_pubmed(query: str, page: int = 1, size: int = 10) -> PubMedResult:
                 f"Searching PubMed: {query}", 
                 extra={"query": query, "page": page, "size": size}
             )
-            # The live service would need to support pagination
+            # The live service provides max_results instead of pagination
             results: List[Dict[str, Optional[str]]] = pubmed_live.search(
-                query, page=page, size=size
+                query, max_results=size
             )
             # The live service should also return the total count
             total_count = pubmed_live.get_total_count(query)

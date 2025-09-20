@@ -80,18 +80,18 @@ def lookup_disease(term: str) -> DiseaseResult:
     # If live mode is enabled and we have the module
     if LIVE and mydisease_live and hasattr(mydisease_live, "lookup"):
         try:
-            logger.info(f"Looking up disease: {effective_term}", extra={"term": effective_term})
+            logger.info(f"Looking up disease: {term}", extra={"term": term})
             if _has_metrics:
                 record_external_request("mydisease", "lookup")
                 
-            data = mydisease_live.lookup(effective_term)
+            data = mydisease_live.lookup(term)  # Use original term, not enhanced prompt
             
             # Ensure we have all required fields
             data.setdefault("banner", banner)
             data.setdefault("query", term)  # Keep original query
             data.setdefault("references", [])
             if "name" not in data:
-                data["name"] = effective_term.title() if effective_term else None
+                data["name"] = term.title() if term else None
             
             # Add enhancement info if term was enhanced
             if effective_term != term:
