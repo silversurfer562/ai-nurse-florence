@@ -31,7 +31,12 @@ def test_config_loading():
     # Set minimal required environment
     os.environ.setdefault("API_BEARER", "test-key")
     
-    from utils.config import settings
+    # Clear settings cache to ensure fresh load with current environment
+    from utils.config import get_settings
+    get_settings.cache_clear()
+    
+    # Get fresh settings instance
+    settings = get_settings()
     
     assert settings.API_BEARER is not None
     assert settings.LOG_LEVEL == "INFO"
