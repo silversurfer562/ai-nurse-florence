@@ -1,0 +1,2 @@
+# Minimal runtime configuration for Vercel
+python3.12

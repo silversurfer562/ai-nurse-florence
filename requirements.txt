@@ -12,4 +12,5 @@ asyncpg
 aiosqlite
 python-jose[cryptography]
 passlib[bcrypt]
-
+pydantic-settings
+mangum
