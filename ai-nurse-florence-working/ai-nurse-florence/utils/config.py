@@ -5,7 +5,8 @@ This module defines a `Settings` class that loads configuration from environment
 variables and a `.env` file, providing a single, type-safe source of truth for
 all application settings.
 """
-from pydantic import BaseSettings, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 from typing import List, Optional
 from functools import lru_cache
 
@@ -48,6 +49,8 @@ class Settings(BaseSettings):
     def CORS_ORIGINS(self) -> List[str]:
         """Parses the comma-separated string of origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
+
+        model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     class Config:
         env_file = ".env"

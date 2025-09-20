@@ -1,0 +1,36 @@
+# OS junk
+.DS_Store
+
+# Archives & local backups (root and subfolders)
+*.zip
+*.tgz
+*.tar.gz
+*.pdf
+repo_backup_*.tgz
+
+# Your backup folder(s)
+ai-nurse-florence-working/ai-nurse-florence-bak/
+
+# Secrets
+*.env
+.env
+OPENAI_API_KEY.env
+nurse_api_importantKey*.txt
+# OS junk
+.DS_Store
+
+# Archives & local backups (root and subfolders)
+*.zip
+*.tgz
+*.tar.gz
+*.pdf
+repo_backup_*.tgz
+
+# Your backup folder(s)
+ai-nurse-florence-working/ai-nurse-florence-bak/
+
+# Secrets
+*.env
+.env
+OPENAI_API_KEY.env
+nurse_api_importantKey*.txt
