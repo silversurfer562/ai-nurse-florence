@@ -1,9 +1,5 @@
 """
 Centralized application configuration using Pydantic.
-
-This module defines a `Settings` class that loads configuration from environment
-variables and a `.env` file, providing a single, type-safe source of truth for
-all application settings.
 """
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
@@ -11,15 +7,11 @@ from typing import List, Optional
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    """
-    Application settings, loaded from environment variables.
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     
-    Pydantic's BaseSettings automatically reads from the environment.
-    The `Config` inner class tells it to also load from a .env file.
-    """
     # Core App Settings
-    API_BEARER: str
-    CORS_ORIGINS_STR: str = Field("", env="CORS_ORIGINS")
+    API_BEARER: str = "default-api-key-change-in-production"
+    CORS_ORIGINS_STR: str = Field("http://localhost:3000,http://localhost:8000", alias="CORS_ORIGINS")
     LOG_LEVEL: str = "INFO"
     
     # OpenAI Settings
@@ -30,40 +22,24 @@ class Settings(BaseSettings):
     
     # Infrastructure Settings
     REDIS_URL: Optional[str] = None
-    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db" # Default to SQLite for simple local dev
+    DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     
     # Feature Settings
     RATE_LIMIT_PER_MINUTE: int = 60
 
-    # --- OAuth2 Settings for GPT Store ---
-    # These will be provided by the GPT editor's authentication section
+    # OAuth2 Settings
     OAUTH_CLIENT_ID: Optional[str] = None
     OAUTH_CLIENT_SECRET: Optional[str] = None
-    # This is a secret key for signing our own JWTs (JSON Web Tokens)
-    # In production, this should be a long, random string.
-    JWT_SECRET_KEY: str = "a_very_secret_key"
+    JWT_SECRET_KEY: str = "a_very_secret_key_change_in_production"
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 1 week
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     @property
     def CORS_ORIGINS(self) -> List[str]:
-        """Parses the comma-separated string of origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
-
-        model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 @lru_cache()
 def get_settings() -> Settings:
-    """
-    Returns a cached instance of the Settings object.
-    
-    Using lru_cache ensures the .env file and environment are read only once.
-    """
     return Settings()
 
-# Create a single instance to be used throughout the application
 settings = get_settings()
