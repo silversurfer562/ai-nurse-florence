@@ -1,0 +1,13 @@
+{
+  "name": "ai-nurse-florence",
+  "version": "1.0.0",
+  "description": "Healthcare AI Assistant API deployed on Vercel",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}

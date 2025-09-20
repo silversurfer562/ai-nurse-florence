@@ -2,6 +2,12 @@ import sys
 import os
 from pathlib import Path
 
+# Import serverless environment setup
+try:
+    from serverless_env import *
+except ImportError:
+    pass
+
 # Get the project root directory
 project_root = Path(__file__).parent.parent
 app_dir = project_root / 'ai-nurse-florence-working' / 'ai-nurse-florence'
