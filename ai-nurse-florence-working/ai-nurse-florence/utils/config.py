@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     The `Config` inner class tells it to also load from a .env file.
     """
     # Core App Settings
-    API_BEARER: str
+    API_BEARER: Optional[str] = None
     CORS_ORIGINS_STR: str = Field("", env="CORS_ORIGINS")
     LOG_LEVEL: str = "INFO"
     

@@ -113,6 +113,9 @@ app.add_middleware(LoggingMiddleware, logger=logger)
 # Set up metrics
 setup_metrics(app)
 
+# Define exempt paths for rate limiting (auth endpoints, health checks, docs)
+EXEMPT_PATHS = ["/api/v1/auth/token", "/docs", "/redoc", "/openapi.json", "/health"]
+
 # Add rate limiting
 app.add_middleware(
     RateLimiter,

@@ -81,6 +81,33 @@ As a public benefit corporation technology initiative, this project prioritizes:
 - Open, responsible AI development
 - Community health outcomes
 
+## 🛠️ Development
+
+### Quick Testing
+For development and testing without external dependencies:
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run unit tests for core services
+python test_runner.py
+
+# Run full test suite (requires Redis/database setup)
+pytest
+```
+
+### Environment Setup
+- Copy `.env.example` to `.env` and configure required variables
+- For basic development, only `API_BEARER` is required
+- For full functionality, configure `OPENAI_API_KEY` and `REDIS_URL`
+
+### Code Quality
+```bash
+# The project follows standard Python practices
+flake8 .
+mypy .
+```
+
 ## 🛡️ Medical Disclaimer
 
 AI Nurse Florence provides educational information for healthcare professionals. All content is for informational purposes only and does not constitute medical advice. Always consult qualified healthcare providers for medical decisions.
