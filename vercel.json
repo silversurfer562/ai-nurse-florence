@@ -1,18 +1,23 @@
-{
-  "version": 2,
-  "builds": [
     {
-      "src": "api/index.py",
-      "use": "@vercel/python"
+      "src": "app.py",
+      "use": "@vercel/python",
+      "config": { "runtime": "python3.9" }
+      "config": { 
+        "runtime": "python3.11",
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
+@@ -15,5 +18,11 @@
   ],
   "env": {
     "PYTHONPATH": "."
+  },
+  "functions": {
+    "app.py": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
   }
 }

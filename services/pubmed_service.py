@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Optional
 from utils.exceptions import ExternalServiceException
 from utils.types import PubMedResult, PubMedArticleDict
 from utils.logging import get_logger
-from utils.redis_cache import cached
+from utils.cache import cached
 from utils.config import settings
 
 logger = get_logger(__name__)

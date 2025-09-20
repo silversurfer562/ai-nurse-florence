@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
-# from services.tasks import summarize_text_task  # Disabled for Redis-free dev # Import the new Celery task
+from services.tasks import summarize_text_task # Import the new Celery task
 from celery.result import AsyncResult
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger

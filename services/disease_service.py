@@ -3,9 +3,11 @@ from typing import Dict, Any, List, Optional
 from utils.exceptions import ExternalServiceException
 from utils.types import DiseaseResult, ReferenceDict
 from utils.logging import get_logger
-from utils.redis_cache import cached
+from utils.cache import cached
 from services.prompt_enhancement import enhance_prompt
 from utils.config import settings
+
+logger = get_logger(__name__)
 
 # Conditional import for metrics
 try:

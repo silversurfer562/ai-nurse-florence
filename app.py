@@ -96,6 +96,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Checks for api-bearer enviroment variable in vercel deployment
+def require_bearer(request: Request):
+    expected = (get_settings().API_BEARER or "").strip()
+    auth = request.headers.get("authorization", "")
+    token = auth.split(" ", 1)[1] if auth.startswith("Bearer ") else ""
+    if not expected or token != expected:
+        raise HTTPException(401, "Unauthorized")
+
+@app.get("/admin/stats")
+async def admin_stats(
+    request: Request,
+    _=Depends(lambda: require_config(require_bearer=True)),
+    __=Depends(require_bearer),
+):
+    return {"ok": True}
+
 # --- Include Routers ---
 api_router.include_router(summarize_router)
 api_router.include_router(disease_router)

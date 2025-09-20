@@ -38,3 +38,17 @@ def search(query: str, max_results: int = 10):
         url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else None
         results.append({"pmid": pmid, "title": title, "abstract": None, "url": url})
     return results
+
+def get_total_count(query: str):
+    """Get total count of articles matching the query"""
+    params = {
+        "db": "pubmed",
+        "term": query,
+        "rettype": "count",
+        "retmode": "json",
+    }
+    if API_KEY: params["api_key"] = API_KEY
+    if EMAIL: params["email"] = EMAIL
+    r = requests.get(f"{BASE}/esearch.fcgi", params=params, timeout=15)
+    r.raise_for_status()
+    return int(r.json().get("esearchresult", {}).get("count", 0))
