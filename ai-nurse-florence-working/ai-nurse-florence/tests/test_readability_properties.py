@@ -21,7 +21,7 @@ def test_analyze_readability_output_structure(text):
     result = analyze_readability(text)
     assert isinstance(result, dict)
     # Check expected keys based on implementation
-    expected_keys = {"text_length", "reading_level", "grade_level"}
+    expected_keys = {"flesch_reading_ease", "flesch_kincaid_grade", "sentences", "words", "syllables", "suggestions"}
     for key in expected_keys:
         assert key in result, f"Expected key '{key}' missing from result"
 
