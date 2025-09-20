@@ -103,6 +103,9 @@ unprotected_router = APIRouter(prefix="/api/v1")
 
 # --- Middleware Configuration ---
 
+# Paths that should be exempt from rate limiting
+EXEMPT_PATHS = {"/", "/health", "/docs", "/redoc", "/openapi.json", "/api/v1/auth/token"}
+
 # Add security headers middleware (should be one of the first)
 app.add_middleware(SecurityHeadersMiddleware)
 

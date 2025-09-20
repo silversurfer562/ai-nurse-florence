@@ -54,7 +54,7 @@ class Settings(BaseSettings):
         """Parses the comma-separated string of origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 @lru_cache()
 def get_settings() -> Settings:
