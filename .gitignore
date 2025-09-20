@@ -11,26 +11,34 @@ repo_backup_*.tgz
 # Your backup folder(s)
 ai-nurse-florence-working/ai-nurse-florence-bak/
 
-# Secrets
-*.env
-.env
-OPENAI_API_KEY.env
-nurse_api_importantKey*.txt
-# OS junk
-.DS_Store
+# Python virtual environments
+venv/
+.venv/
+.test_venv/
+env/
+ENV/
 
-# Archives & local backups (root and subfolders)
-*.zip
-*.tgz
-*.tar.gz
-*.pdf
-repo_backup_*.tgz
-
-# Your backup folder(s)
-ai-nurse-florence-working/ai-nurse-florence-bak/
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Secrets
 *.env
 .env
 OPENAI_API_KEY.env
 nurse_api_importantKey*.txt
+
+# Build and dist
+build/
+dist/
+*.egg-info/
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log

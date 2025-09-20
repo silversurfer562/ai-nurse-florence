@@ -45,16 +45,16 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 1 week
 
+    # Monitoring Configuration (Optional)
+    GRAFANA_ADMIN_USER: Optional[str] = None
+    GRAFANA_ADMIN_PASSWORD: Optional[str] = None
+
     @property
     def CORS_ORIGINS(self) -> List[str]:
         """Parses the comma-separated string of origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
 
-        model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 @lru_cache()
 def get_settings() -> Settings:
