@@ -1,0 +1,30 @@
+name: Repo Digest (Issues)
+on:
+  schedule:
+    - cron: '5 12 * * *'    # daily @ 12:05 UTC (post-artifact job)
+  workflow_dispatch:
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - id: build
+        run: |
+          echo "# Repo Digest ($(date -u +%F))" > digest.md
+          git log --since='1 day ago' --pretty=format:'- %ad %h %s' --date=short >> digest.md
+      - name: Open issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('digest.md', 'utf8');
+            const title = `Repo Digest ${new Date().toISOString().slice(0,10)}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body
+            });
