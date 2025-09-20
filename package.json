@@ -1,0 +1,43 @@
+{
+  "name": "ai-nurse-florence",
+  "version": "1.0.0",
+  "description": "Healthcare AI Assistant - Evidence-based medical information for healthcare professionals",
+  "main": "app.py",
+  "scripts": {
+    "dev": "./run_dev.sh",
+    "start": "uvicorn app:app --host 0.0.0.0 --port 8000",
+    "test": "pytest",
+    "deploy": "./deploy-production.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/silversurfer562/ai-nurse-florence.git"
+  },
+  "keywords": [
+    "healthcare",
+    "ai",
+    "medical",
+    "nursing",
+    "fastapi",
+    "pubmed",
+    "clinical-trials",
+    "evidence-based",
+    "public-benefit"
+  ],
+  "author": "Deep Study AI, LLC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/silversurfer562/ai-nurse-florence/issues"
+  },
+  "homepage": "https://github.com/silversurfer562/ai-nurse-florence#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/silversurfer562"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "python": ">=3.11.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

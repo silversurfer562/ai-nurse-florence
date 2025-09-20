@@ -154,6 +154,25 @@ CORS_ORIGINS=["http://localhost:3000"]  # Frontend origins
 - [API Reference](docs/api_reference.md)
 - [Deployment Guide](docs/deployment.md)
 
+## 💝 Support This Project
+
+AI Nurse Florence is a public benefit technology initiative that improves healthcare accessibility through open-source AI. Your support helps advance healthcare technology for the global community.
+
+### 🌟 Why Support AI Nurse Florence?
+- **Saves Lives**: Faster access to medical information improves patient outcomes
+- **Global Impact**: Supports healthcare workers worldwide, especially in underserved areas
+- **Open Source**: All code is freely available for research and improvement
+- **Evidence-Based**: Promotes best practices in medical care
+
+### 💖 How to Support
+- ⭐ **Star this repository** to show your support
+- 🐛 **Report bugs** and suggest features
+- 💰 **Financial support** via [GitHub Sponsors](https://github.com/sponsors/silversurfer562)
+- 🤝 **Contribute code** - see [CONTRIBUTING.md](CONTRIBUTING.md)
+- 📢 **Share** with healthcare networks and colleagues
+
+For detailed funding information, see [FUNDING.md](FUNDING.md).
+
 ## 🤝 Contributing
 
 We welcome contributions that align with our public benefit mission of improving healthcare accessibility. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
