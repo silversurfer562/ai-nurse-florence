@@ -4,7 +4,7 @@ This guide provides technical documentation for developers working with the AI N
 
 ## Architecture Overview
 
-AI Nurse Florence is a FastAPI-based application that provides healthcare information through various services:
+AI Nurse Florence is a FastAPI-based application that provides healthcare information through various live medical data services:
 
 ```
 ┌───────────────┐     ┌─────────────┐     ┌─────────────────┐
@@ -13,34 +13,69 @@ AI Nurse Florence is a FastAPI-based application that provides healthcare inform
                             │                      │
                             ▼                      ▼
                       ┌─────────────┐     ┌─────────────────┐
-                      │  Middleware │     │ External APIs   │
-                      └─────────────┘     └─────────────────┘
-                            │                      │
-                            ▼                      ▼
-                      ┌─────────────┐     ┌─────────────────┐
-                      │   Caching   │     │ LLM Integration │
-                      └─────────────┘     └─────────────────┘
+                      │  Middleware │     │ Live Medical    │
+                      └─────────────┘     │ APIs Integration│
+                            │             └─────────────────┘
+                            ▼                      │
+                      ┌─────────────┐              ▼
+                      │   Caching   │     ┌─────────────────┐
+                      └─────────────┘     │ LLM Integration │
+                                          └─────────────────┘
 ```
 
 ### Key Components
 
 - **API Routers**: Endpoint definitions in the `/routers` directory
-- **Services**: Core business logic in the `/services` directory
-- **Middleware**: Request processing in `/utils/middleware.py`
-- **Exception Handling**: Custom exceptions in `/utils/exceptions.py`
-- **Caching**: Redis-based caching in `/utils/redis_cache.py`
-- **Monitoring**: Prometheus metrics in `/utils/metrics.py`
+- **Services**: Core business logic in the `/services` directory with live API integration
+- **Live Medical APIs**: Real-time data from `live_mydisease.py`, `live_pubmed.py`, `live_clinicaltrials.py`
+- **Middleware**: Request processing, rate limiting, and logging in `/utils/middleware.py`
+- **Exception Handling**: Custom exceptions with external service handling in `/utils/exceptions.py`
+- **Caching**: Redis-based caching with in-memory fallback in `/utils/cache.py`
+- **Monitoring**: Prometheus metrics and health checks in `/utils/metrics.py`
+
+## Live Medical Data Integration
+
+### External APIs
+
+#### MyDisease.info
+- **Purpose**: Comprehensive disease information and cross-references
+- **File**: `live_mydisease.py`
+- **Function**: `lookup(term: str)`
+- **Rate Limits**: No authentication required, reasonable use expected
+- **Data Fields**: Disease names, definitions, references, cross-database IDs
+
+#### PubMed/NCBI eUtils
+- **Purpose**: Medical literature search from 35+ million citations
+- **File**: `live_pubmed.py`  
+- **Functions**: `search(query, max_results)`, `get_total_count(query)`
+- **Rate Limits**: 3/sec (10/sec with API key)
+- **API Key**: Set `NCBI_API_KEY` for enhanced rate limits
+
+#### ClinicalTrials.gov
+- **Purpose**: Current and completed clinical studies
+- **File**: `live_clinicaltrials.py`
+- **Function**: `search(condition, status, max_results)`
+- **API Version**: v2 (current stable)
+- **Rate Limits**: No authentication required
 
 ## Getting Started
 
 ### Prerequisites
 
 - Python 3.9+
-- Redis (for production deployments)
+- Redis (for production deployments - optional for development)
 - Docker and Docker Compose (for containerized deployment)
+- OpenAI API key (required for AI features)
+- NCBI API key (optional but recommended for enhanced PubMed rate limits)
 
 ### Local Development Setup
 
+#### Option 1: Automated Setup (Recommended)
+```bash
+./run_dev.sh  # Automated setup: venv, deps, .env creation, uvicorn
+```
+
+#### Option 2: Manual Setup
 1. Clone the repository:
    ```bash
    git clone <repository-url>
@@ -56,19 +91,152 @@ AI Nurse Florence is a FastAPI-based application that provides healthcare inform
 3. Install dependencies:
    ```bash
    pip install -r requirements.txt
+   pip install requests greenlet  # Required for live medical APIs
    ```
 
 4. Create a `.env` file:
    ```bash
    cp .env.example .env
-   # Edit .env with your configuration
+   # Edit .env with your configuration:
+   # OPENAI_API_KEY=your_openai_key_here
+   # USE_LIVE=1  # Enable live medical APIs
+   # NCBI_API_KEY=your_ncbi_key_here  # Optional
    ```
 
 5. Run the development server:
    ```bash
-   ./run_dev.sh
-   # Or manually: uvicorn app:app --reload
+   export USE_LIVE=1  # Enable live services
+   uvicorn app:app --reload
+   # Or use the automated script: ./run_dev.sh
    ```
+
+### Live Services Configuration
+
+#### Enabling Live Medical APIs
+Set `USE_LIVE=1` in your environment or `.env` file to enable real-time medical data:
+
+```bash
+# Enable all live services
+export USE_LIVE=1
+
+# Run with live services
+uvicorn app:app --reload
+```
+
+#### Service Fallbacks
+The application uses conditional imports with graceful degradation:
+- **Live services available**: Real medical data from external APIs
+- **Live services unavailable**: Development stubs with sample data
+- **Network issues**: Cached responses when available
+
+### Testing Live Services
+
+#### Quick Service Verification
+```bash
+# Test individual live services
+python -c "
+from live_mydisease import lookup
+result = lookup('diabetes')
+print(f'MyDisease.info: {result.get(\"name\", \"Failed\")}')
+"
+
+python -c "
+from live_pubmed import search
+result = search('hypertension', max_results=1)
+print(f'PubMed: Found {len(result)} articles')
+"
+
+python -c "
+from live_clinicaltrials import search
+result = search('heart failure', max_results=1) 
+print(f'ClinicalTrials.gov: Found {len(result)} trials')
+"
+```
+
+#### FastAPI Integration Testing
+```bash
+# Test complete API endpoints
+python -c "
+from fastapi.testclient import TestClient
+from app import app
+client = TestClient(app)
+
+# Test disease endpoint
+response = client.get('/api/v1/disease?q=diabetes')
+print(f'Disease API: {response.status_code}')
+
+# Test health check
+response = client.get('/api/v1/health')
+print(f'Health API: {response.status_code}')
+"
+```
+
+#### Unit Testing
+```bash
+# Run all tests
+pytest
+
+# Run specific test categories
+pytest tests/unit/                    # Unit tests only
+pytest tests/test_integration.py      # Integration tests
+pytest -m integration                 # Integration marked tests
+pytest -ra                           # Show all test output
+```
+
+### Development Workflows
+
+#### Adding New Medical Information Endpoints
+Follow this pattern when adding new medical data endpoints:
+
+1. **Create Live Service** (`live_newservice.py`):
+```python
+import requests
+
+def lookup_data(term: str):
+    # External API call
+    response = requests.get(f"https://api.example.com/search", 
+                          params={"q": term})
+    return response.json()
+```
+
+2. **Create Service Layer** (`services/newservice_service.py`):
+```python
+from utils.cache import cached
+from utils.exceptions import ExternalServiceException
+
+@cached(ttl_seconds=3600)
+def lookup_service_data(term: str):
+    banner = "Educational use only — not medical advice. No PHI stored."
+    
+    # Conditional import with fallback
+    try:
+        from live_newservice import lookup_data
+        if USE_LIVE:
+            return {"data": lookup_data(term), "banner": banner}
+    except ImportError:
+        pass
+    
+    # Fallback stub response
+    return {"data": f"Sample data for {term}", "banner": banner}
+```
+
+3. **Create Router** (`routers/newservice.py`):
+```python
+from fastapi import APIRouter, Query
+from services.newservice_service import lookup_service_data
+
+router = APIRouter(prefix="/newservice", tags=["newservice"])
+
+@router.get("/")
+def get_service_data(q: str = Query(..., description="Search term")):
+    return lookup_service_data(q)
+```
+
+4. **Register Router** (in `app.py`):
+```python
+from routers.newservice import router as newservice_router
+api_router.include_router(newservice_router)
+```
 
 ### Docker Deployment
 

@@ -47,6 +47,7 @@ except ImportError:
 try:
     from routers.wizards.patient_education import router as patient_education_wizard_router
     from routers.wizards.sbar_report import router as sbar_report_wizard_router
+    from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
     WIZARDS_AVAILABLE = True
 except ImportError:
     logger.warning("Wizard routers not available")
@@ -125,6 +126,7 @@ api_router.include_router(readability_router)
 if WIZARDS_AVAILABLE:
     api_router.include_router(patient_education_wizard_router)
     api_router.include_router(sbar_report_wizard_router)
+    api_router.include_router(treatment_plan_wizard_router)
 
 # Unprotected routes
 unprotected_router.include_router(healthcheck_router)
