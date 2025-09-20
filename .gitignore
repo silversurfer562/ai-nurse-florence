@@ -30,3 +30,6 @@ pytest_cache/
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
+ai-nurse-florence-plan-for dev.txt
+OPENAI_API_KEY.env
+.DS_Store

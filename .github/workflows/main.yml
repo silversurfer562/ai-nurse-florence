@@ -1,0 +1,164 @@
+name: Repo Digest
+
+on:
+  push:
+    branches: [ "**" ]
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Generate digest
+        run: |
+          python - <<'PY'
+          import os, subprocess, textwrap, datetime, json
+          # Range of commits in this push
+          before = os.environ.get("GITHUB_EVENT_BEFORE") or os.environ.get("GITHUB_SHA")
+          after = os.environ.get("GITHUB_SHA")
+          if not before:
+            # Fallback for first push
+            before = subprocess.check_output(["git","rev-list","--max-parents=0","HEAD"]).decode().strip()
+          # Collect commits
+          commits_raw = subprocess.check_output(
+              ["git","log", "--no-merges", "--pretty=format:%H|%h|%an|%ae|%ad|%s", f"{before}..{after}"]
+          ).decode().strip().splitlines()
+          # If a single-commit push, include that one
+          if not commits_raw:
+            commits_raw = subprocess.check_output(
+                ["git","log", "-1", "--pretty=format:%H|%h|%an|%ae|%ad|%s", after]
+            ).decode().strip().splitlines()
+
+          commits = []
+          for line in commits_raw:
+            parts = line.split("|", 5)
+            if len(parts) == 6:
+              full, short, author, email, date, subject = parts
+              commits.append({"full": full, "short": short, "author": author, "email": email, "date": date, "subject": subject})
+
+          # Diff stats
+          diffstat = subprocess.check_output(["git","diff","--stat", f"{before}", f"{after}"]).decode()
+
+          # Top changed files (by insertions+deletions)
+          files = subprocess.check_output(["git","diff","--numstat", f"{before}", f"{after}"]).decode().strip().splitlines()
+          # numstat lines: "<ins>\t<del>\t<path>"
+          file_rows = []
+          for row in files:
+            try:
+              ins, dele, path = row.split("\t", 2)
+              ins = 0 if ins == "-" else int(ins)
+              dele = 0 if dele == "-" else int(dele)
+              file_rows.append((ins+dele, ins, dele, path))
+            except Exception:
+              pass
+          file_rows.sort(reverse=True)
+          top_files = file_rows[:20]
+
+          # Build markdown
+          repo = os.environ.get("GITHUB_REPOSITORY","repo")
+          ref = os.environ.get("GITHUB_REF_NAME","branch")
+          ts = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
+          md = []
+          md.append(f"# Repo Digest — {repo} @ {ref}")
+          md.append(f"_Generated: {ts}_\n")
+          md.append("## Summary")
+          md.append(f"- Commits in push: **{len(commits)}**")
+          if top_files:
+            total_chg = sum(n for n,_,_,_ in file_rows)
+            md.append(f"- Files changed: **{len(file_rows)}** (top 20 listed), total line changes: **{total_chg}**")
+          md.append("\n## Diffstat")
+          md.append("```")
+          md.append(diffstat.strip() or "(no diffstat)")
+          md.append("```\n")
+
+          md.append("## Commits")
+          for c in commits:
+            md.append(f"- `{c['short']}` {c['subject']} — {c['author']}  \n  {c['date']}  \n  https://github.com/{repo}/commit/{c['full']}")
+
+          if top_files:
+            md.append("\n## Top Changed Files")
+            md.append("| Rank | File | + | - | Δ |")
+            md.append("|---:|---|---:|---:|---:|")
+            for i,(chg,ins,dele,path) in enumerate(top_files, start=1):
+              md.append(f"| {i} | `{path}` | {ins} | {dele} | {chg} |")
+
+          # Save
+          with open("digest.md","w", encoding="utf-8") as f:
+            f.write("\n".join(md) + "\n")
+          print("Wrote digest.md")
+          PY
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+
+      # ===== Option A: Email the digest (Gmail) =====
+      - name: Send Digest Email
+        if: ${{ env.ENABLE_EMAIL == '1' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.GMAIL_ADDRESS }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "[Repo Digest] ${{ github.repository }} @ ${{ github.ref_name }} — ${{ github.sha }}"
+          to: ${{ secrets.DIGEST_TO }}
+          from: ${{ secrets.GMAIL_ADDRESS }}
+          body: |
+            New push on ${{ github.repository }} @ ${{ github.ref_name }}.
+
+            See attached repo digest. Reply to this email with questions and your future self will wonder how you ever lived without automation.
+          attachments: digest.md
+
+      # ===== Option B: Publish to Notion Database =====
+      - name: Push Digest to Notion
+        if: ${{ env.ENABLE_NOTION == '1' }}
+        run: |
+          python - <<'PY'
+          import os, json, requests
+          token = os.environ["NOTION_TOKEN"]
+          database_id = os.environ["NOTION_DATABASE_ID"]
+          with open("digest.md","r",encoding="utf-8") as f:
+            content = f.read()
+
+          # Create a new page with title + markdown chunk(s)
+          # We’ll add as a single paragraph block if short, or split into 1900-char chunks.
+          chunks = [content[i:i+1900] for i in range(0, len(content), 1900)] or ["(empty)"]
+
+          def md_block(t):
+            return {"object":"block","paragraph":{"rich_text":[{"type":"text","text":{"content":t}}]}}
+
+          page = {
+            "parent": {"database_id": database_id},
+            "properties": {
+              "Name": {"title": [{"text": {"content": f"Repo Digest — {os.environ.get('GITHUB_REF_NAME','branch')} — {os.environ.get('GITHUB_SHA','')[:7]}"}}]},
+              "Repo": {"rich_text": [{"text":{"content": os.environ.get("GITHUB_REPOSITORY","")}}]},
+            },
+            "children": [md_block(c) for c in chunks]
+          }
+
+          r = requests.post(
+            "https://api.notion.com/v1/pages",
+            headers={
+              "Authorization": f"Bearer {token}",
+              "Notion-Version": "2022-06-28",
+              "Content-Type": "application/json",
+            },
+            data=json.dumps(page),
+            timeout=30,
+          )
+          r.raise_for_status()
+          print("Notion page created:", r.json().get("id"))
+          PY
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
