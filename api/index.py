@@ -1,13 +1,16 @@
-"""Vercel serverless function for AI Nurse Florence FastAPI app."""
+"""Vercel serverless function for AI Nurse Florence FastAPI app.
+Following service layer architecture with conditional imports pattern.
+"""
 import sys
 import os
 from pathlib import Path
+import json
 
-# Add project root to Python path (conftest.py pattern)
+# Add project root to Python path following conftest.py pattern
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# Initialize variables before try block
+# Initialize variables before try block (fix variable scope issue)
 _has_main_app = False
 _import_error = "Not attempted"
 fastapi_app = None
@@ -29,7 +32,7 @@ try:
         
 except Exception as e:
     _has_main_app = False
-    _import_error = str(e)
+    _import_error = f"Import failed: {str(e)}"
     fastapi_app = None
 
 if _has_main_app and fastapi_app:
@@ -42,13 +45,15 @@ else:
     
     app = FastAPI(
         title="AI Nurse Florence - Debug Mode",
-        description="Fallback app for debugging import issues"
+        description="Fallback app for debugging import issues",
+        docs_url="/docs",
+        openapi_url="/openapi.json"
     )
     
-    @app.get("/api/v1/health")
-    @app.get("/health")
     @app.get("/")
+    @app.get("/api/v1/health")
     async def debug_health():
+        """Debug endpoint following API design standards"""
         return JSONResponse({
             "status": "debug_mode",
             "service": "ai-nurse-florence",
@@ -59,15 +64,21 @@ else:
             "project_root": str(project_root),
             "files_in_root": os.listdir(project_root) if project_root.exists() else [],
             "main_app_available": _has_main_app,
-            "routes_count": len(fastapi_app.routes) if fastapi_app else 0
+            "routes_count": len(fastapi_app.routes) if fastapi_app else 0,
+            "banner": "Educational purposes only — verify with healthcare providers. No PHI stored."
         })
     
     @app.get("/api/v1/disease")
     async def debug_disease():
+        """Debug disease endpoint with educational disclaimers"""
         return JSONResponse({
             "status": "debug_mode", 
             "message": "Main app not available - using fallback",
             "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
             "query": "debug",
-            "error": _import_error
+            "error": _import_error,
+            "service": "ai-nurse-florence"
         })
+
+# Export for Vercel
+handler = app
