@@ -1,45 +1,52 @@
-"""Vercel serverless function wrapper for AI Nurse Florence FastAPI app."""
+"""Vercel serverless function for AI Nurse Florence FastAPI app.
+Following service layer architecture with conditional imports pattern.
+"""
 import sys
 import os
 from pathlib import Path
 
-# Add project root to Python path following conftest.py pattern
+# Add project root to Python path (conftest.py pattern)
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Conditional imports pattern - graceful degradation
 try:
-    # Import main FastAPI app with service layer architecture
-    from app import app
-    
-    # Vercel handler - export the FastAPI app directly
-    # This maintains the full middleware stack and router configuration
-    handler = app
-    
+    from app import app as fastapi_app
+    _has_main_app = True
 except ImportError as e:
-    # Conditional loading pattern - graceful degradation
+    _has_main_app = False
+    _import_error = str(e)
+
+if _has_main_app:
+    # Export the main FastAPI app with full middleware stack
+    app = fastapi_app
+else:
+    # Fallback app with debug information
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse
-    import traceback
     
-    # Create minimal fallback app for debugging
-    fallback_app = FastAPI(
+    app = FastAPI(
         title="AI Nurse Florence - Debug Mode",
         description="Fallback app for debugging import issues"
     )
     
-    @fallback_app.get("/api/v1/health")
-    @fallback_app.get("/")
+    @app.get("/api/v1/health")
+    @app.get("/")
     async def debug_health():
         return JSONResponse({
-            "status": "error",
-            "message": f"Main app import failed: {str(e)}",
-            "traceback": traceback.format_exc(),
-            "python_path": sys.path,
+            "status": "debug_mode",
+            "error": _import_error,
+            "python_version": sys.version,
             "working_directory": os.getcwd(),
-            "project_root": str(project_root)
+            "python_path": sys.path[:5],  # Show first 5 entries
+            "project_root": str(project_root),
+            "files_in_root": os.listdir(project_root) if project_root.exists() else []
         })
     
-    handler = fallback_app
-
-# Export for Vercel
-app = handler
+    @app.get("/api/v1/disease")
+    async def debug_disease():
+        return JSONResponse({
+            "status": "debug_mode", 
+            "message": "Main app not available - using fallback",
+            "banner": "Educational purposes only — verify with healthcare providers. No PHI stored."
+        })
