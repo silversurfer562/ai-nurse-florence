@@ -1,16 +1,2 @@
 fastapi>=0.95.0
-uvicorn>=0.21.1
 python-dotenv>=1.0.0
-python-multipart>=0.0.6
-openai>=1.0.0
-redis>=4.5.1
-prometheus-client>=0.17.0
-prometheus-fastapi-instrumentator
-celery
-sqlalchemy
-alembic
-asyncpg
-aiosqlite
-python-jose[cryptography]
-passlib[bcrypt]
-pydantic-settings

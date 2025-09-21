@@ -76,7 +76,7 @@ async def read_index():
         with open(file_path, "r") as f:
             return HTMLResponse(content=f.read(), status_code=200)
     except FileNotFoundError:
-        return HTMLResponse(content="<h1>AI Nurse Florence API is running</h1><p>Index file not found</p>", status_code=200)
+        return HTMLResponse(content="<h1>AI Nurse Florence API</h1><p>Landing page not found - using fallback</p>", status_code=200)
 
 @app.get("/chat.html", response_class=HTMLResponse)
 async def read_chat():
@@ -86,7 +86,7 @@ async def read_chat():
         with open(file_path, "r") as f:
             return HTMLResponse(content=f.read(), status_code=200)
     except FileNotFoundError:
-        return HTMLResponse(content="<h1>Chat interface not found</h1>", status_code=404)
+        return HTMLResponse(content="<h1>Chat Interface</h1><p>Chat page not found - using fallback</p>", status_code=200)
 
 # --- API Versioning Router ---
 api_router = APIRouter(prefix="/api/v1")
