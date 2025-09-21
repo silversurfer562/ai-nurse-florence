@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/summarize_service.py
+# hypothesis_version: 6.139.2
+
+[0.7, 300, 2000, ':', '[\\n\\.]+', '\\bhx\\b|history', 'assessment', 'background', 'call_chatgpt', 'chest pain', 'consult', 'content', 'ecg', 'enhanced_prompt', 'error', 'gpt-4o-mini', 'history', 'hx', 'max_tokens', 'messages', 'model', 'needs_clarification', 'nurse', 'openai', 'original_prompt', 'prompt_enhanced', 'pt', 'recommend', 'recommendation', 'role', 'sbar_from_notes', 'situation', 'summarize', 'summarize_text', 'system', 'temperature', 'text', 'true', 'user', 'vitals']

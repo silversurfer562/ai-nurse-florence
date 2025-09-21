@@ -13,7 +13,7 @@ def get_client():
     `services.openai_client.get_client` and ensures the call is dynamic.
     """
     return openai_client.get_client()
-from services.prompt_enhancement import enhance_prompt
+import services.prompt_enhancement as prompt_enhancement
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
 
@@ -206,7 +206,7 @@ def summarize_text(text: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
         return sbar_from_notes(text)
 
     # Enhance the prompt
-    effective_prompt, needs_clarification, clarification_question = enhance_prompt(text, "summarize")
+    effective_prompt, needs_clarification, clarification_question = prompt_enhancement.enhance_prompt(text, "summarize")
     
     # If clarification is needed, return that info
     if needs_clarification:
@@ -265,13 +265,16 @@ def summarize_text(text: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
         if local:
             return local
 
-    # Call ChatGPT with the effective prompt
+    # Call ChatGPT with the effective prompt directly. Tests patch
+    # `services.summarize_service.call_chatgpt` and expect the enhanced prompt
+    # to be passed as-is.
     summary = call_chatgpt(effective_prompt, model=model)
     
     # Return the result with enhancement info if relevant
     result = {"text": summary}
     if was_enhanced:
-        result["prompt_enhanced"] = "true"
+        # Use a real boolean for prompt_enhanced to match test expectations
+        result["prompt_enhanced"] = True
         result["original_prompt"] = text
         result["enhanced_prompt"] = effective_prompt
     

@@ -125,7 +125,8 @@ def lookup_disease(term: str) -> DiseaseResult:
     result = {
         "banner": banner,
         "query": term,
-        "name": effective_term.title() if effective_term else None,
+        # Use the original term for the name field to match test expectations
+        "name": term.title() if term else None,
         "summary": f"No live connector found. Placeholder for '{effective_term}'.",
         "references": [],
     }

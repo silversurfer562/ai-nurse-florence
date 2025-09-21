@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/tasks/__init__.py
+# hypothesis_version: 6.139.2
+
+['summarize_service']

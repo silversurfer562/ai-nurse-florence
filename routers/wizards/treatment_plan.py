@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 
 from utils.api_responses import create_success_response, create_error_response
-from services.openai_client import get_client
+import services.openai_client as openai_client_module
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/treatment-plan", tags=["wizards"])
@@ -246,7 +246,7 @@ async def generate_treatment_plan(step_input: GenerateTreatmentInput):
     """
 
     try:
-        client = get_client()
+        client = openai_client_module.get_client()
         if not client:
             return create_error_response(
                 "AI service unavailable. Treatment plan cannot be generated.",

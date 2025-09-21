@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Query
-from models.schemas import MedlinePlusSummary
-from services.medlineplus_service import get_medlineplus_summary
+import services.medlineplus_service as medlineplus_service
 from utils.guardrails import educational_banner
+from utils.api_responses import create_success_response_flat
 
-router = APIRouter(prefix="/v1", tags=["medlineplus"])
+# Use no version prefix here; app.py exposes this router under /v1 as needed.
+router = APIRouter(prefix="", tags=["medlineplus"])
 
 
-@router.get("/medlineplus/summary", response_model=MedlinePlusSummary)
-def medlineplus_summary(topic: str = Query(..., description="Topic term")) -> MedlinePlusSummary:
+@router.get("/medlineplus/summary")
+def medlineplus_summary(topic: str = Query(..., description="Topic term")):
     """
     Retrieve a summary from MedlinePlus for a given health topic.
     
@@ -21,10 +22,10 @@ def medlineplus_summary(topic: str = Query(..., description="Topic term")) -> Me
         /v1/medlineplus/summary?topic=diabetes
         /v1/medlineplus/summary?topic=hypertension
     """
-    data = get_medlineplus_summary(topic)
-    return MedlinePlusSummary(
-        banner=educational_banner(),
-        topic=topic,
-        summary=data.get("summary"),
-        references=data.get("references", []),
-    )
+    data = medlineplus_service.get_medlineplus_summary(topic)
+    return create_success_response_flat({
+        "banner": educational_banner(),
+        "topic": topic,
+        "summary": data.get("summary"),
+        "references": data.get("references", []),
+    })

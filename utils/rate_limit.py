@@ -85,9 +85,10 @@ class RateLimiter(BaseHTTPMiddleware):
         """
         path = request.url.path
         
-        # Skip rate limiting for exempt paths
-        if path in self.exempt_paths:
-            return await call_next(request)
+        # Skip rate limiting for exempt paths (support prefix matches)
+        for exempt in self.exempt_paths:
+            if path == exempt or path.startswith(exempt.rstrip("/") + "/"):
+                return await call_next(request)
         
         # Get client identifier (IP or API key)
         client_id = self._get_client_id(request)

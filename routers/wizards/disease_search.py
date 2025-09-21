@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, List
 import json
 
 from utils.api_responses import create_success_response, create_error_response
-from services.openai_client import get_client
+import services.openai_client as openai_client_module
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/disease-search", tags=["wizards"])
@@ -67,8 +67,49 @@ async def start_wizard(step_input: StartWizardInput):
     3. "related_topics": A list of 3 related medical topics for further exploration.
     """
     
+    # Try to get an AI client. Tests patch `services.openai_client.get_client` so
+    # we must call it via the module to allow patching.
     try:
-        client = get_client()
+        client = openai_client_module.get_client()
+    except Exception:
+        client = None
+
+    # If client is not available (e.g., not configured), fall back to a safe
+    # static suggestion set so the wizard can still start in test and dev
+    # environments where AI is disabled.
+    if not client:
+        logger.info("OpenAI client not available; using stub suggestions for disease wizard")
+        suggestions = {
+            "suggested_sections": [
+                "Overview",
+                "Epidemiology",
+                "Pathophysiology",
+                "Clinical Presentation",
+                "Diagnostic Criteria",
+                "Treatment",
+                "Standard Treatment Guidelines",
+                "Monitoring and Follow-up",
+                "Patient Education",
+                "References"
+            ],
+            "pre_selected_sections": ["Overview", "Treatment", "Diagnostic Criteria"],
+            "related_topics": [topic]
+        }
+
+        wizard_sessions[wizard_id] = {"topic": topic}
+        logger.info(f"Started disease report wizard session (stub): {wizard_id} for topic: {topic}")
+        return create_success_response({
+            "wizard_id": wizard_id,
+            "topic": topic,
+            "suggested_sections": suggestions.get("suggested_sections", []),
+            "pre_selected_sections": suggestions.get("pre_selected_sections", []),
+            "related_topics": suggestions.get("related_topics", [])
+        })
+
+    # Otherwise, use the AI client to generate dynamic suggestions
+    try:
+        # Use module-level get_client to allow tests to patch services.openai_client.get_client
+        client = openai_client_module.get_client()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -77,12 +118,11 @@ async def start_wizard(step_input: StartWizardInput):
             ],
             response_format={"type": "json_object"}
         )
-        
         suggestions = json.loads(response.choices[0].message.content)
-        
+
         wizard_sessions[wizard_id] = {"topic": topic}
         logger.info(f"Started disease report wizard session: {wizard_id} for topic: {topic}")
-        
+
         return create_success_response({
             "wizard_id": wizard_id,
             "topic": topic,
@@ -133,7 +173,10 @@ async def generate_report(step_input: GenerateReportInput):
     prompt = "\n".join(prompt_parts)
     
     try:
-        client = get_client()
+        client = openai_client_module.get_client()
+        if not client:
+            return create_error_response("AI service unavailable; cannot generate report.", status.HTTP_503_SERVICE_UNAVAILABLE, "ai_service_unavailable")
+
         report_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -165,7 +208,7 @@ async def generate_report(step_input: GenerateReportInput):
             ]
         }}
         """
-        
+
         next_steps_response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -175,10 +218,10 @@ async def generate_report(step_input: GenerateReportInput):
             response_format={"type": "json_object"}
         )
         next_steps_data = json.loads(next_steps_response.choices[0].message.content)
-        
+
         # Clean up the session
         del wizard_sessions[wizard_id]
-        
+
         return create_success_response({
             "wizard_id": wizard_id,
             "topic": topic,

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Query, status
 from fastapi.responses import JSONResponse
 from models.schemas import DiseaseSummary
-from services.disease_service import lookup_disease
+import services.disease_service as disease_service
 from utils.guardrails import educational_banner
-from utils.api_responses import create_success_response, create_error_response
+from utils.api_responses import create_success_response_flat, create_error_response
 
 router = APIRouter(prefix="/disease", tags=["disease"])
 example = {
@@ -62,7 +62,7 @@ def disease_lookup(
         /api/v1/disease?q=diabetes
         /api/v1/disease?q=asthma
     """
-    result = lookup_disease(q)
+    result = disease_service.lookup_disease(q)
     
     # If clarification is needed, return a standardized error response
     if result.get("needs_clarification"):
@@ -85,4 +85,4 @@ def disease_lookup(
         "advanced_search": f"/api/v1/wizards/disease-search/start?topic={q}"
     }
     
-    return create_success_response(result, links=links)
+    return create_success_response_flat({**result, "_links": links})

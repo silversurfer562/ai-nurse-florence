@@ -40,7 +40,7 @@ def analyze_readability(text: str):
         sug.append("Replace long words with simpler alternatives when possible.")
     if fre < 60:
         sug.append("Use bullets and plain language to improve readability.")
-    return {
+    result = {
         "flesch_reading_ease": round(fre, 2),
         "flesch_kincaid_grade": round(fk, 2),
         "sentences": len(s),
@@ -48,3 +48,20 @@ def analyze_readability(text: str):
         "syllables": syl,
         "suggestions": sug,
     }
+
+    # Backwards-compatible aliases for older tests/clients
+    result["text_length"] = len(text)
+    # Map reading level to a coarse description based on Flesch-Kincaid grade
+    if result["flesch_kincaid_grade"] <= 5:
+        reading_level = "Elementary"
+    elif result["flesch_kincaid_grade"] <= 8:
+        reading_level = "Middle School"
+    elif result["flesch_kincaid_grade"] <= 12:
+        reading_level = "High School"
+    else:
+        reading_level = "College"
+
+    result["reading_level"] = reading_level
+    result["grade_level"] = result["flesch_kincaid_grade"]
+
+    return result

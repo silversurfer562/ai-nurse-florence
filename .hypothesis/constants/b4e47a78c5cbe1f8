@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/routers/medlineplus.py
+# hypothesis_version: 6.139.2
+
+['/medlineplus/summary', 'Topic term', 'banner', 'medlineplus', 'references', 'summary', 'topic']

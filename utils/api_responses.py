@@ -36,6 +36,25 @@ def create_success_response(
         content=content
     )
 
+
+def create_success_response_flat(
+    data: Any,
+    status_code: int = status.HTTP_200_OK,
+    links: Optional[Dict[str, str]] = None
+) -> JSONResponse:
+    """
+    Create a success response but if `data` is a dict, return its items at the top-level
+    under the response body. This preserves backward compatibility for older endpoints
+    and tests that expect top-level keys like 'text'.
+    """
+    if isinstance(data, dict):
+        content = {"status": "success", **data}
+    else:
+        content = {"status": "success", "data": data}
+    if links:
+        content["_links"] = links
+    return JSONResponse(status_code=status_code, content=content)
+
 def create_error_response(
     message: str,
     status_code: int,

@@ -150,9 +150,11 @@ def cached(ttl_seconds: int = 300):
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> T:
-            # Create a cache key from function name and arguments
+            # Some callables (functools.partial, lambdas) may not have a friendly __name__
+            func_name = getattr(func, "__name__", None) or func.__class__.__name__
+            # Create a cache key from function identity and arguments
             cache_key = (
-                f"{func.__module__}.{func.__name__}:"
+                f"{func.__module__}.{func_name}:{id(func)}:"
                 f"{repr(args)}:{repr(sorted(kwargs.items()))}"
             )
             
@@ -166,7 +168,7 @@ def cached(ttl_seconds: int = 300):
             # Call the function and cache the result
             result = func(*args, **kwargs)
             cache.set(cache_key, result, ttl_seconds)
-            return result
+            return result  # type: ignore[return-value]
             
         return wrapper
     return decorator

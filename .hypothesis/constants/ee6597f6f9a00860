@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/tasks/summarize_service.py
+# hypothesis_version: 6.139.2
+
+['call_chatgpt', 'sbar_from_notes', 'summarize_text']

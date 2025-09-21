@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/routers/pubmed.py
+# hypothesis_version: 6.139.2
+
+[100, 200, '...', '/pubmed', '/search', '12345678', 'abstract', 'application/json', 'banner', 'content', 'dict', 'example', 'items', 'links', 'max_results', 'model_dump', 'page', 'pmid', 'pubmed', 'query', 'results', 'search', 'size', 'title', 'total', 'url']
