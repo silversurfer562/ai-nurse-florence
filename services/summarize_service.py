@@ -17,45 +17,27 @@ class ChatGPTError(ExternalServiceException):
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(message, service_name="openai", details=details)
 
-def _extract_text(resp: Any) -> str:
-    """
-    Handle multiple response shapes:
-    - tests: dict with "output_text"
-    - OpenAI Responses API: object with .output_text
-    - legacy/chat: choices[0].message.content
-    - last resort: str(resp)
-    """
-    # test double shape
-    if isinstance(resp, dict) and "output_text" in resp:
-        return str(resp["output_text"])
-
-    # responses API (python sdk) shape
-    text = getattr(resp, "output_text", None)
-    if text:
-        return str(text)
-
-    # legacy/chat-like shape
-    choices = getattr(resp, "choices", None)
-    if choices:
-        first = choices[0] if choices else None
-        message = getattr(first, "message", None) if first else None
-        content = getattr(message, "content", None) if message else None
-        if content:
-            return str(content)
-
-    # fall back to string
-    return str(resp)
-
 def call_chatgpt(
     prompt: str,
     *,
-    model: str = "gpt-5.1-mini",
+    model: str = "gpt-4o-mini",
+    system_message: str = "You are a knowledgeable medical assistant for healthcare professionals.",
     **kwargs: Any,
 ) -> str:
     """
-    Thin wrapper around OpenAI Responses API.
-    Tests monkeypatch services.openai_client.get_client() to return a fake client
-    exposing client.responses.create(model=..., input=...).
+    Call OpenAI's chat completions API with proper error handling.
+    
+    Args:
+        prompt: The user message/prompt to send
+        model: OpenAI model name (default: gpt-4o-mini)
+        system_message: System message to set context
+        **kwargs: Additional parameters for the API call
+        
+    Returns:
+        The response text from the API
+        
+    Raises:
+        ChatGPTError: If the API call fails or client is not configured
     """
     client = get_client()
     if not client:
@@ -67,8 +49,34 @@ def call_chatgpt(
 
     try:
         logger.info(f"Calling OpenAI API with model {model}", extra={"model": model})
-        resp = client.responses.create(model=model, input=prompt, **kwargs)
-        return _extract_text(resp)
+        
+        # Build messages for chat completions API
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": prompt}
+        ]
+        
+        # Default parameters
+        api_params = {
+            "model": model,
+            "messages": messages,
+            "temperature": 0.7,
+            "max_tokens": 2000,
+        }
+        
+        # Override with any provided kwargs
+        api_params.update(kwargs)
+        
+        # Make the API call
+        response = client.chat.completions.create(**api_params)
+        
+        # Extract the content
+        content = response.choices[0].message.content
+        if not content:
+            raise ChatGPTError("Empty response from OpenAI API", details={"model": model})
+            
+        return content.strip()
+        
     except Exception as e:
         logger.error(
             f"OpenAI API call failed: {str(e)}", 
@@ -127,7 +135,7 @@ def sbar_from_notes(
     *,
     reading_level: str = "nurse",           # "nurse" default per your project
     max_words: int = 300,
-    model: str = "gpt-5.1-mini",
+    model: str = "gpt-4o-mini",
     llm: Optional[Callable[..., str]] = None,
     **kwargs: Any,
 ) -> Dict[str, str]:
@@ -204,7 +212,7 @@ def summarize_text(text: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
     # Return the result with enhancement info if relevant
     result = {"text": summary}
     if was_enhanced:
-        result["prompt_enhanced"] = True
+        result["prompt_enhanced"] = "true"
         result["original_prompt"] = text
         result["enhanced_prompt"] = effective_prompt
     

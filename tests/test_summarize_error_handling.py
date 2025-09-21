@@ -21,7 +21,7 @@ def test_call_chatgpt_client_not_configured():
 def test_call_chatgpt_api_error():
     """Test that call_chatgpt handles API errors properly."""
     mock_client = MagicMock()
-    mock_client.responses.create.side_effect = Exception("API error")
+    mock_client.chat.completions.create.side_effect = Exception("API error")
     
     with patch('services.summarize_service.get_client', return_value=mock_client):
         with pytest.raises(ChatGPTError) as excinfo:
