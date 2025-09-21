@@ -235,7 +235,8 @@ def summarize_text(text: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
         lowered = notes.lower()
         # Look for common clinical tokens indicating structured notes
         tokens = ("hx", "history", "vitals", "recommend", "recommendation", "ecg", "consult", "pt", "chest pain")
-        if not any(t in lowered for t in tokens):
+        # Match tokens as whole words to avoid false positives (e.g., 'prompt' contains 'pt')
+        if not any(re.search(rf"\b{re.escape(t)}\b", lowered, re.I) for t in tokens):
             return None
 
         sentences = [s.strip() for s in re.split(r"[\n\.]+", notes) if s.strip()]
