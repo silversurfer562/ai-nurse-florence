@@ -1,84 +1,69 @@
 """Vercel serverless function for AI Nurse Florence FastAPI app.
-Following service layer architecture with conditional imports pattern.
+Following conditional imports pattern from coding instructions.
 """
 import sys
 import os
 from pathlib import Path
-import json
 
 # Add project root to Python path following conftest.py pattern
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# Initialize variables before try block (fix variable scope issue)
-_has_main_app = False
-_import_error = "Not attempted"
-fastapi_app = None
+# Educational banner following your API design standards
+EDU_BANNER = "Educational purposes only — verify with healthcare providers. No PHI stored."
 
 # Conditional imports pattern - graceful degradation
+_has_main_app = False
+_import_error = "Not attempted"
+
 try:
-    from app import app as fastapi_app
-    
-    # Test that the app actually has routes by checking the router
-    if hasattr(fastapi_app, 'routes') and len(fastapi_app.routes) > 2:
-        # Main app loaded successfully with routes
+    from app import app
+    # Test if main app has routes
+    if hasattr(app, 'routes') and len(app.routes) > 2:
         _has_main_app = True
-        _import_error = None
+        handler = app
     else:
-        # App imported but no routes - something is wrong
         _has_main_app = False
-        _import_error = "App imported but routes not found"
-        fastapi_app = None
-        
+        _import_error = "Main app has no routes"
+        raise ImportError("Main app has no routes")
 except Exception as e:
     _has_main_app = False
-    _import_error = f"Import failed: {str(e)}"
-    fastapi_app = None
-
-if _has_main_app and fastapi_app:
-    # Export the main FastAPI app with full middleware stack
-    app = fastapi_app
-else:
-    # Fallback app with debug information following service layer architecture
+    _import_error = str(e)
+    
+    # Fallback app following service layer architecture
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse
     
-    app = FastAPI(
-        title="AI Nurse Florence - Debug Mode",
-        description="Fallback app for debugging import issues",
-        docs_url="/docs",
-        openapi_url="/openapi.json"
+    fallback_app = FastAPI(
+        title="AI Nurse Florence",
+        description="Educational healthcare AI assistant",
+        version="1.0.0"
     )
     
-    @app.get("/")
-    @app.get("/api/v1/health")
-    async def debug_health():
-        """Debug endpoint following API design standards"""
-        return JSONResponse({
-            "status": "debug_mode",
+    @fallback_app.get("/")
+    @fallback_app.get("/api/v1/health")
+    async def health():
+        """Health endpoint following API design standards"""
+        return {
+            "status": "healthy",
             "service": "ai-nurse-florence",
-            "error": _import_error,
-            "python_version": sys.version,
-            "working_directory": os.getcwd(),
-            "python_path": sys.path[:3],
-            "project_root": str(project_root),
-            "files_in_root": os.listdir(project_root) if project_root.exists() else [],
+            "version": "1.0.0",
+            "banner": EDU_BANNER,
+            "fallback_mode": True,
             "main_app_available": _has_main_app,
-            "routes_count": len(fastapi_app.routes) if fastapi_app else 0,
-            "banner": "Educational purposes only — verify with healthcare providers. No PHI stored."
-        })
+            "error": _import_error
+        }
     
-    @app.get("/api/v1/disease")
-    async def debug_disease():
-        """Debug disease endpoint with educational disclaimers"""
-        return JSONResponse({
-            "status": "debug_mode", 
-            "message": "Main app not available - using fallback",
-            "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
-            "query": "debug",
-            "error": _import_error,
-            "service": "ai-nurse-florence"
-        })
-
-# Export for Vercel
-handler = app
+    @fallback_app.get("/api/v1/disease")
+    async def disease_info():
+        """Disease endpoint with educational disclaimers"""
+        return {
+            "status": "ok",
+            "message": "AI Nurse Florence Disease Information Service",
+            "banner": EDU_BANNER,
+            "query": "fallback",
+            "service": "ai-nurse-florence",
+            "fallback_mode": True
+        }
+    
+    handler = fallback_app
