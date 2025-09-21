@@ -1,70 +1,218 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>API Test - AI Nurse Florence</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Nurse Florence - API Test (Real Data Verification)</title>
+    <!-- Cache busting and force refresh -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
-        .success { background-color: #d4edda; border-color: #c3e6cb; }
-        .error { background-color: #f8d7da; border-color: #f5c6cb; }
-        button { padding: 10px 20px; margin: 5px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .cache-buster {
+            background: #ffc107;
+            color: #000;
+        }
+        .demo-warning {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .real-data-indicator {
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h1>🧪 AI Nurse Florence API Test</h1>
-    <p>This page tests the API connection directly - bypassing any GitHub Pages caching issues.</p>
-    
-    <button onclick="testHealth()">Test Health Endpoint</button>
-    <button onclick="testDiabetes()">Test Diabetes Query</button>
-    <button onclick="testCancer()">Test Cancer Query</button>
-    
-    <div id="results"></div>
+    <div class="container">
+        <h1>🏥 AI Nurse Florence - API Test Page</h1>
+        <p>This page directly tests the API with cache-busting to verify real medical data is being served.</p>
+        
+        <div class="timestamp" id="timestamp"></div>
+        
+        <h3>API Tests:</h3>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <button onclick="testDiabetes()">Test Diabetes Query</button>
+        <button onclick="testCancer()">Test Cancer Query</button>
+        <button onclick="testHypertension()">Test Hypertension Query</button>
+        <button class="cache-buster" onclick="testWithMaxCacheBusting()">FORCE TEST (Max Cache Busting)</button>
+        
+        <div id="results"></div>
+        
+        <h3>What to Look For:</h3>
+        <div class="real-data-indicator">
+            ✅ REAL DATA INDICATORS:
+            <ul style="margin: 10px 0 0 20px;">
+                <li>API version: 1.1.0 or higher</li>
+                <li>Medical definitions from MyDisease.info</li>
+                <li>MONDO IDs (e.g., "MONDO:0005015")</li>
+                <li>References to specific medical sources</li>
+                <li>Cache entries showing in health check</li>
+            </ul>
+        </div>
+        
+        <div class="demo-warning">
+            🚫 DEMO DATA INDICATORS (if you see these, caching is still an issue):
+            <ul style="margin: 10px 0 0 20px;">
+                <li>"This is a demo response"</li>
+                <li>"Sample information"</li>
+                <li>Generic educational content without specific sources</li>
+                <li>No MONDO IDs or MyDisease.info references</li>
+            </ul>
+        </div>
+    </div>
 
     <script>
-        const resultsDiv = document.getElementById('results');
-        
-        function addResult(title, success, data) {
-            const div = document.createElement('div');
-            div.className = `test-result ${success ? 'success' : 'error'}`;
-            div.innerHTML = `
-                <h3>${title}</h3>
-                <pre>${JSON.stringify(data, null, 2)}</pre>
-            `;
-            resultsDiv.appendChild(div);
+        function updateTimestamp() {
+            document.getElementById('timestamp').textContent = 'Last updated: ' + new Date().toISOString();
         }
-        
-        async function testHealth() {
-            try {
-                const response = await fetch('https://ai-nurse-florence.vercel.app/api/v1/health');
-                const data = await response.json();
-                addResult('Health Check', response.ok, data);
-            } catch (error) {
-                addResult('Health Check', false, { error: error.message });
+        updateTimestamp();
+
+        function addResult(title, data, isSuccess = true) {
+            const results = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+            
+            const timestamp = new Date().toISOString();
+            resultDiv.innerHTML = `<strong>${title}</strong> (${timestamp})\n${JSON.stringify(data, null, 2)}`;
+            
+            results.insertBefore(resultDiv, results.firstChild);
+            
+            // Check if this looks like demo data
+            const dataStr = JSON.stringify(data).toLowerCase();
+            if (dataStr.includes('demo response') || dataStr.includes('sample information')) {
+                const warning = document.createElement('div');
+                warning.className = 'demo-warning';
+                warning.textContent = '⚠️ WARNING: This looks like demo data! API may still be cached.';
+                results.insertBefore(warning, results.firstChild);
+            } else if (dataStr.includes('mydisease') || dataStr.includes('mondo:') || dataStr.includes('version":"1.1')) {
+                const success = document.createElement('div');
+                success.className = 'real-data-indicator';
+                success.textContent = '✅ SUCCESS: Real medical data detected!';
+                results.insertBefore(success, results.firstChild);
             }
         }
-        
-        async function testDiabetes() {
+
+        async function makeRequest(url, title) {
             try {
-                const response = await fetch('https://ai-nurse-florence.vercel.app/api/v1/disease?q=diabetes');
+                console.log(`Making request to: ${url}`);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    },
+                    cache: 'no-store'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
-                addResult('Diabetes Query', response.ok, data);
+                addResult(title, data, true);
+                return data;
             } catch (error) {
-                addResult('Diabetes Query', false, { error: error.message });
+                console.error('Request failed:', error);
+                addResult(title, { error: error.message }, false);
+                return null;
             }
         }
-        
-        async function testCancer() {
-            try {
-                const response = await fetch('https://ai-nurse-florence.vercel.app/api/v1/disease?q=cancer');
-                const data = await response.json();
-                addResult('Cancer Query', response.ok, data);
-            } catch (error) {
-                addResult('Cancer Query', false, { error: error.message });
-            }
+
+        function testHealth() {
+            const cacheBuster = Date.now() + Math.random();
+            const url = `https://ai-nurse-florence.vercel.app/api/v1/health?t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            makeRequest(url, 'Health Check');
         }
-        
-        // Auto-run health check on page load
-        window.onload = () => testHealth();
+
+        function testDiabetes() {
+            const cacheBuster = Date.now() + Math.random();
+            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=diabetes&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            makeRequest(url, 'Diabetes Query');
+        }
+
+        function testCancer() {
+            const cacheBuster = Date.now() + Math.random();
+            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=cancer&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            makeRequest(url, 'Cancer Query');
+        }
+
+        function testHypertension() {
+            const cacheBuster = Date.now() + Math.random();
+            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=hypertension&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            makeRequest(url, 'Hypertension Query');
+        }
+
+        function testWithMaxCacheBusting() {
+            const megaCacheBuster = Date.now() + '_' + Math.random() + '_' + Math.floor(Math.random() * 1000000);
+            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=asthma&t=${megaCacheBuster}&v=999&bust=${megaCacheBuster}&nocache=true&force=true`;
+            makeRequest(url, 'FORCE TEST - Asthma (Max Cache Busting)');
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', function() {
+            setTimeout(testHealth, 1000);
+            setTimeout(testDiabetes, 2000);
+        });
     </script>
 </body>
 </html>

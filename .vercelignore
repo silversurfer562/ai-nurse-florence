@@ -1,0 +1,7 @@
+# Ignore ALL files except public and api directories
+*
+!public/
+!public/**
+!api/
+!api/**
+!vercel.json
