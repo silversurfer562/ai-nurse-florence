@@ -3,7 +3,12 @@ from typing import Any, Optional, Callable, Dict
 import json
 import re
 
-from services.openai_client import get_client
+import services.openai_client as openai_client
+
+# Backwards-compatible alias so tests that patch services.summarize_service.get_client
+# continue to work when the real implementation delegates to services.openai_client.
+def get_client():
+    return openai_client.get_client()
 from services.prompt_enhancement import enhance_prompt
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
@@ -39,7 +44,8 @@ def call_chatgpt(
     Raises:
         ChatGPTError: If the API call fails or client is not configured
     """
-    client = get_client()
+    # Resolve get_client at call-time so tests can monkeypatch services.openai_client.get_client
+    client = openai_client.get_client()
     if not client:
         logger.error("OpenAI client configuration failed")
         raise ChatGPTError(

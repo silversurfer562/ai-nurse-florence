@@ -4,6 +4,7 @@ OpenAI client configuration and management.
 Provides a lazy-loaded OpenAI client that gracefully handles missing configurations.
 """
 import logging
+import os
 from typing import Optional, Any, TYPE_CHECKING
 
 # Conditional imports - graceful degradation pattern
@@ -59,6 +60,9 @@ def get_client() -> Optional[Any]:
     
     # Mark as initialized to avoid re-attempting
     _client_initialized = True
+
+    # No automatic pytest detection here; tests should mock services.openai_client.get_client
+    # when they need to control the client. Returning None here only when config absent.
     
     # Check if OpenAI package is available
     if not _has_openai or OpenAIClient is None:
@@ -67,7 +71,18 @@ def get_client() -> Optional[Any]:
     
     # Check if API key is configured
     api_key = getattr(settings, 'OPENAI_API_KEY', None)
-    if not api_key:
+    
+    # Common placeholder values that should be treated as "not configured"
+    placeholders = {
+        'your-openai-api-key-here',
+        'sk-placeholder',
+        'sk-NEW_YOUR_KEY_HERE',
+        'change-me',
+        'your-key-here',
+        'set-your-key-here'
+    }
+    
+    if not api_key or api_key.strip() in placeholders:
         logger.info("OpenAI API key not configured - AI features disabled")
         return None
     

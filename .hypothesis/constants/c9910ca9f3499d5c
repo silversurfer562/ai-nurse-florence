@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/routers/readability.py
+# hypothesis_version: 6.139.2
+
+[6.8, 72.3, 200, '/readability/check', '/v1', 'application/json', 'banner', 'content', 'example', 'flesch_kincaid_grade', 'flesch_reading_ease', 'readability', 'sentences', 'suggestions', 'syllables', 'words']

@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/openai_client.py
+# hypothesis_version: 6.139.2
+
+['OPENAI_API_KEY', 'change-me', 'set-your-key-here', 'sk-NEW_YOUR_KEY_HERE', 'sk-placeholder', 'your-key-here']

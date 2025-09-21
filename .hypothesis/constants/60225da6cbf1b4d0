@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/utils/rate_limit.py
+# hypothesis_version: 6.139.2
+
+[429, 'Authorization', 'Bearer ', 'X-RateLimit-Limit', 'client_id', 'count', 'detail', 'error', 'unknown']
