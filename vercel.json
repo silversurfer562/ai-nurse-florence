@@ -1,14 +1,4 @@
 {
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": { 
-        "runtime": "python3.11",
-        "maxLambdaSize": "50mb"
-      }
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
@@ -21,7 +11,8 @@
   "functions": {
     "api/index.py": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "runtime": "python3.11"
     }
   }
 }
