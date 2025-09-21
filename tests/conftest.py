@@ -147,16 +147,22 @@ def mock_trials_service() -> Generator[MagicMock, None, None]:
 @pytest.fixture
 def mock_openai_client() -> Generator[MagicMock, None, None]:
     """
-    Mock the OpenAI client.
+    Mock the OpenAI client with proper chat completions API structure.
     
     Yields:
         A MagicMock object that replaces the OpenAI client
     """
     mock_client = MagicMock()
+    
+    # Create mock response for chat completions
+    mock_choice = MagicMock()
+    mock_choice.message.content = "This is a test response from the AI assistant."
+    
     mock_response = MagicMock()
-    mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = "This is a test summary."
-    mock_client.responses.create.return_value = mock_response
+    mock_response.choices = [mock_choice]
+    
+    # Set up the chat.completions.create method
+    mock_client.chat.completions.create.return_value = mock_response
     
     with patch('services.openai_client.get_client', return_value=mock_client):
         yield mock_client
