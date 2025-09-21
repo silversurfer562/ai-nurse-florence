@@ -3,7 +3,7 @@ from typing import Any, Optional, Callable, Dict
 import json
 import re
 
-from services.openai_client import get_client
+from services import openai_client
 from services.prompt_enhancement import enhance_prompt
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
@@ -39,11 +39,14 @@ def call_chatgpt(
     Raises:
         ChatGPTError: If the API call fails or client is not configured
     """
-    client = get_client()
+    client = openai_client.get_client()
     if not client:
+        # Defer raising until a test or caller expects a live client.
+        # Many unit tests inject a fake via monkeypatch; if client is missing,
+        # raise a clear error so callers/tests can handle it.
         logger.error("OpenAI client configuration failed")
         raise ChatGPTError(
-            "OpenAI client is not configured", 
+            "OpenAI client is not configured",
             details={"model": model}
         )
 
