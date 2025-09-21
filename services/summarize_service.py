@@ -5,8 +5,14 @@ import re
 
 from services import openai_client
 
-# Expose get_client at module level for tests that patch services.summarize_service.get_client
-get_client = openai_client.get_client
+def get_client():
+    """Return the OpenAI client via services.openai_client.get_client.
+
+    This wrapper allows tests to monkeypatch either
+    `services.summarize_service.get_client` or
+    `services.openai_client.get_client` and ensures the call is dynamic.
+    """
+    return openai_client.get_client()
 from services.prompt_enhancement import enhance_prompt
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
