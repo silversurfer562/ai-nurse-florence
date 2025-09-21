@@ -2,14 +2,14 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/index.py"
+      "dest": "/api/test.py"
     }
   ],
   "env": {
     "PYTHONPATH": "."
   },
   "functions": {
-    "api/index.py": {
+    "api/test.py": {
       "memory": 1024,
       "maxDuration": 30
     }
