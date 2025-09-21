@@ -23,7 +23,9 @@ EXEMPT_PATHS = {
     "/openapi.json",
     "/metrics",
     "/health",
-    "/api/v1/health"
+    "/api/v1/health",
+    "/",
+    "/chat.html"
 }
 
 # --- Import Routers (only the ones that exist) ---
@@ -42,6 +44,7 @@ try:
 except ImportError:
     logger.warning("Auth router not available")
     AUTH_AVAILABLE = False
+    auth_router = None
 
 # Import wizards if they exist
 try:
@@ -52,6 +55,9 @@ try:
 except ImportError:
     logger.warning("Wizard routers not available")
     WIZARDS_AVAILABLE = False
+    patient_education_wizard_router = None
+    sbar_report_wizard_router = None
+    treatment_plan_wizard_router = None
 
 app = FastAPI(
     title="AI Nurse Florence API",
@@ -143,14 +149,16 @@ api_router.include_router(patient_education_router)
 api_router.include_router(readability_router)
 
 # Add wizards if available
-if WIZARDS_AVAILABLE:
+if WIZARDS_AVAILABLE and patient_education_wizard_router:
     api_router.include_router(patient_education_wizard_router)
+if WIZARDS_AVAILABLE and sbar_report_wizard_router:
     api_router.include_router(sbar_report_wizard_router)
+if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
     api_router.include_router(treatment_plan_wizard_router)
 
 # Unprotected routes
 unprotected_router.include_router(healthcheck_router)
-if AUTH_AVAILABLE:
+if AUTH_AVAILABLE and auth_router:
     unprotected_router.include_router(auth_router)
 
 # Include routers in app
