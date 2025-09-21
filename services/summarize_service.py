@@ -42,7 +42,8 @@ def call_chatgpt(
     Raises:
         ChatGPTError: If the API call fails or client is not configured
     """
-    client = openai_client.get_client()
+    # Use module-level alias so tests can patch services.summarize_service.get_client
+    client = get_client()
     if not client:
         # Defer raising until a test or caller expects a live client.
         # Many unit tests inject a fake via monkeypatch; if client is missing,
