@@ -1,14 +1,13 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.py": {
-      "runtime": "@vercel/python@5.0.5"
-    }
-  },
   "builds": [
     {
       "src": "api/index.py",
       "use": "@vercel/python@5.0.5"
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ],
   "rewrites": [
