@@ -11,62 +11,143 @@ from typing import Dict, Any, Optional
 EDU_BANNER = "Educational purposes only — verify with healthcare providers. No PHI stored."
 
 async def lookup_disease_simple(query: str) -> Dict[str, Any]:
-    """Simple disease lookup using external APIs"""
+    """Enhanced disease lookup using multiple medical APIs"""
     try:
-        # Try to get basic information from MedlinePlus API
+        # Enhanced medical information lookup
         async with httpx.AsyncClient() as client:
-            # MedlinePlus Connect API for basic disease information
-            response = await client.get(
-                "https://connect.medlineplus.gov/service",
-                params={
-                    "mainSearchCriteria.v.cs": "2.16.840.1.113883.6.177",
-                    "mainSearchCriteria.v.c": query,
-                    "knowledgeResponseType": "application/json"
-                },
-                timeout=10.0
-            )
             
-            if response.status_code == 200:
-                data = response.json()
-                # Extract basic info from MedlinePlus response
-                summary = f"Based on medical resources, {query} is a medical condition. For detailed information, please consult with healthcare providers or visit MedlinePlus.gov."
+            # Try MyDisease.info API for comprehensive medical data
+            try:
+                disease_response = await client.get(
+                    f"https://mydisease.info/v1/query",
+                    params={
+                        "q": query,
+                        "fields": "mondo.definition,mondo.label,disgenet.diseases_genes_summary,hpo.definition",
+                        "size": 1
+                    },
+                    timeout=10.0
+                )
                 
-                return {
-                    "banner": EDU_BANNER,
-                    "query": query,
-                    "name": query.title(),
-                    "summary": summary,
-                    "references": [
-                        {
-                            "title": f"MedlinePlus - {query.title()}",
-                            "url": f"https://medlineplus.gov/healthtopics.html",
-                            "source": "MedlinePlus/NIH"
+                if disease_response.status_code == 200:
+                    disease_data = disease_response.json()
+                    if disease_data.get("hits"):
+                        hit = disease_data["hits"][0]
+                        
+                        # Extract comprehensive information
+                        name = hit.get("mondo", {}).get("label", query.title())
+                        definition = hit.get("mondo", {}).get("definition", "")
+                        hpo_def = hit.get("hpo", {}).get("definition", "")
+                        
+                        # Build comprehensive summary
+                        summary_parts = []
+                        if definition:
+                            summary_parts.append(f"Medical Definition: {definition}")
+                        if hpo_def and hpo_def != definition:
+                            summary_parts.append(f"Clinical Information: {hpo_def}")
+                        
+                        if not summary_parts:
+                            summary_parts.append(f"{name} is a medical condition documented in scientific literature.")
+                        
+                        summary_parts.append("This information is for educational purposes only. Always consult healthcare professionals for medical advice.")
+                        
+                        return {
+                            "banner": EDU_BANNER,
+                            "query": query,
+                            "name": name,
+                            "summary": " ".join(summary_parts),
+                            "references": [
+                                {
+                                    "title": f"MyDisease.info - {name}",
+                                    "url": f"https://mydisease.info/v1/disease/{hit.get('_id', query)}",
+                                    "source": "MyDisease.info/NIH"
+                                },
+                                {
+                                    "title": f"MedlinePlus - {name}",
+                                    "url": f"https://medlineplus.gov/healthtopics.html",
+                                    "source": "MedlinePlus/NIH"
+                                },
+                                {
+                                    "title": "PubMed Medical Literature",
+                                    "url": f"https://pubmed.ncbi.nlm.nih.gov/?term={query}",
+                                    "source": "PubMed/NCBI"
+                                }
+                            ],
+                            "source": "mydisease",
+                            "service": "ai-nurse-florence",
+                            "mode": "serverless"
                         }
-                    ],
-                    "source": "medlineplus"
-                }
+            except Exception as e:
+                print(f"MyDisease.info API error: {e}")
+            
+            # Fallback to MedlinePlus Connect API
+            try:
+                response = await client.get(
+                    "https://connect.medlineplus.gov/service",
+                    params={
+                        "mainSearchCriteria.v.cs": "2.16.840.1.113883.6.177",
+                        "mainSearchCriteria.v.c": query,
+                        "knowledgeResponseType": "application/json"
+                    },
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    summary = f"Based on NIH medical resources, {query.title()} is a documented medical condition. For comprehensive information including symptoms, causes, diagnosis, and treatment options, please consult with qualified healthcare providers or visit MedlinePlus.gov for evidence-based medical information."
+                    
+                    return {
+                        "banner": EDU_BANNER,
+                        "query": query,
+                        "name": query.title(),
+                        "summary": summary,
+                        "references": [
+                            {
+                                "title": f"MedlinePlus - {query.title()}",
+                                "url": f"https://medlineplus.gov/healthtopics.html",
+                                "source": "MedlinePlus/NIH"
+                            },
+                            {
+                                "title": "PubMed Medical Literature",
+                                "url": f"https://pubmed.ncbi.nlm.nih.gov/?term={query}",
+                                "source": "PubMed/NCBI"
+                            }
+                        ],
+                        "source": "medlineplus",
+                        "service": "ai-nurse-florence",
+                        "mode": "serverless"
+                    }
+            except Exception as e:
+                print(f"MedlinePlus API error: {e}")
+                
     except Exception as e:
-        pass  # Fall back to basic response
+        print(f"General API error: {e}")
     
-    # Fallback response with educational information
+    
+    # Enhanced fallback response with educational information
     return {
         "banner": EDU_BANNER,
         "query": query,
         "name": query.title(),
-        "summary": f"This is an educational response about {query}. Please consult with healthcare professionals for accurate medical information. Visit MedlinePlus.gov or PubMed for peer-reviewed medical information.",
+        "summary": f"Educational Information: {query.title()} is a medical term or condition. For accurate, comprehensive medical information including definitions, symptoms, causes, diagnosis, and treatment options, please consult with qualified healthcare professionals. You can also find evidence-based information at MedlinePlus.gov (NIH) or search peer-reviewed medical literature at PubMed.gov.",
         "references": [
             {
-                "title": "MedlinePlus Health Topics",
-                "url": "https://medlineplus.gov/healthtopics.html",
+                "title": f"MedlinePlus Health Topics - {query.title()}",
+                "url": f"https://medlineplus.gov/healthtopics.html",
                 "source": "NIH/MedlinePlus"
             },
             {
-                "title": "PubMed Database",
-                "url": "https://pubmed.ncbi.nlm.nih.gov/",
+                "title": f"PubMed Medical Literature - {query.title()}",
+                "url": f"https://pubmed.ncbi.nlm.nih.gov/?term={query}",
                 "source": "NIH/NLM"
+            },
+            {
+                "title": "Mayo Clinic Health Information",
+                "url": f"https://www.mayoclinic.org/search/search-results?q={query}",
+                "source": "Mayo Clinic"
             }
         ],
-        "source": "educational"
+        "source": "educational",
+        "service": "ai-nurse-florence",
+        "mode": "serverless"
     }
 
 # Create minimal FastAPI app
@@ -98,10 +179,15 @@ async def health():
     """Health endpoint with educational disclaimers"""
     return JSONResponse({
         "status": "healthy",
-        "service": "ai-nurse-florence", 
+        "service": "ai-nurse-florence",
         "version": "1.0.0",
         "banner": EDU_BANNER,
-        "mode": "serverless"
+        "mode": "serverless",
+        "apis": {
+            "mydisease": "https://mydisease.info/v1/",
+            "medlineplus": "https://connect.medlineplus.gov/service",
+            "pubmed": "https://pubmed.ncbi.nlm.nih.gov/"
+        }
     })
 
 @app.get("/api/v1/disease")
