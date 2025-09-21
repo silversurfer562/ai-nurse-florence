@@ -408,7 +408,22 @@
                 
                 // Add AI response
                 if (data.status === 'ok') {
-                    addMessage(`Hello! I'm AI Nurse Florence. You asked about "${message}". This is a demo response from the disease information service. The API is working correctly!`, false);
+                    // Create a comprehensive response using the actual disease data
+                    let responseText = `🏥 **AI Nurse Florence - ${data.name || data.query}**\n\n`;
+                    responseText += `${data.banner}\n\n`;
+                    
+                    if (data.summary) {
+                        responseText += `**Information:**\n${data.summary}\n\n`;
+                    }
+                    
+                    if (data.references && data.references.length > 0) {
+                        responseText += `**References:**\n`;
+                        data.references.forEach((ref, index) => {
+                            responseText += `${index + 1}. [${ref.title}](${ref.url}) - ${ref.source}\n`;
+                        });
+                    }
+                    
+                    addMessage(responseText, false);
                 } else {
                     addMessage('I apologize, but I encountered an issue processing your request. Please try again.', false);
                 }
