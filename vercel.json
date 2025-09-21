@@ -2,11 +2,11 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/test-simple.py"
+      "dest": "/api/index.py"
     }
   ],
   "functions": {
-    "api/test-simple.py": {
+    "api/index.py": {
       "memory": 1024,
       "maxDuration": 30
     }
