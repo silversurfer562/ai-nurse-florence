@@ -19,6 +19,27 @@ logger = get_logger(__name__)
 treatment_wizard_sessions: Dict[str, Dict[str, str]] = {}
 
 # --- Pydantic Models for Wizard Steps ---
+"""
+A wizard for generating comprehensive treatment plans for healthcare professionals.
+
+This multi-step wizard guides users through creating structured treatment plans
+that include assessment, goals, interventions, monitoring, and evaluation components.
+"""
+from fastapi import APIRouter, Body, HTTPException, status
+from pydantic import BaseModel, Field
+from typing import Dict, Any, Optional, List
+
+from utils.api_responses import create_success_response, create_error_response
+import services.openai_client as openai_client_module
+from utils.logging import get_logger
+
+router = APIRouter(prefix="/wizards/treatment-plan", tags=["wizards"])
+logger = get_logger(__name__)
+
+# In-memory storage for wizard state. In production, use Redis or a database.
+treatment_wizard_sessions: Dict[str, Dict[str, str]] = {}
+
+# --- Pydantic Models for Wizard Steps ---
 
 class StartTreatmentResponse(BaseModel):
     wizard_id: str
