@@ -2,14 +2,11 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/test.py"
+      "dest": "/api/basic.py"
     }
   ],
-  "env": {
-    "PYTHONPATH": "."
-  },
   "functions": {
-    "api/test.py": {
+    "api/basic.py": {
       "memory": 1024,
       "maxDuration": 30
     }
