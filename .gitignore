@@ -34,3 +34,7 @@ ai-nurse-florence-plan-for dev.txt
 OPENAI_API_KEY.env
 .DS_Store
 .vercel
+.env*.local
+.env.production
+env.production.bak
+.env.production.fixed

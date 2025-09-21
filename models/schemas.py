@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, ClassVar, TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydantic import ConfigDict
 import uuid
 
 EDU_BANNER = "Draft for clinician review — not medical advice. No PHI stored."
@@ -117,5 +119,11 @@ class User(BaseModel):
     provider: str
     provider_user_id: str
 
-    class Config:
-        orm_mode = True
+    # Pydantic v2 migration: use model_config with ConfigDict instead of class Config
+    # Prefer Pydantic v2 style model_config but keep simple dict to avoid
+    # introducing a non-annotated symbol into the class namespace at runtime.
+    try:
+        model_config: ClassVar = {"from_attributes": True}
+    except Exception:
+        class Config:
+            orm_mode = True

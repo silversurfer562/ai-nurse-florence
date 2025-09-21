@@ -11,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
+from typing import List, Optional, ClassVar
 from enum import Enum
 import stripe
 import hmac
@@ -213,7 +214,12 @@ class UserResponse(BaseModel):
     created_at: datetime
     
     class Config:
-        from_attributes = True
+        # Pydantic v2 migration: prefer model_config with ConfigDict
+        try:
+            model_config: ClassVar = {"from_attributes": True}
+        except Exception:
+            class Config:
+                from_attributes = True
 
 class EntitlementsResponse(BaseModel):
     tier: SubscriptionTier
