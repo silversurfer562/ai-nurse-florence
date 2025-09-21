@@ -15,24 +15,12 @@
       "destination": "/api/index.py"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
       "source": "/docs",
       "destination": "/api/index.py"
     },
     {
       "source": "/openapi.json",
       "destination": "/api/index.py"
-    },
-    {
-      "source": "/chat",
-      "destination": "/static/assets/chat.html"
-    },
-    {
-      "source": "/",
-      "destination": "/static/assets/index.html"
     }
   ],
   "headers": [
