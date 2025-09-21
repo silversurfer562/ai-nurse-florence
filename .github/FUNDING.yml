@@ -26,6 +26,6 @@ issuehunt: # your-issuehunt-username
 
 # Custom funding URLs (you can add multiple)
 custom: # Add your custom funding URLs here
+  - https://paypal.me/yourname  # Replace 'yourname' with your PayPal.me username
   # - https://www.buymeacoffee.com/yourname
-  # - https://paypal.me/yourname
   # - https://www.gofundme.com/your-campaign
