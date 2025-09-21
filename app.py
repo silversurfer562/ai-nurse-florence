@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, APIRouter, Depends
-from fastapi.responses import JSONResponse, Response
+from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse, Response, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -7,7 +7,7 @@ import os
 # Core imports
 from utils.middleware import RequestIdMiddleware, LoggingMiddleware
 from utils.logging import get_logger
-from utils.config import settings
+from utils.config import settings, get_settings
 from utils.security import SecurityHeadersMiddleware
 
 # Load environment variables
@@ -61,6 +61,27 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Route handlers for HTML files
+@app.get("/", response_class=HTMLResponse)
+async def read_index():
+    try:
+        import os
+        file_path = os.path.join(os.path.dirname(__file__), "index.html")
+        with open(file_path, "r") as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>AI Nurse Florence API is running</h1><p>Index file not found</p>", status_code=200)
+
+@app.get("/chat.html", response_class=HTMLResponse)
+async def read_chat():
+    try:
+        import os
+        file_path = os.path.join(os.path.dirname(__file__), "chat.html")
+        with open(file_path, "r") as f:
+            return HTMLResponse(content=f.read(), status_code=200)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Chat interface not found</h1>", status_code=404)
+
 # --- API Versioning Router ---
 api_router = APIRouter(prefix="/api/v1")
 unprotected_router = APIRouter(prefix="/api/v1") 
@@ -98,7 +119,7 @@ app.add_middleware(
 )
 
 
-# Checks for api-bearer enviroment variable in vercel deployment
+# Checks for api-bearer environment variable in vercel deployment
 def require_bearer(request: Request):
     expected = (get_settings().API_BEARER or "").strip()
     auth = request.headers.get("authorization", "")
@@ -109,7 +130,6 @@ def require_bearer(request: Request):
 @app.get("/admin/stats")
 async def admin_stats(
     request: Request,
-    _=Depends(lambda: require_config(require_bearer=True)),
     __=Depends(require_bearer),
 ):
     return {"ok": True}
