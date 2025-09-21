@@ -2,6 +2,10 @@
   "version": 2,
   "routes": [
     {
+      "src": "/chat",
+      "dest": "/public/working-chat.html"
+    },
+    {
       "src": "/api/v1/(.*)",
       "dest": "/api/index.py"
     },
