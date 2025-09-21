@@ -1,8 +1,17 @@
-def handler(event, context):
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Content-Type': 'application/json',
-        },
-        'body': '{"status": "success", "message": "Basic Python function working", "service": "ai-nurse-florence-basic"}'
-    }
+from http.server import BaseHTTPRequestHandler
+import json
+
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        
+        response = {
+            'status': 'success',
+            'message': 'Basic Python handler working',
+            'service': 'ai-nurse-florence-basic',
+            'path': self.path
+        }
+        
+        self.wfile.write(json.dumps(response).encode())
