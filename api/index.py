@@ -1,6 +1,4 @@
-"""Vercel serverless function for AI Nurse Florence FastAPI app.
-Following service layer architecture with conditional imports pattern.
-"""
+"""Vercel serverless function for AI Nurse Florence FastAPI app."""
 import sys
 import os
 from pathlib import Path
@@ -21,7 +19,7 @@ if _has_main_app:
     # Export the main FastAPI app with full middleware stack
     app = fastapi_app
 else:
-    # Fallback app with debug information
+    # Fallback app with debug information following service layer architecture
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse
     
@@ -31,14 +29,16 @@ else:
     )
     
     @app.get("/api/v1/health")
+    @app.get("/health")
     @app.get("/")
     async def debug_health():
         return JSONResponse({
             "status": "debug_mode",
+            "service": "ai-nurse-florence",
             "error": _import_error,
             "python_version": sys.version,
             "working_directory": os.getcwd(),
-            "python_path": sys.path[:5],  # Show first 5 entries
+            "python_path": sys.path[:3],
             "project_root": str(project_root),
             "files_in_root": os.listdir(project_root) if project_root.exists() else []
         })
@@ -48,5 +48,6 @@ else:
         return JSONResponse({
             "status": "debug_mode", 
             "message": "Main app not available - using fallback",
-            "banner": "Educational purposes only — verify with healthcare providers. No PHI stored."
+            "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
+            "query": "debug"
         })
