@@ -10,12 +10,22 @@ sys.path.insert(0, str(project_root))
 # Conditional imports pattern - graceful degradation
 try:
     from app import app as fastapi_app
-    _has_main_app = True
-except ImportError as e:
+    
+    # Test that the app actually has routes by checking the router
+    if hasattr(fastapi_app, 'routes') and len(fastapi_app.routes) > 2:
+        # Main app loaded successfully with routes
+        app = fastapi_app
+        _has_main_app = True
+    else:
+        # App imported but no routes - something is wrong
+        raise ImportError("App imported but routes not found")
+        
+except Exception as e:
     _has_main_app = False
     _import_error = str(e)
+    fastapi_app = None
 
-if _has_main_app:
+if _has_main_app and fastapi_app:
     # Export the main FastAPI app with full middleware stack
     app = fastapi_app
 else:
@@ -35,12 +45,13 @@ else:
         return JSONResponse({
             "status": "debug_mode",
             "service": "ai-nurse-florence",
-            "error": _import_error,
+            "error": _import_error if '_import_error' in locals() else "Unknown error",
             "python_version": sys.version,
             "working_directory": os.getcwd(),
             "python_path": sys.path[:3],
             "project_root": str(project_root),
-            "files_in_root": os.listdir(project_root) if project_root.exists() else []
+            "files_in_root": os.listdir(project_root) if project_root.exists() else [],
+            "main_app_available": _has_main_app
         })
     
     @app.get("/api/v1/disease")
