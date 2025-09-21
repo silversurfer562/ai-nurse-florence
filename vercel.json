@@ -5,6 +5,12 @@
       "runtime": "@vercel/python@5.0.5"
     }
   },
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python@5.0.5"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/v1/health",
