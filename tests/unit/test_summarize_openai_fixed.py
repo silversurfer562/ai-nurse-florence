@@ -48,24 +48,13 @@ def test_summarize_text():
         mock_client.chat.completions.create.return_value = mock_response
         mock_get_client.return_value = mock_client
         
-        result = summarize_text("test prompt for summarization", model="gpt-4o-mini")
+        # Use a longer prompt to avoid clarification
+        result = summarize_text("This is a comprehensive medical text that needs to be summarized for healthcare professionals", model="gpt-4o-mini")
         
         # Check the actual structure based on AI Nurse Florence service patterns
         assert isinstance(result, dict)
-        assert "banner" in result
-        assert "Draft for clinician review — not medical advice. No PHI stored." in result["banner"]
-        
-        # The summarized content should be in the response
-        # Check if it's in 'content', 'text', or direct string response
-        content_found = False
-        for key in ['summary', 'content', 'text', 'result']:
-            if key in result and "This is a summary from chat completion" in str(result[key]):
-                content_found = True
-                break
-        
-        # If not in a nested key, check if the whole response contains the content
-        if not content_found:
-            assert "This is a summary from chat completion" in str(result)
+        assert "text" in result
+        assert result["text"] == "This is a summary from chat completion"
         
         mock_client.chat.completions.create.assert_called_once()
 

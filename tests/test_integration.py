@@ -62,15 +62,20 @@ def test_trials_search_endpoint(test_client: TestClient, mock_trials_service: Ma
 def test_summarize_chat_endpoint(test_client: TestClient, mock_openai_client: MagicMock):
     """Test that the summarize chat endpoint returns the expected response."""
     response = test_client.post(
-        "/summarize/chat",
+        "/api/v1/summarize/chat",
         json={"prompt": "Summarize this text", "model": "gpt-4o-mini"}
     )
     assert response.status_code == 200
     data = response.json()
     assert "text" in data
-    assert data["text"] == "This is a test summary."
-    mock_openai_client.responses.create.assert_called_once()
+    assert data["text"] == "This is a test response from the AI assistant."
+    mock_openai_client.chat.completions.create.assert_called_once()
     # Verify the prompt and model were passed correctly
-    _, kwargs = mock_openai_client.responses.create.call_args
-    assert kwargs["model"] == "gpt-4o-mini"
-    assert "Summarize this text" in kwargs["input"]
+    call_args = mock_openai_client.chat.completions.create.call_args
+    assert call_args[1]["model"] == "gpt-4o-mini"
+    # Check that the messages structure is correct
+    messages = call_args[1]["messages"]
+    assert len(messages) == 2
+    assert messages[0]["role"] == "system"
+    assert messages[1]["role"] == "user"
+    assert "Summarize this text" in messages[1]["content"]
