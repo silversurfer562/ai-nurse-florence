@@ -70,6 +70,10 @@ def get_client() -> Optional[Any]:
     if not api_key:
         logger.info("OpenAI API key not configured - AI features disabled")
         return None
+    # Avoid initializing client when API key is a placeholder (common in example .env)
+    if isinstance(api_key, str) and any(tag in api_key.upper() for tag in ("NEW_", "REPLACE", "YOUR")):
+        logger.warning("OpenAI API key appears to be a placeholder; skipping client initialization")
+        return None
     
     # Initialize client
     try:
