@@ -12,16 +12,14 @@ sys.path.insert(0, str(project_root))
 # Educational banner following your API design standards
 EDU_BANNER = "Educational purposes only — verify with healthcare providers. No PHI stored."
 
-# Start with minimal FastAPI app to avoid function invocation failures
+# Start with minimal FastAPI app following service layer architecture
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 app = FastAPI(
     title="AI Nurse Florence",
     description="Healthcare AI assistant providing evidence-based medical information for nurses",
-    version="1.0.0",
-    docs_url="/docs",
-    openapi_url="/openapi.json"
+    version="1.0.0"
 )
 
 @app.get("/")
@@ -33,8 +31,7 @@ async def health():
         "service": "ai-nurse-florence", 
         "version": "1.0.0",
         "banner": EDU_BANNER,
-        "deployment": "vercel_minimal",
-        "python_version": sys.version.split()[0]
+        "deployment": "vercel_minimal"
     }
 
 @app.get("/api/v1/disease")
