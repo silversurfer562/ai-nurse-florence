@@ -4,6 +4,9 @@ import json
 import re
 
 from services import openai_client
+
+# Expose get_client at module level for tests that patch services.summarize_service.get_client
+get_client = openai_client.get_client
 from services.prompt_enhancement import enhance_prompt
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
@@ -191,6 +194,10 @@ def summarize_text(text: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
     Returns:
         A dictionary with the summary or clarification information
     """
+    # If input is empty, return an SBAR-shaped empty dict (tests expect SBAR keys)
+    if not isinstance(text, str) or not text.strip():
+        return sbar_from_notes(text)
+
     # Enhance the prompt
     effective_prompt, needs_clarification, clarification_question = enhance_prompt(text, "summarize")
     
