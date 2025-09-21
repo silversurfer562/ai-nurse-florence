@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Nurse Florence - Chat Interface (Updated 2025-09-21)</title>
+    <title>AI Nurse Florence - Working Chat Interface</title>
     <style>
         * {
             margin: 0;
@@ -50,7 +50,7 @@
         .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 2rem 0;
+            padding: 1rem 0;
             display: flex;
             flex-direction: column;
             gap: 1rem;
@@ -58,11 +58,12 @@
 
         .message {
             display: flex;
-            gap: 1rem;
-            animation: fadeIn 0.3s ease-in;
+            gap: 0.75rem;
+            max-width: 85%;
         }
 
         .message.user {
+            align-self: flex-end;
             flex-direction: row-reverse;
         }
 
@@ -73,89 +74,85 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
             flex-shrink: 0;
         }
 
-        .message.user .message-avatar {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        .user .message-avatar {
+            background: #667eea;
             color: white;
         }
 
-        .message.assistant .message-avatar {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
+        .assistant .message-avatar {
+            background: #4CAF50;
             color: white;
         }
 
         .message-content {
             background: white;
-            padding: 1rem 1.5rem;
+            padding: 1rem;
             border-radius: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            max-width: 70%;
-            line-height: 1.6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            line-height: 1.5;
         }
 
-        .message.user .message-content {
+        .user .message-content {
             background: #667eea;
             color: white;
         }
 
         .input-container {
-            padding: 1rem 0 2rem 0;
-            background: #f7f7f8;
-        }
-
-        .input-form {
-            display: flex;
-            gap: 1rem;
+            padding: 1rem 0;
             background: white;
-            border-radius: 2rem;
-            padding: 0.5rem;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            border: 2px solid transparent;
-            transition: border-color 0.2s ease;
+            border-top: 1px solid #e0e0e0;
         }
 
-        .input-form:focus-within {
+        .input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 22px;
+            font-size: 1rem;
+            resize: none;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
             border-color: #667eea;
         }
 
-        .message-input {
-            flex: 1;
-            border: none;
-            outline: none;
-            padding: 1rem 1.5rem;
-            font-size: 1rem;
-            background: transparent;
-            resize: none;
-            min-height: 20px;
-            max-height: 120px;
-        }
-
         .send-button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 44px;
+            height: 44px;
+            background: #667eea;
             color: white;
             border: none;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            font-size: 1.2rem;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
         }
 
         .send-button:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            background: #5a6fd8;
         }
 
         .send-button:disabled {
-            opacity: 0.5;
+            background: #ccc;
             cursor: not-allowed;
         }
 
@@ -163,143 +160,87 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            color: #666;
         }
 
         .loading-dots {
             display: flex;
-            gap: 4px;
+            gap: 0.25rem;
         }
 
         .loading-dot {
-            width: 8px;
-            height: 8px;
-            background: #667eea;
+            width: 6px;
+            height: 6px;
+            background: #666;
             border-radius: 50%;
-            animation: bounce 1.4s ease-in-out infinite both;
+            animation: loading 1.4s infinite;
         }
 
-        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
 
-        @keyframes bounce {
-            0%, 80%, 100% { 
-                transform: scale(0);
-            } 40% { 
-                transform: scale(1);
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes loading {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.5;
             }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
         }
 
         .disclaimer {
-            background: rgba(241, 196, 15, 0.1);
-            border: 1px solid rgba(241, 196, 15, 0.3);
-            border-radius: 1rem;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 0.5rem;
             padding: 1rem;
             margin: 1rem 0;
             font-size: 0.9rem;
-            color: #8b7d00;
             text-align: center;
-        }
-
-        .model-selector {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            justify-content: center;
-        }
-
-        .model-option {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 1rem;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
-        }
-
-        .model-option.active {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
-
-        .model-option:hover {
-            border-color: #667eea;
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                padding: 0 1rem;
-            }
-            
-            .message-content {
-                max-width: 85%;
-            }
-            
-            .header {
-                padding: 1rem;
-            }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🏥 AI Nurse Florence</h1>
-        <p>Healthcare AI Assistant - Chat with evidence-based medical information</p>
+        <p>Healthcare AI Assistant - Educational Information from NIH Sources</p>
     </div>
 
     <div class="chat-container">
         <div class="disclaimer">
-            <strong>⚠️ Educational Use Only</strong><br>
-            This AI provides educational information for healthcare professionals. All content is for informational purposes only and does not constitute medical advice. No PHI is stored.
-        </div>
-
-        <div class="model-selector">
-            <div class="model-option active" data-model="gpt-4o-mini">
-                GPT-4o Mini (Fast)
-            </div>
-            <div class="model-option" data-model="gpt-4o">
-                GPT-4o (Balanced)
-            </div>
-            <div class="model-option" data-model="gpt-4">
-                GPT-4 (Advanced)
-            </div>
+            <strong>⚠️ Educational Use Only:</strong> This AI assistant provides educational healthcare information from NIH/MedlinePlus sources. Always consult qualified healthcare professionals for medical advice. No personal health information is stored.
         </div>
 
         <div class="messages" id="messages">
             <div class="message assistant">
                 <div class="message-avatar">F</div>
                 <div class="message-content">
-                    Hello! I'm AI Nurse Florence, your healthcare AI assistant. I can help you with:
-                    <br><br>
-                    • Medical information and disease lookup
-                    <br>• Literature search and evidence-based answers
-                    <br>• Clinical trial information
-                    <br>• Patient education materials
-                    <br>• Clinical documentation assistance
-                    <br><br>
-                    How can I assist you today?
+                    Hello! I'm AI Nurse Florence, your educational healthcare assistant. I can provide information about diseases, conditions, and medical topics using NIH and MedlinePlus resources. What would you like to learn about?
                 </div>
             </div>
         </div>
 
         <div class="input-container">
-            <form class="input-form" id="chatForm">
+            <div class="input-wrapper">
                 <textarea 
-                    class="message-input" 
                     id="messageInput" 
-                    placeholder="Ask me about medical conditions, treatments, research..."
+                    class="input-field" 
+                    placeholder="Ask about a medical condition or disease..."
                     rows="1"
                 ></textarea>
-                <button type="submit" class="send-button" id="sendButton">
-                    ➤
+                <button id="sendButton" class="send-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                    </svg>
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -307,17 +248,6 @@
         const messagesContainer = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
-        const chatForm = document.getElementById('chatForm');
-        let selectedModel = 'gpt-4o-mini';
-
-        // Model selection
-        document.querySelectorAll('.model-option').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('active'));
-                option.classList.add('active');
-                selectedModel = option.dataset.model;
-            });
-        });
 
         // Auto-resize textarea
         messageInput.addEventListener('input', function() {
@@ -325,7 +255,7 @@
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
         });
 
-        // Send message on Enter (but allow Shift+Enter for new line)
+        // Send message on Enter (but allow Shift+Enter for new lines)
         messageInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -333,10 +263,7 @@
             }
         });
 
-        chatForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            sendMessage();
-        });
+        sendButton.addEventListener('click', sendMessage);
 
         function addMessage(content, isUser = false, isLoading = false) {
             const messageDiv = document.createElement('div');
@@ -361,7 +288,7 @@
                     </div>
                 `;
             } else {
-                contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+                contentDiv.innerHTML = content;
             }
             
             messageDiv.appendChild(avatar);
@@ -369,13 +296,13 @@
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
             
-            return contentDiv;
+            return contentDiv; // Return for loading message updates
         }
 
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
-
+            
             // Add user message
             addMessage(message, true);
             
@@ -458,9 +385,6 @@
             sendButton.disabled = false;
             messageInput.focus();
         }
-
-        // Focus input on load
-        messageInput.focus();
     </script>
 </body>
 </html>
