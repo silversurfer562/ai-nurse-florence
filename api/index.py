@@ -32,6 +32,7 @@ except Exception as e:
     
     # Fallback app following service layer architecture
     from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
     
     fallback_app = FastAPI(
         title="AI Nurse Florence",
@@ -45,27 +46,33 @@ except Exception as e:
     @fallback_app.get("/api/v1/health")
     async def health():
         """Health endpoint following API design standards"""
-        return {
-            "status": "healthy",
-            "service": "ai-nurse-florence", 
-            "version": "1.0.0",
-            "banner": EDU_BANNER,
-            "fallback_mode": True,
-            "main_app_available": _has_main_app,
-            "error": _import_error
-        }
+        return JSONResponse(
+            content={
+                "status": "healthy",
+                "service": "ai-nurse-florence", 
+                "version": "1.0.0",
+                "banner": EDU_BANNER,
+                "fallback_mode": True,
+                "main_app_available": _has_main_app,
+                "error": _import_error
+            },
+            headers={"Content-Type": "application/json"}
+        )
     
     @fallback_app.get("/api/v1/disease")
     async def disease_info():
         """Disease endpoint with educational disclaimers"""
-        return {
-            "status": "ok",
-            "message": "AI Nurse Florence Disease Information Service",
-            "banner": EDU_BANNER,
-            "query": "minimal",
-            "service": "ai-nurse-florence",
-            "fallback_mode": True
-        }
+        return JSONResponse(
+            content={
+                "status": "ok",
+                "message": "AI Nurse Florence Disease Information Service",
+                "banner": EDU_BANNER,
+                "query": "minimal",
+                "service": "ai-nurse-florence",
+                "fallback_mode": True
+            },
+            headers={"Content-Type": "application/json"}
+        )
     
     handler = fallback_app
 

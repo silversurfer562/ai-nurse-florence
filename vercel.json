@@ -2,10 +2,14 @@
   "version": 2,
   "functions": {
     "api/index.py": {
-      "runtime": "python3.9"
+      "runtime": "@vercel/python"
     }
   },
   "rewrites": [
+    {
+      "source": "/api/v1/health",
+      "destination": "/api/index.py"
+    },
     {
       "source": "/api/v1/(.*)",
       "destination": "/api/index.py"
