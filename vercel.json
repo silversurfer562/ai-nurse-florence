@@ -24,11 +24,7 @@
     },
     {
       "source": "/chat",
-      "destination": "/static/assets/chat.html"
-    },
-    {
-      "source": "/",
-      "destination": "/static/assets/index.html"
+      "destination": "/chat.html"
     }
   ],
   "headers": [
