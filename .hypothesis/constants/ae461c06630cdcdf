@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/app.py
+# hypothesis_version: 6.139.2
+
+[200, 401, '*', '/', '/admin/stats', '/api/v1', '/api/v1/health', '/chat.html', '/docs', '/health', '/metrics', '/openapi.json', '/redoc', '/v1', '1.0.0', 'Bearer ', 'Unauthorized', 'authorization', 'chat.html', 'index.html', 'ok', 'r', 'shutdown', 'sqlite', 'startup']

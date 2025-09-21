@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/education_service.py
+# hypothesis_version: 6.139.2
+
+['en', 'lang', 'level', 'red_flags', 'references', 'self_care', 'topic', 'what_it_is', 'when_to_seek_help', 'why_it_matters']

@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/readability_service.py
+# hypothesis_version: 6.139.2
+
+[0.0, 0.39, 1.015, 11.8, 15.59, 84.6, 206.835, '(?<=[.!?])\\s+', 'Advanced', 'Easy', 'Moderate', 'aeiouy', 'e', 'flesch_kincaid_grade', 'flesch_reading_ease', 'grade_level', 'reading_level', 'sentences', 'suggestions', 'syllables', 'text_length', 'words']

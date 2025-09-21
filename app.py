@@ -51,6 +51,8 @@ try:
     from routers.wizards.patient_education import router as patient_education_wizard_router
     from routers.wizards.sbar_report import router as sbar_report_wizard_router
     from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
+    from routers.wizards.disease_search import router as disease_search_wizard_router
+    from routers.wizards.clinical_trials import router as clinical_trials_wizard_router
     WIZARDS_AVAILABLE = True
 except ImportError:
     logger.warning("Wizard routers not available")
@@ -58,6 +60,8 @@ except ImportError:
     patient_education_wizard_router = None
     sbar_report_wizard_router = None
     treatment_plan_wizard_router = None
+    disease_search_wizard_router = None
+    clinical_trials_wizard_router = None
 
 app = FastAPI(
     title="AI Nurse Florence API",
@@ -91,6 +95,9 @@ async def read_chat():
 # --- API Versioning Router ---
 api_router = APIRouter(prefix="/api/v1")
 unprotected_router = APIRouter(prefix="/api/v1") 
+
+# Legacy router for older tests and paths (keeps compatibility with /v1)
+legacy_router = APIRouter(prefix="/v1")
 
 # --- Middleware Configuration ---
 app.add_middleware(SecurityHeadersMiddleware)
@@ -155,6 +162,10 @@ if WIZARDS_AVAILABLE and sbar_report_wizard_router:
     api_router.include_router(sbar_report_wizard_router)
 if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
     api_router.include_router(treatment_plan_wizard_router)
+if WIZARDS_AVAILABLE and disease_search_wizard_router:
+    api_router.include_router(disease_search_wizard_router)
+if WIZARDS_AVAILABLE and clinical_trials_wizard_router:
+    api_router.include_router(clinical_trials_wizard_router)
 
 # Unprotected routes
 unprotected_router.include_router(healthcheck_router)
@@ -164,6 +175,22 @@ if AUTH_AVAILABLE and auth_router:
 # Include routers in app
 app.include_router(api_router)
 app.include_router(unprotected_router)
+# Also include legacy /v1 prefixes for backward compatibility in tests
+legacy_router.include_router(summarize_router)
+legacy_router.include_router(disease_router)
+legacy_router.include_router(pubmed_router)
+legacy_router.include_router(trials_router)
+if WIZARDS_AVAILABLE and patient_education_wizard_router:
+    legacy_router.include_router(patient_education_wizard_router)
+if WIZARDS_AVAILABLE and sbar_report_wizard_router:
+    legacy_router.include_router(sbar_report_wizard_router)
+if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
+    legacy_router.include_router(treatment_plan_wizard_router)
+if WIZARDS_AVAILABLE and disease_search_wizard_router:
+    legacy_router.include_router(disease_search_wizard_router)
+if WIZARDS_AVAILABLE and clinical_trials_wizard_router:
+    legacy_router.include_router(clinical_trials_wizard_router)
+app.include_router(legacy_router)
 
 # Register exception handlers if available
 try:

@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/routers/wizards/treatment_plan.py
+# hypothesis_version: 6.139.2
+
+[0.7, 100, 2000, '...', '/assessment', '/generate', '/goals', '/interventions', '/monitoring', '/session/{wizard_id}', '/start', '_', 'assessment', 'completed_steps', 'content', 'evaluation', 'evaluation_criteria', 'generate', 'generation_failed', 'goals', 'gpt-4o-mini', 'interventions', 'key_goals', 'main_interventions', 'medications', 'message', 'monitoring', 'monitoring_focus', 'next_step', 'patient_education', 'primary_diagnosis', 'progress', 'role', 'summary', 'system', 'treatment_plan', 'user', 'wizard_id', 'wizard_not_found', 'wizards']

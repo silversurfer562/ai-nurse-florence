@@ -2,10 +2,18 @@
   "version": 2,
   "functions": {
     "api/index.py": {
-      "runtime": "@vercel/python"
+      "runtime": "@vercel/python@5.0.5"
     }
   },
   "rewrites": [
+    {
+      "source": "/",
+      "destination": "/static/assets/index.html"
+    },
+    {
+      "source": "/chat",
+      "destination": "/static/assets/chat.html"
+    },
     {
       "source": "/api/v1/health",
       "destination": "/api/index.py"
