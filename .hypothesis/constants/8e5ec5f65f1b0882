@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/utils/logging.py
+# hypothesis_version: 6.139.2
+
+['INFO', 'LOG_LEVEL', 'exception', 'extra', 'level', 'message', 'name', 'request_id', 'timestamp']

@@ -47,4 +47,8 @@ def analyze_readability(text: str):
         "words": len(w),
         "syllables": syl,
         "suggestions": sug,
+        # Additional keys for test compatibility
+        "text_length": len(text),
+        "reading_level": "Advanced" if fre < 30 else "Moderate" if fre < 60 else "Easy",
+        "grade_level": round(fk, 1) if fk > 0 else 0,
     }

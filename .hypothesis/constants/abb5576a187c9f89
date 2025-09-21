@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/utils/pagination.py
+# hypothesis_version: 6.139.2
+
+[100, 'Page number', 'Page size', 'first', 'last', 'next', 'page', 'prev', 'self', 'size']

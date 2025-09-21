@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/utils/config.py
+# hypothesis_version: 6.139.2
+
+[',', '.env', 'CORS_ORIGINS', 'HS256', 'INFO', 'ignore', 'utf-8']

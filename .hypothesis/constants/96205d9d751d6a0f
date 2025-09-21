@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/routers/patient_education.py
+# hypothesis_version: 6.139.2
+
+[200, '/patient-education', '/v1', 'Asthma', 'application/json', 'banner', 'content', 'education', 'en', 'example', 'lang', 'level', 'red_flags', 'references', 'self_care', 'topic', 'what_it_is', 'when_to_seek_help', 'why_it_matters']

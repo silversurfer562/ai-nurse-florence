@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/medlineplus.py
+# hypothesis_version: 6.139.2
+
+['MedlinePlus', "content[@name='url']", 'db', 'healthTopics', 'id', 'references', 'source', 'summary', 'term', 'title', 'topic', 'url']

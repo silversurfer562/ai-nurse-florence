@@ -150,9 +150,15 @@ def cached(ttl_seconds: int = 300):
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> T:
-            # Create a cache key from function name and arguments
+            # Determine a stable function name; some callables (MagicMock)
+            # may not have a __name__ attribute, so fall back to qualname
+            # or the class name.
+            func_name = getattr(func, "__name__", None) or getattr(func, "__qualname__", None) or func.__class__.__name__
+            module = getattr(func, "__module__", "")
+
+            # Create a cache key from function identification and arguments
             cache_key = (
-                f"{func.__module__}.{func.__name__}:"
+                f"{module}.{func_name}:"
                 f"{repr(args)}:{repr(sorted(kwargs.items()))}"
             )
             

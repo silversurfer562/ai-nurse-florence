@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/services/prompt_enhancement.py
+# hypothesis_version: 6.139.2
+
+['about', 'alzheimer', 'anxiety', 'arthritis', 'asthma', 'cancer', 'copd', 'depression', 'diabetes', 'disease', 'education', 'explain', 'general', 'help', 'hypertension', 'info', 'information', 'parkinsons', 'summar', 'summarize', 'summary', 'tell me more', 'what is']

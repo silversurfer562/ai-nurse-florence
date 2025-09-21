@@ -1,0 +1,4 @@
+# file: /Users/patrickroebuck/projects/ai-nurse-florence/utils/security.py
+# hypothesis_version: 6.139.2
+
+['DENY', 'X-Frame-Options', 'nosniff']

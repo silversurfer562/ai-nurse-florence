@@ -3,7 +3,38 @@ from fastapi.responses import JSONResponse
 from typing import Any, Dict
 
 from services import summarize_service
-# from services.tasks import summarize_text_task  # Disabled for Redis-free dev # Import the new Celery task
+# Try to import the Celery task. In Redis-free development or tests the
+# tasks module may not expose a Celery task object; provide a local
+# synchronous fallback that implements `.delay()` and returns a small
+# task-like object with `id`, `status`, and `get()` so the endpoint can
+# operate without a worker.
+try:
+    from services.tasks import summarize_text_task  # type: ignore
+except Exception:
+    from uuid import uuid4
+
+    class _LocalTask:
+        def __init__(self, result: dict):
+            self.id = str(uuid4())
+            # When running in a local, synchronous fallback we still return
+            # an initial PENDING status so the API behaves like a queued
+            # Celery task for callers (tests patch AsyncResult for GET).
+            self.status = "PENDING"
+            self._result = result
+
+        def get(self, propagate: bool = True):
+            return self._result
+
+    class _LocalTaskWrapper:
+        @staticmethod
+        def delay(prompt: str, model: str = "gpt-4o-mini"):
+            # call the summarization synchronously (tests may patch
+            # `services.summarize_service.summarize_text` so this remains
+            # test-friendly)
+            result = summarize_service.summarize_text(prompt, model=model)
+            return _LocalTask(result)
+
+    summarize_text_task = _LocalTaskWrapper()
 from celery.result import AsyncResult
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
@@ -183,10 +214,13 @@ async def get_task(task_id: str):
         # For PENDING, STARTED, etc.
         response_data = {"task_id": task_id, "status": task_result.status}
 
-    if not task_result.ready() and task_result.status != 'PENDING' and task_result.status != 'STARTED':
-         # This condition handles cases where the task ID might not be in the backend
-        if not task_result.backend.get(task_id):
-             return create_error_response(
+    if not task_result.ready() and task_result.status not in ('PENDING', 'STARTED'):
+        # This condition handles cases where the task ID might not be in the backend.
+        # The Celery result backend may be None in local/test environments, so
+        # guard attribute access accordingly.
+        backend = getattr(task_result, "backend", None)
+        if backend is None or not getattr(backend, "get", lambda *_: False)(task_id):
+            return create_error_response(
                 f"Task {task_id} not found",
                 status.HTTP_404_NOT_FOUND,
                 "task_not_found"
