@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python -m uvicorn app_minimal:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 120"
+startCommand = "python -m uvicorn app:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 120"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"

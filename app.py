@@ -127,8 +127,10 @@ app = FastAPI(
 )
 
 # Log startup diagnostics
-print(f"=== AI NURSE FLORENCE STARTUP - FORCED DEPLOY ===")
-print(f"Deployment timestamp: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
+print(f"=== AI NURSE FLORENCE RAILWAY DEPLOY DEBUG ===")
+print(f"Deployment ID: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
+print(f"Railway Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'unknown')}")
+print(f"Port: {os.environ.get('PORT', '8000')}")
 print(f"Git commit: 6990f32")
 print(f"Python version: {sys.version}")
 print(f"Current working directory: {os.getcwd()}")
@@ -136,7 +138,11 @@ print(f"Loaded routers: {routers_loaded}")
 print(f"Failed routers: {routers_failed}")
 print(f"Wizards available: {WIZARDS_AVAILABLE}")
 print(f"Auth available: {AUTH_AVAILABLE}")
-print("====================================================")
+print("==================================================")
+
+# Ensure health endpoint is available immediately
+print(f"Total app routes defined: {len(app.routes)}")
+print("Health endpoint will be available at /health")
 
 # Mount static files (HTML frontend)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -165,8 +171,17 @@ async def root():
 # Health endpoint for Railway healthcheck
 @app.get("/health")
 async def health():
-    """Simple health check endpoint for Railway"""
-    return {"status": "healthy", "timestamp": "2025-09-22"}
+    """Health check endpoint optimized for Railway deployment"""
+    # Log that health check was called
+    logger.info("Health check endpoint called")
+    
+    return {
+        "status": "healthy", 
+        "timestamp": "2025-09-22",
+        "service": "ai-nurse-florence",
+        "version": "2.0.1",
+        "routers_count": len(routers_loaded)
+    }
 
 # Diagnostic endpoint to see what loaded
 @app.get("/debug/status")
