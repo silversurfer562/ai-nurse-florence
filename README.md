@@ -13,7 +13,7 @@ AI Nurse Florence is a **production-ready** FastAPI-based healthcare information
 ## ✅ **Current Status: PRODUCTION-READY**
 - **Live API Integrations**: ✅ All medical data sources verified and working
 - **GitHub Updated**: ✅ 78 files enhanced with comprehensive improvements  
-- **Vercel Deployment**: ✅ Production-optimized environment configuration
+- **Railway Deployment**: ✅ Production-optimized cloud hosting
 - **Live Data Verified**: ✅ Tested returning real medical information from authoritative sources
 
 ## 🏥 Core Features
