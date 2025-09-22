@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
+from routers import openapi_gpt
 from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -264,6 +265,7 @@ if AUTH_AVAILABLE and auth_router:
 # Include routers in app
 app.include_router(api_router)
 app.include_router(unprotected_router)
+app.include_router(openapi_gpt.router)
 
 # Register exception handlers if available
 try:
