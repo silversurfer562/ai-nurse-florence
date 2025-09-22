@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 import os
+import sys
 
 # Core imports
 from utils.middleware import RequestIdMiddleware, LoggingMiddleware
@@ -30,14 +31,68 @@ EXEMPT_PATHS = {
     "/static"
 }
 
-# --- Import Routers (only the ones that exist) ---
-from routers.summarize import router as summarize_router
-from routers.disease import router as disease_router  
-from routers.pubmed import router as pubmed_router
-from routers.trials import router as trials_router
-from routers.patient_education import router as patient_education_router
-from routers.readability import router as readability_router
-from routers.healthcheck import router as healthcheck_router
+# --- Import Routers (with explicit error handling) ---
+routers_loaded = []
+routers_failed = []
+
+try:
+    from routers.summarize import router as summarize_router
+    routers_loaded.append("summarize")
+except Exception as e:
+    logger.error(f"Failed to import summarize router: {e}")
+    routers_failed.append(f"summarize: {e}")
+    summarize_router = None
+
+try:
+    from routers.disease import router as disease_router
+    routers_loaded.append("disease")
+except Exception as e:
+    logger.error(f"Failed to import disease router: {e}")
+    routers_failed.append(f"disease: {e}")
+    disease_router = None
+
+try:
+    from routers.pubmed import router as pubmed_router
+    routers_loaded.append("pubmed")
+except Exception as e:
+    logger.error(f"Failed to import pubmed router: {e}")
+    routers_failed.append(f"pubmed: {e}")
+    pubmed_router = None
+
+try:
+    from routers.trials import router as trials_router
+    routers_loaded.append("trials")
+except Exception as e:
+    logger.error(f"Failed to import trials router: {e}")
+    routers_failed.append(f"trials: {e}")
+    trials_router = None
+
+try:
+    from routers.patient_education import router as patient_education_router
+    routers_loaded.append("patient_education")
+except Exception as e:
+    logger.error(f"Failed to import patient_education router: {e}")
+    routers_failed.append(f"patient_education: {e}")
+    patient_education_router = None
+
+try:
+    from routers.readability import router as readability_router
+    routers_loaded.append("readability")
+except Exception as e:
+    logger.error(f"Failed to import readability router: {e}")
+    routers_failed.append(f"readability: {e}")
+    readability_router = None
+
+try:
+    from routers.healthcheck import router as healthcheck_router
+    routers_loaded.append("healthcheck")
+except Exception as e:
+    logger.error(f"Failed to import healthcheck router: {e}")
+    routers_failed.append(f"healthcheck: {e}")
+    healthcheck_router = None
+
+logger.info(f"Routers loaded: {routers_loaded}")
+logger.info(f"Routers failed: {routers_failed}")
 
 # Import auth if it exists
 try:
@@ -61,13 +116,25 @@ except ImportError:
     sbar_report_wizard_router = None
     treatment_plan_wizard_router = None
 
+# Create FastAPI instance
 app = FastAPI(
     title="AI Nurse Florence",
     description="Healthcare AI Assistant providing evidence-based medical information",
     version="2.0.1",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
+
+# Log startup diagnostics
+print(f"=== AI NURSE FLORENCE STARTUP ===")
+print(f"Python version: {sys.version}")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Loaded routers: {routers_loaded}")
+print(f"Failed routers: {routers_failed}")
+print(f"Wizards available: {WIZARDS_AVAILABLE}")
+print(f"Auth available: {AUTH_AVAILABLE}")
+print("==================================")
 
 # Mount static files (HTML frontend)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -91,6 +158,18 @@ async def root():
         "health": "/health", 
         "api_health": "/api/v1/health",
         "frontend": "/app"
+    }
+
+# Diagnostic endpoint to see what loaded
+@app.get("/debug/status")
+async def debug_status():
+    """Debug endpoint to see what components loaded"""
+    return {
+        "routers_loaded": routers_loaded,
+        "routers_failed": routers_failed,
+        "wizards_available": WIZARDS_AVAILABLE,
+        "auth_available": AUTH_AVAILABLE,
+        "version": "2.0.1"
     }
 
 # --- API Versioning Router ---
@@ -145,13 +224,19 @@ async def admin_stats(
 ):
     return {"ok": True}
 
-# --- Include Routers ---
-api_router.include_router(summarize_router)
-api_router.include_router(disease_router)
-api_router.include_router(pubmed_router)
-api_router.include_router(trials_router)
-api_router.include_router(patient_education_router)
-api_router.include_router(readability_router)
+# --- Include Routers (only if they loaded successfully) ---
+if summarize_router:
+    api_router.include_router(summarize_router)
+if disease_router:
+    api_router.include_router(disease_router)
+if pubmed_router:
+    api_router.include_router(pubmed_router)
+if trials_router:
+    api_router.include_router(trials_router)
+if patient_education_router:
+    api_router.include_router(patient_education_router)
+if readability_router:
+    api_router.include_router(readability_router)
 
 # Add wizards if available
 if WIZARDS_AVAILABLE and patient_education_wizard_router:
@@ -162,7 +247,8 @@ if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
     api_router.include_router(treatment_plan_wizard_router)
 
 # Unprotected routes
-unprotected_router.include_router(healthcheck_router)
+if healthcheck_router:
+    unprotected_router.include_router(healthcheck_router)
 if AUTH_AVAILABLE and auth_router:
     unprotected_router.include_router(auth_router)
 
