@@ -180,31 +180,31 @@
 
         function testHealth() {
             const cacheBuster = Date.now() + Math.random();
-            const url = `https://ai-nurse-florence.vercel.app/api/v1/health?t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            const url = `/api/v1/health?t=${cacheBuster}&v=4&bust=${cacheBuster}`;
             makeRequest(url, 'Health Check');
         }
 
         function testDiabetes() {
             const cacheBuster = Date.now() + Math.random();
-            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=diabetes&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            const url = `/api/v1/disease/lookup?q=diabetes&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
             makeRequest(url, 'Diabetes Query');
         }
 
         function testCancer() {
             const cacheBuster = Date.now() + Math.random();
-            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=cancer&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            const url = `/api/v1/disease/lookup?q=cancer&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
             makeRequest(url, 'Cancer Query');
         }
 
         function testHypertension() {
             const cacheBuster = Date.now() + Math.random();
-            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=hypertension&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
+            const url = `/api/v1/disease/lookup?q=hypertension&t=${cacheBuster}&v=4&bust=${cacheBuster}`;
             makeRequest(url, 'Hypertension Query');
         }
 
         function testWithMaxCacheBusting() {
             const megaCacheBuster = Date.now() + '_' + Math.random() + '_' + Math.floor(Math.random() * 1000000);
-            const url = `https://ai-nurse-florence.vercel.app/api/v1/disease?q=asthma&t=${megaCacheBuster}&v=999&bust=${megaCacheBuster}&nocache=true&force=true`;
+            const url = `/api/v1/disease/lookup?q=asthma&t=${megaCacheBuster}&v=999&bust=${megaCacheBuster}&nocache=true&force=true`;
             makeRequest(url, 'FORCE TEST - Asthma (Max Cache Busting)');
         }
 

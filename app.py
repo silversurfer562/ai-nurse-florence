@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import httpx
 import json
 import time
@@ -29,6 +30,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files (HTML frontend)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Educational banner
 EDU_BANNER = "Educational purposes only — verify with healthcare providers. No PHI stored."
 
@@ -42,8 +46,15 @@ async def root():
         "banner": EDU_BANNER,
         "docs": "/docs",
         "health": "/health",
-        "api_health": "/api/v1/health"
+        "api_health": "/api/v1/health",
+        "frontend": "/static/index.html"
     }
+
+@app.get("/app")
+async def frontend():
+    """Serve the main frontend application"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/index.html")
 
 @app.get("/health")
 async def health():
