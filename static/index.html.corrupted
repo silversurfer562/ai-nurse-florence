@@ -6,7 +6,7 @@
     <title>AI Nurse Florence - Healthcare AI Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
+                const response = await fetch(`${API_BASE}/disease/?q=${encodeURIComponent(query)}`);   <style>
         :root {
             --primary: #2563eb;
             --primary-dark: #1d4ed8;
@@ -101,19 +101,20 @@
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
             font-weight: 500;
             margin-bottom: 2rem;
         }
         
         .status-healthy {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--success);
+            color: var(--white);
         }
         
         .status-error {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--error);
+            color: var(--white);
         }
         
         .btn {
@@ -121,9 +122,11 @@
             align-items: center;
             gap: 0.5rem;
             padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
+            font-size: 1rem;
             font-weight: 500;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
             margin: 0 0.5rem;
         }
         
@@ -138,36 +141,33 @@
         
         .demo {
             padding: 4rem 0;
+            background: var(--gray-100);
         }
         
         .demo h2 {
             text-align: center;
             font-size: 2rem;
-            color: var(--gray-900);
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
         }
         
         .demo-interface {
             background: var(--white);
             border-radius: 1rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            max-width: 800px;
+            margin: 0 auto;
         }
         
         .demo-header {
-            background: var(--gray-900);
+            background: var(--gray-800);
             color: var(--white);
             padding: 1rem 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
         
         .demo-tabs {
             display: flex;
             background: var(--gray-100);
-            border-bottom: 1px solid #e5e7eb;
         }
         
         .demo-tab {
@@ -183,16 +183,16 @@
         .demo-tab.active {
             background: var(--white);
             color: var(--primary);
-            border-bottom: 2px solid var(--primary);
         }
         
         .demo-content {
-            padding: 2rem;
+            padding: 1.5rem;
+            min-height: 400px;
         }
         
         .search-form {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
         
@@ -351,7 +351,7 @@
             
             try {
                 console.log('Checking system status...');
-                const response = await fetch(`${API_BASE}/health`);
+                const response = await fetch('/health');
                 console.log('Health response:', response.status, response.ok);
                 if (response.ok) {
                     const data = await response.json();
@@ -387,7 +387,7 @@
         function getDemoContent(type) {
             switch (type) {
                 case 'disease':
-                    return `
+                    return \`
                         <h3>Disease Information Search</h3>
                         <p>Search for comprehensive information about medical conditions.</p>
                         <div class="search-form">
@@ -395,10 +395,10 @@
                             <button class="search-btn" onclick="searchDisease()">Search</button>
                         </div>
                         <div id="disease-results" class="results"></div>
-                    `;
+                    \`;
                 
                 case 'pubmed':
-                    return `
+                    return \`
                         <h3>PubMed Literature Search</h3>
                         <p>Access medical research from PubMed database.</p>
                         <div class="search-form">
@@ -406,10 +406,10 @@
                             <button class="search-btn" onclick="searchPubmed()">Search</button>
                         </div>
                         <div id="pubmed-results" class="results"></div>
-                    `;
+                    \`;
                 
                 case 'summarize':
-                    return `
+                    return \`
                         <h3>Text Summarization</h3>
                         <p>Summarize medical texts and patient notes.</p>
                         <div class="search-form">
@@ -417,7 +417,7 @@
                             <button class="search-btn" onclick="summarizeText()">Summarize</button>
                         </div>
                         <div id="summarize-results" class="results"></div>
-                    `;
+                    \`;
                 
                 default:
                     return '<p>Demo not available.</p>';
@@ -437,23 +437,18 @@
             results.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
             
             try {
-                const response = await fetch(`${API_BASE}/disease/?q=${encodeURIComponent(query)}`);
+                const response = await fetch(\`\${API_BASE}/disease?q=\${encodeURIComponent(query)}\`);
                 const data = await response.json();
                 
-                if (data.status === 'success') {
-                    results.innerHTML = `
-                        <div class="result-item">
-                            <div class="result-title">${data.data.name || query}</div>
-                            <p><strong>Summary:</strong> ${data.data.summary}</p>
-                            <p><em>${data.data.banner}</em></p>
-                        </div>
-                    `;
-                } else {
-                    results.innerHTML = `<div class="result-item">Error: ${data.error || 'Unknown error'}</div>`;
-                }
+                results.innerHTML = \`
+                    <div class="result-item">
+                        <div class="result-title">Disease Information: \${query}</div>
+                        <div class="result-content">\${JSON.stringify(data, null, 2)}</div>
+                    </div>
+                \`;
                 
             } catch (error) {
-                results.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+                results.innerHTML = \`<div class="result-item">Error: \${error.message}</div>\`;
             }
         }
         
@@ -470,31 +465,18 @@
             results.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
             
             try {
-                const response = await fetch(`${API_BASE}/pubmed/search?q=${encodeURIComponent(query)}&retmax=3`);
+                const response = await fetch(\`\${API_BASE}/pubmed/search?q=\${encodeURIComponent(query)}&retmax=3\`);
                 const data = await response.json();
                 
-                if (data.status === 'success') {
-                    let resultsHtml = '';
-                    if (data.data.articles && data.data.articles.length > 0) {
-                        data.data.articles.forEach(article => {
-                            resultsHtml += `
-                                <div class="result-item">
-                                    <div class="result-title">${article.title}</div>
-                                    <p><strong>Authors:</strong> ${article.authors}</p>
-                                    <p><strong>Journal:</strong> ${article.journal}</p>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        resultsHtml = '<div class="result-item">No articles found.</div>';
-                    }
-                    results.innerHTML = resultsHtml;
-                } else {
-                    results.innerHTML = `<div class="result-item">Error: ${data.error || 'Search failed'}</div>`;
-                }
+                results.innerHTML = \`
+                    <div class="result-item">
+                        <div class="result-title">PubMed Results: \${query}</div>
+                        <div class="result-content">\${JSON.stringify(data, null, 2)}</div>
+                    </div>
+                \`;
                 
             } catch (error) {
-                results.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+                results.innerHTML = \`<div class="result-item">Error: \${error.message}</div>\`;
             }
         }
         
@@ -511,7 +493,7 @@
             results.innerHTML = '<div class="loading"><div class="spinner"></div> Summarizing...</div>';
             
             try {
-                const response = await fetch(`${API_BASE}/summarize/chat`, {
+                const response = await fetch(\`\${API_BASE}/summarize/chat\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: text })
@@ -519,19 +501,15 @@
                 
                 const data = await response.json();
                 
-                if (data.status === 'success') {
-                    results.innerHTML = `
-                        <div class="result-item">
-                            <div class="result-title">Summary</div>
-                            <p>${data.data.summary}</p>
-                        </div>
-                    `;
-                } else {
-                    results.innerHTML = `<div class="result-item">Error: ${data.error?.message || 'Summarization failed'}</div>`;
-                }
+                results.innerHTML = \`
+                    <div class="result-item">
+                        <div class="result-title">Summary</div>
+                        <div class="result-content">\${JSON.stringify(data, null, 2)}</div>
+                    </div>
+                \`;
                 
             } catch (error) {
-                results.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+                results.innerHTML = \`<div class="result-item">Error: \${error.message}</div>\`;
             }
         }
     </script>
