@@ -22,12 +22,11 @@ RUN pip install --upgrade pip && \
 # Copy application code
 COPY . .
 
-# Expose the application port (Railway will override this)
-EXPOSE $PORT
+# Expose the application port
+EXPOSE 8000
 
-# Health check - Railway will use the dynamically assigned port
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+# Health check - let Railway handle this with its own health check
+# CMD will use the proper PORT environment variable at runtime
 
 # Command to run the application - use PORT environment variable
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port $PORT"]
