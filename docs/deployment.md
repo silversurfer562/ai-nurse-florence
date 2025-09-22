@@ -4,44 +4,7 @@ This guide covers deployment strategies and best practices for the AI Nurse Flor
 
 ## 🚀 Deployment Options
 
-### 1. Vercel Serverless (Recommended for Demo/Development)
-
-#### Prerequisites
-- Vercel account
-- GitHub repository
-- Environment variables configured
-
-#### Setup
-1. **Connect Repository**
-   ```bash
-   vercel --prod
-   ```
-
-2. **Configure Environment Variables**
-   ```bash
-   # Required
-   OPENAI_API_KEY=your_openai_key_here
-   
-   # Optional but recommended
-   USE_LIVE=1
-   NCBI_API_KEY=your_ncbi_key_here
-   DATABASE_URL=postgresql://user:pass@host:port/db
-   REDIS_URL=redis://host:port
-   ```
-
-3. **Deploy**
-   ```bash
-   vercel --prod
-   ```
-
-#### Features
-- ✅ Automatic scaling
-- ✅ Global CDN
-- ✅ Zero server management
-- ❌ Cold starts may affect response time
-- ❌ Limited to serverless functions
-
-### 2. Docker Container (Recommended for Production)
+### 1. Docker Container (Recommended for Production)
 
 #### Prerequisites
 - Docker and Docker Compose
@@ -115,7 +78,7 @@ This guide covers deployment strategies and best practices for the AI Nurse Flor
 - ✅ Health checks and monitoring
 - ❌ Requires server management
 
-### 3. Kubernetes (Enterprise Production)
+### 2. Kubernetes (Enterprise Production)
 
 #### Prerequisites
 - Kubernetes cluster

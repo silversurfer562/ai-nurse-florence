@@ -170,7 +170,7 @@
             const cacheBuster = '?v=' + Date.now();
             
             links.forEach(link => {
-                if (!link.href.includes('vercel.app') && !link.href.includes('http')) {
+                if (!link.href.includes('http')) {
                     const url = new URL(link.href, window.location.origin);
                     url.searchParams.set('v', Date.now());
                     link.href = url.toString();

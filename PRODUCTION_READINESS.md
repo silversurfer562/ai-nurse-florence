@@ -59,7 +59,7 @@
 ### Deployment Infrastructure
 - ✅ **Docker Support**: Multi-stage Dockerfile with health checks
 - ✅ **Docker Compose**: Full stack with PostgreSQL, Redis, monitoring
-- ✅ **Vercel Ready**: Serverless deployment configuration
+- ✅ **Docker Ready**: Containerized deployment configuration
 - ✅ **Kubernetes Manifests**: Enterprise production deployment
 - ✅ **Environment Configuration**: Comprehensive .env.example template
 
@@ -83,7 +83,7 @@
 ## 🚀 DEPLOYMENT RECOMMENDATIONS
 
 ### Immediate Production Deployment
-1. **Vercel (Recommended for Demo/MVP)**
+1. **Docker Container (Recommended for Production)**
    - ✅ Zero-config deployment
    - ✅ Global CDN
    - ✅ Automatic HTTPS
@@ -173,7 +173,7 @@ The AI Nurse Florence API is production-ready with:
 - Multiple deployment options configured
 
 **Recommended Next Steps:**
-1. Deploy to Vercel for immediate availability
+1. Deploy with Docker for immediate availability
 2. Set up production monitoring (Prometheus + Grafana)
 3. Configure domain and SSL certificates
 4. Set up automated backups for PostgreSQL
