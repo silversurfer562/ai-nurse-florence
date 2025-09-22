@@ -1,18 +1,66 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-import httpx
-import json
-import time
-import logging
-from typing import Dict, Any, Optional, List
+from dotenv import load_dotenv
+import os
 
-# Set up basic logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Core imports
+from utils.middleware import RequestIdMiddleware, LoggingMiddleware
+from utils.logging import get_logger
+from utils.config import settings, get_settings
+from utils.security import SecurityHeadersMiddleware
 
-# Create FastAPI app
+# Load environment variables
+load_dotenv()
+
+# Set up logger
+logger = get_logger(__name__)
+
+# Define exempt paths for rate limiting
+EXEMPT_PATHS = {
+    "/docs",
+    "/redoc", 
+    "/openapi.json",
+    "/metrics",
+    "/health",
+    "/api/v1/health",
+    "/",
+    "/app",
+    "/static"
+}
+
+# --- Import Routers (only the ones that exist) ---
+from routers.summarize import router as summarize_router
+from routers.disease import router as disease_router  
+from routers.pubmed import router as pubmed_router
+from routers.trials import router as trials_router
+from routers.patient_education import router as patient_education_router
+from routers.readability import router as readability_router
+from routers.healthcheck import router as healthcheck_router
+
+# Import auth if it exists
+try:
+    from routers.auth import router as auth_router
+    AUTH_AVAILABLE = True
+except ImportError:
+    logger.warning("Auth router not available")
+    AUTH_AVAILABLE = False
+    auth_router = None
+
+# Import wizards if they exist
+try:
+    from routers.wizards.patient_education import router as patient_education_wizard_router
+    from routers.wizards.sbar_report import router as sbar_report_wizard_router
+    from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
+    WIZARDS_AVAILABLE = True
+except ImportError:
+    logger.warning("Wizard routers not available")
+    WIZARDS_AVAILABLE = False
+    patient_education_wizard_router = None
+    sbar_report_wizard_router = None
+    treatment_plan_wizard_router = None
+
 app = FastAPI(
     title="AI Nurse Florence",
     description="Healthcare AI Assistant providing evidence-based medical information",
@@ -21,175 +69,135 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
-
 # Mount static files (HTML frontend)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Educational banner
-EDU_BANNER = "Educational purposes only — verify with healthcare providers. No PHI stored."
-
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "AI Nurse Florence - Healthcare AI Assistant",
-        "status": "operational",
-        "version": "2.0.1",
-        "banner": EDU_BANNER,
-        "docs": "/docs",
-        "health": "/health",
-        "api_health": "/api/v1/health",
-        "frontend": "/static/index.html"
-    }
-
-@app.get("/app")
+# Frontend route
+@app.get("/app", response_class=HTMLResponse)
 async def frontend():
     """Serve the main frontend application"""
-    from fastapi.responses import FileResponse
     return FileResponse("static/index.html")
 
-@app.get("/health")
-async def health():
-    """Health check endpoint"""
+# Root endpoint  
+@app.get("/")
+async def root():
+    """Root endpoint with service information"""
     return {
-        "status": "healthy",
-        "service": "ai-nurse-florence",
+        "message": "AI Nurse Florence - Healthcare AI Assistant",
+        "status": "operational", 
         "version": "2.0.1",
-        "banner": EDU_BANNER,
-        "mode": "railway",
-        "apis": {
-            "mydisease": "https://mydisease.info/v1/",
-            "pubmed": "https://pubmed.ncbi.nlm.nih.gov/",
-            "clinicaltrials": "https://clinicaltrials.gov/api/v2/"
-        }
+        "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
+        "docs": "/docs",
+        "health": "/health", 
+        "api_health": "/api/v1/health",
+        "frontend": "/app"
     }
 
-@app.get("/api/v1/health")
-async def api_health():
-    """API health check endpoint"""
-    return await health()
+# --- API Versioning Router ---
+api_router = APIRouter(prefix="/api/v1")
+unprotected_router = APIRouter(prefix="/api/v1") 
 
-@app.get("/api/v1/disease/lookup")
-async def disease_lookup(q: str = Query(..., description="Disease or condition to search for")):
-    """Look up disease information using MyDisease.info API"""
+# --- Middleware Configuration ---
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestIdMiddleware)
+app.add_middleware(LoggingMiddleware)
+
+# Setup metrics if available
+try:
+    from utils.metrics import setup_metrics
+    setup_metrics(app)
+except ImportError:
+    logger.warning("Metrics not available")
+
+# Setup rate limiting if available  
+try:
+    from utils.rate_limit import RateLimiter
+    app.add_middleware(
+        RateLimiter,
+        requests_per_minute=settings.RATE_LIMIT_PER_MINUTE,
+        exempt_paths=EXEMPT_PATHS
+    )
+except ImportError:
+    logger.warning("Rate limiting not available")
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Checks for api-bearer environment variable in vercel deployment
+def require_bearer(request: Request):
+    expected = (get_settings().API_BEARER or "").strip()
+    auth = request.headers.get("authorization", "")
+    token = auth.split(" ", 1)[1] if auth.startswith("Bearer ") else ""
+    if not expected or token != expected:
+        raise HTTPException(401, "Unauthorized")
+
+@app.get("/admin/stats")
+async def admin_stats(
+    request: Request,
+    __=Depends(require_bearer),
+):
+    return {"ok": True}
+
+# --- Include Routers ---
+api_router.include_router(summarize_router)
+api_router.include_router(disease_router)
+api_router.include_router(pubmed_router)
+api_router.include_router(trials_router)
+api_router.include_router(patient_education_router)
+api_router.include_router(readability_router)
+
+# Add wizards if available
+if WIZARDS_AVAILABLE and patient_education_wizard_router:
+    api_router.include_router(patient_education_wizard_router)
+if WIZARDS_AVAILABLE and sbar_report_wizard_router:
+    api_router.include_router(sbar_report_wizard_router)
+if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
+    api_router.include_router(treatment_plan_wizard_router)
+
+# Unprotected routes
+unprotected_router.include_router(healthcheck_router)
+if AUTH_AVAILABLE and auth_router:
+    unprotected_router.include_router(auth_router)
+
+# Include routers in app
+app.include_router(api_router)
+app.include_router(unprotected_router)
+
+# Register exception handlers if available
+try:
+    from utils.error_handlers import register_exception_handlers
+    register_exception_handlers(app)
+except ImportError:
+    logger.warning("Exception handlers not available")
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    logger.info("AI Nurse Florence API starting up")
+    
+    # Initialize database if needed
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            # Query MyDisease.info API
-            url = f"https://mydisease.info/v1/query"
-            params = {
-                "q": q,
-                "size": 1,
-                "fields": "mondo.definition,disgenet.diseases_related_to_gene,chembl.indication"
-            }
-            
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            
-            if not data.get("hits"):
-                return {
-                    "query": q,
-                    "banner": EDU_BANNER,
-                    "message": f"No disease information found for '{q}'",
-                    "suggestions": "Try using medical terminology or check spelling"
-                }
-            
-            hit = data["hits"][0]
-            return {
-                "query": q,
-                "banner": EDU_BANNER,
-                "disease_info": hit,
-                "source": "MyDisease.info",
-                "timestamp": time.time()
-            }
-            
+        if "sqlite" in settings.DATABASE_URL:
+            logger.info("Using SQLite database - tables will be created as needed")
     except Exception as e:
-        logger.error(f"Disease lookup error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error looking up disease information: {str(e)}"
-        )
+        logger.warning(f"Database setup warning: {e}")
 
-@app.get("/api/v1/literature/search")
-async def literature_search(q: str = Query(..., description="Medical literature search query")):
-    """Search medical literature using PubMed API"""
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            # Search PubMed
-            search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-            search_params = {
-                "db": "pubmed",
-                "term": q,
-                "retmax": 5,
-                "retmode": "json",
-                "sort": "relevance"
-            }
-            
-            search_response = await client.get(search_url, params=search_params)
-            search_response.raise_for_status()
-            search_data = search_response.json()
-            
-            if not search_data.get("esearchresult", {}).get("idlist"):
-                return {
-                    "query": q,
-                    "banner": EDU_BANNER,
-                    "message": f"No literature found for '{q}'",
-                    "articles": []
-                }
-            
-            # Get article details
-            ids = search_data["esearchresult"]["idlist"]
-            summary_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
-            summary_params = {
-                "db": "pubmed",
-                "id": ",".join(ids),
-                "retmode": "json"
-            }
-            
-            summary_response = await client.get(summary_url, params=summary_params)
-            summary_response.raise_for_status()
-            summary_data = summary_response.json()
-            
-            articles = []
-            for uid in ids:
-                if uid in summary_data.get("result", {}):
-                    article = summary_data["result"][uid]
-                    articles.append({
-                        "pmid": uid,
-                        "title": article.get("title", ""),
-                        "authors": article.get("authors", []),
-                        "source": article.get("source", ""),
-                        "pubdate": article.get("pubdate", ""),
-                        "url": f"https://pubmed.ncbi.nlm.nih.gov/{uid}/"
-                    })
-            
-            return {
-                "query": q,
-                "banner": EDU_BANNER,
-                "articles": articles,
-                "total_found": len(articles),
-                "source": "PubMed",
-                "timestamp": time.time()
-            }
-            
-    except Exception as e:
-        logger.error(f"Literature search error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error searching literature: {str(e)}"
-        )
+    # Initialize OpenAI client if available
+    if settings.OPENAI_API_KEY:
+        try:
+            from openai import OpenAI as OpenAIClient
+            global client
+            client = OpenAIClient(api_key=settings.OPENAI_API_KEY)
+            logger.info("OpenAI client configured")
+        except Exception as e:
+            logger.warning(f"OpenAI client setup failed: {e}")
 
-if __name__ == "__main__":
-    import uvicorn
-    import os
-    port = int(os.environ.get("PORT", 8000))
-    logger.info(f"Starting AI Nurse Florence on port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+@app.on_event("shutdown") 
+async def shutdown_event() -> None:
+    logger.info("AI Nurse Florence API shutting down")
