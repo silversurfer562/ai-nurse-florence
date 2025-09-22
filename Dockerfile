@@ -28,5 +28,9 @@ EXPOSE 8000
 # Health check - let Railway handle this with its own health check
 # CMD will use the proper PORT environment variable at runtime
 
-# Command to run the application - use PORT environment variable
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port $PORT"]
+# Copy startup script and make it executable
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Command to run the application - use startup script
+CMD ["./start.sh"]
