@@ -159,7 +159,12 @@ async def frontend():
 # Root endpoint  
 @app.get("/")
 async def root():
-    """Root endpoint with service information"""
+    """Serve the main frontend application"""
+    return FileResponse("static/index.html")
+
+@app.get("/info")
+async def info():
+    """Service information endpoint"""
     return {
         "message": "AI Nurse Florence - Healthcare AI Assistant",
         "status": "operational", 
