@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="AI Nurse Florence",
     description="Healthcare AI Assistant providing evidence-based medical information",
-    version="2.0.0",
+    version="2.0.1",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -38,10 +38,11 @@ async def root():
     return {
         "message": "AI Nurse Florence - Healthcare AI Assistant",
         "status": "operational",
-        "version": "2.0.0",
+        "version": "2.0.1",
         "banner": EDU_BANNER,
         "docs": "/docs",
-        "health": "/api/v1/health"
+        "health": "/health",
+        "api_health": "/api/v1/health"
     }
 
 @app.get("/health")
@@ -50,7 +51,7 @@ async def health():
     return {
         "status": "healthy",
         "service": "ai-nurse-florence",
-        "version": "2.0.0",
+        "version": "2.0.1",
         "banner": EDU_BANNER,
         "mode": "railway",
         "apis": {
