@@ -36,8 +36,10 @@ $RECYCLE.BIN/
 .env.production
 .env.staging
 .env.test
+.env.secrets.local
 *.env
 !.env.example
+!.env.production.ready
 
 # API Keys and Secrets
 OPENAI_API_KEY.env
