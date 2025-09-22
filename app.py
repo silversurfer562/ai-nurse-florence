@@ -127,18 +127,20 @@ app = FastAPI(
 )
 
 # Log startup diagnostics
-print(f"=== AI NURSE FLORENCE RAILWAY DEPLOY DEBUG ===")
+print(f"=== AI NURSE FLORENCE FULL APPLICATION STARTING ===")
+print(f"THIS IS THE COMPLETE APP.PY WITH ALL MEDICAL FEATURES")
 print(f"Deployment ID: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
 print(f"Railway Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'unknown')}")
 print(f"Port: {os.environ.get('PORT', '8000')}")
-print(f"Git commit: 6990f32")
+print(f"Git commit: 1558a38")
 print(f"Python version: {sys.version}")
 print(f"Current working directory: {os.getcwd()}")
 print(f"Loaded routers: {routers_loaded}")
 print(f"Failed routers: {routers_failed}")
 print(f"Wizards available: {WIZARDS_AVAILABLE}")
 print(f"Auth available: {AUTH_AVAILABLE}")
-print("==================================================")
+print(f"Expected ~35 routes in full app")
+print("===========================================================")
 
 # Ensure health endpoint is available immediately
 print(f"Total app routes defined: {len(app.routes)}")
