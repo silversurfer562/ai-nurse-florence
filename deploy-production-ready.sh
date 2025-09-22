@@ -34,9 +34,9 @@ if grep -q "sk-your-actual-openai-api-key-here" .env.production.ready; then
 fi
 
 echo -e "${BLUE}📋 Pre-deployment checklist:${NC}"
-echo "✅ Secure JWT secret: 13e4a2ed4ff7ab0376acdbcaeddc84863c6d124374e8331d1e3f96f87457204d"
-echo "✅ Secure API bearer: jYZbnAbvRvs0gXfUI75AWNPFBrc0dA7a2z/xLVMQoRI="  
-echo "✅ Secure DB password: lWmZmyJ0QM/ysbSSatzKAA=="
+echo "✅ Secure JWT secret: [Generated secure 64-char hex key]"
+echo "✅ Secure API bearer: [Generated base64 token]"  
+echo "✅ Secure DB password: [Generated secure password]"
 echo "✅ Production CORS: https://ainurseflorence.com"
 echo "✅ All dependencies enabled in requirements.txt"
 

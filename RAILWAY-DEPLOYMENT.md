@@ -15,10 +15,10 @@ Copy and paste these environment variables into your Railway project:
 
 ```bash
 # JWT Secret (Generated securely)
-JWT_SECRET_KEY=13e4a2ed4ff7ab0376acdbcaeddc84863c6d124374e8331d1e3f96f87457204d
+JWT_SECRET_KEY=your-secure-jwt-secret-key-here
 
 # API Bearer Token (Generated securely)
-API_BEARER=jYZbnAbvRvs0gXfUI75AWNPFBrc0dA7a2z/xLVMQoRI=
+API_BEARER=your-secure-api-bearer-token-here
 
 # OpenAI API Key (Get from .env.secrets.local)
 OPENAI_API_KEY=sk-your-openai-api-key-here
@@ -172,8 +172,8 @@ JWT_EXPIRE_MINUTES=30
 ## 🎯 **Quick Copy-Paste for Railway Variables:**
 
 ```
-JWT_SECRET_KEY=13e4a2ed4ff7ab0376acdbcaeddc84863c6d124374e8331d1e3f96f87457204d
-API_BEARER=jYZbnAbvRvs0gXfUI75AWNPFBrc0dA7a2z/xLVMQoRI=
+JWT_SECRET_KEY=your-secure-jwt-secret-key-here
+API_BEARER=your-secure-api-bearer-token-here
 OPENAI_API_KEY=sk-your-openai-api-key-here
 NODE_ENV=production
 PYTHON_ENV=production
