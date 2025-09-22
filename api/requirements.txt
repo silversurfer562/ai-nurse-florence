@@ -1,23 +1,10 @@
-# AI Nurse Florence - API Dependencies
-# Production-ready dependencies with security and performance focus
-
-# Core Framework
-fastapi>=0.104.1,<0.105.0
-uvicorn[standard]>=0.24.0,<0.25.0
-pydantic>=2.4.0,<2.6.0
-
-# HTTP Client & Async Support
-httpx>=0.25.0,<0.26.0
-aiofiles>=23.2.0,<24.0.0
-
-# Configuration Management
-python-dotenv>=1.0.0,<1.1.0
-
-# Template Engine (Optional)
-jinja2>=3.1.2,<3.2.0
-
-# Data Validation & Serialization
-email-validator>=2.1.0,<2.2.0
+# AI Nurse Florence - Simplified for Vercel
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.4.0
+httpx>=0.25.0
+python-dotenv>=1.0.0
+requests>=2.31.0
 
 # Performance & Caching
 python-multipart>=0.0.6,<0.1.0
