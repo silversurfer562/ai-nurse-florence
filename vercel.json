@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "ai-nurse-florence",
   "regions": ["iad1"],
   "functions": {
     "api/index.py": {
@@ -50,7 +49,20 @@
       ]
     },
     {
-      "source": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=600"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
