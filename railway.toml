@@ -7,14 +7,5 @@ healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "always"
 
-[experimental]
-configVersion = 2
-
-[[services]]
-name = "ai-nurse-florence"
-
-[services.source]
-repo = "silversurfer562/ai-nurse-florence"
-
 [environments.production]
 variables = { }
