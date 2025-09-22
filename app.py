@@ -128,6 +128,7 @@ app = FastAPI(
 
 # Log startup diagnostics
 print(f"=== AI NURSE FLORENCE STARTUP ===")
+print(f"Deployment timestamp: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
 print(f"Python version: {sys.version}")
 print(f"Current working directory: {os.getcwd()}")
 print(f"Loaded routers: {routers_loaded}")
