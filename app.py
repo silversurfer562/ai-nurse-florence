@@ -85,6 +85,30 @@ except Exception as e:
     readability_router = None
 
 try:
+    from routers.education import router as education_router
+    routers_loaded.append("education")
+except Exception as e:
+    logger.error(f"Failed to import education router: {e}")
+    routers_failed.append(f"education: {e}")
+    education_router = None
+
+try:
+    from routers.medlineplus import router as medlineplus_router
+    routers_loaded.append("medlineplus")
+except Exception as e:
+    logger.error(f"Failed to import medlineplus router: {e}")
+    routers_failed.append(f"medlineplus: {e}")
+    medlineplus_router = None
+
+try:
+    from routers.clinical_documents import router as clinical_documents_router
+    routers_loaded.append("clinical_documents")
+except Exception as e:
+    logger.error(f"Failed to import clinical_documents router: {e}")
+    routers_failed.append(f"clinical_documents: {e}")
+    clinical_documents_router = None
+
+try:
     from routers.healthcheck import router as healthcheck_router
     routers_loaded.append("healthcheck")
 except Exception as e:
@@ -109,6 +133,8 @@ try:
     from routers.wizards.patient_education import router as patient_education_wizard_router
     from routers.wizards.sbar_report import router as sbar_report_wizard_router
     from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
+    from routers.wizards.clinical_trials import router as clinical_trials_wizard_router
+    from routers.wizards.disease_search import router as disease_search_wizard_router
     WIZARDS_AVAILABLE = True
 except ImportError:
     logger.warning("Wizard routers not available")
@@ -116,6 +142,8 @@ except ImportError:
     patient_education_wizard_router = None
     sbar_report_wizard_router = None
     treatment_plan_wizard_router = None
+    clinical_trials_wizard_router = None
+    disease_search_wizard_router = None
 
 # Create FastAPI instance
 app = FastAPI(
@@ -252,6 +280,12 @@ if patient_education_router:
     api_router.include_router(patient_education_router)
 if readability_router:
     api_router.include_router(readability_router)
+if education_router:
+    api_router.include_router(education_router)
+if medlineplus_router:
+    api_router.include_router(medlineplus_router)
+if clinical_documents_router:
+    api_router.include_router(clinical_documents_router)
 
 # Add wizards if available
 if WIZARDS_AVAILABLE and patient_education_wizard_router:
@@ -260,6 +294,10 @@ if WIZARDS_AVAILABLE and sbar_report_wizard_router:
     api_router.include_router(sbar_report_wizard_router)
 if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
     api_router.include_router(treatment_plan_wizard_router)
+if WIZARDS_AVAILABLE and clinical_trials_wizard_router:
+    api_router.include_router(clinical_trials_wizard_router)
+if WIZARDS_AVAILABLE and disease_search_wizard_router:
+    api_router.include_router(disease_search_wizard_router)
 
 # Unprotected routes
 if healthcheck_router:
