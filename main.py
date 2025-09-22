@@ -15,9 +15,12 @@ os.chdir(project_root)
 sys.path.insert(0, str(project_root))
 
 print("=== RAILWAY MAIN.PY ENTRY POINT ===")
+print(f"FORCE REBUILD: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
 print(f"Project root: {project_root}")
 print(f"Current working directory: {os.getcwd()}")
 print(f"Python path: {sys.path[0]}")
+print(f"Files in directory: {list(os.listdir('.'))[:10]}")
+print(f"app.py exists: {os.path.exists('app.py')}")
 
 # Import the complete FastAPI application
 try:
@@ -28,6 +31,11 @@ try:
     # Count routes to verify complete app loaded
     route_count = len([r for r in app.routes if hasattr(r, 'path')])
     print(f"✅ Total routes loaded: {route_count}")
+    
+    if route_count < 30:
+        print(f"⚠️ WARNING: Expected ~35 routes, only got {route_count}")
+    else:
+        print(f"🎉 SUCCESS: Complete app with {route_count} routes loaded!")
     
 except ImportError as e:
     print(f"❌ Failed to import app: {e}")
