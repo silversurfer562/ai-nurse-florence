@@ -1,11 +1,22 @@
 #!/bin/bash
-
 # AI Nurse Florence - Production Deployment Script
-# This script sets up the production environment with Docker
+# Secure Docker deployment with health checks and validation
 
-set -e
+set -euo pipefail
 
-echo "🏥 AI Nurse Florence - Production Deployment 🏥"
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+COMPOSE_FILE="docker-compose.production.yml"
+ENV_FILE=".env.production"
+PROJECT_NAME="ai-nurse-florence"
+
+echo -e "${BLUE}🏥 AI Nurse Florence - Production Deployment${NC}"
 echo "=================================================="
 
 # Colors for output
