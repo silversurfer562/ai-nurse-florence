@@ -3,7 +3,7 @@ from models.schemas import PatientEducationRequest, PatientEducation
 from services.education_service import make_patient_education
 from utils.guardrails import educational_banner
 
-router = APIRouter(prefix="/v1", tags=["education"])
+router = APIRouter(prefix="/patient-education", tags=["education"])
 example = {
     "banner": "Draft for clinician review — not medical advice. No PHI stored.",
     "topic": "Asthma",
@@ -22,7 +22,7 @@ example = {
 
 
 @router.post(
-    "/patient-education",
+    "/",
     response_model=PatientEducation,
     responses={200: {"content": {"application/json": {"example": example}}}},
 )

@@ -4,10 +4,10 @@ from models.schemas import ClinicalTrialsResponse, ClinicalTrial
 from services.trials_service import search_trials
 from utils.guardrails import educational_banner
 
-router = APIRouter(prefix="/v1", tags=["clinicaltrials"])
+router = APIRouter(prefix="/trials", tags=["clinicaltrials"])
 
 
-@router.get("/clinicaltrials/search", response_model=ClinicalTrialsResponse)
+@router.get("/search", response_model=ClinicalTrialsResponse)
 def clinical_trials(
     condition: str = Query(...),
     status: Optional[str] = Query(None, pattern="^(recruiting|active|completed)$"),
