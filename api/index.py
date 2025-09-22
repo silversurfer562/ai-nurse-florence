@@ -934,3 +934,12 @@ async def internal_server_error_handler(request: Request, exc: Exception):
             "support": "Please try again or contact support if the issue persists"
         }
     )
+
+# Vercel handler
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    # If mangum is not available, create a simple handler
+    def handler(event, context):
+        return app

@@ -56,7 +56,9 @@
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "http-proxy-middleware": "^3.0.0"
+  },
   "browserslist": [
     "> 1%",
     "last 2 versions",

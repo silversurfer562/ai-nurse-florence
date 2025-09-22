@@ -1,26 +1,9 @@
-# AI Nurse Florence - Simplified for Vercel
-fastapi>=0.104.1
-uvicorn[standard]>=0.24.0
-pydantic>=2.4.0
-httpx>=0.25.0
-python-dotenv>=1.0.0
-requests>=2.31.0
-
-# Performance & Caching
-python-multipart>=0.0.6,<0.1.0
-
-# Security Headers and CORS
-starlette>=0.27.0,<0.28.0
-
-# Production WSGI Server (for local development)
-gunicorn>=21.2.0,<22.0.0
-
-# Optional: Database Support (uncomment if needed)
-# sqlalchemy>=2.0.23,<2.1.0
-# alembic>=1.12.1,<1.13.0
-
-# Optional: Redis Support (uncomment if needed) 
-# redis>=5.0.1,<5.1.0
+fastapi==0.104.1
+uvicorn==0.24.0
+requests==2.31.0
+python-multipart==0.0.6
+starlette==0.27.0
+mangum==0.17.0
 
 # Optional: Authentication (uncomment if needed)
 # python-jose[cryptography]>=3.3.0,<3.4.0
