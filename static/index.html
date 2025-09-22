@@ -350,14 +350,19 @@
             const statusElement = document.getElementById('system-status');
             
             try {
+                console.log('Checking system status...');
                 const response = await fetch('/health');
+                console.log('Health response:', response.status, response.ok);
                 if (response.ok) {
+                    const data = await response.json();
+                    console.log('Health data:', data);
                     statusElement.className = 'status-badge status-healthy';
                     statusElement.innerHTML = '<i class="fas fa-check-circle"></i> System Online';
                 } else {
-                    throw new Error('Health check failed');
+                    throw new Error(`Health check failed with status: ${response.status}`);
                 }
             } catch (error) {
+                console.error('Health check error:', error);
                 statusElement.className = 'status-badge status-error';
                 statusElement.innerHTML = '<i class="fas fa-times-circle"></i> System Offline';
             }
