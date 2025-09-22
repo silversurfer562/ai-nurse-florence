@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
     
     # Core App Settings
-    API_BEARER: str = "jYZbnAbvRvs0gXfUI75AWNPFBrc0dA7a2z/xLVMQoRI="
+    API_BEARER: str = "default-api-key-change-in-production"
     CORS_ORIGINS_STR: str = Field("https://ainurseflorence.com,https://www.ainurseflorence.com", alias="CORS_ORIGINS")
     LOG_LEVEL: str = "INFO"
     
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # OAuth2 Settings
     OAUTH_CLIENT_ID: Optional[str] = None
     OAUTH_CLIENT_SECRET: Optional[str] = None
-    JWT_SECRET_KEY: str = "13e4a2ed4ff7ab0376acdbcaeddc84863c6d124374e8331d1e3f96f87457204d"
+    JWT_SECRET_KEY: str = "a_very_secret_key_change_in_production"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     
