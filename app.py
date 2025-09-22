@@ -162,6 +162,12 @@ async def root():
         "frontend": "/app"
     }
 
+# Health endpoint for Railway healthcheck
+@app.get("/health")
+async def health():
+    """Simple health check endpoint for Railway"""
+    return {"status": "healthy", "timestamp": "2025-09-22"}
+
 # Diagnostic endpoint to see what loaded
 @app.get("/debug/status")
 async def debug_status():
