@@ -1,36 +1,343 @@
+# ================================
+# AI Nurse Florence - Git Ignore Rules
+# ================================
+
+# ================================
+# OPERATING SYSTEM FILES
+# ================================
 # macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Node / Next.js
-node_modules/
-.next/
-out/
-dist/
-*.log
-*.tsbuildinfo
-coverage/
+# Windows
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
 
-# Python
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ================================
+# ENVIRONMENT & SECRETS
+# ================================
+# Environment files (NEVER commit these!)
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+*.env
+!.env.example
+
+# API Keys and Secrets
+OPENAI_API_KEY.env
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+
+# ================================
+# PYTHON & FASTAPI
+# ================================
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*.egg-info/
-.eggs/
-.venv/
-venv/
-env/
+*$py.class
+*.so
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
 build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# Unit test / coverage reports
+htmlcov/
 .coverage
-pytest_cache/
-.mypy_cache/
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
 .ipynb_checkpoints
 
-# VS Code
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ================================
+# NODE.JS & JAVASCRIPT
+# ================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# ================================
+# DATABASES
+# ================================
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# PostgreSQL
+*.sql.gz
+
+# Database dumps
+*.dump
+*.sql
+
+# ================================
+# LOGGING & MONITORING
+# ================================
+# Log files
+*.log
+logs/
+*.log.*
+log/
+
+# Monitoring data
+prometheus-data/
+grafana-data/
+
+# ================================
+# DEVELOPMENT TOOLS
+# ================================
+# IDE files
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
-ai-nurse-florence-plan-for dev.txt
-OPENAI_API_KEY.env
-.DS_Store
-.vercel
+!.vscode/tasks.json
+
+.idea/
+*.swp
+*.swo
+*~
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ================================
+# DEPLOYMENT & BUILD ARTIFACTS
+# ================================
+# Vercel
+.vercel/
+
+# Docker
+.dockerignore
+
+# Build outputs
+build/
+dist/
+out/
+
+# Deployment artifacts
+deployment/
+*.tar.gz
+*.zip
+
+# ================================
+# TESTING
+# ================================
+# Test artifacts
+.coverage
+.tox/
+.pytest_cache/
+test-reports/
+test-results/
+
+# ================================
+# DOCUMENTATION
+# ================================
+# Documentation build
+docs/_build/
+site/
+
+# ================================
+# TEMPORARY FILES
+# ================================
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# ================================
+# PROJECT SPECIFIC
+# ================================
+# Development notes and plans
+ai-nurse-florence-plan-for-dev.txt
+DEVELOPMENT_NOTES.md
+TODO.md
+
+# Cache directories
+.cache/
+cache/
+
+# Artifacts
+artifacts/
+.artifacts/
+
+# Local configuration overrides
+local.py
+local_settings.py
+
+# ================================
+# SECURITY & COMPLIANCE
+# ================================
+# Security scan reports
+.bandit
+security-reports/
+
+# Compliance artifacts
+compliance/
+audit-reports/

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Nurse Florence - Professional Clinical Workspace</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .clinical-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #3b82f6;
+        }
+        .urgent-card {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+        .success-card {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+        .professional-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .action-button {
+            transition: all 0.3s ease;
+        }
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .template-preview {
+            font-family: 'Courier New', monospace;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+        }
+        .nurse-profile {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Professional Header -->
+    <header class="professional-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-stethoscope text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-sm text-blue-100">Continuing Education Assistant</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="nurse-profile rounded-lg px-4 py-2 text-gray-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right">
+                            <p class="text-sm font-medium" id="nurseName">Professional User</p>
+                            <p class="text-xs text-gray-600" id="nurseUnit">Clinical Unit</p>
+                        </div>
+                        <div class="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                            <span id="nurseInitials">NU</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation -->
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-8 overflow-x-auto">
+                <button onclick="showSection('dashboard')" class="nav-tab active flex items-center space-x-2 py-4 px-2 border-b-2 border-blue-500 text-blue-600">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="showSection('continuing-ed')" class="nav-tab flex items-center space-x-2 py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Learning</span>
+                </button>
+                <button onclick="showSection('documentation')" class="nav-tab flex items-center space-x-2 py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-file-medical"></i>
+                    <span>Documents</span>
+                </button>
+                <button onclick="showSection('communication')" class="nav-tab flex items-center space-x-2 py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-comments-medical"></i>
+                    <span>Communication</span>
+                </button>
+                <button onclick="showSection('patient-education')" class="nav-tab flex items-center space-x-2 py-4 px-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Patient Education</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Professional Dashboard</h2>
+                <p class="text-gray-600">Supporting continuing education and evidence-based nursing practice</p>
+            </div>
+
+            <!-- Quick Actions Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="clinical-card rounded-lg p-6 action-button cursor-pointer" onclick="showSection('continuing-ed')">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-graduation-cap text-blue-600 text-2xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900">Today's Learning</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Work-related Q&A and clinical scenarios</p>
+                    <span class="text-blue-600 text-sm font-medium">Start Learning →</span>
+                </div>
+
+                <div class="clinical-card rounded-lg p-6 action-button cursor-pointer" onclick="showSection('documentation')">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-file-medical text-green-600 text-2xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900">Create Documents</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">SBAR reports, care plans, assessments</p>
+                    <span class="text-green-600 text-sm font-medium">Generate Docs →</span>
+                </div>
+
+                <div class="clinical-card rounded-lg p-6 action-button cursor-pointer" onclick="showSection('communication')">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-comments-medical text-purple-600 text-2xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900">Team Communication</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Emails to physicians and allied health</p>
+                    <span class="text-purple-600 text-sm font-medium">Draft Messages →</span>
+                </div>
+
+                <div class="clinical-card rounded-lg p-6 action-button cursor-pointer" onclick="showSection('patient-education')">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-chalkboard-teacher text-orange-600 text-2xl mr-3"></i>
+                        <h3 class="font-semibold text-gray-900">Patient Education</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">Create educational handouts and materials</p>
+                    <span class="text-orange-600 text-sm font-medium">Create Materials →</span>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                        Recent Activity
+                    </h3>
+                </div>
+                <div class="p-6 space-y-4" id="recentActivity">
+                    <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900">Welcome to AI Nurse Florence</p>
+                            <p class="text-xs text-gray-500">Start by exploring continuing education or creating documents</p>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continuing Education Section -->
+        <div id="continuing-ed" class="section hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Continuing Education</h2>
+                <p class="text-gray-600">Evidence-based learning for work-related clinical questions</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Clinical Q&A -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-question-circle text-blue-600 mr-2"></i>
+                            Work-Related Q&A
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">Get evidence-based answers with custom query optimization</p>
+                    </div>
+                    <div class="p-6">
+                        <!-- Custom Optimization Screens -->
+                        <div class="mb-4">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">🎯 Query Optimization Screens</h4>
+                            <div class="grid grid-cols-1 gap-2">
+                                <button onclick="openOptimizer('assessment')" class="text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="font-medium text-sm text-gray-900">Clinical Assessment Optimizer</div>
+                                            <div class="text-xs text-gray-500">Symptom analysis, differential considerations</div>
+                                        </div>
+                                        <i class="fas fa-arrow-right text-blue-500"></i>
+                                    </div>
+                                </button>
+                                <button onclick="openOptimizer('medication')" class="text-left p-3 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="font-medium text-sm text-gray-900">Medication Query Builder</div>
+                                            <div class="text-xs text-gray-500">Drug interactions, dosing, contraindications</div>
+                                        </div>
+                                        <i class="fas fa-arrow-right text-green-500"></i>
+                                    </div>
+                                </button>
+                                <button onclick="openOptimizer('emergency')" class="text-left p-3 border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="font-medium text-sm text-gray-900">Emergency Scenario Assistant</div>
+                                            <div class="text-xs text-gray-500">Rapid decision support, protocol guidance</div>
+                                        </div>
+                                        <i class="fas fa-arrow-right text-red-500"></i>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-200 pt-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Quick Clinical Question</label>
+                                    <textarea 
+                                        id="clinicalQuestion" 
+                                        class="w-full p-3 border border-gray-300 rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        rows="3"
+                                        placeholder="e.g., What are the early signs of sepsis in elderly patients?"
+                                    ></textarea>
+                                </div>
+                                <button onclick="generateContinuingEdResponse()" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                                    Get Evidence-Based Answer
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Popular Questions Today</h4>
+                            <div class="space-y-2">
+                                <button onclick="loadQuestion('What are the normal vital sign ranges for different age groups?')" class="text-left w-full p-2 text-sm text-gray-600 hover:bg-gray-50 rounded border">
+                                    • Normal vital sign ranges by age
+                                </button>
+                                <button onclick="loadQuestion('How do I calculate pediatric medication dosages safely?')" class="text-left w-full p-2 text-sm text-gray-600 hover:bg-gray-50 rounded border">
+                                    • Pediatric medication calculations
+                                </button>
+                                <button onclick="loadQuestion('What is the proper protocol for post-surgical wound care?')" class="text-left w-full p-2 text-sm text-gray-600 hover:bg-gray-50 rounded border">
+                                    • Post-surgical wound care protocols
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinical Scenarios -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-scenario text-green-600 mr-2"></i>
+                            Clinical Scenarios
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">Interactive case studies for decision-making practice</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Current Scenario</h4>
+                            <p class="text-sm text-gray-600 mb-3">
+                                You're caring for a 68-year-old patient with CHF. Their BP is 160/95, HR 110, 
+                                and they're showing signs of fluid overload. What are your next steps?
+                            </p>
+                            <button class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                                Continue Scenario
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button class="border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors">
+                                New Scenario
+                            </button>
+                            <button class="border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors">
+                                Review Completed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div id="documentation" class="section hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Clinical Documentation</h2>
+                <p class="text-gray-600">Generate professional documents with templates</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- SBAR Reports -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-file-medical text-blue-600 mr-2"></i>
+                            SBAR Reports
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <button onclick="openSBARGenerator()" class="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 hover:text-blue-600 transition-colors mb-4">
+                            <i class="fas fa-plus text-2xl mb-2"></i>
+                            <div class="font-medium">Create SBAR Report</div>
+                        </button>
+                        
+                        <div class="space-y-2" id="sbarDrafts">
+                            <!-- Draft items will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Care Plans -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-clipboard-list text-green-600 mr-2"></i>
+                            Care Plans
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <button onclick="openCarePlanGenerator()" class="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-500 hover:text-green-600 transition-colors mb-4">
+                            <i class="fas fa-plus text-2xl mb-2"></i>
+                            <div class="font-medium">Create Care Plan</div>
+                        </button>
+                        
+                        <div class="space-y-2" id="carePlanDrafts">
+                            <!-- Draft items will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assessment Notes -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-stethoscope text-purple-600 mr-2"></i>
+                            Assessment Notes
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <button class="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-purple-500 hover:text-purple-600 transition-colors mb-4">
+                            <i class="fas fa-plus text-2xl mb-2"></i>
+                            <div class="font-medium">Create Assessment</div>
+                        </button>
+                        
+                        <div class="space-y-2">
+                            <!-- Draft items will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Communication Section -->
+        <div id="communication" class="section hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Clinical AI Assistant</h2>
+                <p class="text-gray-600">Get evidence-based clinical guidance and professional communication support</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Smart Chat Interface -->
+                <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-brain text-purple-600 mr-2"></i>
+                            Clinical AI Assistant
+                            <div id="optimizedIndicator" class="hidden ml-3 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                <i class="fas fa-magic"></i> Optimized Query
+                            </div>
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <!-- Chat Messages Area -->
+                        <div id="chatMessages" class="bg-gray-50 rounded-lg p-4 h-96 overflow-y-auto mb-4 border">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-comments text-4xl mb-4"></i>
+                                <p>Start a conversation with your clinical AI assistant</p>
+                                <p class="text-sm mt-2">Use the Query Optimizer for enhanced responses</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Input -->
+                        <div class="flex space-x-3">
+                            <div class="flex-1">
+                                <textarea 
+                                    id="chatInput" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    rows="3"
+                                    placeholder="Ask a clinical question or describe your assessment needs..."
+                                ></textarea>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <button onclick="optimizeQuery()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm whitespace-nowrap">
+                                    <i class="fas fa-magic mr-1"></i>
+                                    Optimize
+                                </button>
+                                <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                    <i class="fas fa-paper-plane mr-1"></i>
+                                    Send
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button onclick="loadQuickQuery('medication-review')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-pills mr-1"></i> Medication Review
+                            </button>
+                            <button onclick="loadQuickQuery('pain-assessment')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-hand-paper mr-1"></i> Pain Assessment
+                            </button>
+                            <button onclick="loadQuickQuery('discharge-planning')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-home mr-1"></i> Discharge Planning
+                            </button>
+                            <button onclick="loadQuickQuery('fall-risk')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> Fall Risk
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Communication Templates -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-user-md text-blue-600 mr-2"></i>
+                            Physician Communication
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <button onclick="openPhysicianEmailGenerator()" class="w-full border border-gray-300 rounded-lg p-3 text-left hover:bg-gray-50 transition-colors mb-3">
+                            <i class="fas fa-envelope mr-2"></i>
+                            <span>Draft Email to Physician</span>
+                        </button>
+                        <button class="w-full border border-gray-300 rounded-lg p-3 text-left hover:bg-gray-50 transition-colors mb-3">
+                            <i class="fas fa-phone mr-2"></i>
+                            <span>Phone Consultation Template</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Allied Health Communication -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-users text-green-600 mr-2"></i>
+                            Allied Health Team
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <button class="w-full border border-gray-300 rounded-lg p-3 text-left hover:bg-gray-50 transition-colors mb-3">
+                            <i class="fas fa-walking mr-2"></i>
+                            <span>Physical Therapy Referral</span>
+                        </button>
+                        <button class="w-full border border-gray-300 rounded-lg p-3 text-left hover:bg-gray-50 transition-colors mb-3">
+                            <i class="fas fa-hands-helping mr-2"></i>
+                            <span>Social Work Consultation</span>
+                        </button>
+                        <button class="w-full border border-gray-300 rounded-lg p-3 text-left hover:bg-gray-50 transition-colors mb-3">
+                            <i class="fas fa-utensils mr-2"></i>
+                            <span>Dietary Consultation</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Education Section -->
+        <div id="patient-education" class="section hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Patient Education Materials</h2>
+                <p class="text-gray-600">Create educational handouts and materials for patients and families</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-chalkboard-teacher text-orange-600 mr-2"></i>
+                        Create Patient Education Material
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <button onclick="openPatientEducationGenerator()" class="w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors mb-6">
+                        <i class="fas fa-plus mr-2"></i>
+                        Create New Patient Handout
+                    </button>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <h4 class="font-medium text-gray-900 mb-2">Diabetes Management</h4>
+                            <p class="text-sm text-gray-600 mb-3">Blood sugar monitoring and care</p>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Ready</span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <h4 class="font-medium text-gray-900 mb-2">Post-Op Care</h4>
+                            <p class="text-sm text-gray-600 mb-3">Surgical recovery instructions</p>
+                            <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Draft</span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <h4 class="font-medium text-gray-900 mb-2">Medication Safety</h4>
+                            <p class="text-sm text-gray-600 mb-3">Safe medication practices at home</p>
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Completed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Document Generation -->
+    <div id="documentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">Generate Document</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="modalContent" class="p-6">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentUser = {
+            name: 'Professional User',
+            unit: 'Clinical Unit',
+            initials: 'NU'
+        };
+
+        // Navigation functions
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            event.target.closest('.nav-tab').classList.add('active', 'border-blue-500', 'text-blue-600');
+            event.target.closest('.nav-tab').classList.remove('border-transparent', 'text-gray-500');
+        }
+
+        // Modal functions
+        function closeModal() {
+            document.getElementById('documentModal').classList.add('hidden');
+        }
+
+        function openModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('documentModal').classList.remove('hidden');
+        }
+
+        // SBAR Generator
+        function openSBARGenerator() {
+            const content = `
+                <form onsubmit="generateSBAR(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Patient Name</label>
+                            <input type="text" id="sbar_patient_name" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Patient ID</label>
+                            <input type="text" id="sbar_patient_id" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Situation</label>
+                        <textarea id="sbar_situation" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Describe the current clinical situation..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Background</label>
+                        <textarea id="sbar_background" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Relevant background information..."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Assessment</label>
+                        <textarea id="sbar_assessment" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Your clinical assessment findings..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Recommendation</label>
+                        <textarea id="sbar_recommendation" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Your recommendations for action..." required></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Generate SBAR Report</button>
+                    </div>
+                </form>
+            `;
+            openModal('Generate SBAR Report', content);
+        }
+
+        // Patient Education Generator
+        function openPatientEducationGenerator() {
+            const content = `
+                <form onsubmit="generatePatientEducation(event)" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Education Topic</label>
+                        <input type="text" id="edu_topic" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500" placeholder="e.g., Managing Diabetes at Home" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Main Information</label>
+                        <textarea id="edu_main_info" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500" rows="4" placeholder="Key information the patient needs to know..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
+                        <textarea id="edu_instructions" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500" rows="3" placeholder="Specific instructions for the patient..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Warning Signs</label>
+                        <textarea id="edu_warning_signs" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500" rows="3" placeholder="Signs that warrant immediate attention..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">When to Contact Healthcare Team</label>
+                        <textarea id="edu_contact_criteria" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500" rows="2" placeholder="When to call or contact providers..." required></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700">Generate Patient Education</button>
+                    </div>
+                </form>
+            `;
+            openModal('Create Patient Education Material', content);
+        }
+
+        // Physician Email Generator
+        function openPhysicianEmailGenerator() {
+            const content = `
+                <form onsubmit="generatePhysicianEmail(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Patient Name</label>
+                            <input type="text" id="email_patient_name" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Physician Name</label>
+                            <input type="text" id="email_physician_name" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500" placeholder="Dr. Smith">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Clinical Update</label>
+                        <textarea id="email_clinical_update" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500" rows="3" placeholder="Summary of clinical changes or updates..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Assessment</label>
+                        <textarea id="email_assessment" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500" rows="3" placeholder="Current clinical assessment..." required></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Concerns/Questions</label>
+                        <textarea id="email_concerns" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500" rows="3" placeholder="Specific concerns or questions for the physician..." required></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">Generate Email Draft</button>
+                    </div>
+                </form>
+            `;
+            openModal('Draft Email to Physician', content);
+        }
+
+        // Load sample question into continuing education
+        function loadQuestion(question) {
+            document.getElementById('clinicalQuestion').value = question;
+        }
+
+        // Open custom optimization screens
+        function openOptimizer(type) {
+            const optimizers = {
+                'assessment': 'clinical-assessment-optimizer.html',
+                'medication': 'medication-optimizer.html',
+                'safety': 'safety-optimizer.html'
+            };
+            
+            if (optimizers[type]) {
+                window.open(optimizers[type], '_blank');
+            } else {
+                alert('This optimizer is coming soon!');
+            }
+        }
+
+        // ===== SMART CHAT INTERFACE FUNCTIONS =====
+        
+        let chatHistory = [];
+        
+        // Initialize chat on page load
+        function initializeChat() {
+            // Check for optimized query from URL params or localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const optimizedQuery = localStorage.getItem('optimizedQuery');
+            
+            if (urlParams.get('optimized') === 'true' && optimizedQuery) {
+                // Show optimized indicator
+                document.getElementById('optimizedIndicator').classList.remove('hidden');
+                
+                // Load the optimized query into chat input
+                document.getElementById('chatInput').value = optimizedQuery;
+                
+                // Auto-focus on send button
+                setTimeout(() => {
+                    alert('🎯 Optimized query loaded! Click Send to get enhanced clinical guidance.');
+                }, 500);
+                
+                // Clear the stored query
+                localStorage.removeItem('optimizedQuery');
+            }
+        }
+        
+        // Send message function
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addMessageToChat('user', message);
+            
+            // Clear input
+            input.value = '';
+            
+            // Show typing indicator
+            addTypingIndicator();
+            
+            try {
+                // Simulate AI response (replace with actual OpenAI API call)
+                await simulateAIResponse(message);
+            } catch (error) {
+                removeTypingIndicator();
+                addMessageToChat('assistant', 'I apologize, but I\'m experiencing technical difficulties. Please try again or contact technical support.');
+            }
+        }
+        
+        // Add message to chat interface
+        function addMessageToChat(sender, message) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mb-4 ${sender === 'user' ? 'text-right' : 'text-left'}`;
+            
+            const isOptimized = message.includes('CLINICAL ASSESSMENT REQUEST');
+            
+            messageDiv.innerHTML = `
+                <div class="inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    sender === 'user' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-800'
+                }">
+                    ${isOptimized ? '<i class="fas fa-magic mr-1"></i>' : ''}
+                    <div class="whitespace-pre-wrap">${message}</div>
+                    ${sender === 'assistant' ? '<div class="text-xs mt-1 opacity-75">Educational purposes only</div>' : ''}
+                </div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Store in history
+            chatHistory.push({sender, message, timestamp: new Date()});
+        }
+        
+        // Add typing indicator
+        function addTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'mb-4 text-left';
+            typingDiv.innerHTML = `
+                <div class="inline-block px-4 py-2 bg-gray-100 rounded-lg">
+                    <div class="flex space-x-1">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+        
+        // Simulate AI response (replace with actual OpenAI integration)
+        async function simulateAIResponse(userMessage) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            removeTypingIndicator();
+            
+            let response = '';
+            const isOptimized = userMessage.includes('CLINICAL ASSESSMENT REQUEST');
+            
+            if (isOptimized) {
+                response = `🎯 OPTIMIZED CLINICAL RESPONSE
+
+Based on your enhanced query, here's evidence-based clinical guidance:
+
+**Assessment Priorities:**
+• Primary assessment findings and significance
+• Risk stratification and safety considerations
+• Immediate interventions required
+
+**Nursing Interventions:**
+• Specific nursing actions and monitoring
+• Patient safety protocols
+• Documentation requirements
+
+**When to Escalate:**
+• Critical parameters requiring physician notification
+• Warning signs for immediate escalation
+• Communication templates for reporting
+
+**Patient Education Points:**
+• Key teaching priorities
+• Safety instructions for patient/family
+• Follow-up care requirements
+
+*This response was enhanced using your optimized query structure for maximum clinical relevance.*
+
+**Evidence Sources:**
+- American Nurses Association Practice Standards
+- Evidence-based clinical guidelines
+- Peer-reviewed nursing literature
+
+*Educational purposes only - verify with healthcare providers.*`;
+            } else {
+                response = `Thank you for your clinical question. I can provide evidence-based information to support your nursing practice.
+
+For more detailed and relevant guidance, I recommend using the **Query Optimizer** to enhance your question. This will help me provide:
+
+• More specific clinical recommendations
+• Targeted nursing interventions  
+• Appropriate escalation criteria
+• Relevant patient education points
+
+Would you like me to help you optimize this query for better results?
+
+*Educational purposes only - always verify with healthcare providers.*`;
+            }
+            
+            addMessageToChat('assistant', response);
+        }
+        
+        // Quick query loaders
+        function loadQuickQuery(type) {
+            const queries = {
+                'medication-review': 'I need guidance on medication administration safety checks and patient education for a new prescription.',
+                'pain-assessment': 'Help me with comprehensive pain assessment techniques and documentation requirements.',
+                'discharge-planning': 'What are the key nursing considerations for discharge planning and patient education?',
+                'fall-risk': 'I need to assess fall risk factors and implement appropriate prevention strategies.'
+            };
+            
+            if (queries[type]) {
+                document.getElementById('chatInput').value = queries[type];
+            }
+        }
+        
+        // Optimize current query
+        function optimizeQuery() {
+            const currentQuery = document.getElementById('chatInput').value.trim();
+            if (!currentQuery) {
+                alert('Please enter a question first, then click Optimize to enhance it.');
+                return;
+            }
+            
+            // Store current query for the optimizer
+            localStorage.setItem('baseQuery', currentQuery);
+            
+            // Open optimizer in new tab
+            window.open('clinical-assessment-optimizer.html', '_blank');
+        }
+        
+        // Handle Enter key in chat input
+        document.getElementById('chatInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Initialize chat when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChat();
+        });
+                'medication': 'medication-query-builder.html', // Future implementation
+                'emergency': 'emergency-scenario-assistant.html', // Future implementation
+                'pediatric': 'pediatric-care-optimizer.html', // Future implementation
+                'icu': 'icu-critical-care-optimizer.html' // Future implementation
+            };
+            
+            if (optimizers[type]) {
+                // In a real implementation, this would navigate to the optimizer
+                if (type === 'assessment') {
+                    window.location.href = optimizers[type];
+                } else {
+                    alert(`🚀 ${type.charAt(0).toUpperCase() + type.slice(1)} Query Optimizer coming soon!\n\nThis specialized screen will help you create perfectly optimized queries for ${type} scenarios.`);
+                }
+            }
+        }
+
+        // Document generation functions (these would connect to the FastAPI backend)
+        async function generateSBAR(event) {
+            event.preventDefault();
+            // In a real implementation, this would call the FastAPI endpoint
+            console.log('Generating SBAR report...');
+            // Show success message and close modal
+            alert('SBAR report generated successfully! (This would generate a real document in the full implementation)');
+            closeModal();
+        }
+
+        async function generatePatientEducation(event) {
+            event.preventDefault();
+            console.log('Generating patient education material...');
+            alert('Patient education material generated successfully!');
+            closeModal();
+        }
+
+        async function generatePhysicianEmail(event) {
+            event.preventDefault();
+            console.log('Generating physician email...');
+            alert('Physician email draft generated successfully!');
+            closeModal();
+        }
+
+        async function generateContinuingEdResponse() {
+            const question = document.getElementById('clinicalQuestion').value;
+            if (!question.trim()) {
+                alert('Please enter a clinical question');
+                return;
+            }
+            console.log('Generating continuing education response for:', question);
+            alert('Evidence-based response generated! (This would provide a real response in the full implementation)');
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update user profile display
+            document.getElementById('nurseName').textContent = currentUser.name;
+            document.getElementById('nurseUnit').textContent = currentUser.unit;
+            document.getElementById('nurseInitials').textContent = currentUser.initials;
+        });
+    </script>
+</body>
+</html>

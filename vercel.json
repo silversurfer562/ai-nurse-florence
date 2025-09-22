@@ -1,13 +1,89 @@
 {
+  "version": 2,
+  "name": "ai-nurse-florence",
+  "regions": ["iad1"],
   "functions": {
     "api/index.py": {
-      "runtime": "@vercel/python@5.0.5"
+      "runtime": "@vercel/python@5.0.5",
+      "maxDuration": 30,
+      "memory": 512
     }
   },
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
       "source": "/api/v1/(.*)",
       "destination": "/api/index.py"
     }
-  ]
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=600"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options", 
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=()"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/health",
+      "destination": "/api/v1/health",
+      "permanent": false
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "PYTHON_ENV": "production",
+    "USE_LIVE": "true",
+    "LOG_LEVEL": "INFO",
+    "RATE_LIMIT_PER_MINUTE": "100",
+    "CACHE_TTL_SECONDS": "3600",
+    "ENABLE_CACHING": "true",
+    "ENABLE_SECURITY_HEADERS": "true",
+    "MYDISEASE_API_URL": "https://mydisease.info/v1",
+    "MEDLINEPLUS_API_URL": "https://connect.medlineplus.gov/service",
+    "PUBMED_API_URL": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+  },
+  "github": {
+    "silent": true
+  }
 }
