@@ -127,15 +127,16 @@ app = FastAPI(
 )
 
 # Log startup diagnostics
-print(f"=== AI NURSE FLORENCE STARTUP ===")
+print(f"=== AI NURSE FLORENCE STARTUP - FORCED DEPLOY ===")
 print(f"Deployment timestamp: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
+print(f"Git commit: 6990f32")
 print(f"Python version: {sys.version}")
 print(f"Current working directory: {os.getcwd()}")
 print(f"Loaded routers: {routers_loaded}")
 print(f"Failed routers: {routers_failed}")
 print(f"Wizards available: {WIZARDS_AVAILABLE}")
 print(f"Auth available: {AUTH_AVAILABLE}")
-print("==================================")
+print("====================================================")
 
 # Mount static files (HTML frontend)
 app.mount("/static", StaticFiles(directory="static"), name="static")
