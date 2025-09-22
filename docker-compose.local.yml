@@ -1,0 +1,86 @@
+# Local Production Testing - Docker Compose
+# Simplified version for local testing with Docker Desktop
+
+version: '3.8'
+
+services:
+  # Main API Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    image: ai-nurse-florence:local
+    container_name: florence-api-local
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - florence-local
+    volumes:
+      - ./logs:/app/logs:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: florence-postgres-local
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=florence_db
+      - POSTGRES_USER=florence
+      - POSTGRES_PASSWORD=local-test-password
+    volumes:
+      - postgres_local_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - florence-local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U florence -d florence_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: florence-redis-local
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_local_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - florence-local
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Networks
+networks:
+  florence-local:
+    driver: bridge
+    name: florence-local
+
+# Persistent volumes
+volumes:
+  postgres_local_data:
+    name: florence_postgres_local_data
+  redis_local_data:
+    name: florence_redis_local_data
