@@ -3,536 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Nurse Florence - Healthcare AI Assistant</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>AI Nurse Florence - Medical Information System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary: #10b981;
-            --white: #ffffff;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-600: #4b5563;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
-            --success: #10b981;
-            --error: #ef4444;
+        .medical-card { 
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+            border-left: 4px solid #3b82f6;
+            transition: all 0.3s ease;
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: var(--gray-800);
-            background: var(--gray-50);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: var(--white);
-            padding: 1.5rem 0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-        
-        .nav {
-            display: flex;
-            gap: 2rem;
-        }
-        
-        .nav-link {
-            color: var(--white);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .nav-link:hover {
-            color: var(--secondary);
-        }
-        
-        .hero {
-            background: var(--white);
-            padding: 4rem 0;
-            text-align: center;
-        }
-        
-        .hero h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 1rem;
-        }
-        
-        .hero p {
-            font-size: 1.125rem;
-            color: var(--gray-600);
-            margin-bottom: 2rem;
-        }
-        
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            margin-bottom: 2rem;
-        }
-        
-        .status-healthy {
-            background: #dcfce7;
-            color: #166534;
-        }
-        
-        .status-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            font-weight: 500;
-            margin: 0 0.5rem;
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: var(--white);
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-        
-        .demo {
-            padding: 4rem 0;
-        }
-        
-        .demo h2 {
-            text-align: center;
-            font-size: 2rem;
-            color: var(--gray-900);
-            margin-bottom: 2rem;
-        }
-        
-        .demo-interface {
-            background: var(--white);
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        
-        .demo-header {
-            background: var(--gray-900);
-            color: var(--white);
-            padding: 1rem 1.5rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .demo-tabs {
-            display: flex;
-            background: var(--gray-100);
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .demo-tab {
-            flex: 1;
-            padding: 1rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--gray-600);
-        }
-        
-        .demo-tab.active {
-            background: var(--white);
-            color: var(--primary);
-            border-bottom: 2px solid var(--primary);
-        }
-        
-        .demo-content {
-            padding: 2rem;
-        }
-        
-        .search-form {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .search-input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-        }
-        
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        .search-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--primary);
-            color: var(--white);
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-        }
-        
-        .search-btn:hover {
-            background: var(--primary-dark);
-        }
-        
-        .results {
-            margin-top: 1rem;
-        }
-        
-        .result-item {
-            background: var(--gray-50);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid var(--primary);
-            margin-bottom: 1rem;
-        }
-        
-        .result-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 2rem;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #e5e7eb;
-            border-top: 2px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .footer {
-            background: var(--gray-900);
-            color: var(--white);
-            padding: 2rem 0;
-            text-align: center;
-            margin-top: 4rem;
-        }
+        .medical-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
     </style>
 </head>
-<body>
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-stethoscope"></i>
-                    AI Nurse Florence
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-stethoscope text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                        <p class="text-sm text-blue-100">Evidence-Based Medical Information System</p>
+                    </div>
                 </div>
-                <nav class="nav">
-                    <a href="#demo" class="nav-link">Try Demo</a>
-                    <a href="/docs" class="nav-link">API Docs</a>
-                    <a href="/health" class="nav-link">Status</a>
-                </nav>
+                <div class="flex space-x-2">
+                    <button onclick="loadSample()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded text-sm">
+                        <i class="fas fa-flask mr-1"></i>Try Sample
+                    </button>
+                </div>
             </div>
         </div>
     </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1>AI Healthcare Assistant</h1>
-            <p>Evidence-based medical information and clinical decision support powered by AI.</p>
-            
-            <div>
-                <span class="status-badge" id="system-status">
-                    <div class="spinner"></div>
-                    Checking system...
-                </span>
-            </div>
-            
-            <div>
-                <a href="#demo" class="btn btn-primary">
-                    <i class="fas fa-rocket"></i>
-                    Try AI Assistant
-                </a>
-                <a href="/docs" class="btn btn-primary">
-                    <i class="fas fa-code"></i>
-                    API Docs
-                </a>
-            </div>
+    <div id="statusBanner" class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="max-w-7xl mx-auto flex items-center">
+            <i class="fas fa-spinner fa-spin text-yellow-400 mr-3"></i>
+            <span id="statusText">Initializing medical database connection...</span>
         </div>
-    </section>
+    </div>
 
-    <section class="demo" id="demo">
-        <div class="container">
-            <h2>Try AI Nurse Florence</h2>
-            <div class="demo-interface">
-                <div class="demo-header">
-                    <i class="fas fa-terminal"></i>
-                    AI Healthcare Assistant
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <div class="bg-white rounded-lg shadow-sm border mb-6">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <i class="fas fa-search text-blue-600 mr-2"></i>
+                    Medical Research Portal
+                </h2>
+                <p class="text-gray-600 mt-1">Search comprehensive medical databases for evidence-based clinical information</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="flex flex-col lg:flex-row gap-4">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="flex-1 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter medical condition, disease, or clinical topic (e.g., diabetes mellitus, hypertension, heart failure)"
+                        onkeypress="if(event.key==='Enter') performSearch()"
+                    />
+                    <button 
+                        onclick="performSearch()" 
+                        id="searchBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold whitespace-nowrap"
+                    >
+                        <i class="fas fa-search mr-2"></i>Search Medical Database
+                    </button>
                 </div>
                 
-                <div class="demo-tabs">
-                    <button class="demo-tab active" onclick="switchDemo('disease')">Disease Info</button>
-                    <button class="demo-tab" onclick="switchDemo('pubmed')">PubMed</button>
-                    <button class="demo-tab" onclick="switchDemo('summarize')">Summarize</button>
-                </div>
-                
-                <div class="demo-content" id="demo-content">
-                    <!-- Content loaded by JavaScript -->
+                <div class="mt-4">
+                    <p class="text-sm text-gray-600 mb-3">Quick access to common conditions:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="quickSearch('diabetes mellitus')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Diabetes</button>
+                        <button onclick="quickSearch('hypertension')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Hypertension</button>
+                        <button onclick="quickSearch('heart failure')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Heart Failure</button>
+                        <button onclick="quickSearch('copd')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">COPD</button>
+                        <button onclick="quickSearch('pneumonia')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Pneumonia</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 AI Nurse Florence. Educational use only - not medical advice.</p>
+        <div class="bg-white rounded-lg shadow-sm border">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex">
+                    <button onclick="switchTab('disease')" id="diseaseTab" class="tab-active py-4 px-6 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700">
+                        <i class="fas fa-heartbeat mr-2"></i>Disease Information
+                    </button>
+                    <button onclick="switchTab('literature')" id="literatureTab" class="py-4 px-6 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700">
+                        <i class="fas fa-book-medical mr-2"></i>Medical Literature
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="p-6 min-h-[500px]">
+                <div id="diseaseContent">
+                    <div class="text-center text-gray-500 py-16">
+                        <i class="fas fa-stethoscope text-6xl mb-6 opacity-30"></i>
+                        <h3 class="text-xl font-semibold mb-2">Medical Database Ready</h3>
+                        <p class="text-gray-600 mb-4">Search for comprehensive disease information from MyDisease.info</p>
+                        <button onclick="quickSearch('diabetes')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+                            Try Example Search
+                        </button>
+                    </div>
+                </div>
+
+                <div id="literatureContent" class="hidden">
+                    <div class="text-center text-gray-500 py-16">
+                        <i class="fas fa-book-medical text-6xl mb-6 opacity-30"></i>
+                        <h3 class="text-xl font-semibold mb-2">PubMed Literature Search</h3>
+                        <p class="text-gray-600 mb-4">Access peer-reviewed medical literature and research articles</p>
+                        <button onclick="quickSearch('diabetes')" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+                            Search Medical Literature
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="bg-yellow-100 text-yellow-800 p-4 rounded-lg mb-4">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-1"></i>
+                    <div>
+                        <p class="font-semibold">Educational Use Only</p>
+                        <p class="text-sm">This system provides evidence-based medical information for educational and research purposes. Always consult qualified healthcare professionals for clinical decisions and patient care.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center text-gray-400">
+                <p>&copy; 2025 AI Nurse Florence - Healthcare Information System</p>
+                <p class="text-sm mt-1">Data sources: MyDisease.info, PubMed/NCBI</p>
+            </div>
         </div>
     </footer>
 
     <script>
-        const API_BASE = '/api/v1';
-        
+        const API_BASE = 'https://ai-nurse-florence-production.up.railway.app/api/v1';
+        let currentTab = 'disease';
+        let systemOnline = false;
+
         document.addEventListener('DOMContentLoaded', function() {
             checkSystemStatus();
-            switchDemo('disease');
         });
-        
+
         async function checkSystemStatus() {
-            const statusElement = document.getElementById('system-status');
+            const statusBanner = document.getElementById('statusBanner');
+            const statusText = document.getElementById('statusText');
             
             try {
-                console.log('Checking system status...');
                 const response = await fetch(`${API_BASE}/health`);
-                console.log('Health response:', response.status, response.ok);
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Health data:', data);
-                    statusElement.className = 'status-badge status-healthy';
-                    statusElement.innerHTML = '<i class="fas fa-check-circle"></i> System Online';
+                    systemOnline = true;
+                    statusBanner.className = 'bg-green-50 border-l-4 border-green-400 p-4';
+                    statusText.innerHTML = `
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        Medical databases online - ${data.service} v${data.version} ready for clinical queries
+                    `;
                 } else {
-                    throw new Error(`Health check failed with status: ${response.status}`);
+                    throw new Error('Health check failed');
                 }
             } catch (error) {
-                console.error('Health check error:', error);
-                statusElement.className = 'status-badge status-error';
-                statusElement.innerHTML = '<i class="fas fa-times-circle"></i> System Offline';
+                systemOnline = false;
+                statusBanner.className = 'bg-red-50 border-l-4 border-red-400 p-4';
+                statusText.innerHTML = '<i class="fas fa-times-circle text-red-600 mr-2"></i>Medical databases offline - Please try again later';
             }
         }
-        
-        function switchDemo(type) {
-            document.querySelectorAll('.demo-tab').forEach(tab => {
-                tab.classList.remove('active');
+
+        function switchTab(tabName) {
+            document.querySelectorAll('button[id$="Tab"]').forEach(button => {
+                button.classList.remove('tab-active', 'text-blue-600');
+                button.classList.add('text-gray-500');
             });
             
-            const tabs = document.querySelectorAll('.demo-tab');
-            const tabNames = ['disease', 'pubmed', 'summarize'];
-            const index = tabNames.indexOf(type);
-            if (index !== -1 && tabs[index]) {
-                tabs[index].classList.add('active');
-            }
+            document.getElementById(tabName + 'Tab').classList.add('tab-active', 'text-blue-600');
+            document.getElementById(tabName + 'Tab').classList.remove('text-gray-500');
             
-            const content = document.getElementById('demo-content');
-            content.innerHTML = getDemoContent(type);
-        }
-        
-        function getDemoContent(type) {
-            switch (type) {
-                case 'disease':
-                    return `
-                        <h3>Disease Information Search</h3>
-                        <p>Search for comprehensive information about medical conditions.</p>
-                        <div class="search-form">
-                            <input type="text" class="search-input" placeholder="Enter disease (e.g., diabetes)" id="disease-input" value="diabetes">
-                            <button class="search-btn" onclick="searchDisease()">Search</button>
-                        </div>
-                        <div id="disease-results" class="results"></div>
-                    `;
-                
-                case 'pubmed':
-                    return `
-                        <h3>PubMed Literature Search</h3>
-                        <p>Access medical research from PubMed database.</p>
-                        <div class="search-form">
-                            <input type="text" class="search-input" placeholder="Enter medical topic" id="pubmed-input" value="hypertension">
-                            <button class="search-btn" onclick="searchPubmed()">Search</button>
-                        </div>
-                        <div id="pubmed-results" class="results"></div>
-                    `;
-                
-                case 'summarize':
-                    return `
-                        <h3>Text Summarization</h3>
-                        <p>Summarize medical texts and patient notes.</p>
-                        <div class="search-form">
-                            <textarea class="search-input" placeholder="Enter text to summarize" id="summarize-input" rows="3">Patient presents with chest pain and shortness of breath. History of hypertension.</textarea>
-                            <button class="search-btn" onclick="summarizeText()">Summarize</button>
-                        </div>
-                        <div id="summarize-results" class="results"></div>
-                    `;
-                
-                default:
-                    return '<p>Demo not available.</p>';
-            }
-        }
-        
-        async function searchDisease() {
-            const input = document.getElementById('disease-input');
-            const results = document.getElementById('disease-results');
-            const query = input.value.trim();
+            document.getElementById('diseaseContent').classList.toggle('hidden', tabName !== 'disease');
+            document.getElementById('literatureContent').classList.toggle('hidden', tabName !== 'literature');
             
+            currentTab = tabName;
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
             if (!query) {
-                results.innerHTML = '<div class="result-item">Please enter a disease to search.</div>';
+                alert('Please enter a medical condition or topic to search');
                 return;
             }
+
+            if (!systemOnline) {
+                alert('Medical databases are currently offline. Please try again later.');
+                return;
+            }
+
+            const btn = document.getElementById('searchBtn');
+            const originalText = btn.innerHTML;
             
-            results.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
-            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Searching Medical Database...';
+            btn.disabled = true;
+
             try {
-                const response = await fetch(`${API_BASE}/disease/?q=${encodeURIComponent(query)}`);
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    results.innerHTML = `
-                        <div class="result-item">
-                            <div class="result-title">${data.data.name || query}</div>
-                            <p><strong>Summary:</strong> ${data.data.summary}</p>
-                            <p><em>${data.data.banner}</em></p>
-                        </div>
-                    `;
+                if (currentTab === 'disease') {
+                    await searchDisease(query);
                 } else {
-                    results.innerHTML = `<div class="result-item">Error: ${data.error || 'Unknown error'}</div>`;
+                    await searchLiterature(query);
+                }
+            } catch (error) {
+                showError(`Search failed: ${error.message}`);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function searchDisease(query) {
+            const content = document.getElementById('diseaseContent');
+            content.innerHTML = '<div class="flex justify-center py-12"><div class="spinner"></div></div>';
+
+            const response = await fetch(`${API_BASE}/disease/lookup?q=${encodeURIComponent(query)}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const data = await response.json();
+            displayDiseaseResults(data, query);
+        }
+
+        async function searchLiterature(query) {
+            const content = document.getElementById('literatureContent');
+            content.innerHTML = '<div class="flex justify-center py-12"><div class="spinner"></div></div>';
+
+            const response = await fetch(`${API_BASE}/literature/search?q=${encodeURIComponent(query)}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const data = await response.json();
+            displayLiteratureResults(data, query);
+        }
+
+        function displayDiseaseResults(data, query) {
+            const content = document.getElementById('diseaseContent');
+            
+            let html = `<div class="space-y-6">`;
+            
+            html += `
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-blue-900 mb-2">
+                                <i class="fas fa-heartbeat mr-2"></i>
+                                Disease Information: ${query}
+                            </h3>
+                            <p class="text-blue-800">${data.banner || 'Medical information from trusted databases'}</p>
+                        </div>
+                        <div class="text-blue-700 text-sm">
+                            <i class="fas fa-database mr-1"></i>
+                            ${data.source || 'MyDisease.info'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (data.disease_info) {
+                html += `
+                    <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-lg">
+                        <h4 class="text-lg font-semibold text-green-900 mb-3 flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Clinical Definition
+                        </h4>
+                `;
+                
+                if (data.disease_info.mondo && data.disease_info.mondo.definition) {
+                    html += `<p class="text-green-800 mb-3">${data.disease_info.mondo.definition}</p>`;
                 }
                 
-            } catch (error) {
-                results.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
-            }
-        }
-        
-        async function searchPubmed() {
-            const input = document.getElementById('pubmed-input');
-            const results = document.getElementById('pubmed-results');
-            const query = input.value.trim();
-            
-            if (!query) {
-                results.innerHTML = '<div class="result-item">Please enter a topic to search.</div>';
-                return;
-            }
-            
-            results.innerHTML = '<div class="loading"><div class="spinner"></div> Searching...</div>';
-            
-            try {
-                const response = await fetch(`${API_BASE}/pubmed/search?q=${encodeURIComponent(query)}&retmax=3`);
-                const data = await response.json();
+                if (data.disease_info._id) {
+                    html += `
+                        <div class="text-sm text-green-700 mt-4">
+                            <strong>Medical Identifier:</strong> ${data.disease_info._id}
+                        </div>
+                    `;
+                }
                 
-                if (data.status === 'success') {
-                    let resultsHtml = '';
-                    if (data.data.articles && data.data.articles.length > 0) {
-                        data.data.articles.forEach(article => {
-                            resultsHtml += `
-                                <div class="result-item">
-                                    <div class="result-title">${article.title}</div>
-                                    <p><strong>Authors:</strong> ${article.authors}</p>
-                                    <p><strong>Journal:</strong> ${article.journal}</p>
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            content.innerHTML = html;
+        }
+
+        function displayLiteratureResults(data, query) {
+            const content = document.getElementById('literatureContent');
+            
+            let html = `<div class="space-y-6">`;
+            
+            html += `
+                <div class="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-lg">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-purple-900 mb-2">
+                                <i class="fas fa-book-medical mr-2"></i>
+                                Medical Literature: ${query}
+                            </h3>
+                            <p class="text-purple-800">${data.banner || 'Peer-reviewed medical literature'}</p>
+                        </div>
+                        <div class="text-purple-700 text-sm">
+                            <i class="fas fa-database mr-1"></i>
+                            ${data.source || 'PubMed'} • ${data.total_found || 0} articles
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (data.articles && data.articles.length > 0) {
+                html += `
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                            <i class="fas fa-list mr-2"></i>
+                            Recent Research Articles
+                        </h4>
+                        <div class="space-y-4">
+                `;
+                
+                data.articles.forEach((article, index) => {
+                    html += `
+                        <div class="border-l-4 border-gray-300 pl-4 py-2">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h5 class="font-semibold text-gray-900 mb-1">
+                                        <a href="${article.url}" target="_blank" class="text-blue-600 hover:underline">
+                                            ${article.title}
+                                        </a>
+                                    </h5>
+                                    <div class="text-sm text-gray-600 mb-2">
+                                        <strong>Authors:</strong> ${article.authors?.map(a => a.name).join(', ') || 'N/A'}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <span class="font-medium">${article.source}</span> • 
+                                        <span>${article.pubdate}</span> • 
+                                        <span>PMID: ${article.pmid}</span>
+                                    </div>
                                 </div>
-                            `;
-                        });
-                    } else {
-                        resultsHtml = '<div class="result-item">No articles found.</div>';
-                    }
-                    results.innerHTML = resultsHtml;
-                } else {
-                    results.innerHTML = `<div class="result-item">Error: ${data.error || 'Search failed'}</div>`;
-                }
-                
-            } catch (error) {
-                results.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
-            }
-        }
-        
-        async function summarizeText() {
-            const input = document.getElementById('summarize-input');
-            const results = document.getElementById('summarize-results');
-            const text = input.value.trim();
-            
-            if (!text) {
-                results.innerHTML = '<div class="result-item">Please enter text to summarize.</div>';
-                return;
-            }
-            
-            results.innerHTML = '<div class="loading"><div class="spinner"></div> Summarizing...</div>';
-            
-            try {
-                const response = await fetch(`${API_BASE}/summarize/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: text })
+                            </div>
+                        </div>
+                    `;
                 });
                 
-                const data = await response.json();
-                
-                if (data.status === 'success') {
-                    results.innerHTML = `
-                        <div class="result-item">
-                            <div class="result-title">Summary</div>
-                            <p>${data.data.summary}</p>
-                        </div>
-                    `;
-                } else {
-                    results.innerHTML = `<div class="result-item">Error: ${data.error?.message || 'Summarization failed'}</div>`;
-                }
-                
-            } catch (error) {
-                results.innerHTML = `<div class="result-item">Error: ${error.message}</div>`;
+                html += `</div></div>`;
             }
+            
+            html += `</div>`;
+            content.innerHTML = html;
+        }
+
+        function showError(message) {
+            const activeContent = currentTab === 'disease' ? 
+                document.getElementById('diseaseContent') : 
+                document.getElementById('literatureContent');
+                
+            activeContent.innerHTML = `
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-circle text-red-600 mr-3 mt-1"></i>
+                        <div>
+                            <h4 class="font-semibold text-red-900 mb-2">Search Error</h4>
+                            <p class="text-red-800">${message}</p>
+                            <button onclick="performSearch()" class="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
+                                <i class="fas fa-redo mr-1"></i>Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function quickSearch(condition) {
+            document.getElementById('searchInput').value = condition;
+            performSearch();
+        }
+
+        function loadSample() {
+            quickSearch('diabetes mellitus');
         }
     </script>
 </body>
