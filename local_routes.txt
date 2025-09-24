@@ -25,6 +25,7 @@ POST /api/v1/patient-education/
 POST /api/v1/readability/check
 POST /api/v1/summarize/chat
 POST /api/v1/summarize/chat/async
+POST /api/v1/v1/patient-education
 POST /api/v1/wizards/clinical-trials/search
 POST /api/v1/wizards/clinical-trials/start
 POST /api/v1/wizards/clinical-trials/step2-condition
