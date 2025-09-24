@@ -44,6 +44,7 @@ class PubMedResult(TypedDict):
     banner: str
     query: str
     results: List[PubMedArticleDict]
+    total: int
 
 
 class MedlinePlusResult(TypedDict):

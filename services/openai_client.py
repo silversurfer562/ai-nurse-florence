@@ -101,3 +101,23 @@ def reset_client() -> None:
     global _client, _client_initialized
     _client = None
     _client_initialized = False
+
+# Added for education router compatibility
+async def chat(messages, model="gpt-4o-mini", **kwargs):
+    """
+    Chat completion wrapper for education router
+    Compatible with OpenAI API v1.0+
+    """
+    if not client:
+        raise Exception("OpenAI client not configured - check OPENAI_API_KEY")
+    
+    try:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            **kwargs
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI chat error: {e}")
+        raise Exception(f"OpenAI chat failed: {str(e)}")

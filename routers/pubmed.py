@@ -50,4 +50,4 @@ async def search(
         base_url=str(request.url_for("search")),
     )
 
-    return create_success_response(paginated_data)
+    return create_success_response(paginated_data.dict())

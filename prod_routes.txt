@@ -1,0 +1,6 @@
+GET /
+GET /api/v1/disease/lookup
+GET /api/v1/health
+GET /api/v1/literature/search
+GET /app
+GET /health
