@@ -1,0 +1,19 @@
+# Add this to app.py for debugging
+@app.get("/debug/railway")
+def debug_railway():
+    """Debug Railway deployment issues"""
+    import sys
+    import os
+    from pathlib import Path
+    
+    return {
+        "python_version": sys.version,
+        "working_directory": os.getcwd(),
+        "port": os.getenv("PORT", "not set"),
+        "files_exist": {
+            "app.py": Path("app.py").exists(),
+            "start.sh": Path("start.sh").exists(),
+            "requirements.txt": Path("requirements.txt").exists(),
+        },
+        "environment": {k: v for k, v in os.environ.items() if not k.startswith("RAILWAY_")}
+    }
