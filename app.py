@@ -213,7 +213,7 @@ async def health():
     
     return {
         "status": "healthy", 
-        "timestamp": "2025-09-22",
+        "timestamp": "2025-09-24",
         "service": "ai-nurse-florence",
         "version": "2.1.0",
         "routers_count": len(routers_loaded)
