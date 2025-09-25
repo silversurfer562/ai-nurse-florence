@@ -3,390 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Nurse Florence - Medical Information System</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>AI Nurse Florence - Clinical Decision Support</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .medical-card { 
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
-            border-left: 4px solid #3b82f6;
-            transition: all 0.3s ease;
-        }
-        .medical-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .chat-message { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .typing-indicator { animation: typing 1.5s infinite; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-10px); } }
+        .clinical-card { transition: all 0.2s ease; }
+        .clinical-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15); }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-4">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-600">
+        <div class="max-w-6xl mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <i class="fas fa-stethoscope text-2xl"></i>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-blue-600 p-3 rounded-xl">
+                        <i class="fas fa-user-nurse text-white text-2xl"></i>
+                    </div>
                     <div>
-                        <h1 class="text-xl font-bold">AI Nurse Florence</h1>
-                        <p class="text-sm text-blue-100">Evidence-Based Medical Information System</p>
+                        <h1 class="text-2xl font-bold text-gray-800">AI Nurse Florence</h1>
+                        <p class="text-sm text-blue-600 font-medium">Clinical Decision Support System</p>
                     </div>
                 </div>
-                <div class="flex space-x-2">
-                    <button onclick="loadSample()" class="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded text-sm">
-                        <i class="fas fa-flask mr-1"></i>Try Sample
-                    </button>
+                
+                <!-- Header Controls -->
+                <div class="flex items-center space-x-4">
+                    <!-- Connection Status -->
+                    <div id="connectionStatus" class="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
+                        <div class="w-3 h-3 bg-gray-400 rounded-full pulse-dot"></div>
+                        <span class="text-sm text-gray-600 font-medium">Connecting...</span>
+                    </div>
+                    
+                    <!-- Language Selector -->
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-globe text-gray-500"></i>
+                        <select id="languageSelector" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                            <option value="pt">Português</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <div id="statusBanner" class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-        <div class="max-w-7xl mx-auto flex items-center">
-            <i class="fas fa-spinner fa-spin text-yellow-400 mr-3"></i>
-            <span id="statusText">Initializing medical database connection...</span>
-        </div>
-    </div>
-
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <div class="bg-white rounded-lg shadow-sm border mb-6">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-semibold flex items-center">
-                    <i class="fas fa-search text-blue-600 mr-2"></i>
-                    Medical Research Portal
-                </h2>
-                <p class="text-gray-600 mt-1">Search comprehensive medical databases for evidence-based clinical information</p>
-            </div>
-            
-            <div class="p-6">
-                <div class="flex flex-col lg:flex-row gap-4">
-                    <input 
-                        type="text" 
-                        id="searchInput" 
-                        class="flex-1 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter medical condition, disease, or clinical topic (e.g., diabetes mellitus, hypertension, heart failure)"
-                        onkeypress="if(event.key==='Enter') performSearch()"
-                    />
-                    <button 
-                        onclick="performSearch()" 
-                        id="searchBtn"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold whitespace-nowrap"
-                    >
-                        <i class="fas fa-search mr-2"></i>Search Medical Database
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        
+        <!-- Welcome Banner (shown initially) -->
+        <div id="welcomeBanner" class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg text-white p-8 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold mb-2">Welcome to Your Clinical Assistant</h2>
+                    <p class="text-blue-100 mb-4">Get evidence-based support for patient care, medication guidance, and clinical protocols</p>
+                    
+                    <!-- Compliance Notice -->
+                    <div class="bg-blue-500/30 border border-blue-400/30 rounded-lg p-4 mb-4">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-shield-alt text-blue-200 mt-1"></i>
+                            <div class="text-sm">
+                                <p class="font-semibold text-blue-100 mb-1">Clinical Decision Support Tool</p>
+                                <p class="text-blue-200">Educational and reference purposes only. Always follow your institution's protocols and verify all clinical decisions with appropriate healthcare professionals. No PHI is stored or processed.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="startClinicalChat()" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center space-x-2">
+                        <i class="fas fa-comments"></i>
+                        <span>Start Clinical Chat</span>
                     </button>
                 </div>
                 
+                <div class="hidden lg:block">
+                    <div class="text-right">
+                        <div class="bg-white/10 rounded-lg p-4 backdrop-blur">
+                            <div class="text-3xl font-bold">v2.0.1</div>
+                            <div class="text-blue-200 text-sm">Evidence-Based</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Cards (shown initially) -->
+        <div id="quickAccessSection" class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Emergency Assessment -->
+            <div class="clinical-card bg-red-50 border-2 border-red-200 rounded-xl p-6 cursor-pointer hover:border-red-400" onclick="quickClinicalQuery('Emergency assessment protocols for sepsis recognition')">
+                <div class="text-center">
+                    <div class="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Emergency Assessment</h3>
+                    <p class="text-sm text-gray-600">Rapid assessment protocols, warning signs, critical interventions</p>
+                </div>
+            </div>
+
+            <!-- Medication Management -->
+            <div class="clinical-card bg-blue-50 border-2 border-blue-200 rounded-xl p-6 cursor-pointer hover:border-blue-400" onclick="quickClinicalQuery('Safe medication administration and dosage calculations')">
+                <div class="text-center">
+                    <div class="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-pills text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Medication Safety</h3>
+                    <p class="text-sm text-gray-600">Administration protocols, dosage calculations, drug interactions</p>
+                </div>
+            </div>
+
+            <!-- Patient Care Plans -->
+            <div class="clinical-card bg-green-50 border-2 border-green-200 rounded-xl p-6 cursor-pointer hover:border-green-400" onclick="quickClinicalQuery('Create nursing care plan for post-operative patient')">
+                <div class="text-center">
+                    <div class="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Care Planning</h3>
+                    <p class="text-sm text-gray-600">Nursing diagnoses, interventions, outcome evaluation</p>
+                </div>
+            </div>
+
+            <!-- Clinical Documentation -->
+            <div class="clinical-card bg-purple-50 border-2 border-purple-200 rounded-xl p-6 cursor-pointer hover:border-purple-400" onclick="quickClinicalQuery('SBAR communication template for patient handoff')">
+                <div class="text-center">
+                    <div class="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-file-medical-alt text-purple-600 text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Documentation</h3>
+                    <p class="text-sm text-gray-600">SBAR reports, nursing notes, handoff communication</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface (hidden initially) -->
+        <div id="chatInterface" class="hidden">
+            <!-- Chat Header -->
+            <div class="bg-white rounded-t-xl shadow-lg p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-600 p-2 rounded-lg">
+                            <i class="fas fa-user-nurse text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">Clinical Decision Support</h3>
+                            <p class="text-sm text-gray-600">Evidence-based nursing guidance</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="showDashboard()" class="text-gray-600 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-home mr-2"></i>Dashboard
+                        </button>
+                        <button onclick="clearChat()" class="text-gray-600 hover:text-red-600 transition-colors">
+                            <i class="fas fa-trash-alt mr-2"></i>Clear Chat
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="bg-white shadow-lg">
+                <div id="chatMessages" class="h-96 overflow-y-auto p-6 space-y-4">
+                    <!-- Messages will be inserted here -->
+                </div>
+                
+                <!-- Typing Indicator -->
+                <div id="typingIndicator" class="hidden px-6 py-2 border-t border-gray-100">
+                    <div class="flex items-center space-x-2 text-gray-500">
+                        <div class="typing-indicator">
+                            <i class="fas fa-circle text-xs"></i>
+                            <i class="fas fa-circle text-xs mx-1"></i>
+                            <i class="fas fa-circle text-xs"></i>
+                        </div>
+                        <span class="text-sm">Florence is analyzing...</span>
+                    </div>
+                </div>
+            </div>
+                
+            <!-- Input Area -->
+            <div class="bg-white rounded-b-xl shadow-lg p-6 border-t border-gray-200">
+                <div class="flex space-x-4">
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        placeholder="Ask about patient assessment, medications, procedures, or clinical protocols..."
+                        class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                    <button 
+                        id="sendButton"
+                        onclick="sendMessage()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-medium"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send</span>
+                    </button>
+                </div>
+                
+                <!-- Clinical Quick Actions -->
                 <div class="mt-4">
-                    <p class="text-sm text-gray-600 mb-3">Quick access to common conditions:</p>
+                    <p class="text-xs text-gray-500 mb-2 font-medium">QUICK CLINICAL ACTIONS:</p>
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="quickSearch('diabetes mellitus')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Diabetes</button>
-                        <button onclick="quickSearch('hypertension')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Hypertension</button>
-                        <button onclick="quickSearch('heart failure')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Heart Failure</button>
-                        <button onclick="quickSearch('copd')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">COPD</button>
-                        <button onclick="quickSearch('pneumonia')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">Pneumonia</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-sm border">
-            <div class="border-b border-gray-200">
-                <nav class="-mb-px flex">
-                    <button onclick="switchTab('disease')" id="diseaseTab" class="tab-active py-4 px-6 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700">
-                        <i class="fas fa-heartbeat mr-2"></i>Disease Information
-                    </button>
-                    <button onclick="switchTab('literature')" id="literatureTab" class="py-4 px-6 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:border-gray-300 hover:text-gray-700">
-                        <i class="fas fa-book-medical mr-2"></i>Medical Literature
-                    </button>
-                </nav>
-            </div>
-            
-            <div class="p-6 min-h-[500px]">
-                <div id="diseaseContent">
-                    <div class="text-center text-gray-500 py-16">
-                        <i class="fas fa-stethoscope text-6xl mb-6 opacity-30"></i>
-                        <h3 class="text-xl font-semibold mb-2">Medical Database Ready</h3>
-                        <p class="text-gray-600 mb-4">Search for comprehensive disease information from MyDisease.info</p>
-                        <button onclick="quickSearch('diabetes')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-                            Try Example Search
+                        <button onclick="quickClinicalQuery('Signs and symptoms of sepsis with qSOFA scoring')" class="bg-red-100 text-red-700 px-3 py-2 rounded-lg text-xs hover:bg-red-200 transition-colors font-medium">
+                            <i class="fas fa-thermometer-half mr-1"></i>Sepsis Assessment
                         </button>
-                    </div>
-                </div>
-
-                <div id="literatureContent" class="hidden">
-                    <div class="text-center text-gray-500 py-16">
-                        <i class="fas fa-book-medical text-6xl mb-6 opacity-30"></i>
-                        <h3 class="text-xl font-semibold mb-2">PubMed Literature Search</h3>
-                        <p class="text-gray-600 mb-4">Access peer-reviewed medical literature and research articles</p>
-                        <button onclick="quickSearch('diabetes')" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
-                            Search Medical Literature
+                        <button onclick="quickClinicalQuery('Medication calculation: safe dosing and administration')" class="bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs hover:bg-blue-200 transition-colors font-medium">
+                            <i class="fas fa-calculator mr-1"></i>Dosage Calc
+                        </button>
+                        <button onclick="quickClinicalQuery('Pain assessment scales and management protocols')" class="bg-orange-100 text-orange-700 px-3 py-2 rounded-lg text-xs hover:bg-orange-200 transition-colors font-medium">
+                            <i class="fas fa-hand-holding-heart mr-1"></i>Pain Management
+                        </button>
+                        <button onclick="quickClinicalQuery('Fall risk assessment and prevention strategies')" class="bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg text-xs hover:bg-yellow-200 transition-colors font-medium">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Fall Prevention
+                        </button>
+                        <button onclick="quickClinicalQuery('Wound assessment and dressing selection guidelines')" class="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-xs hover:bg-green-200 transition-colors font-medium">
+                            <i class="fas fa-band-aid mr-1"></i>Wound Care
+                        </button>
+                        <button onclick="quickClinicalQuery('IV therapy: insertion, maintenance, and complications')" class="bg-purple-100 text-purple-700 px-3 py-2 rounded-lg text-xs hover:bg-purple-200 transition-colors font-medium">
+                            <i class="fas fa-syringe mr-1"></i>IV Therapy
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
-    <footer class="bg-gray-900 text-white py-8 mt-12">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="bg-yellow-100 text-yellow-800 p-4 rounded-lg mb-4">
-                <div class="flex items-start">
-                    <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-1"></i>
-                    <div>
-                        <p class="font-semibold">Educational Use Only</p>
-                        <p class="text-sm">This system provides evidence-based medical information for educational and research purposes. Always consult qualified healthcare professionals for clinical decisions and patient care.</p>
-                    </div>
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    <p class="font-medium">AI Nurse Florence v2.0.1</p>
+                    <p class="text-xs text-gray-500 mt-1">Clinical Decision Support System</p>
                 </div>
-            </div>
-            <div class="text-center text-gray-400">
-                <p>&copy; 2025 AI Nurse Florence - Healthcare Information System</p>
-                <p class="text-sm mt-1">Data sources: MyDisease.info, PubMed/NCBI</p>
+                <div class="flex items-center space-x-4 text-xs text-gray-500">
+                    <span><i class="fas fa-shield-alt mr-1"></i>Evidence-Based</span>
+                    <span><i class="fas fa-user-graduate mr-1"></i>Educational Tool</span>
+                    <span><i class="fas fa-lock mr-1"></i>No PHI Stored</span>
+                </div>
             </div>
         </div>
     </footer>
 
     <script>
-        const API_BASE = 'https://ai-nurse-florence-production.up.railway.app/api/v1';
-        let currentTab = 'disease';
-        let systemOnline = false;
+        // Configuration - Update this to match your Railway deployment
+        const API_BASE_URL = window.location.origin + '/api/v1';
+        let currentLanguage = 'en';
 
+        // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
-            checkSystemStatus();
+            checkApiConnection();
+            setupEventListeners();
         });
 
-        async function checkSystemStatus() {
-            const statusBanner = document.getElementById('statusBanner');
-            const statusText = document.getElementById('statusText');
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('languageSelector').addEventListener('change', function(e) {
+                currentLanguage = e.target.value;
+                addSystemMessage(`Language changed to ${getLanguageName(e.target.value)}`);
+            });
+        }
+
+        // Check API connection
+        async function checkApiConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'operational') {
+                    updateConnectionStatus('connected', 'System Online');
+                } else {
+                    throw new Error('API not operational');
+                }
+            } catch (error) {
+                console.error('API connection failed:', error);
+                updateConnectionStatus('error', 'System Offline');
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status, text) {
+            const statusEl = document.getElementById('connectionStatus');
+            const dot = statusEl.querySelector('.pulse-dot');
+            const span = statusEl.querySelector('span');
+            
+            dot.className = 'w-3 h-3 rounded-full pulse-dot';
+            statusEl.className = 'flex items-center space-x-2 px-3 py-2 rounded-lg';
+            
+            switch (status) {
+                case 'connected':
+                    dot.classList.add('bg-green-500');
+                    span.textContent = text;
+                    span.className = 'text-sm text-green-700 font-medium';
+                    statusEl.classList.add('bg-green-50');
+                    break;
+                case 'error':
+                    dot.classList.add('bg-red-500');
+                    span.textContent = text;
+                    span.className = 'text-sm text-red-700 font-medium';
+                    statusEl.classList.add('bg-red-50');
+                    break;
+                default:
+                    dot.classList.add('bg-gray-400');
+                    span.textContent = text;
+                    span.className = 'text-sm text-gray-600 font-medium';
+                    statusEl.classList.add('bg-gray-50');
+            }
+        }
+
+        // Start clinical chat
+        function startClinicalChat() {
+            document.getElementById('welcomeBanner').classList.add('hidden');
+            document.getElementById('quickAccessSection').classList.add('hidden');
+            document.getElementById('chatInterface').classList.remove('hidden');
+            
+            // Add clinical welcome message
+            addAssistantMessage("Hello! I'm AI Nurse Florence, your clinical decision support assistant. I'm here to help with evidence-based nursing guidance, patient assessment protocols, medication safety, and clinical decision-making.\n\nI can assist with:\n• Patient assessment and monitoring\n• Medication calculations and safety\n• Clinical protocols and procedures\n• Documentation and communication\n• Emergency response protocols\n\nWhat clinical question can I help you with today?");
+            
+            // Focus the input
+            document.getElementById('messageInput').focus();
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            document.getElementById('welcomeBanner').classList.remove('hidden');
+            document.getElementById('quickAccessSection').classList.remove('hidden');
+            document.getElementById('chatInterface').classList.add('hidden');
+            clearChatMessages();
+        }
+
+        // Clear chat
+        function clearChat() {
+            clearChatMessages();
+            addAssistantMessage("Chat cleared. How can I assist you with your clinical practice today?");
+        }
+
+        // Clear chat messages
+        function clearChatMessages() {
+            document.getElementById('chatMessages').innerHTML = '';
+        }
+
+        // Add assistant message
+        function addAssistantMessage(content) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message flex justify-start mb-6';
+            
+            messageDiv.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 max-w-4xl">
+                    <div class="flex items-center mb-2">
+                        <div class="bg-blue-600 p-1 rounded-full mr-2">
+                            <i class="fas fa-user-nurse text-white text-xs"></i>
+                        </div>
+                        <span class="text-xs text-blue-700 font-medium">AI Nurse Florence</span>
+                        <span class="text-xs text-gray-500 ml-2">Clinical Assistant</span>
+                    </div>
+                    <div class="text-sm text-gray-800 whitespace-pre-line">${content}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Add user message
+        function addUserMessage(content) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message flex justify-end mb-6';
+            
+            messageDiv.innerHTML = `
+                <div class="bg-blue-600 text-white rounded-lg px-4 py-3 max-w-md">
+                    <div class="flex items-center justify-end mb-2">
+                        <span class="text-xs text-blue-100 mr-2">Nurse</span>
+                        <div class="bg-blue-500 p-1 rounded-full">
+                            <i class="fas fa-user text-white text-xs"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm">${content}</p>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Add system message
+        function addSystemMessage(content) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message flex justify-center mb-4';
+            
+            messageDiv.innerHTML = `
+                <div class="bg-gray-100 text-gray-700 rounded-full px-4 py-2 text-xs">
+                    <i class="fas fa-info-circle mr-1"></i>${content}
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Handle key press in input
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Quick clinical query
+        function quickClinicalQuery(query) {
+            if (document.getElementById('chatInterface').classList.contains('hidden')) {
+                startClinicalChat();
+                setTimeout(() => {
+                    document.getElementById('messageInput').value = query;
+                    sendMessage();
+                }, 100);
+            } else {
+                document.getElementById('messageInput').value = query;
+                sendMessage();
+            }
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addUserMessage(message);
+            
+            // Clear input and disable send button
+            input.value = '';
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Analyzing...</span>';
+            
+            // Show typing indicator
+            document.getElementById('typingIndicator').classList.remove('hidden');
             
             try {
-                const response = await fetch(`${API_BASE}/health`);
+                // Try to make real API call first
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        language: currentLanguage
+                    })
+                });
+
                 if (response.ok) {
                     const data = await response.json();
-                    systemOnline = true;
-                    statusBanner.className = 'bg-green-50 border-l-4 border-green-400 p-4';
-                    statusText.innerHTML = `
-                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
-                        Medical databases online - ${data.service} v${data.version} ready for clinical queries
-                    `;
+                    addAssistantMessage(data.response || data.message || 'Response received');
                 } else {
-                    throw new Error('Health check failed');
+                    throw new Error('API call failed');
                 }
+                
             } catch (error) {
-                systemOnline = false;
-                statusBanner.className = 'bg-red-50 border-l-4 border-red-400 p-4';
-                statusText.innerHTML = '<i class="fas fa-times-circle text-red-600 mr-2"></i>Medical databases offline - Please try again later';
-            }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('button[id$="Tab"]').forEach(button => {
-                button.classList.remove('tab-active', 'text-blue-600');
-                button.classList.add('text-gray-500');
-            });
-            
-            document.getElementById(tabName + 'Tab').classList.add('tab-active', 'text-blue-600');
-            document.getElementById(tabName + 'Tab').classList.remove('text-gray-500');
-            
-            document.getElementById('diseaseContent').classList.toggle('hidden', tabName !== 'disease');
-            document.getElementById('literatureContent').classList.toggle('hidden', tabName !== 'literature');
-            
-            currentTab = tabName;
-        }
-
-        async function performSearch() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) {
-                alert('Please enter a medical condition or topic to search');
-                return;
-            }
-
-            if (!systemOnline) {
-                alert('Medical databases are currently offline. Please try again later.');
-                return;
-            }
-
-            const btn = document.getElementById('searchBtn');
-            const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Searching Medical Database...';
-            btn.disabled = true;
-
-            try {
-                if (currentTab === 'disease') {
-                    await searchDisease(query);
-                } else {
-                    await searchLiterature(query);
-                }
-            } catch (error) {
-                showError(`Search failed: ${error.message}`);
+                console.warn('API call failed, using simulated response:', error);
+                // Fall back to simulated response for testing
+                await simulateClinicalApiCall(message);
             } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                // Re-enable send button and hide typing indicator
+                sendButton.disabled = false;
+                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Send</span>';
+                document.getElementById('typingIndicator').classList.add('hidden');
+                input.focus();
             }
         }
 
-        async function searchDisease(query) {
-            const content = document.getElementById('diseaseContent');
-            content.innerHTML = '<div class="flex justify-center py-12"><div class="spinner"></div></div>';
-
-            const response = await fetch(`${API_BASE}/disease/lookup?q=${encodeURIComponent(query)}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const data = await response.json();
-            displayDiseaseResults(data, query);
+        // Simulate clinical API call with nursing-specific responses (for testing when API is not ready)
+        async function simulateClinicalApiCall(message) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    let response = generateClinicalResponse(message);
+                    addAssistantMessage(response);
+                    resolve();
+                }, 1500);
+            });
         }
 
-        async function searchLiterature(query) {
-            const content = document.getElementById('literatureContent');
-            content.innerHTML = '<div class="flex justify-center py-12"><div class="spinner"></div></div>';
-
-            const response = await fetch(`${API_BASE}/literature/search?q=${encodeURIComponent(query)}`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        // Generate clinical response for testing
+        function generateClinicalResponse(message) {
+            const lowerMessage = message.toLowerCase();
             
-            const data = await response.json();
-            displayLiteratureResults(data, query);
-        }
-
-        function displayDiseaseResults(data, query) {
-            const content = document.getElementById('diseaseContent');
-            
-            let html = `<div class="space-y-6">`;
-            
-            html += `
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-blue-900 mb-2">
-                                <i class="fas fa-heartbeat mr-2"></i>
-                                Disease Information: ${query}
-                            </h3>
-                            <p class="text-blue-800">${data.banner || 'Medical information from trusted databases'}</p>
-                        </div>
-                        <div class="text-blue-700 text-sm">
-                            <i class="fas fa-database mr-1"></i>
-                            ${data.source || 'MyDisease.info'}
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            if (data.disease_info) {
-                html += `
-                    <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-lg">
-                        <h4 class="text-lg font-semibold text-green-900 mb-3 flex items-center">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            Clinical Definition
-                        </h4>
-                `;
-                
-                if (data.disease_info.mondo && data.disease_info.mondo.definition) {
-                    html += `<p class="text-green-800 mb-3">${data.disease_info.mondo.definition}</p>`;
-                }
-                
-                if (data.disease_info._id) {
-                    html += `
-                        <div class="text-sm text-green-700 mt-4">
-                            <strong>Medical Identifier:</strong> ${data.disease_info._id}
-                        </div>
-                    `;
-                }
-                
-                html += `</div>`;
+            if (lowerMessage.includes('sepsis')) {
+                return "**Sepsis Recognition & Response Protocol:**\n\n**qSOFA Screening (≥2 points suggests sepsis):**\n• Altered mental status (GCS <15)\n• Systolic BP ≤100 mmHg\n• Respiratory rate ≥22/min\n\n**SIRS Criteria (≥2 suggests infection):**\n• Temperature >38°C or <36°C\n• Heart rate >90 bpm\n• Respiratory rate >20/min\n• WBC >12,000 or <4,000\n\n**Immediate Nursing Actions:**\n1. Obtain blood cultures before antibiotics\n2. Start broad-spectrum antibiotics within 1 hour\n3. Administer 30ml/kg crystalloid if hypotensive\n4. Monitor lactate levels\n5. Ensure adequate oxygenation\n6. Frequent vital signs and neurological checks\n\n**Critical Alert:** Activate sepsis protocol and notify physician immediately for any positive screening.";
+                        
+            } else if (lowerMessage.includes('medication') || lowerMessage.includes('dosage')) {
+                return "**Medication Safety & Calculation Protocol:**\n\n**Five Rights of Medication Administration:**\n• Right Patient (2 identifiers)\n• Right Drug (generic & brand names)\n• Right Dose (calculate and verify)\n• Right Route (PO, IV, IM, SQ, etc.)\n• Right Time (scheduled vs PRN)\n\n**Dosage Calculation Formula:**\n**Dose = (Desired dose × Volume) ÷ Stock strength**\n\nExample: Order 400mg, Stock 200mg/5ml\n= (400 × 5) ÷ 200 = 10ml\n\n**Critical Safety Checks:**\n1. Verify allergies and contraindications\n2. Check drug interactions\n3. Assess patient's current condition\n4. Double-check high-risk medications\n5. Monitor for adverse effects\n6. Document immediately after administration\n\n**High-Alert Medications:** Always use independent double-checks for insulin, heparin, chemotherapy, and vasoactive drugs.";
+                        
+            } else {
+                return `I understand you're asking about "${message}". As your AI healthcare assistant, I'd be happy to provide evidence-based information. Could you provide more specific details about what aspect you'd like me to focus on? This helps me give you the most relevant and useful information for your nursing practice.\n\n**Note:** This is a testing prototype. The API will provide more comprehensive responses when fully connected.`;
             }
-            
-            html += `</div>`;
-            content.innerHTML = html;
         }
 
-        function displayLiteratureResults(data, query) {
-            const content = document.getElementById('literatureContent');
-            
-            let html = `<div class="space-y-6">`;
-            
-            html += `
-                <div class="bg-purple-50 border-l-4 border-purple-500 p-6 rounded-r-lg">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-purple-900 mb-2">
-                                <i class="fas fa-book-medical mr-2"></i>
-                                Medical Literature: ${query}
-                            </h3>
-                            <p class="text-purple-800">${data.banner || 'Peer-reviewed medical literature'}</p>
-                        </div>
-                        <div class="text-purple-700 text-sm">
-                            <i class="fas fa-database mr-1"></i>
-                            ${data.source || 'PubMed'} • ${data.total_found || 0} articles
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            if (data.articles && data.articles.length > 0) {
-                html += `
-                    <div class="bg-white border border-gray-200 rounded-lg p-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                            <i class="fas fa-list mr-2"></i>
-                            Recent Research Articles
-                        </h4>
-                        <div class="space-y-4">
-                `;
-                
-                data.articles.forEach((article, index) => {
-                    html += `
-                        <div class="border-l-4 border-gray-300 pl-4 py-2">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <h5 class="font-semibold text-gray-900 mb-1">
-                                        <a href="${article.url}" target="_blank" class="text-blue-600 hover:underline">
-                                            ${article.title}
-                                        </a>
-                                    </h5>
-                                    <div class="text-sm text-gray-600 mb-2">
-                                        <strong>Authors:</strong> ${article.authors?.map(a => a.name).join(', ') || 'N/A'}
-                                    </div>
-                                    <div class="text-sm text-gray-500">
-                                        <span class="font-medium">${article.source}</span> • 
-                                        <span>${article.pubdate}</span> • 
-                                        <span>PMID: ${article.pmid}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += `</div></div>`;
-            }
-            
-            html += `</div>`;
-            content.innerHTML = html;
-        }
-
-        function showError(message) {
-            const activeContent = currentTab === 'disease' ? 
-                document.getElementById('diseaseContent') : 
-                document.getElementById('literatureContent');
-                
-            activeContent.innerHTML = `
-                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
-                    <div class="flex items-start">
-                        <i class="fas fa-exclamation-circle text-red-600 mr-3 mt-1"></i>
-                        <div>
-                            <h4 class="font-semibold text-red-900 mb-2">Search Error</h4>
-                            <p class="text-red-800">${message}</p>
-                            <button onclick="performSearch()" class="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
-                                <i class="fas fa-redo mr-1"></i>Try Again
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function quickSearch(condition) {
-            document.getElementById('searchInput').value = condition;
-            performSearch();
-        }
-
-        function loadSample() {
-            quickSearch('diabetes mellitus');
+        // Get language name
+        function getLanguageName(code) {
+            const languages = {
+                'en': 'English',
+                'es': 'Spanish',
+                'fr': 'French',
+                'de': 'German',
+                'it': 'Italian',
+                'pt': 'Portuguese'
+            };
+            return languages[code] || 'English';
         }
     </script>
 </body>
