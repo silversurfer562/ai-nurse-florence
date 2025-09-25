@@ -6,12 +6,17 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 import os
 import sys
+import logging
 
 # Core imports
 from utils.middleware import RequestIdMiddleware, LoggingMiddleware
 from utils.logging import get_logger
 from utils.config import settings, get_settings
 from utils.security import SecurityHeadersMiddleware
+
+# Configure logging for Railway
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()

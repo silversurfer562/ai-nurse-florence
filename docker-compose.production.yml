@@ -182,3 +182,34 @@ volumes:
     name: florence_postgres_data
   redis_data:
     name: florence_redis_data
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for caching
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Copy and make start script executable
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Health check for Railway
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+
+# Expose port
+EXPOSE ${PORT:-8000}
+
+# Start application
+CMD ["./start.sh"]
