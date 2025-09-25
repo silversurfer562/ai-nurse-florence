@@ -341,3 +341,8 @@ async def startup_event() -> None:
 @app.on_event("shutdown") 
 async def shutdown_event() -> None:
     logger.info("AI Nurse Florence API shutting down")
+
+# Commit the version consistency update
+git add app.py
+git commit -m "Fix version consistency - all endpoints now report v2.1.0"
+git push origin main
