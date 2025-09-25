@@ -149,7 +149,7 @@ except ImportError:
 app = FastAPI(
     title="AI Nurse Florence",
     description="Healthcare AI Assistant providing evidence-based medical information",
-    version="2.0.1",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json"
