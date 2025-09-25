@@ -196,7 +196,7 @@ async def info():
     return {
         "message": "AI Nurse Florence - Healthcare AI Assistant",
         "status": "operational", 
-        "version": "2.0.1",
+        "version": "2.1.0",
         "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
         "docs": "/docs",
         "health": "/health", 
@@ -215,7 +215,7 @@ async def health():
         "status": "healthy", 
         "timestamp": "2025-09-22",
         "service": "ai-nurse-florence",
-        "version": "2.0.1",
+        "version": "2.1.0",
         "routers_count": len(routers_loaded)
     }
 
@@ -228,7 +228,7 @@ async def debug_status():
         "routers_failed": routers_failed,
         "wizards_available": WIZARDS_AVAILABLE,
         "auth_available": AUTH_AVAILABLE,
-        "version": "2.0.1"
+        "version": "2.1.0"
     }
 
 # --- API Versioning Router ---
