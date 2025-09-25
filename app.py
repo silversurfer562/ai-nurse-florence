@@ -1,348 +1,411 @@
-from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
-from routers import openapi_gpt
-from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
+"""
+AI Nurse Florence - Healthcare AI Assistant FastAPI Application
+Educational use only - not medical advice. No PHI stored.
+Following Service Layer Architecture with Conditional Imports Pattern
+"""
+
+from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
 import os
 import sys
 import logging
+from pathlib import Path
+import uuid
+from datetime import datetime
 
-# Core imports
-from utils.middleware import RequestIdMiddleware, LoggingMiddleware
-from utils.logging import get_logger
-from utils.config import settings, get_settings
-from utils.security import SecurityHeadersMiddleware
-
-# Configure logging for Railway
-logging.basicConfig(level=logging.INFO)
+# Configure logging for Railway deployment
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
+# Educational disclaimer banner
+EDU_BANNER = "Draft for clinician review — not medical advice. No PHI stored."
 
-# Set up logger
-logger = get_logger(__name__)
-
-# Define exempt paths for rate limiting
-EXEMPT_PATHS = {
-    "/docs",
-    "/redoc", 
-    "/openapi.json",
-    "/metrics",
-    "/health",
-    "/api/v1/health",
-    "/",
-    "/app",
-    "/static"
-}
-
-# --- Import Routers (with explicit error handling) ---
-routers_loaded = []
-routers_failed = []
-
-try:
-    from routers.summarize import router as summarize_router
-    routers_loaded.append("summarize")
-except Exception as e:
-    logger.error(f"Failed to import summarize router: {e}")
-    routers_failed.append(f"summarize: {e}")
-    summarize_router = None
-
-try:
-    from routers.disease import router as disease_router
-    routers_loaded.append("disease")
-except Exception as e:
-    logger.error(f"Failed to import disease router: {e}")
-    routers_failed.append(f"disease: {e}")
-    disease_router = None
-
-try:
-    from routers.pubmed import router as pubmed_router
-    routers_loaded.append("pubmed")
-except Exception as e:
-    logger.error(f"Failed to import pubmed router: {e}")
-    routers_failed.append(f"pubmed: {e}")
-    pubmed_router = None
-
-try:
-    from routers.trials import router as trials_router
-    routers_loaded.append("trials")
-except Exception as e:
-    logger.error(f"Failed to import trials router: {e}")
-    routers_failed.append(f"trials: {e}")
-    trials_router = None
-
-try:
-    from routers.patient_education import router as patient_education_router
-    routers_loaded.append("patient_education")
-except Exception as e:
-    logger.error(f"Failed to import patient_education router: {e}")
-    routers_failed.append(f"patient_education: {e}")
-    patient_education_router = None
-
-try:
-    from routers.readability import router as readability_router
-    routers_loaded.append("readability")
-except Exception as e:
-    logger.error(f"Failed to import readability router: {e}")
-    routers_failed.append(f"readability: {e}")
-    readability_router = None
-
-try:
-    from routers.education import router as education_router
-    routers_loaded.append("education")
-except Exception as e:
-    logger.error(f"Failed to import education router: {e}")
-    routers_failed.append(f"education: {e}")
-    education_router = None
-
-try:
-    from routers.medlineplus import router as medlineplus_router
-    routers_loaded.append("medlineplus")
-except Exception as e:
-    logger.error(f"Failed to import medlineplus router: {e}")
-    routers_failed.append(f"medlineplus: {e}")
-    medlineplus_router = None
-
-try:
-    from routers.clinical_documents import router as clinical_documents_router
-    routers_loaded.append("clinical_documents")
-except Exception as e:
-    logger.error(f"Failed to import clinical_documents router: {e}")
-    routers_failed.append(f"clinical_documents: {e}")
-    clinical_documents_router = None
-
-try:
-    from routers.healthcheck import router as healthcheck_router
-    routers_loaded.append("healthcheck")
-except Exception as e:
-    logger.error(f"Failed to import healthcheck router: {e}")
-    routers_failed.append(f"healthcheck: {e}")
-    healthcheck_router = None
-
-logger.info(f"Routers loaded: {routers_loaded}")
-logger.info(f"Routers failed: {routers_failed}")
-
-# Import auth if it exists
-try:
-    from routers.auth import router as auth_router
-    AUTH_AVAILABLE = True
-except ImportError:
-    logger.warning("Auth router not available")
-    AUTH_AVAILABLE = False
-    auth_router = None
-
-# Import wizards if they exist
-try:
-    from routers.wizards.patient_education import router as patient_education_wizard_router
-    from routers.wizards.sbar_report import router as sbar_report_wizard_router
-    from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
-    from routers.wizards.clinical_trials import router as clinical_trials_wizard_router
-    from routers.wizards.disease_search import router as disease_search_wizard_router
-    WIZARDS_AVAILABLE = True
-except ImportError:
-    logger.warning("Wizard routers not available")
-    WIZARDS_AVAILABLE = False
-    patient_education_wizard_router = None
-    sbar_report_wizard_router = None
-    treatment_plan_wizard_router = None
-    clinical_trials_wizard_router = None
-    disease_search_wizard_router = None
-
-# Create FastAPI instance
+# Application metadata following Configuration Management
 app = FastAPI(
     title="AI Nurse Florence",
-    description="Healthcare AI Assistant providing evidence-based medical information",
+    description="Healthcare AI assistant providing evidence-based medical information for nurses and healthcare professionals. Educational use only - not medical advice.",
     version="2.1.0",
     docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    redoc_url="/redoc"
 )
 
-# Log startup diagnostics
-print(f"=== AI NURSE FLORENCE FULL APPLICATION STARTING ===")
-print(f"THIS IS THE COMPLETE APP.PY WITH ALL MEDICAL FEATURES")
-print(f"Deployment ID: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
-print(f"Railway Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'unknown')}")
-print(f"Port: {os.environ.get('PORT', '8000')}")
-print(f"Git commit: 1558a38")
-print(f"Python version: {sys.version}")
-print(f"Current working directory: {os.getcwd()}")
-print(f"Loaded routers: {routers_loaded}")
-print(f"Failed routers: {routers_failed}")
-print(f"Wizards available: {WIZARDS_AVAILABLE}")
-print(f"Auth available: {AUTH_AVAILABLE}")
-print(f"Expected ~35 routes in full app")
-print("===========================================================")
-
-# Ensure health endpoint is available immediately
-print(f"Total app routes defined: {len(app.routes)}")
-print("Health endpoint will be available at /health")
-
-# Mount static files (HTML frontend)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Frontend route
-@app.get("/app", response_class=HTMLResponse)
-async def frontend():
-    """Serve the main frontend application"""
-    return FileResponse("static/index.html")
-
-# Root endpoint  
-@app.get("/")
-async def root():
-    """Serve the main frontend application"""
-    return FileResponse("static/index.html")
-
-@app.get("/info")
-async def info():
-    """Service information endpoint"""
-    return {
-        "message": "AI Nurse Florence - Healthcare AI Assistant",
-        "status": "operational", 
-        "version": "2.1.0",
-        "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
-        "docs": "/docs",
-        "health": "/health", 
-        "api_health": "/api/v1/health",
-        "frontend": "/app"
-    }
-
-# Health endpoint for Railway healthcheck
-@app.get("/health")
-async def health():
-    """Health check endpoint optimized for Railway deployment"""
-    # Log that health check was called
-    logger.info("Health check endpoint called")
-    
-    return {
-        "status": "healthy", 
-        "timestamp": "2025-09-25-000902",
-        "service": "ai-nurse-florence",
-        "version": "2.1.0",
-        "routers_count": len(routers_loaded)
-    }
-
-# Diagnostic endpoint to see what loaded
-@app.get("/debug/status")
-async def debug_status():
-    """Debug endpoint to see what components loaded"""
-    return {
-        "routers_loaded": routers_loaded,
-        "routers_failed": routers_failed,
-        "wizards_available": WIZARDS_AVAILABLE,
-        "auth_available": AUTH_AVAILABLE,
-        "version": "2.1.0"
-    }
-
-# --- API Versioning Router ---
-api_router = APIRouter(prefix="/api/v1")
-unprotected_router = APIRouter(prefix="/api/v1") 
-
-# --- Middleware Configuration ---
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RequestIdMiddleware)
-app.add_middleware(LoggingMiddleware)
-
-# Setup metrics if available
-try:
-    from utils.metrics import setup_metrics
-    setup_metrics(app)
-except ImportError:
-    logger.warning("Metrics not available")
-
-# Setup rate limiting if available  
-try:
-    from utils.rate_limit import RateLimiter
-    app.add_middleware(
-        RateLimiter,
-        requests_per_minute=settings.RATE_LIMIT_PER_MINUTE,
-        exempt_paths=EXEMPT_PATHS
-    )
-except ImportError:
-    logger.warning("Rate limiting not available")
-
-# CORS
+# CORS configuration for Railway deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],  # Configure restrictively in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- Include Routers (only if they loaded successfully) ---
-if summarize_router:
-    api_router.include_router(summarize_router)
-if disease_router:
-    api_router.include_router(disease_router)
-if pubmed_router:
-    api_router.include_router(pubmed_router)
-if trials_router:
-    api_router.include_router(trials_router)
-if patient_education_router:
-    api_router.include_router(patient_education_router)
-if readability_router:
-    api_router.include_router(readability_router)
-if education_router:
-    api_router.include_router(education_router)
-if medlineplus_router:
-    api_router.include_router(medlineplus_router)
-if clinical_documents_router:
-    api_router.include_router(clinical_documents_router)
-
-# Add wizards if available
-if WIZARDS_AVAILABLE and patient_education_wizard_router:
-    api_router.include_router(patient_education_wizard_router)
-if WIZARDS_AVAILABLE and sbar_report_wizard_router:
-    api_router.include_router(sbar_report_wizard_router)
-if WIZARDS_AVAILABLE and treatment_plan_wizard_router:
-    api_router.include_router(treatment_plan_wizard_router)
-if WIZARDS_AVAILABLE and clinical_trials_wizard_router:
-    api_router.include_router(clinical_trials_wizard_router)
-if WIZARDS_AVAILABLE and disease_search_wizard_router:
-    api_router.include_router(disease_search_wizard_router)
-
-# Unprotected routes
-if healthcheck_router:
-    unprotected_router.include_router(healthcheck_router)
-if AUTH_AVAILABLE and auth_router:
-    unprotected_router.include_router(auth_router)
-
-# Include routers in app
-app.include_router(api_router)
-app.include_router(unprotected_router)
-app.include_router(openapi_gpt.router)
-
-# Register exception handlers if available
-try:
-    from utils.error_handlers import register_exception_handlers
-    register_exception_handlers(app)
-except ImportError:
-    logger.warning("Exception handlers not available")
-
-@app.on_event("startup")
-async def startup_event() -> None:
-    logger.info("AI Nurse Florence API starting up")
+# Request ID middleware following Security & Middleware Stack
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    """Add request ID for tracing"""
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
     
-    # Initialize database if needed
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
+
+# Logging middleware following Middleware Stack Order
+@app.middleware("http") 
+async def logging_middleware(request: Request, call_next):
+    """Structured request/response logging"""
+    start_time = datetime.utcnow()
+    
+    # Log request
+    logger.info(f"Request: {request.method} {request.url.path} - ID: {getattr(request.state, 'request_id', 'unknown')}")
+    
+    response = await call_next(request)
+    
+    # Log response
+    duration = (datetime.utcnow() - start_time).total_seconds()
+    logger.info(f"Response: {response.status_code} - Duration: {duration:.3f}s")
+    
+    return response
+
+# Health check endpoints (unprotected routes)
+@app.get("/health", tags=["health"])
+def health_check():
+    """Railway health check endpoint - unprotected route"""
+    logger.info("Health check requested")
+    return {
+        "status": "healthy",
+        "version": "2.1.0",
+        "timestamp": datetime.utcnow().isoformat(),
+        "message": "AI Nurse Florence API operational"
+    }
+
+@app.get("/api/v1/health", tags=["health"])
+def api_health_check():
+    """API health check with dependency status"""
+    # Check service availability
+    services_status = {}
+    
+    # Test database connection (conditional)
     try:
-        if "sqlite" in settings.DATABASE_URL:
-            logger.info("Using SQLite database - tables will be created as needed")
+        from utils.database import test_connection
+        services_status["database"] = "healthy" if test_connection() else "unhealthy"
+    except ImportError:
+        services_status["database"] = "not configured"
+    
+    # Test Redis cache (conditional)
+    try:
+        from utils.redis_cache import test_redis
+        services_status["redis"] = "healthy" if test_redis() else "unhealthy"
+    except ImportError:
+        services_status["redis"] = "not configured"
+    
+    return {
+        "status": "healthy",
+        "version": "2.1.0",
+        "services": services_status,
+        "banner": EDU_BANNER
+    }
+
+# Root endpoints for frontend serving
+@app.get("/", response_class=HTMLResponse)
+def read_root():
+    """Serve frontend application"""
+    try:
+        static_path = Path("static/index.html")
+        if static_path.exists():
+            return FileResponse("static/index.html")
+        else:
+            # Fallback HTML if static files not available
+            return HTMLResponse("""
+            <!DOCTYPE html>
+            <html>
+            <head><title>AI Nurse Florence</title></head>
+            <body>
+                <h1>AI Nurse Florence</h1>
+                <p>Healthcare AI Assistant API</p>
+                <p><a href="/docs">API Documentation</a></p>
+                <p><em>Educational use only - not medical advice</em></p>
+            </body>
+            </html>
+            """)
     except Exception as e:
-        logger.warning(f"Database setup warning: {e}")
+        logger.error(f"Error serving root: {e}")
+        return HTMLResponse("<h1>AI Nurse Florence API</h1><p>Visit <a href='/docs'>/docs</a> for API documentation</p>")
 
-    # Initialize OpenAI client if available
-    if settings.OPENAI_API_KEY:
-        try:
-            from openai import OpenAI as OpenAIClient
-            global client
-            client = OpenAIClient(api_key=settings.OPENAI_API_KEY)
-            logger.info("OpenAI client configured")
-        except Exception as e:
-            logger.warning(f"OpenAI client setup failed: {e}")
+@app.get("/app", response_class=HTMLResponse)
+def read_app():
+    """Alternative frontend endpoint"""
+    return read_root()
 
-@app.on_event("shutdown") 
-async def shutdown_event() -> None:
-    logger.info("AI Nurse Florence API shutting down")
+# Mount static files (conditional)
+try:
+    if Path("static").exists():
+        app.mount("/static", StaticFiles(directory="static"), name="static")
+        logger.info("✅ Static files mounted")
+except Exception as e:
+    logger.warning(f"⚠️ Static files not mounted: {e}")
+
+# Debug endpoints for Railway troubleshooting
+@app.get("/debug/status", tags=["debug"])
+def debug_status():
+    """Debug endpoint showing loaded routers and system status"""
+    return {
+        "version": "2.1.0",
+        "timestamp": datetime.utcnow().isoformat(),
+        "python_version": sys.version,
+        "working_directory": os.getcwd(),
+        "port": os.getenv("PORT", "8000"),
+        "routers_loaded": [route.tags[0] if route.tags else "untagged" for route in app.routes if hasattr(route, 'tags')],
+        "files_exist": {
+            "requirements.txt": Path("requirements.txt").exists(),
+            "routers_init": Path("routers/__init__.py").exists(),
+            "wizards_init": Path("routers/wizards/__init__.py").exists()
+        },
+        "environment_vars": {
+            "PORT": os.getenv("PORT", "Not set"),
+            "DATABASE_URL": "Set" if os.getenv("DATABASE_URL") else "Not set",
+            "REDIS_URL": "Set" if os.getenv("REDIS_URL") else "Not set",
+            "OPENAI_API_KEY": "Set" if os.getenv("OPENAI_API_KEY") else "Not set"
+        }
+    }
+
+@app.get("/info", tags=["info"])
+def app_info():
+    """Application information endpoint"""
+    return {
+        "name": "AI Nurse Florence",
+        "version": "2.1.0",
+        "description": "Healthcare AI assistant for nurses and healthcare professionals",
+        "banner": EDU_BANNER,
+        "message": "Educational use only - not medical advice. No PHI stored."
+    }
+
+# API Router for protected routes following Router Organization
+api_router = APIRouter(prefix="/api/v1", tags=["api"])
+
+# Core medical services with Conditional Imports Pattern
+logger.info("=== AI NURSE FLORENCE STARTUP ===")
+logger.info("Loading routers with Conditional Imports Pattern...")
+
+routers_loaded = []
+routers_failed = []
+
+# Disease information service
+try:
+    from routers.disease import router as disease_router
+    api_router.include_router(disease_router, prefix="/disease", tags=["disease"])
+    routers_loaded.append("disease")
+    logger.info("✅ Disease router loaded")
+except ImportError as e:
+    routers_failed.append(f"disease: {e}")
+    logger.warning(f"⚠️ Disease router failed: {e}")
+
+# Literature search service  
+try:
+    from routers.literature import router as literature_router
+    api_router.include_router(literature_router, prefix="/literature", tags=["literature"])
+    routers_loaded.append("literature")
+    logger.info("✅ Literature router loaded")
+except ImportError as e:
+    routers_failed.append(f"literature: {e}")
+    logger.warning(f"⚠️ Literature router failed: {e}")
+
+# PubMed integration
+try:
+    from routers.pubmed import router as pubmed_router  
+    api_router.include_router(pubmed_router, prefix="/pubmed", tags=["pubmed"])
+    routers_loaded.append("pubmed")
+    logger.info("✅ PubMed router loaded")
+except ImportError as e:
+    routers_failed.append(f"pubmed: {e}")
+    logger.warning(f"⚠️ PubMed router failed: {e}")
+
+# Clinical trials service
+try:
+    from routers.clinical_trials import router as trials_router
+    api_router.include_router(trials_router, prefix="/trials", tags=["trials"]) 
+    routers_loaded.append("trials")
+    logger.info("✅ Clinical trials router loaded")
+except ImportError as e:
+    routers_failed.append(f"trials: {e}")
+    logger.warning(f"⚠️ Clinical trials router failed: {e}")
+
+# Patient education service
+try:
+    from routers.patient_education import router as education_router
+    api_router.include_router(education_router, prefix="/patient-education", tags=["education"])
+    routers_loaded.append("education")  
+    logger.info("✅ Patient education router loaded")
+except ImportError as e:
+    routers_failed.append(f"education: {e}")
+    logger.warning(f"⚠️ Patient education router failed: {e}")
+
+# Text summarization service
+try:
+    from routers.summarize import router as summarize_router
+    api_router.include_router(summarize_router, prefix="/summarize", tags=["summarize"])
+    routers_loaded.append("summarize")
+    logger.info("✅ Summarize router loaded")
+except ImportError as e:
+    routers_failed.append(f"summarize: {e}")
+    logger.warning(f"⚠️ Summarize router failed: {e}")
+
+# Wizard Pattern Implementation - Multi-step workflows
+WIZARDS_AVAILABLE = False
+wizard_routers_loaded = []
+
+logger.info("Loading wizard routers following Wizard Pattern Implementation...")
+
+# Treatment plan wizard (your original target endpoint)
+try:
+    from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
+    api_router.include_router(treatment_plan_wizard_router, prefix="/wizards/treatment-plan", tags=["wizards", "treatment-plan"])
+    wizard_routers_loaded.append("treatment-plan")
+    WIZARDS_AVAILABLE = True
+    logger.info("✅ Treatment plan wizard loaded - YOUR ORIGINAL ENDPOINT AVAILABLE!")
+except ImportError as e:
+    routers_failed.append(f"treatment-plan-wizard: {e}")
+    logger.warning(f"⚠️ Treatment plan wizard failed: {e}")
+
+# SBAR report wizard  
+try:
+    from routers.wizards.sbar_report import router as sbar_wizard_router
+    api_router.include_router(sbar_wizard_router, prefix="/wizards/sbar", tags=["wizards", "sbar"])
+    wizard_routers_loaded.append("sbar")
+    WIZARDS_AVAILABLE = True
+    logger.info("✅ SBAR wizard loaded")
+except ImportError as e:
+    routers_failed.append(f"sbar-wizard: {e}")
+    logger.warning(f"⚠️ SBAR wizard failed: {e}")
+
+# Patient education wizard
+try:
+    from routers.wizards.patient_education import router as patient_education_wizard_router
+    api_router.include_router(patient_education_wizard_router, prefix="/wizards/patient-education", tags=["wizards", "patient-education"])
+    wizard_routers_loaded.append("patient-education")
+    WIZARDS_AVAILABLE = True
+    logger.info("✅ Patient education wizard loaded")
+except ImportError as e:
+    routers_failed.append(f"patient-education-wizard: {e}")
+    logger.warning(f"⚠️ Patient education wizard failed: {e}")
+
+# Clinical trials wizard
+try:
+    from routers.wizards.clinical_trials import router as clinical_trials_wizard_router
+    api_router.include_router(clinical_trials_wizard_router, prefix="/wizards/clinical-trials", tags=["wizards", "clinical-trials"])
+    wizard_routers_loaded.append("clinical-trials")
+    WIZARDS_AVAILABLE = True
+    logger.info("✅ Clinical trials wizard loaded")
+except ImportError as e:
+    routers_failed.append(f"clinical-trials-wizard: {e}")
+    logger.warning(f"⚠️ Clinical trials wizard failed: {e}")
+
+# Disease search wizard
+try:
+    from routers.wizards.disease_search import router as disease_search_wizard_router
+    api_router.include_router(disease_search_wizard_router, prefix="/wizards/disease-search", tags=["wizards", "disease-search"])
+    wizard_routers_loaded.append("disease-search")
+    WIZARDS_AVAILABLE = True
+    logger.info("✅ Disease search wizard loaded")
+except ImportError as e:
+    routers_failed.append(f"disease-search-wizard: {e}")
+    logger.warning(f"⚠️ Disease search wizard failed: {e}")
+
+# Include main API router with all loaded endpoints
+app.include_router(api_router)
+
+# Startup summary following Service Layer Architecture
+logger.info("=== STARTUP SUMMARY ===")
+logger.info(f"Core routers loaded: {routers_loaded}")
+logger.info(f"Wizard routers loaded: {wizard_routers_loaded}")  
+logger.info(f"Wizards available: {WIZARDS_AVAILABLE}")
+logger.info(f"Failed imports: {len(routers_failed)}")
+
+if routers_failed:
+    logger.warning("Failed router imports (graceful degradation):")
+    for failure in routers_failed:
+        logger.warning(f"  - {failure}")
+
+total_expected_routes = len(routers_loaded) * 3 + len(wizard_routers_loaded) * 8  # Estimated
+logger.info(f"Expected routes: ~{total_expected_routes}")
+
+if WIZARDS_AVAILABLE:
+    logger.info("🎯 TREATMENT PLAN WIZARD ENDPOINTS AVAILABLE:")
+    logger.info("  - POST /api/v1/wizards/treatment-plan/start")
+    logger.info("  - POST /api/v1/wizards/treatment-plan/interventions (YOUR ORIGINAL TARGET)")
+    logger.info("  - POST /api/v1/wizards/treatment-plan/generate")
+
+# OpenAI client initialization (conditional)
+try:
+    from services.openai_client import get_openai_client
+    openai_client = get_openai_client()
+    if openai_client:
+        logger.info("✅ OpenAI client configured")
+    else:
+        logger.info("⚠️ OpenAI client not configured (API key missing)")
+except ImportError:
+    logger.warning("⚠️ OpenAI service not available")
+
+# Cache initialization (conditional) following Caching Strategy
+try:
+    from utils.redis_cache import test_redis
+    if test_redis():
+        logger.info("✅ Redis cache available")
+    else:
+        logger.info("⚠️ Redis cache not available - using in-memory fallback")
+except ImportError:
+    logger.info("⚠️ Cache service not configured")
+
+logger.info("=== AI NURSE FLORENCE READY ===")
+logger.info(f"Version: 2.1.0")
+logger.info(f"Educational disclaimer: {EDU_BANNER}")
+logger.info("Health endpoint: /health")
+logger.info("API documentation: /docs")
+
+# Error handlers following Error Handling patterns
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Standardized HTTP exception handling"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "message": exc.detail,
+            "status_code": exc.status_code,
+            "request_id": getattr(request.state, 'request_id', 'unknown')
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """General exception handling with logging"""
+    request_id = getattr(request.state, 'request_id', 'unknown')
+    logger.error(f"Unhandled exception - Request ID: {request_id} - {str(exc)}")
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "message": "An unexpected error occurred",
+            "request_id": request_id
+        }
+    )
+
+# Development server configuration
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    host = "0.0.0.0"
+    
+    logger.info(f"Starting development server on {host}:{port}")
+    uvicorn.run(
+        "app:app",
+        host=host,
+        port=port,
+        reload=True,
+        log_level="info"
+    )
