@@ -112,24 +112,21 @@ try:
     available_routers = get_available_routers()
     router_status = get_router_status()
     
-    # Include routers with proper prefix following Router Organization
+    # Include routers onto `api_router` (it already has prefix='/api/v1') to avoid duplicate registration
     for router_name, router in available_routers.items():
         try:
-            if router_name in ['health', 'auth']:
-                # Unprotected routes
-                app.include_router(router, prefix="/api/v1")
-            else:
-                # Protected routes
-                app.include_router(router, prefix="/api/v1")
-                # For wizard routers, also register a plural alias to support tests/docs that use '/wizards'
-                if 'wizard' in getattr(router, 'prefix', '') or router_name.startswith('nursing') or router_name in ['treatment_plan', 'sbar_report', 'medication_reconciliation', 'care_plan', 'discharge_planning']:
-                    try:
-                        app.include_router(router, prefix="/api/v1/wizards")
-                    except Exception:
-                        pass
-            
+            # Register each router under the central api_router so OpenAPI IDs stay unique
+            api_router.include_router(router)
+
+            # For wizard routers, also register a plural alias under '/wizards' (api_router prefix will make it '/api/v1/wizards')
+            if 'wizard' in getattr(router, 'prefix', '') or router_name.startswith('nursing') or router_name in ['treatment_plan', 'sbar_report', 'medication_reconciliation', 'care_plan', 'discharge_planning']:
+                try:
+                    api_router.include_router(router, prefix="/wizards")
+                except Exception:
+                    pass
+
             ROUTERS_LOADED[router_name] = True
-            logger.info(f"Router registered: {router_name}")
+            logger.info(f"Router registered onto api_router: {router_name}")
         except Exception as e:
             logger.warning(f"Failed to register router {router_name}: {e}")
             ROUTERS_LOADED[router_name] = False
@@ -208,72 +205,10 @@ if __name__ == "__main__":
         log_level="info"
     )
 
-# ROUTER REGISTRATION - Following Router Organization Pattern
-try:
-    from src.routers import available_routers, router_status
-    
-    logger.info("Registering routers following Router Organization pattern...")
-    
-    # Register each available router with proper error handling
-    registered_count = 0
-    for router_name, router in available_routers.items():
-        try:
-            if router_status.get(router_name, False) and router:
-                # Include router in the API router
-                api_router.include_router(router)
-                logger.info(f"✅ Registered router: {router_name}")
-                registered_count += 1
-            else:
-                logger.warning(f"⚠️ Skipped unavailable router: {router_name}")
-        except Exception as e:
-            logger.error(f"❌ Failed to register router {router_name}: {e}")
-    
-    logger.info(f"Router registration complete: {registered_count}/{len(available_routers)} routers registered")
-    
-except ImportError as e:
-    logger.error(f"Router loading failed: {e}")
-    logger.info("Attempting individual router registration with Conditional Imports Pattern...")
-    
-    # Individual router registration with graceful degradation
-    routers_to_load = [
-        ('src.routers.health', 'health'),
-        ('src.routers.auth', 'auth'),
-        ('src.routers.wizards.nursing_assessment', 'nursing_assessment'),
-        ('src.routers.wizards.sbar_report', 'sbar_report'),
-        ('src.routers.wizards.medication_reconciliation', 'medication_reconciliation'),
-        ('src.routers.wizards.care_plan', 'care_plan'),
-        ('src.routers.wizards.discharge_planning', 'discharge_planning')
-    ]
-    
-    for module_path, router_name in routers_to_load:
-        try:
-            import importlib
-            module = importlib.import_module(module_path)
-            if hasattr(module, 'router'):
-                api_router.include_router(module.router)
-                logger.info(f"✅ Fallback: {router_name} router registered")
-            else:
-                logger.warning(f"⚠️ {router_name} module missing 'router' attribute")
-        except ImportError as e:
-            logger.warning(f"⚠️ {router_name} router unavailable: {e}")
-        except Exception as e:
-            logger.error(f"❌ Failed to register {router_name}: {e}")
-
-# Explicitly register treatment-plan router at the plural path expected by tests
-try:
-    import importlib
-    tp_mod = importlib.import_module('routers.wizards.treatment_plan')
-    if hasattr(tp_mod, 'router'):
-        # Mount the treatment-plan router onto the api_router (api_router prefix = /api/v1)
-        try:
-            api_router.include_router(tp_mod.router)
-            logger.info("✅ Explicitly included treatment_plan router onto api_router")
-        except Exception:
-            # Fallback to including directly on app if api_router not available
-            app.include_router(tp_mod.router, prefix="/api/v1")
-            logger.info("✅ Fallback: explicitly registered treatment_plan router at /api/v1")
-except Exception as _:
-    logger.debug('Could not explicitly register treatment_plan router')
+# NOTE: Router registration is handled above by including routers onto `api_router`.
+# The previous duplicate registration block was removed to avoid double-including routers
+# which caused duplicate OpenAPI operation IDs. If a fallback import path is needed,
+# the registry in `src.routers` should be updated instead of registering routers twice here.
 
 # STATIC FILE SERVING - Following API Design Standards
 from fastapi.staticfiles import StaticFiles
