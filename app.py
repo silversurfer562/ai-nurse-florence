@@ -173,3 +173,55 @@ if __name__ == "__main__":
         reload=True,
         log_level="info"
     )
+
+# ROUTER REGISTRATION - Following Router Organization Pattern
+try:
+    from src.routers import available_routers, router_status
+    
+    logger.info("Registering routers following Router Organization pattern...")
+    
+    # Register each available router with proper error handling
+    registered_count = 0
+    for router_name, router in available_routers.items():
+        try:
+            if router_status.get(router_name, False) and router:
+                # Include router in the API router
+                api_router.include_router(router)
+                logger.info(f"✅ Registered router: {router_name}")
+                registered_count += 1
+            else:
+                logger.warning(f"⚠️ Skipped unavailable router: {router_name}")
+        except Exception as e:
+            logger.error(f"❌ Failed to register router {router_name}: {e}")
+    
+    logger.info(f"Router registration complete: {registered_count}/{len(available_routers)} routers registered")
+    
+except ImportError as e:
+    logger.error(f"Router loading failed: {e}")
+    logger.info("Attempting individual router registration with Conditional Imports Pattern...")
+    
+    # Individual router registration with graceful degradation
+    routers_to_load = [
+        ('src.routers.health', 'health'),
+        ('src.routers.auth', 'auth'),
+        ('src.routers.wizards.nursing_assessment', 'nursing_assessment'),
+        ('src.routers.wizards.sbar_report', 'sbar_report'),
+        ('src.routers.wizards.medication_reconciliation', 'medication_reconciliation'),
+        ('src.routers.wizards.care_plan', 'care_plan'),
+        ('src.routers.wizards.discharge_planning', 'discharge_planning')
+    ]
+    
+    for module_path, router_name in routers_to_load:
+        try:
+            import importlib
+            module = importlib.import_module(module_path)
+            if hasattr(module, 'router'):
+                api_router.include_router(module.router)
+                logger.info(f"✅ Fallback: {router_name} router registered")
+            else:
+                logger.warning(f"⚠️ {router_name} module missing 'router' attribute")
+        except ImportError as e:
+            logger.warning(f"⚠️ {router_name} router unavailable: {e}")
+        except Exception as e:
+            logger.error(f"❌ Failed to register {router_name}: {e}")
+

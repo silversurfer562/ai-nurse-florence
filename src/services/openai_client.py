@@ -1,254 +1,160 @@
 """
-OpenAI client with conditional loading
-Following AI Nurse Florence integration patterns
+OpenAI Client Service - AI Nurse Florence
+Following OpenAI Integration pattern with environment-based API key loading
 """
 
 import logging
-from typing import Optional, Dict, Any, List
-import asyncio
+import os
+from typing import Optional, Dict, Any
+from src.utils.config import get_settings, get_educational_banner, get_openai_config
 
-# Conditional OpenAI import - graceful degradation
-try:
-    from openai import AsyncOpenAI
-    _openai_available = True
-except ImportError:
-    _openai_available = False
-    AsyncOpenAI = None
+logger = logging.getLogger(__name__)
 
-from ..utils.config import get_openai_config, is_feature_enabled
-from ..utils.exceptions import ExternalServiceException
-
-# Global client instance
-_openai_client: Optional[AsyncOpenAI] = None
-
-async def get_openai_client() -> Optional[AsyncOpenAI]:
-    """Get OpenAI client with graceful fallback"""
-    global _openai_client
-    
-    if not _openai_available:
-        logging.warning("OpenAI library not available - install with: pip install openai")
-        return None
-    
-    if not is_feature_enabled('openai'):
-        logging.info("OpenAI not configured - clinical AI features disabled")
-        return None
-    
-    if _openai_client is None:
-        openai_config = get_openai_config()
-        if not openai_config:
-            return None
-        
-        try:
-            _openai_client = AsyncOpenAI(
-                api_key=openai_config["api_key"],
-                timeout=30.0,
-                max_retries=2
-            )
-            logging.info("OpenAI client initialized successfully")
-        except Exception as e:
-            logging.error(f"OpenAI client initialization failed: {e}")
-            return None
-    
-    return _openai_client
-
-async def chat_completion(
-    messages: List[Dict[str, str]],
-    model: Optional[str] = None,
-    temperature: Optional[float] = None,
-    max_tokens: Optional[int] = None,
-    **kwargs
-) -> Optional[str]:
+class OpenAIService:
     """
-    Chat completion with clinical context
-    Returns None if OpenAI unavailable (graceful degradation)
+    OpenAI service following OpenAI Integration pattern.
+    Implements Conditional Imports Pattern for graceful degradation.
     """
-    client = await get_openai_client()
-    if not client:
-        return None
     
-    try:
-        # Get default config
-        openai_config = get_openai_config()
-        if not openai_config:
-            return None
+    def __init__(self):
+        self.settings = get_settings()
+        self.config = get_openai_config()
+        self.banner = get_educational_banner()
         
-        # Use provided parameters or defaults
-        model = model or openai_config["model"]
-        temperature = temperature if temperature is not None else openai_config["temperature"]
-        max_tokens = max_tokens or openai_config["max_tokens"]
-        
-        # Add clinical safety context to system message
-        if messages and messages[0].get("role") == "system":
-            messages[0]["content"] += "\n\nIMPORTANT: This is for educational purposes only. Always emphasize clinical judgment and evidence-based practice."
+        # Try to initialize OpenAI client following lazy client pattern
+        self._client = None
+        self._initialize_client()
+    
+    def _initialize_client(self):
+        """Initialize OpenAI client if API key is available."""
+        if self.config["available"]:
+            try:
+                # Try to import OpenAI following Conditional Imports Pattern
+                try:
+                    import openai
+                    self._client = openai.OpenAI(api_key=self.config["api_key"])
+                    logger.info("OpenAI service: Client initialized successfully")
+                except ImportError:
+                    logger.info("OpenAI service: openai library not available, using educational stubs")
+                    self._client = None
+                except Exception as e:
+                    logger.warning(f"OpenAI service: Failed to initialize client: {e}")
+                    self._client = None
+            except Exception as e:
+                logger.warning(f"OpenAI service: Configuration error: {e}")
         else:
-            messages.insert(0, {
-                "role": "system",
-                "content": "You are an AI assistant providing educational healthcare information. Always emphasize that this is for educational purposes only and clinical judgment is required."
-            })
+            logger.info("OpenAI service: No API key configured, using educational stubs")
+    
+    async def generate_response(self, prompt: str, context: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Generate AI response following OpenAI Integration pattern.
         
-        response = await client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            **kwargs
-        )
+        Args:
+            prompt: User prompt for AI generation
+            context: Optional context for better responses
         
-        return response.choices[0].message.content
+        Returns:
+            Dict with AI response and educational disclaimers
+        """
+        try:
+            if self._client and self.config["available"]:
+                # Use live OpenAI API
+                return await self._generate_live_response(prompt, context)
+            else:
+                # Fallback: Educational stub response
+                return self._create_stub_response(prompt, context)
+                
+        except Exception as e:
+            logger.error(f"OpenAI generation error: {e}")
+            return self._create_error_response(prompt, str(e))
+    
+    async def _generate_live_response(self, prompt: str, context: Optional[str]) -> Dict[str, Any]:
+        """Generate live OpenAI response using actual API."""
+        try:
+            # Construct messages following OpenAI best practices
+            messages = []
+            
+            if context:
+                messages.append({
+                    "role": "system", 
+                    "content": f"You are a healthcare AI assistant. Context: {context}. Always include educational disclaimers that this is for educational purposes only and not medical advice."
+                })
+            else:
+                messages.append({
+                    "role": "system",
+                    "content": "You are a healthcare AI assistant providing educational information only. Always include disclaimers that this is not medical advice."
+                })
+            
+            messages.append({"role": "user", "content": prompt})
+            
+            # Make API call
+            response = await self._client.chat.completions.create(
+                model=self.config["model"],
+                messages=messages,
+                max_tokens=1000,
+                temperature=0.7
+            )
+            
+            ai_response = response.choices[0].message.content
+            
+            return {
+                "banner": self.banner,
+                "prompt": prompt,
+                "context": context,
+                "response": ai_response,
+                "model": self.config["model"],
+                "service_note": "OpenAI service: Live API response",
+                "disclaimer": "AI-generated content for educational purposes only. Clinical decisions require professional judgment.",
+                "usage": {
+                    "prompt_tokens": response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
+                    "total_tokens": response.usage.total_tokens
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Live OpenAI API error: {e}")
+            # Fall back to stub response on API error
+            return self._create_stub_response(prompt, context, api_error=str(e))
+    
+    def _create_stub_response(self, prompt: str, context: Optional[str], api_error: Optional[str] = None) -> Dict[str, Any]:
+        """Create educational stub response following API Design Standards."""
         
-    except Exception as e:
-        logging.error(f"OpenAI chat completion failed: {e}")
-        raise ExternalServiceException("OpenAI", str(e), e)
-
-async def clinical_decision_support(
-    patient_condition: str,
-    severity: str = "moderate",
-    care_setting: str = "med-surg",
-    additional_context: Optional[str] = None
-) -> Optional[str]:
-    """
-    Generate clinical decision support content
-    Returns None if OpenAI unavailable
-    """
-    client = await get_openai_client()
-    if not client:
-        return None
-    
-    # Construct clinical prompt
-    prompt = f"""
-As a nursing education expert, provide evidence-based nursing interventions for:
-
-Patient Condition: {patient_condition}
-Severity: {severity}
-Care Setting: {care_setting}
-{f"Additional Context: {additional_context}" if additional_context else ""}
-
-Please provide:
-1. Primary nursing interventions (3-5 evidence-based interventions)
-2. Monitoring parameters
-3. Patient education points
-4. Safety considerations
-
-Format as structured text with clear headings. Include evidence levels where possible.
-Remember: This is educational content for nursing professionals.
-"""
-
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a nursing education expert providing evidence-based clinical guidance. Always emphasize clinical judgment and evidence-based practice."
-        },
-        {
-            "role": "user", 
-            "content": prompt
+        if api_error:
+            service_note = f"OpenAI service: API error, using educational stub - {api_error}"
+        else:
+            service_note = "OpenAI service: Educational stub mode (no API key configured)"
+        
+        # Create contextual response based on prompt content
+        if any(term in prompt.lower() for term in ['nursing', 'patient', 'care', 'assessment']):
+            response = f"Educational AI response for nursing query: '{prompt}'. This is a simulated response demonstrating the AI assistant's capability to provide contextual healthcare information. In a live system, this would provide evidence-based nursing guidance with proper citations and safety considerations."
+        elif any(term in prompt.lower() for term in ['medication', 'drug', 'treatment']):
+            response = f"Educational AI response for medication query: '{prompt}'. This simulated response shows how the AI would provide drug information with appropriate safety disclaimers, contraindications, and dosing considerations based on current clinical guidelines."
+        elif any(term in prompt.lower() for term in ['diagnosis', 'symptom', 'condition']):
+            response = f"Educational AI response for diagnostic query: '{prompt}'. This demonstrates how the AI would provide differential diagnosis considerations, clinical decision support, and evidence-based recommendations while emphasizing the need for professional clinical judgment."
+        else:
+            response = f"Educational AI response: This is a simulated response to '{prompt}' for demonstration purposes. A live system would provide comprehensive, evidence-based healthcare information with appropriate clinical context and safety considerations."
+        
+        return {
+            "banner": self.banner,
+            "prompt": prompt,
+            "context": context,
+            "response": response,
+            "model": self.config["model"],
+            "service_note": service_note,
+            "disclaimer": "AI-generated content for educational purposes only. Clinical decisions require professional judgment.",
+            "educational_note": "This response is generated for learning purposes and should not replace professional medical advice."
         }
-    ]
     
-    return await chat_completion(messages, temperature=0.1)
-
-async def generate_sbar_report(
-    situation: str,
-    background: str, 
-    assessment: str,
-    recommendation: str
-) -> Optional[str]:
-    """
-    Generate formatted SBAR report
-    Returns None if OpenAI unavailable
-    """
-    client = await get_openai_client()
-    if not client:
-        return None
-    
-    prompt = f"""
-Format the following information into a professional SBAR report:
-
-SITUATION: {situation}
-BACKGROUND: {background}  
-ASSESSMENT: {assessment}
-RECOMMENDATION: {recommendation}
-
-Please format this as a clear, professional SBAR report suitable for healthcare communication.
-Include appropriate clinical terminology and ensure clarity for handoff communication.
-"""
-
-    messages = [
-        {
-            "role": "system",
-            "content": "You are a clinical documentation expert. Format healthcare communications clearly and professionally."
-        },
-        {
-            "role": "user",
-            "content": prompt
+    def _create_error_response(self, prompt: str, error: str) -> Dict[str, Any]:
+        """Create standardized error response."""
+        return {
+            "banner": self.banner,
+            "prompt": prompt,
+            "error": f"OpenAI service temporarily unavailable: {error}",
+            "fallback_note": "AI service experiencing issues. Educational content may be limited.",
+            "service_status": "degraded"
         }
-    ]
-    
-    return await chat_completion(messages, temperature=0.2)
-
-async def enhance_patient_education(
-    topic: str,
-    reading_level: str = "6th grade",
-    language: str = "en"
-) -> Optional[str]:
-    """
-    Generate patient education content
-    Returns None if OpenAI unavailable
-    """
-    client = await get_openai_client()
-    if not client:
-        return None
-    
-    prompt = f"""
-Create patient education content for: {topic}
-
-Requirements:
-- Reading level: {reading_level}
-- Language: {language}
-- Include key points, lifestyle modifications, when to call healthcare provider
-- Use simple, clear language appropriate for patients
-- Include encouragement and practical tips
-
-Format as structured patient education material.
-"""
-
-    messages = [
-        {
-            "role": "system", 
-            "content": "You are a patient education specialist. Create clear, empowering educational content for patients and families."
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-    
-    return await chat_completion(messages, temperature=0.3)
-
-# Legacy compatibility function for existing routers
-async def chat(messages: List[Dict[str, str]], model: str = "gpt-4o-mini", **kwargs) -> str:
-    """
-    Legacy chat function for backward compatibility
-    Used by education router and other existing components
-    """
-    result = await chat_completion(messages, model=model, **kwargs)
-    if result is None:
-        raise ExternalServiceException("OpenAI", "OpenAI service not available", None)
-    return result
-
-# Client availability check
-async def is_openai_available() -> bool:
-    """Check if OpenAI client is available and working"""
-    client = await get_openai_client()
-    return client is not None
-
-# Cleanup function
-async def cleanup_openai_client():
-    """Cleanup OpenAI client on shutdown"""
-    global _openai_client
-    if _openai_client:
-        await _openai_client.close()
-        _openai_client = None
-        logging.info("OpenAI client cleaned up")
 
 # Service factory function following Conditional Imports Pattern
 def create_openai_service() -> Optional[OpenAIService]:
@@ -262,14 +168,104 @@ def create_openai_service() -> Optional[OpenAIService]:
         logger.warning(f"OpenAI service unavailable: {e}")
         return None
 
-# Export public interface
-__all__ = [
-    "get_openai_client",
-    "chat_completion", 
-    "clinical_decision_support",
-    "generate_sbar_report",
-    "enhance_patient_education",
-    "chat",  # Legacy compatibility
-    "is_openai_available",
-    "cleanup_openai_client"
-]
+async def clinical_decision_support(
+    patient_data: dict,
+    clinical_question: str,
+    context: str = "general"
+) -> dict:
+    """
+    Clinical decision support using OpenAI following OpenAI Integration pattern.
+    
+    Args:
+        patient_data: Patient information (de-identified)
+        clinical_question: Clinical question requiring decision support
+        context: Clinical context (general, critical, emergency)
+    
+    Returns:
+        Dict with clinical recommendations and educational disclaimers
+    """
+    service = create_openai_service()
+    
+    if not service:
+        return {
+            "banner": get_educational_banner(),
+            "clinical_question": clinical_question,
+            "error": "Clinical decision support temporarily unavailable",
+            "fallback_note": "Please consult clinical protocols and healthcare team for decision support",
+            "service_status": "degraded"
+        }
+    
+    # Create clinical decision prompt
+    clinical_prompt = f"""
+    Clinical Decision Support Request:
+    
+    Clinical Question: {clinical_question}
+    Context: {context}
+    Patient Data: {patient_data}
+    
+    Please provide evidence-based clinical guidance including:
+    1. Assessment considerations
+    2. Recommended interventions
+    3. Monitoring parameters
+    4. When to escalate care
+    
+    Remember: This is educational support only - clinical decisions require professional judgment.
+    """
+    
+    try:
+        result = await service.generate_response(
+            prompt=clinical_prompt,
+            context="clinical_decision_support"
+        )
+        
+        # Add clinical-specific fields
+        result.update({
+            "clinical_question": clinical_question,
+            "decision_support_type": context,
+            "clinical_disclaimer": "This AI-generated guidance is for educational purposes only. All clinical decisions must be made by qualified healthcare professionals based on complete patient assessment.",
+            "escalation_note": "Escalate to attending physician or specialist for complex cases or when patient condition changes."
+        })
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "banner": get_educational_banner(),
+            "clinical_question": clinical_question,
+            "error": f"Clinical decision support failed: {str(e)}",
+            "fallback_note": "AI decision support temporarily unavailable - rely on clinical protocols",
+            "service_status": "error"
+        }
+
+def is_openai_available() -> bool:
+    """
+    Check if OpenAI service is available following OpenAI Integration pattern.
+    
+    Returns:
+        bool: True if OpenAI service can be created and used
+    """
+    try:
+        config = get_openai_config()
+        return config["available"]
+    except Exception:
+        return False
+
+# Update factory function to include clinical decision support
+def create_openai_service() -> Optional[OpenAIService]:
+    """
+    Create OpenAI service with clinical decision support capabilities.
+    Returns None if service cannot be initialized following Conditional Imports Pattern.
+    """
+    try:
+        service = OpenAIService()
+        
+        # Verify clinical decision support is available
+        if service.config["available"]:
+            logger.info("OpenAI service: Clinical decision support enabled")
+        else:
+            logger.info("OpenAI service: Using educational stubs for clinical decision support")
+            
+        return service
+    except Exception as e:
+        logger.warning(f"OpenAI service unavailable: {e}")
+        return None

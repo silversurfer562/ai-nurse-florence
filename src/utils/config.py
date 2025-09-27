@@ -6,7 +6,7 @@ Following coding instructions centralized configuration with Pydantic Settings
 import os
 from typing import List, Optional
 from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 class Settings(BaseSettings):
     """
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     HOST: str = Field(default="0.0.0.0", description="Server host")
     PORT: int = Field(default=8000, description="Server port")
     
-    # CORS Configuration - Fixed attribute name
+    # CORS Configuration
     CORS_ORIGINS: str = Field(
         default="http://localhost:3000,https://localhost:3000",
         description="Comma-separated CORS origins"
@@ -52,8 +52,11 @@ class Settings(BaseSettings):
     USE_MEDLINEPLUS: bool = Field(default=True, description="Enable MedlinePlus service")
     USE_PUBMED: bool = Field(default=True, description="Enable PubMed service")
     
-    # OpenAI Configuration following OpenAI Integration
-    OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API key")
+    # OpenAI Configuration following OpenAI Integration - loads from environment
+    OPENAI_API_KEY: Optional[str] = Field(
+        default=None, 
+        description="OpenAI API key from environment variable"
+    )
     OPENAI_MODEL: str = Field(default="gpt-3.5-turbo", description="Default OpenAI model")
     
     # Redis Configuration following Caching Strategy
@@ -87,12 +90,12 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        # Allow extra fields to prevent validation errors
-        extra = "allow"
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="allow"
+    )
     
     @property
     def ALLOWED_ORIGINS(self) -> List[str]:
@@ -106,6 +109,47 @@ class Settings(BaseSettings):
     def has_redis(self) -> bool:
         """Check if Redis is configured following Caching Strategy."""
         return self.REDIS_URL is not None and self.REDIS_URL.strip() != ""
+    
+    def get_database_url(self) -> str:
+        """Get database URL with environment variable override."""
+        return os.getenv("DATABASE_URL", self.DATABASE_URL)
+    
+    @property
+    def effective_use_live_services(self) -> bool:
+        """Get effective USE_LIVE_SERVICES setting (USE_LIVE takes precedence)."""
+        return self.USE_LIVE or self.USE_LIVE_SERVICES
+
+# Global settings instance following Configuration Management pattern
+_settings: Optional[Settings] = None
+
+def get_settings() -> Settings:
+    """
+    Get settings instance with caching.
+    Following Conditional Imports Pattern for graceful configuration loading.
+    """
+    global _settings
+    if _settings is None:
+        try:
+            _settings = Settings()
+        except Exception as e:
+            print(f"Configuration error: {e}")
+            # Fallback to default settings
+            _settings = Settings()
+    return _settings
+
+def get_educational_banner() -> str:
+    """Get educational banner following API Design Standards pattern."""
+    settings = get_settings()
+    return settings.EDUCATIONAL_BANNER
+
+def get_openai_config() -> dict:
+    """Get OpenAI configuration following OpenAI Integration pattern."""
+    settings = get_settings()
+    return {
+        "api_key": settings.OPENAI_API_KEY,
+        "model": settings.OPENAI_MODEL,
+        "available": settings.has_openai()
+    }
 
 def get_redis_config() -> dict:
     """Get Redis configuration following Caching Strategy pattern."""
@@ -126,19 +170,44 @@ def get_cache_config() -> dict:
         "fallback_to_memory": True
     }
 
-# Global settings instance following Configuration Management pattern
-_settings: Optional[Settings] = None
+def is_feature_enabled(feature: str) -> bool:
+    """
+    Check if feature is enabled following feature flag pattern.
+    
+    Args:
+        feature: Feature name (openai, redis, metrics, etc.)
+    
+    Returns:
+        bool: True if feature is enabled and available
+    """
+    settings = get_settings()
+    
+    if feature == "openai":
+        return settings.has_openai()
+    elif feature == "redis":
+        return settings.has_redis()
+    elif feature == "metrics":
+        return settings.ENABLE_METRICS
+    elif feature == "rate_limiting":
+        return settings.RATE_LIMIT_ENABLED
+    elif feature == "health_checks":
+        return settings.ENABLE_HEALTH_CHECKS
+    elif feature == "caching":
+        return settings.ENABLE_CACHING
+    elif feature == "docs":
+        return settings.ENABLE_DOCS
+    elif feature == "debug_routes":
+        return settings.ENABLE_DEBUG_ROUTES
+    else:
+        return False
 
-def get_settings() -> Settings:
-    """Get settings instance with caching."""
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
-
+# Export commonly used items
 __all__ = [
     "Settings",
     "get_settings", 
+    "get_educational_banner",
+    "get_openai_config",
     "get_redis_config",
-    "get_cache_config"
+    "get_cache_config",
+    "is_feature_enabled"
 ]

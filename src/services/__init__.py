@@ -86,3 +86,10 @@ def get_available_services() -> Dict[str, bool]:
 _load_services()
 
 __all__ = ['get_service', 'get_available_services']
+
+def reload_services():
+    """Reload all services (useful for testing) following Service Layer Architecture."""
+    global _service_registry, _service_status
+    _service_registry = {}
+    _service_status = {}
+    _load_services()

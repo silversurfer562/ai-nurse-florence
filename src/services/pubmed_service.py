@@ -262,3 +262,14 @@ class PubMedService(BaseService[Dict[str, Any]]):
     def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
         """Implementation of abstract method from BaseService"""
         return self.search_literature(query, **kwargs)
+# Service factory function following Conditional Imports Pattern
+def create_pubmed_service() -> Optional[PubMedService]:
+    """
+    Create PubMed service with graceful degradation.
+    Returns None if service cannot be initialized.
+    """
+    try:
+        return PubMedService()
+    except Exception as e:
+        logger.warning(f"PubMed service unavailable: {e}")
+        return None

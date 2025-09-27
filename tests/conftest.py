@@ -1,212 +1,213 @@
 """
-Test configuration and fixtures
-Enhanced for service layer testing
+Test configuration and fixtures following Testing Patterns from coding instructions.
+Provides path setup, service layer mocks, and test client for comprehensive testing.
 """
 
 import pytest
-import asyncio
-from unittest.mock import Mock, AsyncMock, patch
-import tempfile
-import os
+import sys
+from pathlib import Path
+from typing import Dict, Any, AsyncGenerator
+from unittest.mock import AsyncMock, MagicMock
+from fastapi.testclient import TestClient
 
-# Test environment setup
-@pytest.fixture(scope="session", autouse=True)
-def setup_test_environment():
-    """Setup test environment variables"""
-    os.environ["ENVIRONMENT"] = "test"
-    os.environ["DEBUG"] = "true"
-    os.environ["DATABASE_URL"] = "sqlite:///test.db"
-    os.environ["LOG_LEVEL"] = "DEBUG"
-    # Disable external services in tests
-    os.environ["USE_LIVE_SERVICES"] = "false"
-    os.environ["OPENAI_API_KEY"] = ""  # Disable OpenAI in tests
-    os.environ["REDIS_URL"] = ""  # Disable Redis in tests
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create event loop for async tests"""
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
-
-# Mock external services
-@pytest.fixture
-def mock_openai_client():
-    """Mock OpenAI client for testing"""
-    with patch('src.services.openai_client.get_openai_client') as mock:
-        mock_client = AsyncMock()
-        mock.return_value = mock_client
-        yield mock_client
+# Add project root to path following conftest.py pattern from coding instructions
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 @pytest.fixture
-def mock_redis_cache():
-    """Mock Redis cache for testing"""
-    with patch('src.utils.redis_cache.get_redis_client') as mock:
-        mock.return_value = None  # Force fallback to memory cache
-        yield mock
+def test_client():
+    """FastAPI test client following TestClient pattern from coding instructions."""
+    from app import app
+    return TestClient(app)
 
 @pytest.fixture
-def disable_external_services():
-    """Disable all external service calls"""
-    with patch('src.services.openai_client.is_openai_available', return_value=False), \
-         patch('src.utils.redis_cache.get_redis_client', return_value=None):
-        yield
-
-# Sample data fixtures
-@pytest.fixture
-def sample_clinical_request():
-    """Sample clinical decision request"""
-    from src.models.schemas import ClinicalDecisionRequest, SeverityLevel, CareSetting
-    return ClinicalDecisionRequest(
-        patient_condition="acute heart failure",
-        severity=SeverityLevel.MODERATE,
-        care_setting=CareSetting.MED_SURG,
-        comorbidities=["diabetes", "hypertension"],
-        additional_context="Patient reports shortness of breath"
-    )
-
-@pytest.fixture
-def sample_literature_request():
-    """Sample literature search request"""
-    from src.models.schemas import LiteratureSearchRequest
-    return LiteratureSearchRequest(
-        query="heart failure nursing interventions",
-        max_results=10,
-        filter_years=2020
-    )
-
-@pytest.fixture
-def sample_sbar_request():
-    """Sample SBAR request"""
-    from src.models.schemas import SBARRequest
-    return SBARRequest(
-        situation="Patient experiencing increased shortness of breath",
-        background="72-year-old male with history of heart failure",
-        assessment="Bilateral crackles, oxygen saturation 88% on room air",
-        recommendation="Increase oxygen therapy and administer diuretic"
-    )
-
-# Test database fixtures
-@pytest.fixture
-def temp_database():
-    """Create temporary database for testing"""
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
-        db_path = tmp.name
-    
-    yield f"sqlite:///{db_path}"
-    
-    # Cleanup
-    try:
-        os.unlink(db_path)
-    except FileNotFoundError:
-        pass
-
-# Service fixtures
-@pytest.fixture
-def clinical_decision_service():
-    """Clinical decision service instance"""
-    from src.services.clinical_decision_service import ClinicalDecisionService
-    return ClinicalDecisionService()
-
-@pytest.fixture 
-def evidence_service():
-    """Evidence service instance"""
-    from src.services.evidence_service import EvidenceService
-    return EvidenceService()
-
-# Mock response fixtures
-@pytest.fixture
-def mock_openai_response():
-    """Mock OpenAI response"""
-    return """
-    **Primary Nursing Interventions:**
-    1. Monitor daily weights and strict I&O
-    2. Assess for signs of fluid overload
-    3. Position patient in semi-Fowler's position
-    4. Administer diuretics as ordered
-    
-    **Patient Education:**
-    - Sodium restriction (2g daily)
-    - Daily weight monitoring
-    - When to contact healthcare provider
+def mock_disease_service():
     """
+    Disease service mock following Fixture-based mocking pattern.
+    Provides type-safe mock responses matching Pydantic definitions.
+    """
+    mock_service = AsyncMock()
+    
+    # Mock disease lookup response following API Design Standards
+    mock_service.lookup_disease.return_value = {
+        "banner": "Draft for clinician review — not medical advice. No PHI stored.",
+        "query": "diabetes",
+        "disease_name": "Diabetes Mellitus",
+        "description": "Mock disease information for testing",
+        "symptoms": ["Polyuria", "Polydipsia", "Polyphagia"],
+        "risk_factors": ["Family history", "Obesity"],
+        "complications": ["Diabetic nephropathy", "Retinopathy"],
+        "references": ["Mock Reference 1", "Mock Reference 2"],
+        "educational_note": "This is mock data for testing purposes"
+    }
+    
+    # Mock symptom search response
+    mock_service.search_by_symptoms.return_value = {
+        "banner": "Draft for clinician review — not medical advice. No PHI stored.",
+        "symptoms_searched": ["fatigue", "thirst"],
+        "potential_diseases": [
+            {
+                "disease_name": "Mock Disease Match",
+                "match_score": "Mock scoring",
+                "matching_symptoms": ["fatigue", "thirst"],
+                "additional_symptoms": ["Mock symptom A", "Mock symptom B"]
+            }
+        ],
+        "disclaimer": "Mock symptom matching for testing",
+        "educational_note": "Mock data - not for actual diagnosis"
+    }
+    
+    return mock_service
 
 @pytest.fixture
-def mock_literature_response():
-    """Mock literature search response"""
-    from src.models.schemas import LiteratureItem, EvidenceLevel
-    return [
-        LiteratureItem(
-            title="Evidence-Based Heart Failure Management",
-            authors=["Smith, J.", "Johnson, M."],
-            journal="Journal of Cardiac Nursing",
-            year=2023,
-            abstract="Comprehensive review of evidence-based nursing interventions for heart failure management.",
-            evidence_level=EvidenceLevel.LEVEL_I
-        ),
-        LiteratureItem(
-            title="Heart Failure Patient Education Strategies", 
-            authors=["Davis, R.", "Wilson, K."],
-            journal="Patient Education Journal",
-            year=2022,
-            abstract="Systematic review of patient education strategies for heart failure self-management.",
-            evidence_level=EvidenceLevel.LEVEL_II
-        )
-    ]
+def mock_pubmed_service():
+    """
+    PubMed service mock following Service mocking pattern.
+    Mock responses match Pydantic type definitions.
+    """
+    mock_service = AsyncMock()
+    
+    # Mock literature search response
+    mock_service.search_literature.return_value = {
+        "banner": "Draft for clinician review — not medical advice. No PHI stored.",
+        "query": "nursing interventions",
+        "articles": [
+            {
+                "title": "Mock Article: Nursing Interventions for Patient Care",
+                "authors": ["Mock Author A", "Mock Author B"],
+                "journal": "Mock Nursing Journal",
+                "year": "2024",
+                "pmid": "12345678",
+                "abstract": "Mock abstract for testing purposes",
+                "keywords": ["nursing", "interventions", "mock"],
+                "doi": "10.1000/mock.2024"
+            }
+        ],
+        "total_results": 1,
+        "search_strategy": "Mock search strategy",
+        "service_note": "Mock PubMed data for testing",
+        "disclaimer": "Mock literature data - not actual articles"
+    }
+    
+    return mock_service
 
-# Performance testing fixtures
 @pytest.fixture
-def performance_timer():
-    """Timer for performance testing"""
-    import time
+def mock_clinical_trials_service():
+    """
+    Clinical trials service mock following External Service Integration pattern.
+    Provides educational stub responses for testing.
+    """
+    mock_service = AsyncMock()
     
-    class Timer:
-        def __init__(self):
-            self.start_time = None
-            self.end_time = None
-        
-        def start(self):
-            self.start_time = time.time()
-        
-        def stop(self):
-            self.end_time = time.time()
-            return self.elapsed
-        
-        @property
-        def elapsed(self):
-            if self.start_time and self.end_time:
-                return self.end_time - self.start_time
-            return None
+    # Mock trials search response
+    mock_service.search_trials.return_value = {
+        "banner": "Draft for clinician review — not medical advice. No PHI stored.",
+        "query": "diabetes",
+        "trials": [
+            {
+                "nct_id": "NCT12345678",
+                "title": "Mock Clinical Trial: Diabetes Management Study",
+                "brief_summary": "Mock trial for testing purposes",
+                "phase": "Phase 3",
+                "status": "Recruiting",
+                "conditions": ["Diabetes Mellitus"],
+                "interventions": ["Mock intervention"],
+                "primary_outcomes": ["Mock outcome"],
+                "enrollment": 500,
+                "sponsor": "Mock Medical Center"
+            }
+        ],
+        "total_results": 1,
+        "service_note": "Mock clinical trials data for testing",
+        "disclaimer": "Mock trial data - not actual studies"
+    }
     
-    return Timer()
+    return mock_service
 
-# Error testing fixtures
 @pytest.fixture
-def force_service_error():
-    """Force service errors for testing error handling"""
-    with patch('src.services.clinical_decision_service.ClinicalDecisionService._get_base_interventions') as mock:
-        mock.side_effect = Exception("Forced test error")
-        yield mock
+def mock_sbar_service():
+    """
+    SBAR service mock following Wizard Pattern Implementation.
+    Provides mock SBAR templates and validation responses.
+    """
+    mock_service = AsyncMock()
+    
+    # Mock SBAR template response
+    mock_service.get_sbar_template.return_value = {
+        "banner": "Draft for clinician review — not medical advice. No PHI stored.",
+        "specialty": "general",
+        "template": {
+            "situation": {
+                "prompt": "Mock situation prompt",
+                "example": "Mock situation example",
+                "required_fields": ["patient_id", "chief_complaint"]
+            }
+        },
+        "instructions": "Mock SBAR instructions for testing",
+        "timestamp": "2024-01-01T00:00:00"
+    }
+    
+    return mock_service
 
-# Caching test fixtures
 @pytest.fixture
-def mock_cache_operations():
-    """Mock cache operations for testing"""
-    cache_data = {}
+def mock_openai_service():
+    """
+    OpenAI service mock following OpenAI Integration pattern.
+    Provides mock AI responses for testing.
+    """
+    mock_service = AsyncMock()
     
-    async def mock_cache_set(key, value, ttl=3600):
-        cache_data[key] = value
-        return True
+    # Mock AI response
+    mock_service.generate_response.return_value = {
+        "response": "Mock AI response for testing purposes",
+        "context": "Mock context",
+        "service_note": "Mock OpenAI response - testing mode",
+        "disclaimer": "Mock AI content for testing only"
+    }
     
-    async def mock_cache_get(key):
-        return cache_data.get(key)
+    return mock_service
+
+@pytest.fixture(autouse=True)
+def mock_services(monkeypatch, mock_disease_service, mock_pubmed_service, 
+                  mock_clinical_trials_service, mock_sbar_service, mock_openai_service):
+    """
+    Auto-use fixture that mocks all services following Service layer mocking pattern.
+    Ensures tests run with consistent mock data and don't call external APIs.
+    """
     
-    async def mock_cache_delete(key):
-        cache_data.pop(key, None)
-        return True
+    # Mock service registry to return our mocked services
+    def mock_get_service(service_name: str):
+        service_map = {
+            'disease': mock_disease_service,
+            'pubmed': mock_pubmed_service, 
+            'clinical_trials': mock_clinical_trials_service,
+            'sbar': mock_sbar_service,
+            'openai': mock_openai_service
+        }
+        return service_map.get(service_name)
     
-    with patch('src.utils.redis_cache.cache_set', side_effect=mock_cache_set), \
-         patch('src.utils.redis_cache.cache_get', side_effect=mock_cache_get), \
-         patch('src.utils.redis_cache.cache_delete', side_effect=mock_cache_delete):
-        yield cache_data
+    def mock_get_available_services():
+        return {
+            'disease': True,
+            'pubmed': True,
+            'clinical_trials': True,
+            'sbar': True,
+            'openai': True
+        }
+    
+    # Patch service registry functions
+    monkeypatch.setattr("src.services.get_service", mock_get_service)
+    monkeypatch.setattr("src.services.get_available_services", mock_get_available_services)
+
+# Pytest configuration following pytest.ini pattern
+def pytest_configure(config):
+    """Configure pytest markers following Testing Patterns."""
+    config.addinivalue_line(
+        "markers", "unit: mark test as unit test with mocked dependencies"
+    )
+    config.addinivalue_line(
+        "markers", "integration: mark test as integration test (may require external services)"
+    )
+    config.addinivalue_line(
+        "markers", "slow: mark test as slow (takes more than a few seconds)"
+    )

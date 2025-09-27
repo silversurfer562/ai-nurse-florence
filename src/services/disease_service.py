@@ -166,3 +166,14 @@ class DiseaseService(BaseService[Dict[str, Any]]):
     def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
         """Implementation of abstract method from BaseService"""
         return self.lookup_disease(query, **kwargs)
+# Service factory function following Conditional Imports Pattern
+def create_disease_service() -> Optional[DiseaseService]:
+    """
+    Create disease service with graceful degradation.
+    Returns None if service cannot be initialized.
+    """
+    try:
+        return DiseaseService()
+    except Exception as e:
+        logger.warning(f"Disease service unavailable: {e}")
+        return None

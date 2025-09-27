@@ -3,7 +3,7 @@ Pydantic schemas for AI Nurse Florence
 Input/output validation with clinical context
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List, Dict, Any, Union
 from enum import Enum
 from datetime import datetime
@@ -51,7 +51,7 @@ class ClinicalDecisionRequest(BaseModel):
     care_setting: CareSetting = Field(default=CareSetting.MED_SURG)
     additional_context: Optional[str] = Field(None, description="Additional clinical context")
     
-    @validator('patient_condition')
+    @field_validator('patient_condition')
     def validate_condition(cls, v):
         if len(v.strip()) < 3:
             raise ValueError('Patient condition must be at least 3 characters')
@@ -86,8 +86,8 @@ class SBARRequest(BaseModel):
     assessment: str = Field(..., description="Clinical assessment findings")
     recommendation: str = Field(..., description="Recommendations for care")
     
-    @validator('situation', 'background', 'assessment', 'recommendation')
-    def validate_sbar_fields(cls, v):
+    @field_validator('situation', 'background', 'assessment', 'recommendation')
+    def validate_sbar_fields(cls, v, info):
         if len(v.strip()) < 10:
             raise ValueError('SBAR fields must be at least 10 characters')
         return v.strip()
