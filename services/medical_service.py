@@ -22,7 +22,7 @@ except ImportError:
         return decorator
 
 try:
-    from utils.metrics import record_cache_hit, record_service_call
+    from src.utils.metrics import record_cache_hit, record_service_call
     _has_metrics = True
 except ImportError:
     _has_metrics = False

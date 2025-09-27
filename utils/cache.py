@@ -12,7 +12,7 @@ from utils.logging import get_logger
 
 # Conditional import for metrics
 try:
-    from utils.metrics import record_cache_hit, record_cache_miss
+    from src.utils.metrics import record_cache_hit, record_cache_miss
     _has_metrics = True
 except ImportError:
     _has_metrics = False

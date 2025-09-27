@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 # Conditional import for metrics
 try:
-    from utils.metrics import record_external_request, record_external_error
+    from src.utils.metrics import record_external_request, record_external_error
     _has_metrics = True
 except ImportError:
     _has_metrics = False
