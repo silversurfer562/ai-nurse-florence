@@ -119,8 +119,14 @@ try:
                 # Unprotected routes
                 app.include_router(router, prefix="/api/v1")
             else:
-                # Protected routes  
+                # Protected routes
                 app.include_router(router, prefix="/api/v1")
+                # For wizard routers, also register a plural alias to support tests/docs that use '/wizards'
+                if 'wizard' in getattr(router, 'prefix', '') or router_name.startswith('nursing') or router_name in ['treatment_plan', 'sbar_report', 'medication_reconciliation', 'care_plan', 'discharge_planning']:
+                    try:
+                        app.include_router(router, prefix="/api/v1/wizards")
+                    except Exception:
+                        pass
             
             ROUTERS_LOADED[router_name] = True
             logger.info(f"Router registered: {router_name}")
