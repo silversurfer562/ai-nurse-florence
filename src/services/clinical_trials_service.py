@@ -10,6 +10,29 @@ from src.utils.redis_cache import cached
 
 logger = logging.getLogger(__name__)
 
+# Conditional imports following Conditional Imports Pattern
+try:
+    from src.services.prompt_enhancement import enhance_prompt
+    _has_prompt_enhancement = True
+except Exception:
+    _has_prompt_enhancement = False
+    # Provide a lightweight fallback to satisfy static analysis and runtime when missing
+    def enhance_prompt(prompt: str, purpose: str):
+        return prompt, False, None
+
+try:
+    import requests
+    _has_requests = True
+except Exception:
+    _has_requests = False
+    # Fallback helper to raise a clear error if live API is attempted without requests
+    class _RequestsStub:
+        @staticmethod
+        def get(*args, **kwargs):
+            raise RuntimeError("requests package not available in this environment")
+
+    requests = _RequestsStub()
+
 class ClinicalTrialsService:
     """
     Clinical trials service following Service Layer Architecture.
