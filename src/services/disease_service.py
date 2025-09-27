@@ -18,6 +18,13 @@ from .base_service import BaseService
 from ..utils.redis_cache import cached
 from ..utils.config import get_settings
 from ..utils.exceptions import ExternalServiceException
+try:
+    from .mesh_service import map_to_mesh  # type: ignore
+    _has_mesh = True
+except Exception:
+    def map_to_mesh(query: str, top_k: int = 5):
+        return []
+    _has_mesh = False
 
 class DiseaseService(BaseService[Dict[str, Any]]):
     """
@@ -60,7 +67,17 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         """Fetch disease data from MyDisease.info API"""
         if not _has_requests:
             raise ExternalServiceException("Requests library not available", "disease_service")
-        
+        # Try MeSH normalization to improve lookup
+        try:
+            if _has_mesh:
+                mesh_matches = map_to_mesh(query, top_k=2)
+                if mesh_matches:
+                    mesh_term = mesh_matches[0].get("term")
+                    if mesh_term:
+                        query = mesh_term
+        except Exception:
+            pass
+
         # Search for disease
         search_url = f"{self.base_url}/query"
         params = {
@@ -177,3 +194,101 @@ def create_disease_service() -> Optional[DiseaseService]:
     except Exception as e:
         logger.warning(f"Disease service unavailable: {e}")
         return None
+
+async def lookup_disease_info(query: str) -> Dict[str, Any]:
+    """
+    Look up disease information following External Service Integration pattern.
+    
+    Args:
+        query: Disease name or condition to look up
+        
+    Returns:
+        Dict containing disease information with educational banner
+    """
+    settings = get_settings()
+    banner = get_educational_banner()
+    
+    try:
+        # Enhance prompt for better search results
+        if _has_prompt_enhancement:
+            effective_query, needs_clarification, clarification_question = enhance_prompt(query, "disease_lookup")
+            
+            if needs_clarification:
+                return {
+                    "banner": banner,
+                    "query": query,
+                    "needs_clarification": True,
+                    "clarification_question": clarification_question
+                }
+        else:
+            effective_query = query
+        
+        # Use live MyDisease.info API if available and enabled
+        if settings.effective_use_live_services and _has_requests:
+            try:
+                result = await _lookup_disease_live(effective_query)
+                result["banner"] = banner
+                result["query"] = query
+                return result
+                
+            except Exception as e:
+                logger.warning(f"MyDisease.info API failed, using stub response: {e}")
+        
+        # Fallback stub response following Conditional Imports Pattern
+        return _create_disease_stub_response(query, banner)
+        
+    except Exception as e:
+        logger.error(f"Disease lookup failed: {e}")
+        return _create_disease_stub_response(query, banner)
+
+async def _lookup_disease_live(query: str) -> Dict[str, Any]:
+    """Look up disease using live MyDisease.info API following External Service Integration."""
+    
+    # MyDisease.info API
+    base_url = "https://mydisease.info/v1/query"
+    
+    params = {
+        "q": query,
+        "fields": "disease_ontology,mondo,summary",
+        "size": 1
+    }
+    
+    response = requests.get(base_url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+    
+    hits = data.get("hits", [])
+    if hits:
+        disease_data = hits[0]
+        summary = disease_data.get("summary") or "No summary available"
+        
+        return {
+            "summary": summary,
+            "description": f"Medical information for {query}",
+            "symptoms": ["Consult medical literature for symptoms"],
+            "sources": ["MyDisease.info"]
+        }
+    else:
+        return {
+            "summary": f"No specific information found for '{query}'. Consult medical literature.",
+            "description": "Disease information not available in database",
+            "symptoms": [],
+            "sources": ["MyDisease.info"]
+        }
+
+def _create_disease_stub_response(query: str, banner: str) -> Dict[str, Any]:
+    """Create stub response for disease lookup following Conditional Imports Pattern."""
+    
+    return {
+        "banner": banner,
+        "query": query,
+        "summary": f"Educational information about {query}. This is stub data - use live services for actual medical information.",
+        "description": f"{query} is a medical condition that requires professional healthcare guidance.",
+        "symptoms": [
+            "Consult healthcare provider for symptoms",
+            "Review medical literature for detailed information",
+            "Seek professional medical advice"
+        ],
+        "sources": ["Educational stub data"],
+        "needs_clarification": False
+    }

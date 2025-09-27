@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Nurse Florence - Healthcare Assistant</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏥 AI Nurse Florence</h1>
+            <p class="disclaimer">Educational use only - not medical advice. No PHI stored.</p>
+        </header>
+        
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="wizards">Clinical Wizards</button>
+            <button class="tab-btn" data-tab="lookup">Medical Lookup</button>
+            <button class="tab-btn" data-tab="literature">Literature Search</button>
+            <button class="tab-btn" data-tab="api">API Documentation</button>
+        </nav>
+        
+        <main class="main-content">
+            <!-- Wizard Panel -->
+            <div id="wizards" class="tab-content active">
+                <h2>🧙‍♀️ Clinical Documentation Wizards</h2>
+                <p class="section-description">Multi-step workflows following evidence-based nursing practices</p>
+                
+                <div class="wizard-grid">
+                    <div class="wizard-card" data-wizard="nursing-assessment">
+                        <div class="wizard-icon">🩺</div>
+                        <h3>Nursing Assessment</h3>
+                        <p>Comprehensive patient assessment workflow with systematic data collection</p>
+                        <button class="start-wizard">Start Assessment</button>
+                    </div>
+                    
+                    <div class="wizard-card" data-wizard="sbar-report">
+                        <div class="wizard-icon">📋</div>
+                        <h3>SBAR Report</h3>
+                        <p>Structured clinical communication following SBAR methodology</p>
+                        <button class="start-wizard">Create SBAR</button>
+                    </div>
+                    
+                    <div class="wizard-card" data-wizard="medication-reconciliation">
+                        <div class="wizard-icon">💊</div>
+                        <h3>Medication Reconciliation</h3>
+                        <p>4-step medication safety workflow for accurate medication histories</p>
+                        <button class="start-wizard">Start Reconciliation</button>
+                    </div>
+                    
+                    <div class="wizard-card" data-wizard="care-plan">
+                        <div class="wizard-icon">📝</div>
+                        <h3>Care Plan</h3>
+                        <p>NANDA nursing diagnosis-based care planning with interventions</p>
+                        <button class="start-wizard">Create Care Plan</button>
+                    </div>
+                    
+                    <div class="wizard-card" data-wizard="discharge-planning">
+                        <div class="wizard-icon">🏠</div>
+                        <h3>Discharge Planning</h3>
+                        <p>Comprehensive discharge preparation and patient education</p>
+                        <button class="start-wizard">Start Planning</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Medical Lookup Panel -->
+            <div id="lookup" class="tab-content">
+                <h2>🔍 Medical Information Lookup</h2>
+                <p class="section-description">Evidence-based medical information from trusted sources</p>
+                
+                <div class="search-panel">
+                    <input type="text" id="disease-search" placeholder="Search diseases, conditions, symptoms..." 
+                           aria-label="Medical search query">
+                    <button id="search-btn" class="search-button">Search</button>
+                </div>
+                <div id="search-results" class="results-panel">
+                    <div class="empty-state">
+                        <p>🔍 Enter a medical term to search for evidence-based information</p>
+                        <small>Sources: MyDisease.info, medical databases</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Literature Panel -->
+            <div id="literature" class="tab-content">
+                <h2>📚 Medical Literature Search</h2>
+                <p class="section-description">Search PubMed for peer-reviewed medical literature</p>
+                
+                <div class="search-panel">
+                    <input type="text" id="pubmed-search" placeholder="Search medical literature..." 
+                           aria-label="Literature search query">
+                    <button id="pubmed-btn" class="search-button">Search PubMed</button>
+                </div>
+                <div id="pubmed-results" class="results-panel">
+                    <div class="empty-state">
+                        <p>📚 Search peer-reviewed medical literature</p>
+                        <small>Source: PubMed database</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Documentation Panel -->
+            <div id="api" class="tab-content">
+                <h2>📚 API Documentation & System Status</h2>
+                <div class="api-section">
+                    <div class="system-status" id="system-status">
+                        <h3>System Status</h3>
+                        <div class="status-loading">Loading system status...</div>
+                    </div>
+                    
+                    <div class="api-links">
+                        <a href="/docs" target="_blank" class="api-link">
+                            <div class="api-icon">🔧</div>
+                            <h3>Interactive API Docs</h3>
+                            <p>Swagger UI with live testing capabilities</p>
+                        </a>
+                        <a href="/redoc" target="_blank" class="api-link">
+                            <div class="api-icon">📖</div>
+                            <h3>Alternative Documentation</h3>
+                            <p>ReDoc format with detailed schemas</p>
+                        </a>
+                        <a href="/api/v1/health" target="_blank" class="api-link">
+                            <div class="api-icon">❤️</div>
+                            <h3>Health Check</h3>
+                            <p>System status and service health monitoring</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Wizard Modal -->
+    <div id="wizard-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" aria-label="Close modal">&times;</span>
+            <div id="wizard-content"></div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

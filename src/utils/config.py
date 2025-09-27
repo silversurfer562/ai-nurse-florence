@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # Server Configuration
     HOST: str = Field(default="0.0.0.0", description="Server host")
     PORT: int = Field(default=8000, description="Server port")
+    # Public Base URL for deployment and local testing. If not provided, constructed from HOST and PORT.
+    APP_BASE_URL: Optional[str] = Field(
+        default=None,
+        description="Public base URL for the application (e.g., https://api.example.com). If not set, constructed from HOST and PORT."
+    )
     
     # CORS Configuration
     CORS_ORIGINS: str = Field(
@@ -80,6 +85,9 @@ class Settings(BaseSettings):
     # Monitoring Configuration
     GRAFANA_ADMIN_USER: str = Field(default="admin", description="Grafana admin user")
     GRAFANA_ADMIN_PASSWORD: str = Field(default="admin", description="Grafana admin password")
+
+    # Force HTTPS when constructing base URL if APP_BASE_URL is not set
+    FORCE_HTTPS: bool = Field(default=False, description="Force https scheme when constructing base URL")
     
     # Educational Banner following API Design Standards
     EDUCATIONAL_BANNER: str = Field(
@@ -90,12 +98,13 @@ class Settings(BaseSettings):
     # Logging Configuration
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
     
-    model_config = ConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="allow"
-    )
+    # Use a plain dict for model_config to match pydantic v2 / pydantic-settings expectations
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "allow",
+    }
     
     @property
     def ALLOWED_ORIGINS(self) -> List[str]:
@@ -170,6 +179,20 @@ def get_cache_config() -> dict:
         "fallback_to_memory": True
     }
 
+def get_base_url() -> str:
+    """Return an effective base URL for the application.
+
+    Priority: APP_BASE_URL env var if set; otherwise construct from HOST and PORT.
+    """
+    settings = get_settings()
+    if settings.APP_BASE_URL and settings.APP_BASE_URL.strip():
+        return settings.APP_BASE_URL
+    # Default scheme decision controlled by settings.FORCE_HTTPS
+    scheme = "https" if settings.FORCE_HTTPS else "http"
+    host = settings.HOST or "127.0.0.1"
+    port = settings.PORT
+    return f"{scheme}://{host}:{port}"
+
 def is_feature_enabled(feature: str) -> bool:
     """
     Check if feature is enabled following feature flag pattern.
@@ -209,5 +232,6 @@ __all__ = [
     "get_openai_config",
     "get_redis_config",
     "get_cache_config",
+    "get_base_url",
     "is_feature_enabled"
 ]

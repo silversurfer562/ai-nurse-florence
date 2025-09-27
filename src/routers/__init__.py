@@ -36,6 +36,49 @@ def _load_core_routers():
         logger.warning(f"⚠️ Auth router unavailable: {e}")
         router_status['auth'] = False
 
+def _load_medical_routers():
+    """Load medical information routers following External Service Integration."""
+    
+    # Disease router
+    try:
+        from .disease import router
+        _router_registry['disease'] = router
+        router_status['disease'] = True
+        logger.info("✅ Disease router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Disease router unavailable: {e}")
+        router_status['disease'] = False
+
+    # Literature router
+    try:
+        from .literature import router
+        _router_registry['literature'] = router
+        router_status['literature'] = True
+        logger.info("✅ Literature router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Literature router unavailable: {e}")
+        router_status['literature'] = False
+
+    # Clinical trials router
+    try:
+        from .clinical_trials import router
+        _router_registry['clinical_trials'] = router
+        router_status['clinical_trials'] = True
+        logger.info("✅ Clinical trials router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Clinical trials router unavailable: {e}")
+        router_status['clinical_trials'] = False
+
+    # Clinical decision support router
+    try:
+        from .clinical_decision_support import router
+        _router_registry['clinical_decision_support'] = router
+        router_status['clinical_decision_support'] = True
+        logger.info("✅ Clinical Decision Support router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Clinical Decision Support router unavailable: {e}")
+        router_status['clinical_decision_support'] = False
+
 def _load_wizard_routers():
     """Load wizard routers following Wizard Pattern Implementation with Conditional Imports."""
     
@@ -64,16 +107,40 @@ def _load_wizard_routers():
             logger.warning(f"⚠️ Wizard router unavailable: {wizard_name} - {e}")
             router_status[wizard_name] = False
 
-# Initialize routers on module import with graceful degradation
-try:
-    _load_core_routers()
-    _load_wizard_routers()
-except Exception as e:
-    logger.error(f"Initial router loading failed: {e}")
-
-# Export following Router Organization pattern
-available_routers = _router_registry
-__all__ = ['available_routers', 'router_status']
+def _load_routers():
+    """
+    Load all routers with graceful degradation following Conditional Imports Pattern.
+    Critical pattern: Services fail gracefully when optional dependencies missing.
+    """
+    logger.info("Loading routers following Router Organization pattern...")
+    
+    try:
+        _load_core_routers()
+        _load_medical_routers()
+        _load_wizard_routers()
+        
+        loaded_count = sum(router_status.values())
+        total_count = len(router_status)
+        
+        logger.info(f"Router loading complete: {loaded_count}/{total_count} routers available")
+        
+    except Exception as e:
+        logger.error(f"Router loading failed with unexpected error: {e}")
+        # Ensure router_status is always populated even on failure
+        if not router_status:
+            router_status.update({
+                'health': False,
+                'auth': False,
+                'disease': False,
+                'literature': False,
+                'clinical_trials': False,
+                'clinical_decision_support': False,
+                'nursing_assessment': False,
+                'sbar_report': False,
+                'medication_reconciliation': False,
+                'care_plan': False,
+                'discharge_planning': False
+            })
 
 def get_available_routers() -> Dict[str, APIRouter]:
     """Get dictionary of available routers following Conditional Imports Pattern."""
@@ -89,3 +156,27 @@ def reload_routers():
     _router_registry.clear()
     router_status.clear()
     _load_routers()
+
+# Initialize routers on module import with graceful degradation
+try:
+    _load_routers()
+except Exception as e:
+    logger.error(f"Initial router loading failed: {e}")
+    # Ensure basic structure exists even on complete failure
+    router_status = {
+        'health': False,
+        'auth': False,
+        'disease': False,
+        'literature': False,
+        'clinical_trials': False,
+        'clinical_decision_support': False,
+        'nursing_assessment': False,
+        'sbar_report': False,
+        'medication_reconciliation': False,
+        'care_plan': False,
+        'discharge_planning': False
+    }
+
+# Export following Router Organization pattern
+available_routers = _router_registry
+__all__ = ['available_routers', 'router_status', 'get_available_routers', 'get_router_status', 'reload_routers']

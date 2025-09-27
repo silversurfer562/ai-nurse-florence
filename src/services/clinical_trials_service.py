@@ -196,3 +196,122 @@ def create_clinical_trials_service() -> Optional[ClinicalTrialsService]:
     except Exception as e:
         logger.warning(f"Clinical trials service unavailable: {e}")
         return None
+
+async def search_clinical_trials(condition: str, max_studies: int = 10) -> Dict[str, Any]:
+    """
+    Search clinical trials following External Service Integration pattern.
+    
+    Args:
+        condition: Medical condition for clinical trials search
+        max_studies: Maximum number of studies to return
+        
+    Returns:
+        Dict containing clinical trials search results with educational banner
+    """
+    settings = get_settings()
+    banner = get_educational_banner()
+    
+    try:
+        # Enhance prompt for better search results
+        if _has_prompt_enhancement:
+            effective_condition, needs_clarification, clarification_question = enhance_prompt(condition, "clinical_trials")
+            
+            if needs_clarification:
+                return {
+                    "banner": banner,
+                    "query": condition,
+                    "condition": condition,
+                    "needs_clarification": True,
+                    "clarification_question": clarification_question
+                }
+        else:
+            effective_condition = condition
+        
+        # Use live ClinicalTrials.gov API if available and enabled
+        if settings.effective_use_live_services and _has_requests:
+            try:
+                result = await _search_trials_live(effective_condition, max_studies)
+                result["banner"] = banner
+                result["query"] = condition
+                result["condition"] = condition
+                return result
+                
+            except Exception as e:
+                logger.warning(f"ClinicalTrials.gov API failed, using stub response: {e}")
+        
+        # Fallback stub response following Conditional Imports Pattern
+        return _create_trials_stub_response(condition, banner, max_studies)
+        
+    except Exception as e:
+        logger.error(f"Clinical trials search failed: {e}")
+        return _create_trials_stub_response(condition, banner, max_studies)
+
+async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any]:
+    """Search ClinicalTrials.gov using live API following External Service Integration."""
+    
+    # ClinicalTrials.gov API
+    base_url = "https://clinicaltrials.gov/api/query/study_fields"
+    
+    params = {
+        "expr": condition,
+        "fields": "NCTId,BriefTitle,Phase,OverallStatus,StudyType,Condition",
+        "min_rnk": 1,
+        "max_rnk": max_studies,
+        "fmt": "json"
+    }
+    
+    response = requests.get(base_url, params=params, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+    
+    studies = data.get("StudyFieldsResponse", {}).get("StudyFields", [])
+    total_studies = len(studies)
+    
+    trials = []
+    for study in studies:
+        trials.append({
+            "nct_id": study.get("NCTId", ["Unknown"])[0],
+            "title": study.get("BriefTitle", ["No title available"])[0],
+            "phase": study.get("Phase", ["Unknown"])[0],
+            "status": study.get("OverallStatus", ["Unknown"])[0],
+            "study_type": study.get("StudyType", ["Unknown"])[0],
+            "condition": study.get("Condition", [condition])[0]
+        })
+    
+    return {
+        "total_studies": total_studies,
+        "studies_summary": f"Found {total_studies} clinical trials related to '{condition}'",
+        "trials": trials,
+        "sources": ["ClinicalTrials.gov"]
+    }
+
+def _create_trials_stub_response(condition: str, banner: str, max_studies: int) -> Dict[str, Any]:
+    """Create stub response for clinical trials search following Conditional Imports Pattern."""
+    
+    return {
+        "banner": banner,
+        "query": condition,
+        "condition": condition,
+        "total_studies": 15,  # Stub data
+        "studies_summary": f"Clinical trials search completed for '{condition}'. This is educational stub data - use live services for actual trial information.",
+        "trials": [
+            {
+                "nct_id": "NCT12345678",
+                "title": f"Phase III Study of {condition} Treatment",
+                "phase": "Phase 3",
+                "status": "Recruiting",
+                "study_type": "Interventional",
+                "condition": condition
+            },
+            {
+                "nct_id": "NCT87654321",
+                "title": f"Observational Study of {condition} Outcomes",
+                "phase": "N/A",
+                "status": "Active, not recruiting",
+                "study_type": "Observational",
+                "condition": condition
+            }
+        ],
+        "sources": ["ClinicalTrials.gov (Educational stub data)"],
+        "needs_clarification": False
+    }

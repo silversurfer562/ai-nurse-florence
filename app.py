@@ -50,10 +50,16 @@ app = FastAPI(
     description="Healthcare AI assistant providing evidence-based medical information for nurses and healthcare professionals. **Educational use only - not medical advice. No PHI stored.**",
     version="2.1.0",
     lifespan=lifespan,
+    # servers list will be populated at startup with the effective base URL
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json"
 )
+
+# Create API router following Router Organization pattern
+from fastapi import APIRouter
+api_router = APIRouter(prefix="/api/v1")
+
 
 # CORS Configuration following Security & Middleware Stack
 app.add_middleware(
@@ -163,6 +169,29 @@ async def startup_event():
     logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}")
     logger.info(f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}...")
     logger.info("Healthcare AI assistant ready - Educational use only")
+    # Log effective base URL for observability
+    effective_base = None
+    try:
+        from src.utils.config import get_base_url
+        effective_base = get_base_url()
+        logger.info(f"Effective BASE_URL: {effective_base}")
+    except Exception:
+        logger.debug("Could not determine effective BASE_URL at startup")
+    # Populate OpenAPI servers with the effective base URL so generated clients use the right host
+    try:
+        if hasattr(app, 'openapi_schema') and app.openapi_schema is not None:
+            if effective_base:
+                app.openapi_schema.setdefault('servers', [])
+                app.openapi_schema['servers'].append({"url": effective_base})
+        else:
+            # Force generation of openapi schema then set servers
+            schema = app.openapi()
+            if effective_base:
+                schema.setdefault('servers', [])
+                schema['servers'].append({"url": effective_base})
+            app.openapi_schema = schema
+    except Exception:
+        logger.debug('Failed to populate OpenAPI servers with BASE_URL')
 
 if __name__ == "__main__":
     import uvicorn
@@ -225,3 +254,33 @@ except ImportError as e:
         except Exception as e:
             logger.error(f"❌ Failed to register {router_name}: {e}")
 
+# STATIC FILE SERVING - Following API Design Standards
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
+from fastapi.responses import HTMLResponse
+
+# Create directories if they don't exist
+os.makedirs("static/css", exist_ok=True)
+os.makedirs("static/js", exist_ok=True)
+os.makedirs("templates", exist_ok=True)
+
+# Mount static files and templates
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+# Serve main healthcare interface
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_frontend(request: Request):
+    """Serve the main AI Nurse Florence healthcare interface."""
+    return templates.TemplateResponse("index.html", {"request": request})
+
+# Health dashboard redirect
+@app.get("/dashboard", include_in_schema=False) 
+async def dashboard_redirect():
+    """Redirect to main interface."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/")
+
+# Register API router with main app following Router Organization
+app.include_router(api_router)

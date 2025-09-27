@@ -9,6 +9,7 @@ from typing import Dict, Any
 import os
 
 from src.utils.config import get_settings
+from src.utils.config import get_base_url
 from src.services import get_available_services
 
 router = APIRouter(
@@ -48,12 +49,21 @@ async def health_check():
     except:
         pass
     
+    # Determine mesh index readiness
+    try:
+        from src.services.mesh_service import get_mesh_index  # type: ignore
+        mesh_idx = get_mesh_index()
+        mesh_ready = bool(mesh_idx)
+    except Exception:
+        mesh_ready = False
+
     health_data = {
         "status": "healthy",
         "service": "ai-nurse-florence",
         "version": settings.APP_VERSION,
         "timestamp": datetime.now().isoformat(),
         "banner": settings.EDUCATIONAL_BANNER,
+    "base_url": get_base_url(),
         "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "development",
         "services": services,
         "configuration": {
@@ -69,6 +79,8 @@ async def health_check():
             "clinicaltrials": "https://clinicaltrials.gov/api/v2/"
         }
     }
+    # include mesh readiness
+    health_data["services"]["mesh_index"] = {"available": mesh_ready}
     
     return health_data
 

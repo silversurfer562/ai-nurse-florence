@@ -28,9 +28,9 @@ EXPOSE 8000
 # Health check - let Railway handle this with its own health check
 # CMD will use the proper PORT environment variable at runtime
 
-# Copy startup script and make it executable
-COPY start.sh .
-RUN chmod +x start.sh
+# Ensure start script exists and is executable (uses $PORT on Railway)
+COPY run.sh .
+RUN chmod +x run.sh
 
-# Command to run the application - use startup script
-CMD ["./start.sh"]
+# Command to run the application - binds to $PORT provided by Railway
+CMD ["./run.sh"]
