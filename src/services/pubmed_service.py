@@ -3,9 +3,7 @@ PubMed literature search service following External Service Integration
 PubMed API integration from copilot-instructions.md
 """
 
-import logging
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 
 # Conditional imports following copilot-instructions.md
 try:

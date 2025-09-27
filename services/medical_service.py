@@ -6,7 +6,7 @@ Following Service Layer Architecture with Conditional Imports Pattern
 
 import logging
 import httpx
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, Optional, Any, Tuple
 from datetime import datetime
 
 # Conditional imports following project patterns

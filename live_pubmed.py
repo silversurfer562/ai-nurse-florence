@@ -3,7 +3,7 @@ PubMed/NCBI API connector for medical literature search.
 """
 import os
 import requests
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 # NCBI E-utilities base URL
 BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"

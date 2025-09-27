@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 import os
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")

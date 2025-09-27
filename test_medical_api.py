@@ -28,7 +28,7 @@ def test_service_layer_architecture():
             print(f"✅ App: {settings.APP_NAME} v{settings.APP_VERSION}")
             print(f"✅ Educational banner: {settings.EDUCATIONAL_BANNER[:40]}...")
             print(f"✅ Live services: {settings.USE_LIVE_SERVICES}")
-            print(f"✅ Feature flags working:")
+            print("✅ Feature flags working:")
             print(f"   - OpenAI: {is_feature_enabled('openai')}")
             print(f"   - Redis: {is_feature_enabled('redis')}")
             print(f"   - Rate limiting: {is_feature_enabled('rate_limiting')}")
@@ -106,7 +106,7 @@ def test_external_service_integration():
                 print(f"✅ Disease lookup successful: {result.get('disease_name', 'Unknown')}")
                 print(f"✅ Educational banner present: {'banner' in result}")
                 print(f"✅ Symptoms count: {len(result.get('symptoms', []))}")
-                print(f"✅ Following API Design Standards: Educational disclaimer included")
+                print("✅ Following API Design Standards: Educational disclaimer included")
             else:
                 print("⚠️  Disease service: Using graceful degradation (conditional imports)")
         except Exception as e:
@@ -123,7 +123,7 @@ def test_external_service_integration():
                 print(f"✅ Literature search successful: {len(result.get('articles', []))} articles")
                 print(f"✅ Query: {result.get('query', 'Unknown')}")
                 print(f"✅ Educational banner: {'banner' in result}")
-                print(f"✅ Following API Design Standards: Comprehensive medical references")
+                print("✅ Following API Design Standards: Comprehensive medical references")
             else:
                 print("⚠️  PubMed service: Using graceful degradation (conditional imports)")
         except Exception as e:
@@ -139,7 +139,7 @@ def test_external_service_integration():
                 result = await trials_service.search_trials('diabetes management', limit=2)
                 print(f"✅ Clinical trials search: {len(result.get('trials', []))} trials found")
                 print(f"✅ Educational stub note: {result.get('service_note', 'None')[:50]}...")
-                print(f"✅ Following API Design Standards: Educational disclaimers on trial data")
+                print("✅ Following API Design Standards: Educational disclaimers on trial data")
             else:
                 print("⚠️  Clinical trials service: Using graceful degradation (conditional imports)")
         except Exception as e:
@@ -159,8 +159,7 @@ def test_api_design_standards():
         print("\n📝 Pydantic Schemas Test:")
         try:
             from src.models.schemas import (
-                DiseaseResponse, LiteratureResponse, ClinicalTrialsResponse,
-                NursingIntervention, WizardSession, HealthStatus, EDU_BANNER
+                DiseaseResponse, EDU_BANNER
             )
 
             print("✅ All medical response schemas imported successfully")
@@ -182,9 +181,6 @@ def test_api_design_standards():
         # Test middleware stack following middleware stack order
         print("\n🛡️  Middleware Stack Test:")
         try:
-            from src.utils.middleware import (
-                SecurityHeadersMiddleware, RequestIdMiddleware, LoggingMiddleware
-            )
 
             print("✅ Middleware classes imported successfully")
             print("✅ Following coding instructions middleware order:")

@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Request, status
 from typing import Any, Dict
 
 from services import summarize_service
@@ -79,7 +78,7 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request):
         # Return the normal success response
         return create_success_response(result)
         
-    except ExternalServiceException as exc:
+    except ExternalServiceException:
         # This will be caught by our global exception handler
         raise
     except Exception as exc:

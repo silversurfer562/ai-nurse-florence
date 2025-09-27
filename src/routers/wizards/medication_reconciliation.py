@@ -3,9 +3,9 @@ Medication Reconciliation Wizard - AI Nurse Florence
 Following Wizard Pattern Implementation from coding instructions
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import Dict, Any
 from uuid import uuid4
 from datetime import datetime
 

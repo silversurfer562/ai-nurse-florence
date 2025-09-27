@@ -3,9 +3,8 @@ Document Authoring Service - SBAR reports and clinical documentation
 Following Service Layer Architecture pattern
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from utils.redis_cache import cached
-from models.schemas import SBARRequest, SBARResponse
 
 # Conditional imports following coding instructions
 try:

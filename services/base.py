@@ -2,7 +2,7 @@
 Following OpenAI best practices and SOLID principles for extensibility.
 """
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
 import logging
@@ -81,7 +81,7 @@ class BaseAIService(BaseClinicalService):
         
     def _build_system_prompt(self) -> str:
         """Build system prompt following OpenAI best practices"""
-        return f"""You are AI Nurse Florence, a clinical assistant for healthcare professionals.
+        return """You are AI Nurse Florence, a clinical assistant for healthcare professionals.
 
 ROLE: Provide evidence-based clinical information and decision support
 AUDIENCE: Nurses and healthcare professionals

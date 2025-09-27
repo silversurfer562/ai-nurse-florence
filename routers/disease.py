@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Query, status
-from fastapi.responses import JSONResponse
 from models.schemas import DiseaseSummary
 from services.disease_service import lookup_disease
 from utils.guardrails import educational_banner

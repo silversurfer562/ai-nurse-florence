@@ -23,7 +23,7 @@ try:
     # Export for Vercel (FastAPI apps work directly with Vercel)
     # No need for a custom handler - Vercel handles ASGI apps natively
     
-except Exception as e:
+except Exception:
     # Fallback minimal app if main app fails
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse

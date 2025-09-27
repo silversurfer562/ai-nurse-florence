@@ -4,7 +4,6 @@ Quick script to check if Railway has deployed the latest version
 """
 
 import requests
-import json
 
 def check_deployment():
     base_url = "https://ai-nurse-florence-production.up.railway.app"
@@ -52,7 +51,7 @@ def check_deployment():
                 print(f"\n✅ Advanced endpoints found: {found_advanced}")
                 return True
             else:
-                print(f"\n❌ No advanced endpoints found. Still running old version.")
+                print("\n❌ No advanced endpoints found. Still running old version.")
                 return False
     except Exception as e:
         print(f"❌ Could not check OpenAPI: {e}")

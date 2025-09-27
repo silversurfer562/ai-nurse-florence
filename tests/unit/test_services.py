@@ -4,7 +4,6 @@ Tests individual service methods with mocked dependencies.
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch
 
 pytestmark = pytest.mark.unit
 

@@ -5,12 +5,11 @@ From copilot-instructions.md patterns
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, TypeVar, Generic
+from typing import Any, Dict, TypeVar, Generic
 from datetime import datetime
 
 from ..utils.config import get_settings, get_educational_banner
-from ..utils.exceptions import ServiceException, ExternalServiceException
-from ..utils.redis_cache import cached
+from ..utils.exceptions import ExternalServiceException
 
 T = TypeVar('T')
 

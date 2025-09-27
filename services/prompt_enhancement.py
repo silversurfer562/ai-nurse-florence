@@ -4,8 +4,7 @@ Prompt enhancement service to improve user prompts.
 This module provides functions to analyze and enhance user prompts,
 or generate clarification questions when prompts are unclear.
 """
-from typing import Tuple, Optional, List, Dict
-import re
+from typing import Tuple, Optional
 from utils.logging import get_logger
 
 logger = get_logger(__name__)

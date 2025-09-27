@@ -4,7 +4,7 @@ A wizard for generating a custom clinical report on a disease.
 This multi-step wizard guides users through building a detailed, context-aware
 report on a specific medical condition, acting as an "Advanced Search" feature.
 """
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 import json

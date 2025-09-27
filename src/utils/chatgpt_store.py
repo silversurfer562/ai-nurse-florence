@@ -39,7 +39,7 @@ class ChatGPTStoreAuth:
                 "institution": None,
                 "gpt_store_user": True
             }
-        except Exception as e:
+        except Exception:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid ChatGPT Store authentication"

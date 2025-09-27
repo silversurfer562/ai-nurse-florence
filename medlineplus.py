@@ -2,8 +2,7 @@
 MedlinePlus connector for health information lookup.
 """
 import requests
-from typing import Dict, Any, List, Tuple, Optional
-import json
+from typing import Dict, Any, List, Tuple
 
 # MedlinePlus Connect API base URL
 BASE_URL = "https://connect.medlineplus.gov/service"
@@ -79,7 +78,7 @@ def search_medlineplus(topic: str) -> Tuple[str, List[Dict[str, Any]]]:
         summary = f"MedlinePlus lookup for '{topic}' - API temporarily unavailable"
         references = [{
             "title": f"MedlinePlus - {topic}",
-            "url": f"https://medlineplus.gov/",
+            "url": "https://medlineplus.gov/",
             "source": "MedlinePlus",
             "summary": "Search MedlinePlus directly for health information"
         }]

@@ -9,7 +9,6 @@ import logging
 import os
 from typing import Dict, Optional, Union
 from enum import Enum
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +196,7 @@ def select_model_for_context(
     # Safety-critical tasks always use premium model
     if safety_critical:
         complexity = "premium"
-        logger.info(f"Safety-critical task, upgrading to premium complexity")
+        logger.info("Safety-critical task, upgrading to premium complexity")
     
     # Enterprise ChatGPT / ChatGPT Store model selection
     if mode in [DeploymentMode.ENTERPRISE_CHATGPT, DeploymentMode.CHATGPT_STORE]:

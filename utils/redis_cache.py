@@ -6,8 +6,7 @@ that can be used in production environments. It implements the same
 interface as the in-memory cache for easy switching.
 """
 import json
-import os
-from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union
+from typing import Any, Optional, TypeVar, Callable, Tuple, Union
 import redis
 from utils.logging import get_logger
 from utils.config import settings

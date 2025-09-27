@@ -1,12 +1,10 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import httpx
-import json
 import time
 import logging
-from typing import Dict, Any, Optional, List
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -53,7 +51,6 @@ async def root():
 @app.get("/app")
 async def frontend():
     """Serve the main frontend application"""
-    from fastapi.responses import FileResponse
     return FileResponse("static/index.html")
 
 @app.get("/health")
@@ -83,7 +80,7 @@ async def disease_lookup(q: str = Query(..., description="Disease or condition t
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             # Query MyDisease.info API
-            url = f"https://mydisease.info/v1/query"
+            url = "https://mydisease.info/v1/query"
             params = {
                 "q": q,
                 "size": 1,

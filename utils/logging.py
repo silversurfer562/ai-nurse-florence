@@ -5,11 +5,10 @@ This module provides a standardized way to create loggers and structured logs
 throughout the application.
 """
 import logging
-import uuid
 import json
 import sys
 import os
-from typing import Dict, Any, Optional
+from typing import Optional
 
 # Configure default logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()

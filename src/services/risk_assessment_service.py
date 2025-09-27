@@ -3,7 +3,7 @@ Risk Assessment Service - Clinical risk scoring
 Following caching strategy patterns
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from utils.redis_cache import cached
 
 class RiskAssessmentService:

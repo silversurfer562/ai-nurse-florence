@@ -4,7 +4,6 @@ Following Testing Patterns from coding instructions
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch
 
 pytestmark = pytest.mark.unit
 

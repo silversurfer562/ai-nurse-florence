@@ -4,7 +4,7 @@ Following External Service Integration and Conditional Imports Pattern from codi
 """
 
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from ..utils.config import get_settings, get_educational_banner
 from ..utils.redis_cache import cached
 

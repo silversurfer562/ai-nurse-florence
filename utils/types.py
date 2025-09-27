@@ -4,7 +4,7 @@ Common type definitions for use throughout the application.
 This module defines reusable type annotations and protocols
 to ensure consistent typing across the codebase.
 """
-from typing import Dict, List, Any, Optional, TypeVar, Protocol, Union, Callable, TypedDict
+from typing import Dict, List, Any, Optional, TypeVar, Protocol, TypedDict
 
 # Simple type aliases
 JSON = Dict[str, Any]

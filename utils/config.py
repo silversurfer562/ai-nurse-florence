@@ -7,7 +7,6 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 from typing import List, Optional
 from functools import lru_cache
-import os
 
 class Settings(BaseSettings):
     """Application settings with validation and type safety."""
@@ -91,10 +90,7 @@ Comprehensive test suite for deployment readiness assessment
 Following coding instructions for Configuration Management
 """
 import pytest
-from typing import Dict, List, Optional, Any
-from unittest.mock import Mock, patch
-import asyncio
-from datetime import datetime
+from typing import List, Optional
 
 # Test configuration following Configuration Management patterns
 class TestFrameworkSettings:

@@ -2,8 +2,7 @@
 ClinicalTrials.gov API connector for clinical trial information.
 """
 import requests
-from typing import Dict, Any, List, Optional
-import json
+from typing import Dict, Any, List
 
 # ClinicalTrials.gov API base URL
 BASE_URL = "https://clinicaltrials.gov/api/v2"

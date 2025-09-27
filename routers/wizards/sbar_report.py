@@ -4,9 +4,9 @@ A wizard for generating SBAR (Situation, Background, Assessment, Recommendation)
 This multi-step wizard guides users through creating a structured SBAR report,
 which is a standard communication tool in healthcare settings.
 """
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional
+from typing import Dict
 
 from utils.api_responses import create_success_response, create_error_response
 from services.openai_client import get_client

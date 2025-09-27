@@ -3,7 +3,6 @@ Disease information service following External Service Integration
 MyDisease.info API integration from copilot-instructions.md
 """
 
-import logging
 from typing import Dict, Any, List, Optional
 
 # Conditional imports following copilot-instructions.md

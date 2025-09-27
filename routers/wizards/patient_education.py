@@ -4,7 +4,7 @@ A wizard for generating patient education materials.
 This module provides a multi-step guided workflow (wizard) to help users
 create customized patient education handouts.
 """
-from fastapi import APIRouter, Depends, Body, HTTPException, status
+from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 

@@ -5,7 +5,6 @@ Following copilot-instructions.md testing patterns
 """
 
 import asyncio
-import json
 from pathlib import Path
 import sys
 

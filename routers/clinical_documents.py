@@ -6,12 +6,10 @@ Provides template-based document generation for nursing workflows
 from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any
-from datetime import datetime
 
 from services.clinical_templates import (
     clinical_template_engine, 
-    TemplateContext, 
-    DocumentType
+    TemplateContext
 )
 
 router = APIRouter(prefix="/api/v2/clinical/documents", tags=["Clinical Documents"])

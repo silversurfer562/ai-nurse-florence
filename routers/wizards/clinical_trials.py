@@ -4,12 +4,11 @@ A wizard for searching clinical trials.
 This multi-step wizard helps users find relevant clinical trials by guiding
 them through specifying search criteria.
 """
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 
 from utils.api_responses import create_success_response, create_error_response
-from services.openai_client import get_client # This would be a real clinical trials API client
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/clinical-trials", tags=["wizards"])

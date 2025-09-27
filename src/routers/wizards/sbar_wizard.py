@@ -3,19 +3,17 @@ SBAR Wizard Router - AI Nurse Florence
 Following Wizard Pattern Implementation from copilot-instructions.md
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status
 from typing import Dict, Any, Optional
 from uuid import uuid4
 from datetime import datetime
 
 from src.services import get_service
 from src.models.schemas import (
-    WizardSession, 
     SBARWizardRequest, 
-    SBARWizardResponse,
-    SBARStep
+    SBARWizardResponse
 )
-from src.utils.api_responses import create_success_response, create_error_response
+from src.utils.api_responses import create_success_response
 from src.utils.exceptions import ServiceException
 from src.utils.config import get_settings
 
@@ -243,7 +241,7 @@ async def _complete_sbar_wizard(wizard_id: str, session: Dict[str, Any]) -> Dict
             message="SBAR wizard completed successfully"
         )
         
-    except Exception as e:
+    except Exception:
         raise ServiceException("Failed to complete SBAR wizard", "sbar_wizard")
 
 def _get_step_data(step_number: int) -> Dict[str, Any]:

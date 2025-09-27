@@ -4,8 +4,6 @@ Tests centralized configuration with environment variables and feature flags.
 """
 
 import pytest
-import os
-from unittest.mock import patch
 
 pytestmark = pytest.mark.unit
 

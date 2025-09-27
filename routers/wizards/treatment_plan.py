@@ -4,9 +4,9 @@ A wizard for generating comprehensive treatment plans for healthcare professiona
 This multi-step wizard guides users through creating structured treatment plans
 that include assessment, goals, interventions, monitoring, and evaluation components.
 """
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, List
+from typing import Dict, Optional
 
 from utils.api_responses import create_success_response, create_error_response
 from services import openai_client

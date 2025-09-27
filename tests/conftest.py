@@ -6,8 +6,7 @@ Provides path setup, service layer mocks, and test client for comprehensive test
 import pytest
 import sys
 from pathlib import Path
-from typing import Dict, Any, AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 
 # Add project root to path following conftest.py pattern from coding instructions

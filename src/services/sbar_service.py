@@ -6,7 +6,7 @@ Following Service Layer Architecture for clinical documentation wizard
 import logging
 from typing import Optional, Dict, Any
 from datetime import datetime
-from src.utils.config import get_settings, get_redis_config
+from src.utils.config import get_settings
 from src.utils.redis_cache import cached
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,6 @@ Integrates with external medical databases
 """
 
 import logging
-import asyncio
 from typing import List, Dict, Any, Optional
 from ..models.schemas import (
     LiteratureSearchRequest,
@@ -13,7 +12,6 @@ from ..models.schemas import (
     EvidenceLevel
 )
 from ..utils.redis_cache import cached
-from ..utils.exceptions import ExternalServiceException
 
 class EvidenceService:
     """Evidence-based literature and guidelines service"""

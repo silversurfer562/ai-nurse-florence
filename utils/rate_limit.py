@@ -10,7 +10,6 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 import hashlib
-import os
 from utils.logging import get_logger
 from utils.config import settings
 

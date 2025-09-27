@@ -1,6 +1,4 @@
 import json
-import tempfile
-from pathlib import Path
 
 from src.utils.mesh_loader import MeshIndex
 from src.services.mesh_service import get_mesh_index, map_to_mesh

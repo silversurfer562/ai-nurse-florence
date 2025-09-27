@@ -29,7 +29,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
         # HSTS for production
-        if not request.url.hostname in ["localhost", "127.0.0.1"]:
+        if request.url.hostname not in ["localhost", "127.0.0.1"]:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         
         # CSP for healthcare application
@@ -79,7 +79,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         
         # Log request
         logger.info(
-            f"Request started",
+            "Request started",
             extra={
                 "request_id": request_id,
                 "method": request.method,
@@ -97,7 +97,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             
             # Log response
             logger.info(
-                f"Request completed",
+                "Request completed",
                 extra={
                     "request_id": request_id,
                     "status_code": response.status_code,
@@ -115,7 +115,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             # Log error
             process_time = time.time() - start_time
             logger.error(
-                f"Request failed",
+                "Request failed",
                 extra={
                     "request_id": request_id,
                     "error": str(e),

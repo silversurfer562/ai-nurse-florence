@@ -19,7 +19,7 @@ except ImportError:
     _redis_available = False
     redis = None
 
-from src.utils.config import get_settings, get_redis_config
+from src.utils.config import get_redis_config
 
 # Global cache instances
 _redis_client: Optional[Any] = None

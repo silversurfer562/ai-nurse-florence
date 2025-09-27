@@ -1,7 +1,5 @@
-from typing import Dict, Any, List, Optional
 
-from utils.exceptions import ExternalServiceException
-from utils.types import DiseaseResult, ReferenceDict
+from utils.types import DiseaseResult
 from utils.logging import get_logger
 from utils.cache import cached
 from services.prompt_enhancement import enhance_prompt

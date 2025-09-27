@@ -4,8 +4,7 @@ Following Service Layer Architecture
 """
 
 from fastapi import APIRouter, Query, Depends, status, Path
-from typing import List, Optional, Dict, Any
-from src.models.schemas import ClinicalDecisionRequest, ClinicalDecisionResponse
+from typing import List, Optional
 from src.services.clinical_decision_service import get_clinical_decision_service, ClinicalDecisionService
 from src.utils.api_responses import create_success_response, create_error_response
 

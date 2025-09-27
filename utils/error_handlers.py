@@ -6,7 +6,6 @@ to handle custom exceptions in a standardized way.
 """
 from fastapi import Request, FastAPI
 from fastapi.responses import JSONResponse
-from typing import Dict, Any
 
 from utils.exceptions import ServiceException, ValidationException, ExternalServiceException, NotFoundException
 from utils.logging import get_logger

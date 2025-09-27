@@ -5,7 +5,7 @@ This module provides functionality for running tasks in the background
 using FastAPI's background tasks feature.
 """
 import uuid
-from typing import Dict, Any, Optional, Callable, Awaitable
+from typing import Dict, Any, Optional, Callable
 import asyncio
 import time
 from fastapi import BackgroundTasks

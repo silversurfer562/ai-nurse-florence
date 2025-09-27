@@ -4,7 +4,6 @@ Following OpenAI Integration pattern with environment-based API key loading
 """
 
 import logging
-import os
 from typing import Optional, Dict, Any
 from src.utils.config import get_settings, get_educational_banner, get_openai_config
 

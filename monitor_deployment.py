@@ -5,7 +5,6 @@ Monitor Railway deployment progress
 
 import requests
 import time
-import json
 from datetime import datetime
 
 def check_deployment():
@@ -81,5 +80,5 @@ if __name__ == "__main__":
                 print()
                 time.sleep(30)
             else:
-                print(f"\n⚠️  Max attempts reached. Build may still be in progress.")
+                print("\n⚠️  Max attempts reached. Build may still be in progress.")
                 print("   Check Railway dashboard for build status.")

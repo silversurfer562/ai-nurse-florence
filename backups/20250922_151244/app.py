@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
+from fastapi import FastAPI, APIRouter
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -9,7 +9,7 @@ import sys
 # Core imports
 from utils.middleware import RequestIdMiddleware, LoggingMiddleware
 from utils.logging import get_logger
-from utils.config import settings, get_settings
+from utils.config import settings
 from utils.security import SecurityHeadersMiddleware
 
 # Load environment variables
@@ -127,19 +127,19 @@ app = FastAPI(
 )
 
 # Log startup diagnostics
-print(f"=== AI NURSE FLORENCE FULL APPLICATION STARTING ===")
-print(f"THIS IS THE COMPLETE APP.PY WITH ALL MEDICAL FEATURES")
+print("=== AI NURSE FLORENCE FULL APPLICATION STARTING ===")
+print("THIS IS THE COMPLETE APP.PY WITH ALL MEDICAL FEATURES")
 print(f"Deployment ID: {os.environ.get('RAILWAY_DEPLOYMENT_ID', 'local')}")
 print(f"Railway Environment: {os.environ.get('RAILWAY_ENVIRONMENT', 'unknown')}")
 print(f"Port: {os.environ.get('PORT', '8000')}")
-print(f"Git commit: 1558a38")
+print("Git commit: 1558a38")
 print(f"Python version: {sys.version}")
 print(f"Current working directory: {os.getcwd()}")
 print(f"Loaded routers: {routers_loaded}")
 print(f"Failed routers: {routers_failed}")
 print(f"Wizards available: {WIZARDS_AVAILABLE}")
 print(f"Auth available: {AUTH_AVAILABLE}")
-print(f"Expected ~35 routes in full app")
+print("Expected ~35 routes in full app")
 print("===========================================================")
 
 # Ensure health endpoint is available immediately

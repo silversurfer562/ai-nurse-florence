@@ -3,7 +3,7 @@ Health Check Router - AI Nurse Florence
 Following Router Organization pattern for unprotected health endpoints
 """
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter
 from datetime import datetime
 from typing import Dict, Any
 import os
@@ -43,7 +43,6 @@ async def health_check():
     # Count available routes (if app context available)
     route_count = "unknown"
     try:
-        from fastapi import Request
         # Route counting would be done at app level
         route_count = "available"
     except:

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Query, Depends, Request
-from models.schemas import PubMedSearchResponse, PubMedArticle
+from models.schemas import PubMedSearchResponse
 from services import pubmed_service
-from utils.guardrails import educational_banner
 from utils.pagination import get_pagination_params, create_paginated_response
 from utils.api_responses import create_success_response
 
