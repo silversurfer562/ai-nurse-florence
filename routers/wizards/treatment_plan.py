@@ -212,87 +212,81 @@ async def generate_treatment_plan(step_input: GenerateTreatmentInput):
             "missing_treatment_components"
         )
 
-    prompt = f"""
-    Format the following clinical information into a comprehensive, professional treatment plan.
-    Use clear headings and bullet points for readability. Ensure the plan is evidence-based and suitable for clinical implementation.
+    prompt = (
+        "Format the following clinical information into a comprehensive, professional treatment plan.\n"
+        "Use clear headings and bullet points for readability. Ensure the plan is evidence-based and suitable for clinical implementation.\n\n"
+        f"**PATIENT ASSESSMENT:**\n{session_data['assessment']}\n\n"
+        f"**TREATMENT GOALS:**\n{session_data['goals']}\n\n"
+        f"**NURSING INTERVENTIONS:**\n{session_data['nursing_interventions']}\n\n"
+        f"**MEDICATION MANAGEMENT:**\n{session_data['medications']}\n\n"
+        f"**PATIENT EDUCATION:**\n{session_data['patient_education']}\n\n"
+        f"**MONITORING PLAN:**\n{session_data['monitoring']}\n\n"
+        f"**EVALUATION CRITERIA:**\n{session_data['evaluation_criteria']}\n\n"
+        "Please format this as a comprehensive treatment plan with:\n"
+        "1. Clear section headers\n2. Organized bullet points\n3. Professional medical language\n4. Implementation timeline where appropriate\n5. Safety considerations highlighted\n"
+    )
 
-    **PATIENT ASSESSMENT:**
-    {session_data['assessment']}
+    try:
+        client = openai_client.get_client()
+        if not client:
+            return create_error_response(
+                "AI service unavailable. Treatment plan cannot be generated.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "ai_service_unavailable",
+            )
 
-    **TREATMENT GOALS:**
-    {session_data['goals']}
-
-    **NURSING INTERVENTIONS:**
-    {session_data['nursing_interventions']}
-
-    **MEDICATION MANAGEMENT:**
-    {session_data['medications']}
-
-    **PATIENT EDUCATION:**
-    {session_data['patient_education']}
-
-    **MONITORING PLAN:**
-    {session_data['monitoring']}
-
-    **EVALUATION CRITERIA:**
-    {session_data['evaluation_criteria']}
-
-    Please format this as a comprehensive treatment plan with:
-    1. Clear section headers
-    2. Organized bullet points
-    3. Professional medical language
-    4. Implementation timeline where appropriate
-    5. Safety considerations highlighted
-    """
-
-        try:
-            client = openai_client.get_client()
-            if not client:
-                return create_error_response(
-                    "AI service unavailable. Treatment plan cannot be generated.",
-                    status.HTTP_503_SERVICE_UNAVAILABLE,
-                    "ai_service_unavailable"
-                )
-
-            response = client.chat.completions.create(
+        # Call the AI client; tests will mock `openai_client.get_client()`
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
-                    "role": "system", 
-                    "content": "You are an expert clinical nurse specialist with extensive experience in developing comprehensive treatment plans. Format treatment plans with clear structure, evidence-based interventions, and professional clinical language. Always include safety considerations and measurable outcomes."
+                    "role": "system",
+                    "content": (
+                        "You are an expert clinical nurse specialist with extensive experience in developing comprehensive treatment plans. "
+                        "Format treatment plans with clear structure, evidence-based interventions, and professional clinical language. "
+                        "Always include safety considerations and measurable outcomes."
+                    ),
                 },
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
             temperature=0.7,
-            max_tokens=2000
+            max_tokens=2000,
         )
-        
-        treatment_plan = response.choices[0].message.content
+
+        # Support different client response shapes safely
+        treatment_plan = None
+        try:
+            treatment_plan = response.choices[0].message.content
+        except Exception:
+            try:
+                treatment_plan = response.choices[0].text
+            except Exception:
+                treatment_plan = str(response)
+
         logger.info(f"Successfully generated treatment plan for session {wizard_id}")
-        
-        # Create summary for quick reference
+
         summary = {
-            "primary_diagnosis": session_data['assessment'][:100] + "..." if len(session_data['assessment']) > 100 else session_data['assessment'],
-            "key_goals": session_data['goals'][:100] + "..." if len(session_data['goals']) > 100 else session_data['goals'],
-            "main_interventions": session_data['nursing_interventions'][:100] + "..." if len(session_data['nursing_interventions']) > 100 else session_data['nursing_interventions'],
-            "monitoring_focus": session_data['monitoring'][:100] + "..." if len(session_data['monitoring']) > 100 else session_data['monitoring']
+            "primary_diagnosis": (session_data.get('assessment') or '')[:100] + "...",
+            "key_goals": (session_data.get('goals') or '')[:100] + "...",
+            "main_interventions": (session_data.get('nursing_interventions') or '')[:100] + "...",
+            "monitoring_focus": (session_data.get('monitoring') or '')[:100] + "...",
         }
-        
-        # Clean up the session
-        del treatment_wizard_sessions[wizard_id]
-        
+
+        # Clean up session
+        treatment_wizard_sessions.pop(wizard_id, None)
+
         return create_success_response({
             "wizard_id": wizard_id,
             "treatment_plan": treatment_plan,
-            "summary": summary
+            "summary": summary,
         })
-        
+
     except Exception as e:
         logger.error(f"Treatment plan generation failed for session {wizard_id}: {e}", exc_info=True)
         return create_error_response(
             "Failed to generate treatment plan from AI model.",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "generation_failed"
+            "generation_failed",
         )
 
 @router.get("/session/{wizard_id}", summary="Get Current Session Status")
