@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, List
 
 from utils.api_responses import create_success_response, create_error_response
-from services.openai_client import get_client
+from services import openai_client
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/treatment-plan", tags=["wizards"])
@@ -245,16 +245,16 @@ async def generate_treatment_plan(step_input: GenerateTreatmentInput):
     5. Safety considerations highlighted
     """
 
-    try:
-        client = get_client()
-        if not client:
-            return create_error_response(
-                "AI service unavailable. Treatment plan cannot be generated.",
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-                "ai_service_unavailable"
-            )
-            
-        response = client.chat.completions.create(
+        try:
+            client = openai_client.get_client()
+            if not client:
+                return create_error_response(
+                    "AI service unavailable. Treatment plan cannot be generated.",
+                    status.HTTP_503_SERVICE_UNAVAILABLE,
+                    "ai_service_unavailable"
+                )
+
+            response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {
