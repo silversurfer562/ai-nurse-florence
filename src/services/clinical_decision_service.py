@@ -92,8 +92,17 @@ class ClinicalDecisionService:
         )
 
         # Normalize result to expected router response shape
+        # Normalize nursing_interventions to a single string (router expects a string)
+        nursing = result.get("nursing_interventions", [])
+        if isinstance(nursing, list):
+            nursing_str = "; ".join(nursing)
+        elif isinstance(nursing, str):
+            nursing_str = nursing
+        else:
+            nursing_str = str(nursing)
+
         normalized = {
-            "nursing_interventions": result.get("nursing_interventions") or result.get("nursing_interventions", []),
+            "nursing_interventions": nursing_str,
             "evidence_level": result.get("evidence_level", "Level VII - Expert Opinion"),
             "safety_considerations": result.get("safety_considerations", []),
             "clinical_context": result.get("clinical_context") or {"concerns": nursing_concerns}
