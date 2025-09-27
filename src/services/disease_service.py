@@ -16,7 +16,7 @@ except ImportError:
 
 from .base_service import BaseService
 from ..utils.redis_cache import cached
-from ..utils.config import get_settings
+from ..utils.config import get_settings, get_educational_banner
 from ..utils.exceptions import ExternalServiceException
 try:
     from .mesh_service import map_to_mesh  # type: ignore
@@ -25,6 +25,13 @@ except Exception:
     def map_to_mesh(query: str, top_k: int = 5):
         return []
     _has_mesh = False
+
+# Optional prompt enhancement module (graceful degradation)
+try:
+    from .prompt_enhancement import enhance_prompt  # type: ignore
+    _has_prompt_enhancement = True
+except Exception:
+    _has_prompt_enhancement = False
 
 class DiseaseService(BaseService[Dict[str, Any]]):
     """
@@ -143,7 +150,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         """
         stub_data = {
             "name": f"Information about {query}",
-            "description": f"This is educational information about {query}. " + self.educational_banner,
+            "description": f"This is educational information about {query}. " + (self.settings.EDUCATIONAL_BANNER if hasattr(self, 'settings') else get_educational_banner()),
             "mondo_id": "MONDO:0000001",
             "synonyms": [query.lower(), query.title()]
         }
