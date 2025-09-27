@@ -19,6 +19,7 @@ except ImportError:
     _redis_available = False
     redis = None
 
+import os
 from src.utils.config import get_redis_config
 
 # Optional metrics - record cache hits/misses when available
@@ -41,6 +42,12 @@ async def get_redis_client():
     """Get Redis client with graceful fallback"""
     global _redis_client
     
+    # Allow tests or environments to force in-memory-only mode by setting
+    # AI_NURSE_DISABLE_REDIS=1 in the environment. This prevents background
+    # Redis connection attempts that can leave pending tasks during test runs.
+    if os.environ.get("AI_NURSE_DISABLE_REDIS", "0") in ("1", "true", "True"):
+        return None
+
     if not _redis_available:
         return None
     
