@@ -25,6 +25,9 @@ from ..utils.redis_cache import cached
 from ..utils.config import get_settings
 from ..utils.exceptions import ExternalServiceException
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PubMedService(BaseService[Dict[str, Any]]):
     """
     PubMed literature search service

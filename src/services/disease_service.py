@@ -13,6 +13,23 @@ except ImportError:
     _has_requests = False
     requests = None
 
+if not _has_requests:
+    class _RequestsStub:
+        @staticmethod
+        def get(*args, **kwargs):
+            raise RuntimeError("requests not available in this environment")
+
+    requests = _RequestsStub()
+
+def _requests_get(*args, **kwargs):
+    """Helper wrapper around requests.get to centralize availability checks."""
+    if not _has_requests:
+        raise RuntimeError("requests not available in this environment")
+    return requests.get(*args, **kwargs)
+
+import logging
+logger = logging.getLogger(__name__)
+
 from .base_service import BaseService
 from ..utils.redis_cache import cached
 from ..utils.config import get_settings, get_educational_banner
@@ -31,6 +48,8 @@ try:
     _has_prompt_enhancement = True
 except Exception:
     _has_prompt_enhancement = False
+    def enhance_prompt(prompt: str, purpose: str):
+        return prompt, False, None
 
 class DiseaseService(BaseService[Dict[str, Any]]):
     """
@@ -42,6 +61,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         super().__init__("disease")
         self.base_url = "https://mydisease.info/v1"
         self.settings = get_settings()
+    # Settings, logger and helpers are provided; class defines safe fallbacks below
     
     @cached(ttl_seconds=3600)
     def lookup_disease(self, query: str, include_symptoms: bool = True, include_treatments: bool = True) -> Dict[str, Any]:
@@ -91,8 +111,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             "fields": "mondo,disgenet,ctd",
             "size": 5
         }
-        
-        response = requests.get(search_url, params=params, timeout=10)
+    response = _requests_get(search_url, params=params, timeout=10)
         response.raise_for_status()
         
         data = response.json()
@@ -124,6 +143,17 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             formatted["treatments"] = self._extract_treatments(raw_data)
         
         return formatted
+
+    # Minimal logging helpers in case BaseService doesn't provide them at runtime
+    def _log_request(self, *args, **kwargs) -> None:
+        logger.debug(f"DiseaseService request: {args} {kwargs}")
+
+    def _log_response(self, *args, **kwargs) -> None:
+        logger.debug(f"DiseaseService response: {args} {kwargs}")
+
+    def _handle_external_service_error(self, error: Exception, fallback_data: Any = None) -> Dict[str, Any]:
+        logger.warning(f"External service error: {error}")
+        return fallback_data or {}
     
     def _extract_symptoms(self, disgenet_data: Dict[str, Any]) -> List[str]:
         """Extract symptoms from DisGeNET data"""
@@ -259,7 +289,7 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
         "size": 1
     }
     
-    response = requests.get(base_url, params=params, timeout=10)
+    response = _requests_get(base_url, params=params, timeout=10)
     response.raise_for_status()
     data = response.json()
     
