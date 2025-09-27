@@ -1,4 +1,48 @@
 """
+Minimal clinical decision service stub for development and tests.
+Provides a dependency factory `get_clinical_decision_service` and a
+`ClinicalDecisionService` with an async `get_nursing_interventions` method.
+"""
+from typing import List, Dict, Any, Optional
+
+
+class ClinicalDecisionService:
+    """Placeholder clinical decision support service."""
+
+    async def get_nursing_interventions(
+        self,
+        patient_condition: str,
+        severity: str = "moderate",
+        comorbidities: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Return a deterministic, evidence-lean placeholder response.
+
+        This keeps routers and integration tests simple until a real
+        implementation is provided.
+        """
+        comorbidities = comorbidities or []
+        # Simple heuristic-based placeholder
+        interventions = [
+            f"Assess airway, breathing, circulation for {patient_condition}",
+            "Establish IV access",
+            "Monitor vital signs every 15 minutes",
+        ]
+
+        if severity.lower() in ("severe", "critical"):
+            interventions.insert(0, "Activate rapid response or transfer to higher level of care")
+
+        return {
+            "nursing_interventions": "; ".join(interventions),
+            "evidence_level": "Level VII - Expert Opinion",
+            "safety_considerations": ["Allergy check", "Medication reconciliation"],
+            "clinical_context": {"comorbidities": comorbidities},
+        }
+
+
+def get_clinical_decision_service() -> ClinicalDecisionService:
+    """Dependency factory used by FastAPI Depends()."""
+    return ClinicalDecisionService()
+"""
 Clinical Decision Service - AI Nurse Florence
 Following Service Layer Architecture from coding instructions
 """
@@ -22,6 +66,40 @@ class ClinicalDecisionService:
         self.settings = get_settings()
         self.banner = get_educational_banner()
         self.openai_available = is_openai_available()
+
+    async def get_nursing_interventions(
+        self,
+        patient_condition: str,
+        severity: str = "moderate",
+        comorbidities: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Compatibility wrapper used by the router.
+
+        Maps the older `get_nursing_interventions` call to the newer
+        `get_nursing_recommendations` implementation so both interfaces work.
+        """
+        # Use comorbidities as nursing concerns if provided
+        nursing_concerns = comorbidities or []
+        # Map severity to a priority level
+        priority = "routine"
+        if severity and severity.lower() in ("urgent", "severe", "critical"):
+            priority = "urgent" if severity.lower() == "severe" else "critical"
+
+        result = await self.get_nursing_recommendations(
+            patient_condition=patient_condition,
+            nursing_concerns=nursing_concerns,
+            priority_level=priority
+        )
+
+        # Normalize result to expected router response shape
+        normalized = {
+            "nursing_interventions": result.get("nursing_interventions") or result.get("nursing_interventions", []),
+            "evidence_level": result.get("evidence_level", "Level VII - Expert Opinion"),
+            "safety_considerations": result.get("safety_considerations", []),
+            "clinical_context": result.get("clinical_context") or {"concerns": nursing_concerns}
+        }
+
+        return normalized
         
     async def get_nursing_recommendations(
         self,
