@@ -84,6 +84,7 @@ def _load_wizard_routers():
     
     wizard_routers = {
         'nursing_assessment': 'src.routers.wizards.nursing_assessment',
+    'treatment_plan': 'src.routers.wizards.treatment_plan',
         'sbar_report': 'src.routers.wizards.sbar_report', 
         'medication_reconciliation': 'src.routers.wizards.medication_reconciliation',
         'care_plan': 'src.routers.wizards.care_plan',
