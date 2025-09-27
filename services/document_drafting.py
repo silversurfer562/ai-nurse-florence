@@ -3,6 +3,7 @@ AI Nurse Florence - Document Drafting System
 Provides editable document generation with version control and approval workflow
 """
 
+from enum import Enum
 from typing import Dict, List, Optional, Any, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime
