@@ -5,6 +5,15 @@ MyDisease.info API integration from copilot-instructions.md
 
 from typing import Dict, Any, List, Optional
 
+import logging
+
+from .base_service import BaseService
+from ..utils.redis_cache import cached
+from ..utils.config import get_settings, get_educational_banner
+from ..utils.exceptions import ExternalServiceException
+
+logger = logging.getLogger(__name__)
+
 # Conditional imports following copilot-instructions.md
 try:
     import requests
@@ -21,19 +30,12 @@ if not _has_requests:
 
     requests = _RequestsStub()
 
+
 def _requests_get(*args, **kwargs):
     """Helper wrapper around requests.get to centralize availability checks."""
     if not _has_requests:
         raise RuntimeError("requests not available in this environment")
     return requests.get(*args, **kwargs)
-
-import logging
-logger = logging.getLogger(__name__)
-
-from .base_service import BaseService
-from ..utils.redis_cache import cached
-from ..utils.config import get_settings, get_educational_banner
-from ..utils.exceptions import ExternalServiceException
 try:
     from .mesh_service import map_to_mesh  # type: ignore
     _has_mesh = True
@@ -93,6 +95,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         """Fetch disease data from MyDisease.info API"""
         if not _has_requests:
             raise ExternalServiceException("Requests library not available", "disease_service")
+
         # Try MeSH normalization to improve lookup
         try:
             if _has_mesh:
@@ -102,7 +105,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
                     if mesh_term:
                         query = mesh_term
         except Exception:
-            pass
+            logger.debug("MeSH normalization failed, continuing with original query")
 
         # Search for disease
         search_url = f"{self.base_url}/query"
@@ -111,15 +114,17 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             "fields": "mondo,disgenet,ctd",
             "size": 5
         }
-    response = _requests_get(search_url, params=params, timeout=10)
+
+        response = _requests_get(search_url, params=params, timeout=10)
+        # propagate HTTP errors to caller
         response.raise_for_status()
-        
+
         data = response.json()
         hits = data.get("hits", [])
-        
+
         if not hits:
             return self._create_not_found_response(query)
-        
+
         # Process the first result
         disease_data = hits[0]
         return self._format_disease_data(disease_data, include_symptoms, include_treatments)

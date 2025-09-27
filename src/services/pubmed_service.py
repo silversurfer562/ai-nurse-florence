@@ -20,6 +20,21 @@ except ImportError:
     _has_xml = False
     ET = None
 
+if not _has_requests:
+    class _RequestsStub:
+        @staticmethod
+        def get(*args, **kwargs):
+            raise RuntimeError("requests not available in this environment")
+
+    requests = _RequestsStub()
+
+
+def _requests_get(*args, **kwargs):
+    """Helper wrapper around requests.get to centralize availability checks."""
+    if not _has_requests:
+        raise RuntimeError("requests not available in this environment")
+    return requests.get(*args, **kwargs)
+
 from .base_service import BaseService
 from ..utils.redis_cache import cached
 from ..utils.config import get_settings
@@ -128,15 +143,22 @@ class PubMedService(BaseService[Dict[str, Any]]):
         articles = []
         
         try:
+            if not _has_xml:
+                raise RuntimeError("XML parsing not available in this environment")
+
             root = ET.fromstring(xml_content)
-            
+
             for article_elem in root.findall(".//PubmedArticle"):
                 article_data = self._extract_article_data(article_elem)
                 if article_data:
                     articles.append(article_data)
-                    
-        except ET.ParseError as e:
-            self.logger.warning(f"XML parsing error: {e}")
+
+        except Exception as e:
+            # Use module logger; fall back to standard logger when necessary
+            try:
+                logger.warning(f"XML parsing error: {e}")
+            except Exception:
+                pass
         
         return articles
     
@@ -190,7 +212,10 @@ class PubMedService(BaseService[Dict[str, Any]]):
             }
             
         except Exception as e:
-            self.logger.warning(f"Error extracting article data: {e}")
+            try:
+                logger.warning(f"Error extracting article data: {e}")
+            except Exception:
+                pass
             return None
     
     def _extract_publication_date(self, pub_date_elem) -> str:
@@ -263,6 +288,16 @@ class PubMedService(BaseService[Dict[str, Any]]):
     def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
         """Implementation of abstract method from BaseService"""
         return self.search_literature(query, **kwargs)
+# Minimal logging helpers in case BaseService doesn't provide them at runtime
+    def _log_request(self, *args, **kwargs) -> None:
+        logger.debug(f"PubMedService request: {args} {kwargs}")
+
+    def _log_response(self, *args, **kwargs) -> None:
+        logger.debug(f"PubMedService response: {args} {kwargs}")
+
+    def _handle_external_service_error(self, error: Exception, fallback_data: Any = None) -> Dict[str, Any]:
+        logger.warning(f"External service error: {error}")
+        return fallback_data or {}
 # Service factory function following Conditional Imports Pattern
 def create_pubmed_service() -> Optional[PubMedService]:
     """
