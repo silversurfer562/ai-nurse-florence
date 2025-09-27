@@ -4,7 +4,7 @@ Following Service Layer Architecture
 """
 
 from fastapi import APIRouter, Query, Depends, status, Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from src.models.schemas import ClinicalDecisionRequest, ClinicalDecisionResponse
 from src.services.clinical_decision_service import get_clinical_decision_service, ClinicalDecisionService
 from src.utils.api_responses import create_success_response, create_error_response
@@ -14,7 +14,7 @@ router = APIRouter(
     tags=["Clinical Decision Support"]
 )
 
-@router.post("/interventions", response_model=ClinicalDecisionResponse)
+@router.post("/interventions", response_model=dict)
 async def get_nursing_interventions(
     patient_condition: str = Query(..., 
         description="Patient condition or clinical presentation",
@@ -45,11 +45,10 @@ async def get_nursing_interventions(
             severity=severity,
             comorbidities=comorbidities or []
         )
-        
-        # Return the normalized result directly so it matches the
-        # response_model (ClinicalDecisionResponse).
-        return result
-        
+
+        # Return a standardized success wrapper (used across the API)
+        return create_success_response(result)
+
     except Exception as e:
         return create_error_response(
             f"Clinical decision support failed: {str(e)}",
