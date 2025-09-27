@@ -1,260 +1,175 @@
 """
-AI Nurse Florence - FastAPI Healthcare AI Assistant
-Following copilot-instructions.md Architecture Patterns
+AI Nurse Florence - Healthcare AI Assistant
+Following Service Layer Architecture from coding instructions
 """
 
 import logging
-from datetime import datetime
+import os
 from contextlib import asynccontextmanager
-from typing import Dict, Any, Optional
-
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+from datetime import datetime
 
-# Core utilities following Conditional Imports Pattern
+# Configure logging following coding instructions
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Import configuration following Configuration Management pattern
 try:
-    from src.utils.config import get_settings, is_feature_enabled
-    from src.utils.middleware import (
-        SecurityHeadersMiddleware,
-        RequestIdMiddleware, 
-        LoggingMiddleware
-    )
-    from src.utils.exceptions import ServiceException, ExternalServiceException
-    _has_core_utils = True
-except ImportError as e:
-    logging.error(f"Core utilities unavailable: {e}")
-    _has_core_utils = False
-    raise
+    from src.utils.config import get_settings
+    settings = get_settings()
+    logger.info(f"Configuration loaded: {settings.APP_NAME} v{settings.APP_VERSION}")
+except Exception as e:
+    logger.error(f"Configuration failed: {e}")
+    # Fallback configuration
+    class FallbackSettings:
+        APP_NAME = "AI Nurse Florence"
+        APP_VERSION = "2.1.0"
+        ALLOWED_ORIGINS = ["http://localhost:3000"]
+        EDUCATIONAL_BANNER = "Educational purposes only"
+    settings = FallbackSettings()
 
-# Optional middleware following Conditional Imports Pattern
-try:
-    from src.utils.rate_limit import RateLimiter
-    _has_rate_limiting = True
-except ImportError:
-    _has_rate_limiting = False
-    logging.warning("Rate limiting unavailable - continuing without")
-
-try:
-    from prometheus_fastapi_instrumentator import Instrumentator
-    _has_metrics = True
-except ImportError:
-    _has_metrics = False
-    logging.warning("Prometheus metrics unavailable - continuing without")
-
-# Router imports following Router Organization pattern
-AVAILABLE_ROUTERS = {}
-
-# Core routers (always available)
-try:
-    from src.routers.health import router as health_router
-    AVAILABLE_ROUTERS['health'] = health_router
-except ImportError:
-    logging.warning("Health router unavailable")
-
-try:
-    from src.routers.auth import router as auth_router
-    AVAILABLE_ROUTERS['auth'] = auth_router
-except ImportError:
-    logging.warning("Auth router unavailable")
-
-# Medical Information routers (Conditional Imports Pattern)
-try:
-    from src.routers.disease import router as disease_router
-    from src.routers.literature import router as literature_router
-    from src.routers.clinical_trials import router as clinical_trials_router
-    
-    AVAILABLE_ROUTERS.update({
-        'disease': disease_router,
-        'literature': literature_router,
-        'clinical_trials': clinical_trials_router
-    })
-    logging.info("Medical Information API: Available")
-except ImportError as e:
-    logging.warning(f"Medical Information API unavailable: {e}")
-
-# Wizard routers (Conditional Imports Pattern) 
-try:
-    from src.routers.wizards.sbar_wizard import router as sbar_wizard_router
-    from src.routers.wizards.treatment_plan_wizard import router as treatment_plan_router
-    
-    AVAILABLE_ROUTERS.update({
-        'sbar_wizard': sbar_wizard_router,
-        'treatment_plan': treatment_plan_router
-    })
-    logging.info("Clinical Wizards: Available")
-except ImportError as e:
-    logging.warning(f"Clinical Wizards unavailable: {e}")
-
-# Application lifespan management
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan management following copilot-instructions.md patterns."""
-    
+    """Application lifespan following coding instructions startup patterns."""
     # Startup
-    logging.info("AI Nurse Florence starting up...")
-    
-    # Initialize services following Service Layer Architecture
-    try:
-        from src.services import get_available_services
-        services = get_available_services()
-        logging.info(f"Services initialized: {services}")
-    except ImportError:
-        logging.warning("Service registry unavailable - continuing with limited functionality")
-    
-    # Log available routers
-    logging.info(f"Available routers: {list(AVAILABLE_ROUTERS.keys())}")
-    
-    # Initialize metrics if available
-    if _has_metrics:
-        instrumentator = Instrumentator()
-        instrumentator.instrument(app).expose(app)
-        logging.info("Prometheus metrics enabled")
+    logger.info(f"🏥 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    logger.info("Healthcare AI assistant - Educational use only, no PHI stored")
     
     yield
     
     # Shutdown
-    logging.info("AI Nurse Florence shutting down...")
+    logger.info("Application shutdown complete")
 
-# Initialize FastAPI app following API Design Standards
-def create_app() -> FastAPI:
-    """Create FastAPI application following copilot-instructions.md patterns."""
+# Create FastAPI app following coding instructions
+app = FastAPI(
+    title="AI Nurse Florence",
+    description="Healthcare AI assistant providing evidence-based medical information for nurses and healthcare professionals. **Educational use only - not medical advice. No PHI stored.**",
+    version="2.1.0",
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
+)
+
+# CORS Configuration following Security & Middleware Stack
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=getattr(settings, 'ALLOWED_ORIGINS', ["http://localhost:3000"]),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Load and register routers following Router Organization pattern
+ROUTERS_LOADED = {}
+try:
+    from src.routers import get_available_routers, get_router_status
     
-    settings = get_settings()
+    # Get available routers following Conditional Imports Pattern
+    available_routers = get_available_routers()
+    router_status = get_router_status()
     
-    app = FastAPI(
-        title=settings.APP_NAME,
-        version=settings.APP_VERSION,
-        description="Healthcare AI assistant providing evidence-based medical information for nurses and healthcare professionals. Educational use only - not medical advice. No PHI stored.",
-        docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
-        redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
-        lifespan=lifespan,
-        openapi_tags=[
-            {"name": "health", "description": "Health check and system status"},
-            {"name": "auth", "description": "Authentication and authorization"},
-            {"name": "disease-information", "description": "Disease lookup and medical information"},
-            {"name": "medical-literature", "description": "PubMed literature search"},
-            {"name": "clinical-trials", "description": "Clinical trials discovery"},
-            {"name": "clinical-wizards", "description": "Multi-step clinical workflows"},
-        ]
-    )
-    
-    # Security & Middleware Stack following critical order from copilot-instructions.md
-    app.add_middleware(SecurityHeadersMiddleware)
-    app.add_middleware(RequestIdMiddleware)
-    app.add_middleware(LoggingMiddleware)
-    
-    # Rate limiting (conditional)
-    if _has_rate_limiting and settings.ENABLE_RATE_LIMITING:
-        rate_limiter = RateLimiter(
-            requests_per_minute=60,
-            exempt_paths=["/docs", "/redoc", "/openapi.json", "/api/v1/health"]
-        )
-        app.add_middleware(rate_limiter)
-    
-    # CORS middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.ALLOWED_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE"],
-        allow_headers=["*"],
-    )
-    
-    # Mount static files
-    try:
-        app.mount("/static", StaticFiles(directory="src/static"), name="static")
-    except Exception as e:
-        logging.warning(f"Static files unavailable: {e}")
-    
-    # Register available routers following Router Organization pattern
-    for router_name, router in AVAILABLE_ROUTERS.items():
+    # Include routers with proper prefix following Router Organization
+    for router_name, router in available_routers.items():
         try:
-            app.include_router(router)
-            logging.info(f"Router registered: {router_name}")
+            if router_name in ['health', 'auth']:
+                # Unprotected routes
+                app.include_router(router, prefix="/api/v1")
+            else:
+                # Protected routes  
+                app.include_router(router, prefix="/api/v1")
+            
+            ROUTERS_LOADED[router_name] = True
+            logger.info(f"Router registered: {router_name}")
         except Exception as e:
-            logging.error(f"Failed to register router {router_name}: {e}")
+            logger.warning(f"Failed to register router {router_name}: {e}")
+            ROUTERS_LOADED[router_name] = False
     
-    # Global exception handlers following Error Handling pattern
-    @app.exception_handler(ServiceException)
-    async def service_exception_handler(request: Request, exc: ServiceException):
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "success": False,
-                "error": f"Service error: {exc.message}",
-                "service": exc.service_name,
-                "request_id": getattr(request.state, 'request_id', None)
-            }
-        )
+    logger.info(f"Routers loaded: {sum(ROUTERS_LOADED.values())}/{len(router_status)}")
     
-    @app.exception_handler(ExternalServiceException)
-    async def external_service_exception_handler(request: Request, exc: ExternalServiceException):
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={
-                "success": False,
-                "error": f"External service unavailable: {exc.message}",
-                "service": exc.service_name,
-                "fallback_available": exc.fallback_available,
-                "request_id": getattr(request.state, 'request_id', None)
-            }
-        )
-    
-    return app
+except Exception as e:
+    logger.warning(f"Router loading failed: {e}")
+    ROUTERS_LOADED = {}
 
-# Create application instance
-app = create_app()
+# Root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint with application information."""
+    return {
+        "service": "ai-nurse-florence",
+        "version": getattr(settings, 'APP_VERSION', '2.1.0'),
+        "description": "Healthcare AI assistant - Educational use only",
+        "banner": getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only'),
+        "docs": "/docs",
+        "health": "/api/v1/health",
+        "routers_loaded": len(ROUTERS_LOADED),
+        "timestamp": datetime.now().isoformat()
+    }
 
-# Health check endpoint (always available)
-@app.get("/api/v1/health", tags=["health"])
-async def health_check() -> Dict[str, Any]:
-    """
-    Comprehensive health check following copilot-instructions.md patterns.
+# Enhanced health endpoint at root level
+@app.get("/api/v1/health")
+async def health_check():
+    """Enhanced health check with router status."""
     
-    Returns:
-        - System status and version
-        - Available services and routers
-        - Configuration status
-        - Dependency health
-    """
-    settings = get_settings()
+    # Count routes by category
+    total_routes = len([r for r in app.routes if hasattr(r, 'path')])
     
-    # Check service availability
+    # Categorize routes
+    wizard_routes = len([r for r in app.routes if hasattr(r, 'path') and 'wizard' in r.path])
+    medical_routes = len([r for r in app.routes if hasattr(r, 'path') and 
+                         any(term in r.path for term in ['disease', 'literature', 'clinical'])])
+    
+    # Service status
     try:
         from src.services import get_available_services
         services = get_available_services()
-    except ImportError:
+    except Exception:
         services = {"error": "Service registry unavailable"}
     
     health_data = {
         "status": "healthy",
-        "app_name": settings.APP_NAME,
-        "version": settings.APP_VERSION,
-        "timestamp": datetime.utcnow().isoformat(),
-        "environment": settings.ENVIRONMENT,
-        "services": services,
-        "routers": list(AVAILABLE_ROUTERS.keys()),
-        "features": {
-            "rate_limiting": _has_rate_limiting and settings.ENABLE_RATE_LIMITING,
-            "metrics": _has_metrics,
-            "live_services": settings.USE_LIVE_SERVICES,
-            "openai": is_feature_enabled("openai"),
-            "redis": is_feature_enabled("redis")
+        "service": "ai-nurse-florence",
+        "version": getattr(settings, 'APP_VERSION', '2.1.0'),
+        "banner": getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only'),
+        "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "development",
+        "routes": {
+            "total": total_routes,
+            "wizards": wizard_routes,
+            "medical": medical_routes,
+            "routers_loaded": ROUTERS_LOADED
         },
-        "banner": settings.EDUCATIONAL_BANNER
+        "services": services,
+        "configuration": {
+            "live_services": getattr(settings, 'USE_LIVE_SERVICES', False),
+            "educational_mode": True
+        },
+        "timestamp": datetime.now().isoformat()
     }
     
     return health_data
 
+# Application startup logging
+@app.on_event("startup")
+async def startup_event():
+    """Startup logging following coding instructions."""
+    logger.info("=== AI NURSE FLORENCE STARTUP ===")
+    logger.info(f"App: {getattr(settings, 'APP_NAME', 'AI Nurse Florence')}")
+    logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.1.0')}")
+    logger.info(f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}")
+    logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}")
+    logger.info(f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}...")
+    logger.info("Healthcare AI assistant ready - Educational use only")
+
 if __name__ == "__main__":
     import uvicorn
-    settings = get_settings()
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
-        port=settings.PORT,
-        reload=settings.ENVIRONMENT == "development",
+        port=8000,
+        reload=True,
         log_level="info"
     )

@@ -31,7 +31,7 @@ class SBARService(BaseService):
         super().__init__()
         self.settings = get_settings()
     
-    @cached(ttl_seconds=300) if _has_cache else lambda: lambda f: f
+    @cached(ttl_seconds=300) if _has_cache else lambda f: f
     async def validate_sbar_step(self, step_number: int, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validate SBAR step data following clinical documentation standards.

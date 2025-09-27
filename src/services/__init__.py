@@ -1,63 +1,119 @@
 """
-Service layer initialization following Service Layer Architecture
-Conditional imports pattern from copilot-instructions.md
+AI Nurse Florence Services Registry
+Following Service Layer Architecture with Conditional Imports Pattern
 """
 
-from typing import Dict, Any, Optional
 import logging
+from typing import Optional, Dict, Any, TYPE_CHECKING
 
-# Conditional imports following copilot-instructions.md pattern
-try:
-    from .disease_service import DiseaseService
-    _has_disease_service = True
-except ImportError as e:
-    _has_disease_service = False
-    logging.warning(f"Disease service unavailable: {e}")
+if TYPE_CHECKING:
+    from .base_service import BaseService
 
-try:
-    from .pubmed_service import PubMedService
-    _has_pubmed_service = True
-except ImportError as e:
-    _has_pubmed_service = False
-    logging.warning(f"PubMed service unavailable: {e}")
+logger = logging.getLogger(__name__)
 
-try:
-    from .clinical_trials_service import ClinicalTrialsService
-    _has_clinical_trials_service = True
-except ImportError as e:
-    _has_clinical_trials_service = False
-    logging.warning(f"Clinical trials service unavailable: {e}")
+# Service registry following Service Layer Architecture
+_service_registry: Dict[str, 'BaseService'] = {}
+_registry_initialized = False
 
-# Service registry for dependency injection
-_service_registry: Dict[str, Any] = {}
+def _initialize_services() -> None:
+    """Initialize available services with graceful degradation."""
+    global _registry_initialized, _service_registry
+    
+    if _registry_initialized:
+        return
+    
+    # Disease service
+    try:
+        from .disease_service import create_disease_service
+        disease_service = create_disease_service()
+        if disease_service:
+            _service_registry['disease'] = disease_service
+            logger.info("Disease service registered successfully")
+    except ImportError as e:
+        logger.warning(f"Disease service unavailable: {e}")
+    
+    # PubMed service
+    try:
+        from .pubmed_service import create_pubmed_service
+        pubmed_service = create_pubmed_service()
+        if pubmed_service:
+            _service_registry['pubmed'] = pubmed_service
+            logger.info("PubMed service registered successfully")
+    except ImportError as e:
+        logger.warning(f"PubMed service unavailable: {e}")
+    
+    # Clinical trials service
+    try:
+        from .clinical_trials_service import create_clinical_trials_service
+        trials_service = create_clinical_trials_service()
+        if trials_service:
+            _service_registry['clinical_trials'] = trials_service
+            logger.info("Clinical trials service registered successfully")
+    except ImportError as e:
+        logger.warning(f"Clinical trials service unavailable: {e}")
+    
+    # SBAR service (ADD THIS SECTION)
+    try:
+        from .sbar_service import create_sbar_service
+        sbar_service = create_sbar_service()
+        if sbar_service:
+            _service_registry['sbar'] = sbar_service
+            logger.info("SBAR service registered successfully")
+    except ImportError as e:
+        logger.warning(f"SBAR service unavailable: {e}")
+    
+    # OpenAI service (conditional)
+    try:
+        from .openai_client import create_openai_service
+        openai_service = create_openai_service()
+        if openai_service and openai_service.is_available():
+            _service_registry['openai'] = openai_service
+            logger.info("OpenAI service registered successfully")
+        else:
+            logger.info("OpenAI service available but not configured (missing API key)")
+    except ImportError as e:
+        logger.warning(f"OpenAI service unavailable: {e}")
+    
+    _registry_initialized = True
 
-def get_service(service_name: str) -> Optional[Any]:
+def get_service(service_name: str) -> Optional['BaseService']:
     """
-    Get service instance following Service Layer Architecture
-    Returns None if service unavailable (Conditional Imports Pattern)
+    Get service from registry following Service Layer Architecture.
+    Returns None if service not available (Conditional Imports Pattern).
     """
-    if service_name not in _service_registry:
-        try:
-            if service_name == "disease" and _has_disease_service:
-                _service_registry[service_name] = DiseaseService()
-            elif service_name == "pubmed" and _has_pubmed_service:
-                _service_registry[service_name] = PubMedService()
-            elif service_name == "clinical_trials" and _has_clinical_trials_service:
-                _service_registry[service_name] = ClinicalTrialsService()
-            else:
-                return None
-        except Exception as e:
-            logging.error(f"Failed to initialize {service_name} service: {e}")
-            return None
+    if not _registry_initialized:
+        _initialize_services()
     
     return _service_registry.get(service_name)
 
 def get_available_services() -> Dict[str, bool]:
-    """Get status of all services for health checks"""
+    """Get status of all services for health checks."""
+    if not _registry_initialized:
+        _initialize_services()
+    
     return {
-        "disease": _has_disease_service,
-        "pubmed": _has_pubmed_service,
-        "clinical_trials": _has_clinical_trials_service
+        'disease': 'disease' in _service_registry,
+        'pubmed': 'pubmed' in _service_registry,
+        'clinical_trials': 'clinical_trials' in _service_registry,
+        'sbar': 'sbar' in _service_registry,  # ADD THIS LINE
+        'openai': 'openai' in _service_registry
     }
 
-__all__ = ["get_service", "get_available_services"]
+def register_service(name: str, service: 'BaseService') -> None:
+    """Register a service in the registry."""
+    global _service_registry
+    _service_registry[name] = service
+    logger.info(f"Service '{name}' registered successfully")
+
+def clear_registry() -> None:
+    """Clear service registry - primarily for testing."""
+    global _service_registry, _registry_initialized
+    _service_registry.clear()
+    _registry_initialized = False
+
+__all__ = [
+    'get_service',
+    'get_available_services', 
+    'register_service',
+    'clear_registry'
+]

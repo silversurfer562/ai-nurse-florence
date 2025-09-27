@@ -189,6 +189,69 @@ class HealthCheckResponse(BaseModel):
     features: Dict[str, bool]
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
+# SBAR Wizard Schemas
+class SBARStep(BaseModel):
+    """SBAR wizard step configuration."""
+    step_number: int = Field(..., ge=1, le=4, description="Step number (1-4)")
+    step_name: str = Field(..., description="SBAR step name (Situation, Background, Assessment, Recommendation)")
+    title: str = Field(..., description="Step title")
+    description: str = Field(..., description="Step description")
+    prompts: List[str] = Field(default_factory=list, description="Guiding questions")
+    fields: List[Dict[str, Any]] = Field(default_factory=list, description="Form fields for this step")
+
+class SBARWizardRequest(BaseModel):
+    """SBAR wizard step submission."""
+    step_number: int = Field(..., ge=1, le=4, description="Current step number")
+    data: Dict[str, Any] = Field(..., description="Step data collected from user")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "step_number": 1,
+                "data": {
+                    "patient_condition": "Patient experiencing chest pain and shortness of breath",
+                    "immediate_concerns": "Possible cardiac event, patient appears distressed",
+                    "vital_signs": "BP: 180/95, HR: 110, RR: 22, O2 Sat: 92%"
+                }
+            }
+        }
+
+class WizardSession(BaseModel):
+    """Wizard session state."""
+    wizard_id: str = Field(..., description="Unique wizard session ID")
+    wizard_type: str = Field(..., description="Type of wizard (sbar, treatment_plan, etc.)")
+    current_step: Union[int, str] = Field(..., description="Current step number or 'complete'")
+    total_steps: int = Field(..., description="Total number of steps")
+    collected_data: Dict[str, Any] = Field(default_factory=dict, description="Collected step data")
+    created_at: str = Field(..., description="Session creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+    completed_at: Optional[str] = Field(None, description="Completion timestamp")
+    final_report: Optional[Dict[str, Any]] = Field(None, description="Final generated report")
+
+class SBARWizardResponse(BaseResponse):
+    """SBAR wizard response."""
+    wizard_session: WizardSession = Field(..., description="Current wizard session state")
+    current_step: Optional[SBARStep] = Field(None, description="Current step data")
+    progress: Dict[str, Any] = Field(default_factory=dict, description="Progress information")
+    sbar_report: Optional[Dict[str, Any]] = Field(None, description="Completed SBAR report")
+
+class SBARReport(BaseModel):
+    """Complete SBAR report."""
+    report_type: str = Field(default="SBAR", description="Report type")
+    generated_at: str = Field(..., description="Generation timestamp")
+    banner: str = Field(..., description="Educational disclaimer")
+    
+    # SBAR Sections
+    sections: Dict[str, Any] = Field(default_factory=dict, description="SBAR section data")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Report metadata")
+    
+    # Generated content
+    summary: Optional[str] = Field(None, description="Executive summary")
+    enhanced_content: Optional[Dict[str, Any]] = Field(None, description="AI-enhanced content")
+
+# Update model resolution for forward references
+SBARWizardResponse.model_rebuild()
+
 # Export commonly used schemas
 __all__ = [
     "SeverityLevel",
@@ -210,5 +273,10 @@ __all__ = [
     "PaginationRequest",
     "PaginatedResponse",
     "ErrorResponse",
-    "HealthCheckResponse"
+    "HealthCheckResponse",
+    "SBARStep",
+    "SBARWizardRequest",
+    "SBARWizardResponse",
+    "WizardSession",
+    "SBARReport"
 ]
