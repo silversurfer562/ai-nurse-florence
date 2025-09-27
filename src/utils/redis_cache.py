@@ -187,20 +187,65 @@ def _run_sync(coro):
 
 
 def cache_set_sync(key: str, value: Any, ttl_seconds: int = 3600) -> bool:
-    """Synchronous wrapper for `cache_set`."""
-    return _run_sync(cache_set(key, value, ttl_seconds))
+    """Synchronous wrapper for `cache_set`.
+
+    Prefer storing in the in-memory cache first for deterministic behavior in
+    sync contexts, then attempt to update Redis asynchronously. Any Redis
+    errors are swallowed since memory is the fallback.
+    """
+    try:
+        _memory_cache_set(key, value, ttl_seconds)
+        if _has_metrics:
+            record_cache_miss(key, cache_type="memory")
+    except Exception as e:
+        logging.warning(f"Memory cache set failed in sync wrapper: {e}")
+
+    # Attempt to update Redis as best-effort, ignore errors
+    try:
+        _run_sync(cache_set(key, value, ttl_seconds))
+    except Exception:
+        pass
+
+    return True
 
 
 def cache_get_sync(key: str) -> Optional[Any]:
-    """Synchronous wrapper for `cache_get`."""
-    return _run_sync(cache_get(key))
+    """Synchronous wrapper for `cache_get`.
+
+    Check the in-memory cache first for deterministic sync behaviour. If
+    not found, fall back to attempting an async Redis read.
+    """
+    try:
+        val = _memory_cache_get(key)
+        if val is not None:
+            if _has_metrics:
+                record_cache_hit(key, cache_type="memory")
+            return val
+    except Exception:
+        logging.debug("Memory cache get failed in sync wrapper")
+
+    # If not in memory, try Redis (best-effort)
+    try:
+        return _run_sync(cache_get(key))
+    except Exception:
+        return None
 
 
 def cache_delete_sync(key: str) -> bool:
-    """Synchronous wrapper for `cache_delete`. Use this from sync code to avoid
-    'coroutine was never awaited' runtime warnings.
+    """Synchronous wrapper for `cache_delete`.
+
+    Delete from in-memory cache first (deterministic), then attempt an
+    async Redis delete as best-effort.
     """
-    return _run_sync(cache_delete(key))
+    try:
+        _memory_cache_delete(key)
+    except Exception:
+        logging.debug("Memory cache delete failed in sync wrapper")
+
+    try:
+        return _run_sync(cache_delete(key))
+    except Exception:
+        return False
 
 def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
     """
