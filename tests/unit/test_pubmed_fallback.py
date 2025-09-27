@@ -17,10 +17,12 @@ async def test_pubmed_fallback_no_requests_or_xml(monkeypatch):
 
     result = await service.search_literature("nursing assessment", max_results=2)
     assert isinstance(result, dict)
-    assert "articles" in result
-    assert result["total_results"] == len(result["articles"]) 
+    assert "data" in result
+    data = result["data"]
+    assert "articles" in data
+    assert data["total_results"] == len(data["articles"]) 
     # Stub articles use pmid like 'stub_1'
-    assert result["articles"][0]["pmid"].startswith("stub_")
+    assert data["articles"][0]["pmid"].startswith("stub_")
 
 
 @mark.asyncio
@@ -38,5 +40,7 @@ async def test_pubmed_handles_request_errors(monkeypatch):
 
     result = await service.search_literature("nursing assessment", max_results=2)
     assert isinstance(result, dict)
-    assert "articles" in result
-    assert result["total_results"] == len(result["articles"]) 
+    assert "data" in result
+    data = result["data"]
+    assert "articles" in data
+    assert data["total_results"] == len(data["articles"]) 
