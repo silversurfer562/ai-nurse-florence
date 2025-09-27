@@ -250,6 +250,18 @@ async def cleanup_openai_client():
         _openai_client = None
         logging.info("OpenAI client cleaned up")
 
+# Service factory function following Conditional Imports Pattern
+def create_openai_service() -> Optional[OpenAIService]:
+    """
+    Create OpenAI service with graceful degradation.
+    Returns None if service cannot be initialized.
+    """
+    try:
+        return OpenAIService()
+    except Exception as e:
+        logger.warning(f"OpenAI service unavailable: {e}")
+        return None
+
 # Export public interface
 __all__ = [
     "get_openai_client",

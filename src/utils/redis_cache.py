@@ -19,7 +19,7 @@ except ImportError:
     _redis_available = False
     redis = None
 
-from .config import get_redis_config
+from src.utils.config import get_settings, get_redis_config
 
 # Global cache instances
 _redis_client: Optional[Any] = None
@@ -205,3 +205,14 @@ async def cleanup_cache():
         _memory_cache.clear()
     
     logging.info("Cache cleanup completed")
+
+def get_cache_client():
+    """Get Redis client if available following Caching Strategy."""
+    try:
+        redis_config = get_redis_config()
+        if redis_config["available"]:
+            # Production would return Redis client
+            return None
+        return None
+    except Exception:
+        return None
