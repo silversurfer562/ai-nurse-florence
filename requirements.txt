@@ -4,7 +4,7 @@
 # Core FastAPI Application
 # fastapi pinned to a compatible range so Starlette can be upgraded for monitoring libs
 # Use a modern FastAPI compatible with Starlette >=0.30
-fastapi>=0.110.0,<0.116.0
+fastapi==0.115.14
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
@@ -29,7 +29,7 @@ email-validator>=2.1.0,<2.2.0
 
 # CORS and Security
 # Starlette range aligned with modern FastAPI releases used in this project.
-starlette>=0.40.0,<0.47.0
+starlette==0.46.2
 
 # Production Server
 gunicorn>=21.2.0,<22.0.0
