@@ -2,7 +2,25 @@ from fastapi import APIRouter, Request, status
 from typing import Any, Dict
 
 from services import summarize_service
-# from services.tasks import summarize_text_task  # Disabled for Redis-free dev # Import the new Celery task
+from uuid import uuid4
+
+# Background task factory (Celery) — graceful fallback when Celery is not installed/configured.
+try:
+    from services.tasks import summarize_text_task  # type: ignore
+    _has_celery = True
+except Exception:
+    _has_celery = False
+    class _DummyTask:
+        def __init__(self, id: str):
+            self.id = id
+            self.status = "PENDING"
+
+    class _DummyTaskFactory:
+        def delay(self, prompt: str, model: str = "gpt-4o-mini"):
+            # Return a small object with `id` and `status` attributes to mimic Celery AsyncResult for simple use.
+            return _DummyTask(str(uuid4()))
+
+    summarize_text_task = _DummyTaskFactory()
 from celery.result import AsyncResult
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
@@ -184,7 +202,14 @@ async def get_task(task_id: str):
 
     if not task_result.ready() and task_result.status != 'PENDING' and task_result.status != 'STARTED':
          # This condition handles cases where the task ID might not be in the backend
-        if not task_result.backend.get(task_id):
+            backend = getattr(task_result, "backend", None)
+            result = None
+            if backend is not None:
+                # Some backends expose a `get` method, guard access defensively.
+                get_fn = getattr(backend, "get", None)
+                if callable(get_fn):
+                    result = get_fn(getattr(task_result, "id", None))
+            if backend is None or result is None:
              return create_error_response(
                 f"Task {task_id} not found",
                 status.HTTP_404_NOT_FOUND,

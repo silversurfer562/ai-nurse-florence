@@ -4,6 +4,9 @@ import json
 import re
 
 from services import openai_client
+from services.prompt_enhancement import enhance_prompt
+from utils.exceptions import ExternalServiceException
+from utils.logging import get_logger
 
 def get_client():
     """Return the OpenAI client via services.openai_client.get_client.
@@ -13,9 +16,6 @@ def get_client():
     `services.openai_client.get_client` and ensures the call is dynamic.
     """
     return openai_client.get_client()
-from services.prompt_enhancement import enhance_prompt
-from utils.exceptions import ExternalServiceException
-from utils.logging import get_logger
 
 __all__ = ["call_chatgpt", "sbar_from_notes", "summarize_text"]
 

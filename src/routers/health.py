@@ -45,7 +45,7 @@ async def health_check():
     try:
         # Route counting would be done at app level
         route_count = "available"
-    except:
+    except Exception:
         pass
     
     # Determine mesh index readiness

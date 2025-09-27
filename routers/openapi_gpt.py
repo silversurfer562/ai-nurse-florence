@@ -14,7 +14,7 @@ async def get_openapi_yaml():
         # Fetch your existing OpenAPI spec
         response = requests.get("https://ai-nurse-florence-production.up.railway.app/openapi.json")
         openapi_json = response.json()
-    except:
+    except Exception:
         # Fallback minimal spec
         openapi_json = {
             "openapi": "3.0.0",

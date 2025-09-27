@@ -9,6 +9,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi import Request, APIRouter
+from fastapi.responses import HTMLResponse
 
 # Configure logging following coding instructions
 logging.basicConfig(
@@ -90,7 +94,6 @@ app = FastAPI(
 )
 
 # Create API router following Router Organization pattern
-from fastapi import APIRouter
 api_router = APIRouter(prefix="/api/v1")
 
 
@@ -161,9 +164,8 @@ async def health_check():
     total_routes = len([r for r in app.routes if hasattr(r, 'path')])
     
     # Categorize routes
-    wizard_routes = len([r for r in app.routes if hasattr(r, 'path') and 'wizard' in r.path])
-    medical_routes = len([r for r in app.routes if hasattr(r, 'path') and 
-                         any(term in r.path for term in ['disease', 'literature', 'clinical'])])
+    wizard_routes = len([r for r in app.routes if 'wizard' in getattr(r, 'path', '')])
+    medical_routes = len([r for r in app.routes if any(term in getattr(r, 'path', '') for term in ['disease', 'literature', 'clinical'])])
     
     # Service status
     try:
@@ -210,12 +212,6 @@ if __name__ == "__main__":
 # which caused duplicate OpenAPI operation IDs. If a fallback import path is needed,
 # the registry in `src.routers` should be updated instead of registering routers twice here.
 
-# STATIC FILE SERVING - Following API Design Standards
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
-from fastapi.responses import HTMLResponse
-
 # Create directories if they don't exist
 os.makedirs("static/css", exist_ok=True)
 os.makedirs("static/js", exist_ok=True)
@@ -232,7 +228,7 @@ async def serve_frontend(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 # Health dashboard redirect
-@app.get("/dashboard", include_in_schema=False) 
+@app.get("/dashboard", include_in_schema=False)
 async def dashboard_redirect():
     """Redirect to main interface."""
     from fastapi.responses import RedirectResponse

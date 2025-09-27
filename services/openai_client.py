@@ -108,9 +108,10 @@ async def chat(messages, model="gpt-4o-mini", **kwargs):
     Chat completion wrapper for education router
     Compatible with OpenAI API v1.0+
     """
+    client = get_client()
     if not client:
         raise Exception("OpenAI client not configured - check OPENAI_API_KEY")
-    
+
     try:
         response = await client.chat.completions.create(
             model=model,
@@ -119,5 +120,5 @@ async def chat(messages, model="gpt-4o-mini", **kwargs):
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"OpenAI chat error: {e}")
+        logger.error(f"OpenAI chat error: {e}")
         raise Exception(f"OpenAI chat failed: {str(e)}")
