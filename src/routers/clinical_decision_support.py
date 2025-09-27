@@ -3,11 +3,11 @@ Clinical Decision Support Router - Core clinical endpoints
 Following Service Layer Architecture
 """
 
-from fastapi import APIRouter, Query, Depends, status
+from fastapi import APIRouter, Query, Depends, status, Path
 from typing import List, Optional
-from models.schemas import ClinicalDecisionRequest, ClinicalDecisionResponse
-from services.clinical_decision_service import get_clinical_decision_service, ClinicalDecisionService
-from utils.api_responses import create_success_response, create_error_response
+from src.models.schemas import ClinicalDecisionRequest, ClinicalDecisionResponse
+from src.services.clinical_decision_service import get_clinical_decision_service, ClinicalDecisionService
+from src.utils.api_responses import create_success_response, create_error_response
 
 router = APIRouter(
     prefix="/clinical-decision-support", 
@@ -56,7 +56,7 @@ async def get_nursing_interventions(
 
 @router.get("/risk-assessment/{assessment_type}")
 async def get_risk_assessment(
-    assessment_type: str = Query(..., 
+    assessment_type: str = Path(..., 
         description="Type of risk assessment",
         enum=["falls", "pressure_ulcer", "deterioration"]
     )
