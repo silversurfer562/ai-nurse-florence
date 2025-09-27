@@ -145,7 +145,26 @@ def _load_routers():
 
 def get_available_routers() -> Dict[str, APIRouter]:
     """Get dictionary of available routers following Conditional Imports Pattern."""
-    return _router_registry.copy()
+    # Return a canonical mapping of router name -> APIRouter with duplicates removed.
+    # Some modules may expose the same APIRouter object under multiple keys; callers
+    # expect a single canonical router object per logical route collection. We prefer
+    # the first-seen name when duplicates are detected and log a warning.
+    canonical: Dict[str, APIRouter] = {}
+    seen_router_ids = {}
+
+    for name, router in _router_registry.items():
+        if router is None:
+            continue
+        rid = id(router)
+        if rid in seen_router_ids:
+            prev_name = seen_router_ids[rid]
+            logger.warning(f"Duplicate router object detected: '{name}' is the same router as '{prev_name}'; skipping alias '{name}'.")
+            # skip alias to avoid duplicate registration
+            continue
+        canonical[name] = router
+        seen_router_ids[rid] = name
+
+    return canonical
 
 def get_router_status() -> Dict[str, bool]:
     """Get router availability status following Router Organization pattern."""
@@ -178,6 +197,6 @@ except Exception as e:
         'discharge_planning': False
     }
 
-# Export following Router Organization pattern
-available_routers = _router_registry
+# Export a canonical mapping at import time, but prefer callers to call get_available_routers()
+available_routers = get_available_routers()
 __all__ = ['available_routers', 'router_status', 'get_available_routers', 'get_router_status', 'reload_routers']
