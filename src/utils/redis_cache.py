@@ -171,6 +171,37 @@ async def cache_delete(key: str) -> bool:
         logging.warning(f"Memory cache delete failed for key {key}: {e}")
     return success
 
+
+def _run_sync(coro):
+    """Run an async coroutine from sync code, handling running event loops."""
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        # Running inside an event loop (e.g., in async framework); schedule and wait
+        return asyncio.run_coroutine_threadsafe(coro, loop).result()
+    else:
+        return asyncio.run(coro)
+
+
+def cache_set_sync(key: str, value: Any, ttl_seconds: int = 3600) -> bool:
+    """Synchronous wrapper for `cache_set`."""
+    return _run_sync(cache_set(key, value, ttl_seconds))
+
+
+def cache_get_sync(key: str) -> Optional[Any]:
+    """Synchronous wrapper for `cache_get`."""
+    return _run_sync(cache_get(key))
+
+
+def cache_delete_sync(key: str) -> bool:
+    """Synchronous wrapper for `cache_delete`. Use this from sync code to avoid
+    'coroutine was never awaited' runtime warnings.
+    """
+    return _run_sync(cache_delete(key))
+
 def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
     """
     Decorator for caching function results
