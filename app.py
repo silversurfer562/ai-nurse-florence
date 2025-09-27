@@ -259,6 +259,22 @@ except ImportError as e:
         except Exception as e:
             logger.error(f"❌ Failed to register {router_name}: {e}")
 
+# Explicitly register treatment-plan router at the plural path expected by tests
+try:
+    import importlib
+    tp_mod = importlib.import_module('routers.wizards.treatment_plan')
+    if hasattr(tp_mod, 'router'):
+        # Mount the treatment-plan router onto the api_router (api_router prefix = /api/v1)
+        try:
+            api_router.include_router(tp_mod.router)
+            logger.info("✅ Explicitly included treatment_plan router onto api_router")
+        except Exception:
+            # Fallback to including directly on app if api_router not available
+            app.include_router(tp_mod.router, prefix="/api/v1")
+            logger.info("✅ Fallback: explicitly registered treatment_plan router at /api/v1")
+except Exception as _:
+    logger.debug('Could not explicitly register treatment_plan router')
+
 # STATIC FILE SERVING - Following API Design Standards
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
