@@ -11,9 +11,10 @@ from utils.config import get_settings
 
 # Conditional ChatGPT Store integration following coding instructions pattern
 try:
-    from utils.chatgpt_store import ChatGPTStoreAuth
-    _has_chatgpt_integration = True
-except ImportError:
+    # Import module only to detect availability; avoid importing unused symbols
+    import importlib.util
+    _has_chatgpt_integration = importlib.util.find_spec("utils.chatgpt_store") is not None
+except Exception:
     _has_chatgpt_integration = False
 
 settings = get_settings()

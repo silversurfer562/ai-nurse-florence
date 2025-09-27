@@ -20,6 +20,17 @@ except ImportError:
     _has_xml = False
     ET = None
 
+
+from .base_service import BaseService
+from ..utils.redis_cache import cached
+from ..utils.config import get_settings
+from ..utils.exceptions import ExternalServiceException
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+# Provide a requests stub and a helper wrapper when the requests package is unavailable
 if not _has_requests:
     class _RequestsStub:
         @staticmethod
@@ -34,14 +45,6 @@ def _requests_get(*args, **kwargs):
     if not _has_requests:
         raise RuntimeError("requests not available in this environment")
     return requests.get(*args, **kwargs)
-
-from .base_service import BaseService
-from ..utils.redis_cache import cached
-from ..utils.config import get_settings
-from ..utils.exceptions import ExternalServiceException
-
-import logging
-logger = logging.getLogger(__name__)
 
 class PubMedService(BaseService[Dict[str, Any]]):
     """

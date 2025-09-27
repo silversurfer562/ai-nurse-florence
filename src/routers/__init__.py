@@ -4,7 +4,7 @@ Following Router Organization and Conditional Imports Pattern from coding instru
 """
 
 import logging
-from typing import Dict, Optional
+from typing import Dict
 from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
