@@ -12,25 +12,22 @@ def _reset_settings_module():
         pass
 
 
-def test_openapi_servers_include_effective_base(monkeypatch):
+def test_health_endpoint_includes_effective_base_url(monkeypatch):
     orig_env = dict(os.environ)
     try:
-        # Ensure APP_BASE_URL absent and force https
         monkeypatch.delenv('APP_BASE_URL', raising=False)
         monkeypatch.setenv('FORCE_HTTPS', 'true')
-        monkeypatch.setenv('HOST', 'openapi.test')
-        monkeypatch.setenv('PORT', '4443')
+        monkeypatch.setenv('HOST', 'health.test')
+        monkeypatch.setenv('PORT', '8443')
 
         _reset_settings_module()
 
-        # Import app fresh
-        import importlib
         app_module = importlib.import_module('app')
-        # Use TestClient as context manager to run lifespan startup where app.openapi_schema is populated
         with TestClient(app_module.app) as client:
-            schema = client.get('/openapi.json').json()
-        servers = schema.get('servers', [])
-        assert any(s.get('url', '').startswith('https://openapi.test:4443') for s in servers)
+            resp = client.get('/api/v1/health/')
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data.get('base_url', '').startswith('https://health.test:8443')
     finally:
         os.environ.clear()
         os.environ.update(orig_env)
