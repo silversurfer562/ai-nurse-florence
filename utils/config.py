@@ -3,7 +3,7 @@ Centralized application configuration using Pydantic Settings.
 Updated to handle existing environment variables.
 """
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 from pydantic import Field
 from typing import List, Optional
 from functools import lru_cache
@@ -12,12 +12,13 @@ import os
 class Settings(BaseSettings):
     """Application settings with validation and type safety."""
     
-    model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore"  # FIXED: Ignore extra fields from .env
-    )
+    # pydantic v2: use plain dict for model_config
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore",
+    }
     
     # Core Application Settings
     API_BEARER: str = "default-api-key-change-in-production"
