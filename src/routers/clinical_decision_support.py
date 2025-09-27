@@ -46,7 +46,9 @@ async def get_nursing_interventions(
             comorbidities=comorbidities or []
         )
         
-        return create_success_response(result)
+        # Return the normalized result directly so it matches the
+        # response_model (ClinicalDecisionResponse).
+        return result
         
     except Exception as e:
         return create_error_response(
