@@ -204,8 +204,8 @@ class SBARWizardRequest(BaseModel):
     step_number: int = Field(..., ge=1, le=4, description="Current step number")
     data: Dict[str, Any] = Field(..., description="Step data collected from user")
     
-    class Config:
-        json_schema_extra = {
+    model_config = {
+        "json_schema_extra": {
             "example": {
                 "step_number": 1,
                 "data": {
@@ -215,6 +215,7 @@ class SBARWizardRequest(BaseModel):
                 }
             }
         }
+    }
 
 class WizardSession(BaseModel):
     """Wizard session state."""
