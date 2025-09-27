@@ -1,0 +1,33 @@
+"""
+Enhanced API Router - Main API endpoints
+Following Router Organization patterns
+"""
+
+from fastapi import APIRouter
+from routers import clinical_decision_support
+from routers.wizards import treatment_plan, sbar_report
+
+# Conditional imports for enhanced features
+try:
+    from routers import chatgpt_store
+    _has_gpt_store = True
+except ImportError:
+    _has_gpt_store = False
+
+# Create main API router following router organization pattern
+api_router = APIRouter(prefix="/api/v1")
+
+# Include core clinical routers
+api_router.include_router(clinical_decision_support.router)
+
+# Include wizard workflows following wizard pattern implementation
+api_router.include_router(treatment_plan.router)
+api_router.include_router(sbar_report.router)
+
+# Conditional ChatGPT Store integration
+if _has_gpt_store:
+    api_router.include_router(chatgpt_store.router)
+
+# TODO: Add additional router inclusions
+# TODO: Implement rate limiting configuration
+# TODO: Add middleware for clinical workflows

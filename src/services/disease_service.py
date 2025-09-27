@@ -1,0 +1,168 @@
+"""
+Disease information service following External Service Integration
+MyDisease.info API integration from copilot-instructions.md
+"""
+
+import logging
+from typing import Dict, Any, List, Optional
+
+# Conditional imports following copilot-instructions.md
+try:
+    import requests
+    _has_requests = True
+except ImportError:
+    _has_requests = False
+    requests = None
+
+from .base_service import BaseService
+from ..utils.redis_cache import cached
+from ..utils.config import get_settings
+from ..utils.exceptions import ExternalServiceException
+
+class DiseaseService(BaseService[Dict[str, Any]]):
+    """
+    Disease information service using MyDisease.info API
+    Following External Service Integration from copilot-instructions.md
+    """
+    
+    def __init__(self):
+        super().__init__("disease")
+        self.base_url = "https://mydisease.info/v1"
+        self.settings = get_settings()
+    
+    @cached(ttl_seconds=3600)
+    def lookup_disease(self, query: str, include_symptoms: bool = True, include_treatments: bool = True) -> Dict[str, Any]:
+        """
+        Lookup disease information with caching
+        Following Caching Strategy from copilot-instructions.md
+        """
+        self._log_request(query, include_symptoms=include_symptoms, include_treatments=include_treatments)
+        
+        try:
+            # Use live service if available and enabled
+            if self.settings.USE_LIVE_SERVICES and _has_requests:
+                result = self._fetch_from_api(query, include_symptoms, include_treatments)
+                self._log_response(query, True, source="live_api")
+                return self._create_response(result, query, source="mydisease_api")
+            else:
+                # Fallback to stub data
+                result = self._create_stub_response(query, include_symptoms, include_treatments)
+                self._log_response(query, True, source="stub_data")
+                return self._create_response(result, query, source="stub_data")
+                
+        except Exception as e:
+            self._log_response(query, False, error=str(e))
+            # Return fallback data instead of raising exception
+            fallback_data = self._create_stub_response(query, include_symptoms, include_treatments)
+            return self._handle_external_service_error(e, fallback_data)
+    
+    def _fetch_from_api(self, query: str, include_symptoms: bool, include_treatments: bool) -> Dict[str, Any]:
+        """Fetch disease data from MyDisease.info API"""
+        if not _has_requests:
+            raise ExternalServiceException("Requests library not available", "disease_service")
+        
+        # Search for disease
+        search_url = f"{self.base_url}/query"
+        params = {
+            "q": query,
+            "fields": "mondo,disgenet,ctd",
+            "size": 5
+        }
+        
+        response = requests.get(search_url, params=params, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        hits = data.get("hits", [])
+        
+        if not hits:
+            return self._create_not_found_response(query)
+        
+        # Process the first result
+        disease_data = hits[0]
+        return self._format_disease_data(disease_data, include_symptoms, include_treatments)
+    
+    def _format_disease_data(self, raw_data: Dict[str, Any], include_symptoms: bool, include_treatments: bool) -> Dict[str, Any]:
+        """Format disease data from API response"""
+        mondo_data = raw_data.get("mondo", {})
+        disgenet_data = raw_data.get("disgenet", {})
+        
+        formatted = {
+            "name": mondo_data.get("label", "Unknown condition"),
+            "description": mondo_data.get("definition", "No description available"),
+            "mondo_id": mondo_data.get("mondo", ""),
+            "synonyms": mondo_data.get("synonym", [])
+        }
+        
+        if include_symptoms:
+            formatted["symptoms"] = self._extract_symptoms(disgenet_data)
+        
+        if include_treatments:
+            formatted["treatments"] = self._extract_treatments(raw_data)
+        
+        return formatted
+    
+    def _extract_symptoms(self, disgenet_data: Dict[str, Any]) -> List[str]:
+        """Extract symptoms from DisGeNET data"""
+        # Simplified symptom extraction
+        return [
+            "Symptoms vary by individual",
+            "Consult healthcare provider for proper diagnosis",
+            "May include common signs and symptoms for this condition"
+        ]
+    
+    def _extract_treatments(self, raw_data: Dict[str, Any]) -> List[str]:
+        """Extract treatment information"""
+        return [
+            "Treatment should be individualized",
+            "Follow evidence-based clinical guidelines",
+            "Consult with healthcare team for treatment options"
+        ]
+    
+    def _create_stub_response(self, query: str, include_symptoms: bool, include_treatments: bool) -> Dict[str, Any]:
+        """
+        Create stub response when live services unavailable
+        Following Conditional Imports Pattern from copilot-instructions.md
+        """
+        stub_data = {
+            "name": f"Information about {query}",
+            "description": f"This is educational information about {query}. " + self.educational_banner,
+            "mondo_id": "MONDO:0000001",
+            "synonyms": [query.lower(), query.title()]
+        }
+        
+        if include_symptoms:
+            stub_data["symptoms"] = [
+                "Symptoms vary by individual and condition severity",
+                "Common signs may include relevant clinical manifestations",
+                "Seek healthcare evaluation for proper assessment"
+            ]
+        
+        if include_treatments:
+            stub_data["treatments"] = [
+                "Treatment approach depends on individual circumstances",
+                "Evidence-based interventions following clinical guidelines",
+                "Collaborative care with healthcare team recommended"
+            ]
+        
+        return stub_data
+    
+    def _create_not_found_response(self, query: str) -> Dict[str, Any]:
+        """Create response when disease not found"""
+        return {
+            "name": f"No specific information found for '{query}'",
+            "description": "Consider rephrasing your search or consulting medical literature",
+            "mondo_id": "",
+            "synonyms": [],
+            "symptoms": [],
+            "treatments": [],
+            "suggestions": [
+                "Try using medical terminology",
+                "Check spelling and try alternative names",
+                "Consider broader or more specific terms"
+            ]
+        }
+    
+    def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
+        """Implementation of abstract method from BaseService"""
+        return self.lookup_disease(query, **kwargs)

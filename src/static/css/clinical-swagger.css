@@ -1,0 +1,61 @@
+/* AI Nurse Florence - Clinical Decision Support Theme with React Integration */
+
+:root {
+  /* Healthcare color palette */
+  --clinical-primary: #2563eb;        /* Professional blue */
+  --clinical-secondary: #059669;      /* Medical green */
+  --clinical-accent: #dc2626;         /* Alert red */
+  --clinical-warning: #d97706;        /* Warning amber */
+  --clinical-bg: #f8fafc;            /* Clean background */
+  --clinical-surface: #ffffff;       /* Card backgrounds */
+  --clinical-text: #1e293b;          /* Primary text */
+  --clinical-border: #e2e8f0;        /* Subtle borders */
+}
+
+/* Base Swagger UI Enhancements */
+.swagger-ui {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.swagger-ui .topbar {
+  background: linear-gradient(135deg, var(--clinical-primary), var(--clinical-secondary));
+  border-bottom: 3px solid var(--clinical-accent);
+  padding: 1rem 0;
+}
+
+/* Clinical workflow section styling */
+.swagger-ui .opblock.opblock-post {
+  border-left: 4px solid var(--clinical-secondary);
+  background: var(--clinical-surface);
+  margin: 1rem 0;
+  border-radius: 8px;
+}
+
+/* React Component Integration Styles */
+.clinical-widget {
+  background: var(--clinical-surface);
+  border: 1px solid var(--clinical-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.clinical-widget h3 {
+  color: var(--clinical-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.clinical-widget h3::before {
+  content: '🩺';
+  margin-right: 0.5rem;
+}
+
+/* TODO: Add comprehensive React component styles */
+/* TODO: Mobile responsiveness */
+/* TODO: Print styles for clinical documentation */
+/* TODO: Dark mode support */

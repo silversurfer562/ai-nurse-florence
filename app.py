@@ -5,7 +5,6 @@ Following Service Layer Architecture with Conditional Imports Pattern
 """
 
 from fastapi import FastAPI, Request, APIRouter, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
@@ -14,6 +13,11 @@ import logging
 from pathlib import Path
 import uuid
 from datetime import datetime
+
+from src.utils.middleware import setup_middleware
+from src.routers.disease import router as disease_router
+from src.routers.literature import router as literature_router  
+from src.routers.clinical_trials import router as clinical_trials_router
 
 # Configure logging for Railway deployment
 logging.basicConfig(
@@ -34,14 +38,8 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS configuration for Railway deployment
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure restrictively in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Setup Security & Middleware Stack following critical order from copilot-instructions.md
+setup_middleware(app)
 
 # Request ID middleware following Security & Middleware Stack
 @app.middleware("http")
@@ -196,7 +194,6 @@ routers_failed = []
 
 # Disease information service
 try:
-    from routers.disease import router as disease_router
     api_router.include_router(disease_router, prefix="/disease", tags=["disease"])
     routers_loaded.append("disease")
     logger.info("✅ Disease router loaded")
@@ -206,7 +203,6 @@ except ImportError as e:
 
 # Literature search service  
 try:
-    from routers.literature import router as literature_router
     api_router.include_router(literature_router, prefix="/literature", tags=["literature"])
     routers_loaded.append("literature")
     logger.info("✅ Literature router loaded")
@@ -214,20 +210,9 @@ except ImportError as e:
     routers_failed.append(f"literature: {e}")
     logger.warning(f"⚠️ Literature router failed: {e}")
 
-# PubMed integration
-try:
-    from routers.pubmed import router as pubmed_router  
-    api_router.include_router(pubmed_router, prefix="/pubmed", tags=["pubmed"])
-    routers_loaded.append("pubmed")
-    logger.info("✅ PubMed router loaded")
-except ImportError as e:
-    routers_failed.append(f"pubmed: {e}")
-    logger.warning(f"⚠️ PubMed router failed: {e}")
-
 # Clinical trials service
 try:
-    from routers.clinical_trials import router as trials_router
-    api_router.include_router(trials_router, prefix="/trials", tags=["trials"]) 
+    api_router.include_router(clinical_trials_router, prefix="/trials", tags=["trials"]) 
     routers_loaded.append("trials")
     logger.info("✅ Clinical trials router loaded")
 except ImportError as e:
@@ -317,6 +302,11 @@ except ImportError as e:
 
 # Include main API router with all loaded endpoints
 app.include_router(api_router)
+
+# Medical Information Routers
+api_router.include_router(disease_router)
+api_router.include_router(literature_router)
+api_router.include_router(clinical_trials_router)
 
 # Startup summary following Service Layer Architecture
 logger.info("=== STARTUP SUMMARY ===")

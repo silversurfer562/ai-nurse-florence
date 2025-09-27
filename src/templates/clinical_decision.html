@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - AI Nurse Florence</title>
+    <link rel="stylesheet" href="/static/css/clinical-swagger.css">
+    
+    <!-- Conditional React loading following progressive enhancement -->
+    {% if has_react %}
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    {% endif %}
+</head>
+<body>
+    <header>
+        <h1>🩺 AI Nurse Florence - Clinical Decision Support</h1>
+        <p>Educational use only — not medical advice. No PHI stored.</p>
+    </header>
+    
+    <main>
+        <!-- React component will render here -->
+        <div id="clinical-app" data-clinical-widget="decision-support"></div>
+        
+        <!-- Graceful degradation -->
+        <noscript>
+            <div class="no-js-fallback">
+                <h2>Clinical Decision Support</h2>
+                <p>Enhanced clinical interface requires JavaScript.</p>
+                <p><a href="/docs">Use API documentation interface instead</a></p>
+            </div>
+        </noscript>
+    </main>
+    
+    <footer>
+        <p>AI Nurse Florence v2.1.0 - Following Service Layer Architecture</p>
+    </footer>
+    
+    <script src="/static/js/clinical-components.js"></script>
+    
+    <!-- TODO: Add analytics and monitoring -->
+    <!-- TODO: Progressive Web App manifest -->
+    <!-- TODO: Service worker for offline functionality -->
+</body>
+</html>

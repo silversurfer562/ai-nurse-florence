@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - AI Nurse Florence</title>
+    <link rel="stylesheet" href="/static/css/clinical-swagger.css">
+    
+    <!-- React for wizard components -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>📝 SBAR Report Wizard - AI Nurse Florence</h1>
+        <p>Structured clinical communication tool</p>
+    </header>
+    
+    <main>
+        <!-- SBAR wizard will render here -->
+        <div id="sbar-wizard" data-clinical-widget="sbar-wizard"></div>
+        
+        <div class="wizard-help">
+            <h3>SBAR Format Guide</h3>
+            <ul>
+                <li><strong>Situation:</strong> Current patient status</li>
+                <li><strong>Background:</strong> Relevant medical history</li>
+                <li><strong>Assessment:</strong> Clinical findings</li>
+                <li><strong>Recommendation:</strong> Proposed actions</li>
+            </ul>
+        </div>
+    </main>
+    
+    <footer>
+        <p>Educational use only - Clinical judgment required</p>
+    </footer>
+    
+    <script src="/static/js/clinical-components.js"></script>
+    
+    <!-- TODO: Add SBAR template library -->
+    <!-- TODO: Export functionality (PDF, print) -->
+    <!-- TODO: Save draft functionality -->
+</body>
+</html>
