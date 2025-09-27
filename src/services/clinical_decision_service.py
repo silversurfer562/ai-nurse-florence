@@ -1,48 +1,4 @@
 """
-Minimal clinical decision service stub for development and tests.
-Provides a dependency factory `get_clinical_decision_service` and a
-`ClinicalDecisionService` with an async `get_nursing_interventions` method.
-"""
-from typing import List, Dict, Any, Optional
-
-
-class ClinicalDecisionService:
-    """Placeholder clinical decision support service."""
-
-    async def get_nursing_interventions(
-        self,
-        patient_condition: str,
-        severity: str = "moderate",
-        comorbidities: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
-        """Return a deterministic, evidence-lean placeholder response.
-
-        This keeps routers and integration tests simple until a real
-        implementation is provided.
-        """
-        comorbidities = comorbidities or []
-        # Simple heuristic-based placeholder
-        interventions = [
-            f"Assess airway, breathing, circulation for {patient_condition}",
-            "Establish IV access",
-            "Monitor vital signs every 15 minutes",
-        ]
-
-        if severity.lower() in ("severe", "critical"):
-            interventions.insert(0, "Activate rapid response or transfer to higher level of care")
-
-        return {
-            "nursing_interventions": "; ".join(interventions),
-            "evidence_level": "Level VII - Expert Opinion",
-            "safety_considerations": ["Allergy check", "Medication reconciliation"],
-            "clinical_context": {"comorbidities": comorbidities},
-        }
-
-
-def get_clinical_decision_service() -> ClinicalDecisionService:
-    """Dependency factory used by FastAPI Depends()."""
-    return ClinicalDecisionService()
-"""
 Clinical Decision Service - AI Nurse Florence
 Following Service Layer Architecture from coding instructions
 """
