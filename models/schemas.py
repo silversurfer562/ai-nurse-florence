@@ -121,3 +121,16 @@ class User(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+# Backwards-compatible re-exports: some parts of the app import these from `models.schemas`
+# but the canonical implementations live under `src.models.schemas` for the richer clinical schemas.
+try:
+    # prefer the full definitions from `src.models.schemas`
+    from src.models.schemas import ClinicalDecisionRequest, ClinicalDecisionResponse  # type: ignore
+except Exception:
+    # Fallback minimal stubs so imports don't fail in constrained environments
+    class ClinicalDecisionRequest(BaseModel):
+        patient_condition: str = Field(..., description="Primary patient condition")
+
+    class ClinicalDecisionResponse(BaseModel):
+        nursing_interventions: str = Field(..., description="Evidence-based nursing interventions")
