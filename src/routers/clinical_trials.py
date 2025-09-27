@@ -32,11 +32,17 @@ class ClinicalTrialsResponse(BaseModel):
 
 @router.get("/search", response_model=ClinicalTrialsResponse)
 async def search_trials(
-    condition: str = Query(..., 
+    condition: Optional[str] = Query(None, 
                           description="Medical condition for clinical trials search",
                           examples=["diabetes", "hypertension", "cancer treatment"]),
+    q: Optional[str] = Query(None, description="Alias for condition"),
     max_studies: int = Query(10, ge=1, le=50, description="Maximum number of studies to return")
 ):
+    # Support 'q' query param as an alias for condition for backward compatibility
+    if not condition and q:
+        condition = q
+    if not condition:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Missing required query parameter 'condition' or 'q'")
     """
     Search clinical trials following External Service Integration pattern.
     

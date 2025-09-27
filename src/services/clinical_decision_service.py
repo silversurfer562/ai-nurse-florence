@@ -154,6 +154,11 @@ class ClinicalDecisionService:
                     "care_priority": priority_level,
                     "nursing_note": "AI-assisted nursing guidance - verify with nursing protocols and patient assessment"
                 })
+                # Ensure expected fields exist for downstream callers/tests
+                result.setdefault("patient_condition", patient_condition)
+                result.setdefault("nursing_concerns", nursing_concerns)
+                result.setdefault("evidence_level", result.get("evidence_level", "Level VII - Expert Opinion"))
+                result.setdefault("safety_considerations", result.get("safety_considerations", []))
             
             return result
         else:
