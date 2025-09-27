@@ -117,5 +117,7 @@ class User(BaseModel):
     provider: str
     provider_user_id: str
 
-    class Config:
-        orm_mode = True
+    # pydantic v2: replace legacy Config.orm_mode with model_config.from_attributes
+    model_config = {
+        "from_attributes": True
+    }
