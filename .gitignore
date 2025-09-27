@@ -99,6 +99,9 @@ ENV/
 env.bak/
 venv.bak/
 .python-version
+.mypy_cache/
+.cache/
+.pre-commit/
 
 # Unit test / coverage reports
 htmlcov/

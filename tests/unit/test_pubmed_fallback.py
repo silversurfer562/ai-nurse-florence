@@ -1,4 +1,3 @@
-import pytest
 from pytest import mark
 
 from src.services import pubmed_service

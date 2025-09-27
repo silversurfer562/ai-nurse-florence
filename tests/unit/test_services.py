@@ -21,7 +21,7 @@ class TestServiceRegistry:
         
         # Test getting individual services (may be None due to graceful degradation)
         for service_name in ['disease', 'pubmed', 'clinical_trials', 'sbar', 'openai']:
-            service = get_service(service_name)
+            _service = get_service(service_name)
             # Service can be None (graceful degradation) or actual service instance
             # This is expected behavior following Conditional Imports Pattern
             
