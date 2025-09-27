@@ -140,4 +140,5 @@ __all__ = [
     'SecurityHeadersMiddleware',
     'RequestIdMiddleware', 
     'LoggingMiddleware'
+    # RateLimiter is exported from rate_limit.py
 ]

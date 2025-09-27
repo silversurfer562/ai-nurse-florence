@@ -106,6 +106,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate Limiting Middleware - conditionally loaded
+try:
+    from src.utils.rate_limit import RateLimiter
+    if getattr(settings, 'RATE_LIMIT_ENABLED', True):
+        # Define paths that are exempt from rate limiting
+        exempt_paths = ["/docs", "/redoc", "/openapi.json", "/api/v1/health", "/metrics"]
+        
+        # Get rate limit value from settings
+        rate_limit = getattr(settings, 'RATE_LIMIT_REQUESTS', 60) 
+        
+        # Add RateLimiter middleware
+        app.add_middleware(
+            RateLimiter,
+            requests_per_minute=rate_limit,
+            exempt_paths=exempt_paths
+        )
+        logger.info(f"Rate limiting enabled: {rate_limit} requests per minute")
+except ImportError:
+    logger.warning("Rate limiting middleware not available")
+
 # Load and register routers following Router Organization pattern
 ROUTERS_LOADED = {}
 try:
