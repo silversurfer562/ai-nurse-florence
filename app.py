@@ -38,11 +38,44 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"🏥 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info("Healthcare AI assistant - Educational use only, no PHI stored")
-    
-    yield
-    
-    # Shutdown
-    logger.info("Application shutdown complete")
+    # Startup logging and OpenAPI population (moved from deprecated on_event)
+    logger.info("=== AI NURSE FLORENCE STARTUP ===")
+    logger.info(f"App: {getattr(settings, 'APP_NAME', 'AI Nurse Florence')}")
+    logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.1.0')}")
+    logger.info(f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}")
+    logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}")
+    logger.info(f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}...")
+    logger.info("Healthcare AI assistant ready - Educational use only")
+
+    # Log effective base URL for observability and populate OpenAPI servers
+    effective_base = None
+    try:
+        from src.utils.config import get_base_url
+        effective_base = get_base_url()
+        logger.info(f"Effective BASE_URL: {effective_base}")
+    except Exception:
+        logger.debug("Could not determine effective BASE_URL at startup")
+
+    try:
+        if hasattr(app, 'openapi_schema') and app.openapi_schema is not None:
+            if effective_base:
+                app.openapi_schema.setdefault('servers', [])
+                app.openapi_schema['servers'].append({"url": effective_base})
+        else:
+            # Force generation of openapi schema then set servers
+            schema = app.openapi()
+            if effective_base:
+                schema.setdefault('servers', [])
+                schema['servers'].append({"url": effective_base})
+            app.openapi_schema = schema
+    except Exception:
+        logger.debug('Failed to populate OpenAPI servers with BASE_URL')
+
+    try:
+        yield
+    finally:
+        # Shutdown
+        logger.info("Application shutdown complete")
 
 # Create FastAPI app following coding instructions
 app = FastAPI(
@@ -158,40 +191,6 @@ async def health_check():
     
     return health_data
 
-# Application startup logging
-@app.on_event("startup")
-async def startup_event():
-    """Startup logging following coding instructions."""
-    logger.info("=== AI NURSE FLORENCE STARTUP ===")
-    logger.info(f"App: {getattr(settings, 'APP_NAME', 'AI Nurse Florence')}")
-    logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.1.0')}")
-    logger.info(f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}")
-    logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}")
-    logger.info(f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}...")
-    logger.info("Healthcare AI assistant ready - Educational use only")
-    # Log effective base URL for observability
-    effective_base = None
-    try:
-        from src.utils.config import get_base_url
-        effective_base = get_base_url()
-        logger.info(f"Effective BASE_URL: {effective_base}")
-    except Exception:
-        logger.debug("Could not determine effective BASE_URL at startup")
-    # Populate OpenAPI servers with the effective base URL so generated clients use the right host
-    try:
-        if hasattr(app, 'openapi_schema') and app.openapi_schema is not None:
-            if effective_base:
-                app.openapi_schema.setdefault('servers', [])
-                app.openapi_schema['servers'].append({"url": effective_base})
-        else:
-            # Force generation of openapi schema then set servers
-            schema = app.openapi()
-            if effective_base:
-                schema.setdefault('servers', [])
-                schema['servers'].append({"url": effective_base})
-            app.openapi_schema = schema
-    except Exception:
-        logger.debug('Failed to populate OpenAPI servers with BASE_URL')
 
 if __name__ == "__main__":
     import uvicorn
