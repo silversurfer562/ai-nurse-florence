@@ -255,9 +255,13 @@ def sync_wrapper(func: Callable[..., T]) -> Callable[..., T]:
     
     return wrapper
 
-import os, signal, subprocess
-res = subprocess.run(["pgrep", "-f", "pytest"], capture_output=True, text=True)
-pids = res.stdout.strip().split()
-for pid in pids:
-    print("sending SIGUSR1 to", pid)
-    os.kill(int(pid), signal.SIGUSR1)
+import os, subprocess
+env = os.environ.copy()
+env.update({
+    "AI_NURSE_DISABLE_REDIS": "1",
+    "PYTHONASYNCIODEBUG": "1",
+    "PYTHONFAULTHANDLER": "1",
+})
+subprocess.run([os.path.join(".venv","bin","python"), "-m", "pytest",
+                "tests/unit/test_disease_clinical_fallback.py::test_disease_fallback_no_requests",
+                "-vv", "-s", "--maxfail=1", "--showlocals"], env=env)
