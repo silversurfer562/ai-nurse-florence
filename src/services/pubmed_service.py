@@ -14,6 +14,13 @@ except ImportError:
     httpx = None
 
 try:
+    import requests
+    _has_requests = True
+except Exception:
+    _has_requests = False
+    requests = None
+
+try:
     from xml.etree import ElementTree as ET
     _has_xml = True
 except ImportError:
@@ -39,9 +46,9 @@ requests = None
 
 def _requests_get(*args, **kwargs):
     """Legacy helper kept for tests; raises if requests not available."""
-    if not _has_requests:
-        raise RuntimeError("requests not available in this environment")
-    return requests.get(*args, **kwargs)
+    if _has_requests:
+        return requests.get(*args, **kwargs)
+    raise RuntimeError("requests not available in this environment")
 
 class PubMedService(BaseService[Dict[str, Any]]):
     """
@@ -92,40 +99,55 @@ class PubMedService(BaseService[Dict[str, Any]]):
         if not _has_xml:
             raise ExternalServiceException("XML parsing not available", "pubmed_service")
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            # Step 1: Search for PMIDs
-            search_url = f"{self.base_url}/esearch.fcgi"
-            search_params = {
-                "db": "pubmed",
-                "term": query,
-                "retmax": max_results,
-                "sort": "relevance" if sort_by == "relevance" else "pub_date",
-                "retmode": "xml"
-            }
+        # Use httpx when available, otherwise call requests in a thread to avoid blocking
+        search_url = f"{self.base_url}/esearch.fcgi"
+        search_params = {
+            "db": "pubmed",
+            "term": query,
+            "retmax": max_results,
+            "sort": "relevance" if sort_by == "relevance" else "pub_date",
+            "retmode": "xml"
+        }
 
-            search_response = await client.get(search_url, params=search_params)
-            search_response.raise_for_status()
+        if _has_httpx:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+                search_response = await client.get(search_url, params=search_params)
+                search_response.raise_for_status()
+                search_content = search_response.content
+        else:
+            if not _has_requests:
+                raise ExternalServiceException("httpx or requests library not available", "pubmed_service")
+            search_resp = await asyncio.to_thread(requests.get, search_url, params=search_params, timeout=15)
+            search_resp.raise_for_status()
+            search_content = search_resp.content
 
-            # Parse search results
-            search_root = ET.fromstring(search_response.content)
-            pmids = [id_elem.text for id_elem in search_root.findall(".//Id") if id_elem is not None]
+        # Parse search results
+        search_root = ET.fromstring(search_content)
+        pmids = [id_elem.text for id_elem in search_root.findall(".//Id") if id_elem is not None]
 
-            if not pmids:
-                return self._create_no_results_response(query)
+        if not pmids:
+            return self._create_no_results_response(query)
 
-            # Step 2: Fetch article details
-            fetch_url = f"{self.base_url}/efetch.fcgi"
-            fetch_params = {
-                "db": "pubmed",
-                "id": ",".join([p for p in pmids[:max_results] if p]),
-                "retmode": "xml"
-            }
+        # Step 2: Fetch article details
+        fetch_url = f"{self.base_url}/efetch.fcgi"
+        fetch_params = {
+            "db": "pubmed",
+            "id": ",".join([p for p in pmids[:max_results] if p]),
+            "retmode": "xml"
+        }
 
-            fetch_response = await client.get(fetch_url, params=fetch_params)
-            fetch_response.raise_for_status()
+        if _has_httpx:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+                fetch_response = await client.get(fetch_url, params=fetch_params)
+                fetch_response.raise_for_status()
+                fetch_content = fetch_response.content
+        else:
+            fetch_resp = await asyncio.to_thread(requests.get, fetch_url, params=fetch_params, timeout=15)
+            fetch_resp.raise_for_status()
+            fetch_content = fetch_resp.content
 
-            # Parse article details
-            articles = self._parse_pubmed_xml(fetch_response.content)
+        # Parse article details
+        articles = self._parse_pubmed_xml(fetch_content)
 
             return {
                 "articles": articles,
