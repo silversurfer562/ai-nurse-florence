@@ -202,9 +202,11 @@ def generate_sbar_report(
     request = DocumentGenerationRequest(
         template_name="sbar_standard",
         nurse_name=nurse_name,
-        nurse_unit=nurse_unit,
-        patient_name=patient_name,
-        patient_id=patient_id,
+    nurse_unit=nurse_unit,
+    patient_name=patient_name,
+    patient_id=patient_id,
+    patient_age=None,
+    primary_diagnosis=None,
         custom_fields=custom_data,
     )
 
@@ -257,7 +259,11 @@ def generate_patient_education(
     request = DocumentGenerationRequest(
         template_name="patient_education_standard",
         nurse_name=nurse_name,
-        nurse_unit=nurse_unit,
+    nurse_unit=nurse_unit,
+    patient_name=None,
+    patient_id=None,
+    patient_age=None,
+    primary_diagnosis=None,
         custom_fields=custom_data,
     )
 
@@ -310,9 +316,11 @@ def generate_physician_email(
     request = DocumentGenerationRequest(
         template_name="physician_email",
         nurse_name=nurse_name,
-        nurse_unit=nurse_unit,
-        patient_name=patient_name,
-        patient_id=patient_id,
+    nurse_unit=nurse_unit,
+    patient_name=patient_name,
+    patient_id=patient_id,
+    patient_age=None,
+    primary_diagnosis=None,
         custom_fields=custom_data,
     )
 
@@ -369,7 +377,12 @@ def generate_continuing_education_response(
     request = DocumentGenerationRequest(
         template_name="continuing_ed_qa",
         nurse_name=nurse_name,
-        evidence_sources=evidence_sources,
+    evidence_sources=evidence_sources,
+    nurse_unit=None,
+    patient_name=None,
+    patient_id=None,
+    patient_age=None,
+    primary_diagnosis=None,
         custom_fields=custom_data,
     )
 

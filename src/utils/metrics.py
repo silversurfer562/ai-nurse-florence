@@ -22,12 +22,8 @@ except Exception:
 # Prometheus optional imports
 _PROM_AVAILABLE = False
 Counter = None
-Histogram = None
-Gauge = None
-Info = None
 try:
-    import prometheus_client as _prom  # type: ignore
-    from prometheus_client import Counter as Counter, Histogram as Histogram, Gauge as Gauge, Info as Info  # type: ignore
+    from prometheus_client import Counter  # type: ignore
 
     _PROM_AVAILABLE = True
 except Exception:
