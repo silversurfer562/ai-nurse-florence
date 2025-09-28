@@ -46,6 +46,9 @@ jobs:
 
       - name: Run tests
         run: |
+          # Run quick critical tests first (fast feedback)
+          AI_NURSE_DISABLE_REDIS=1 python -m pytest -q tests/unit/test_rate_limit_precedence.py || true
+          # Then run the full test suite
           python -m pytest -q -ra
 
       - name: OpenAPI operationId check
