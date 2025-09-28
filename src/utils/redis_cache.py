@@ -13,12 +13,14 @@ from datetime import datetime, timedelta
 
 # Conditional Redis import - graceful degradation
 try:
-    import redis.asyncio as redis
+    import redis.asyncio as redis  # type: ignore
 
     _redis_available = True
 except ImportError:
     _redis_available = False
-    redis = None
+    from types import ModuleType
+
+    redis: Optional[ModuleType] = None
 
 import os
 from src.utils.config import get_redis_config
@@ -31,11 +33,11 @@ try:
 except Exception:
     _has_metrics = False
 
-    def record_cache_hit(cache_key: str, cache_type: str = "redis"):
-        return
+    def record_cache_hit(cache_key: str, cache_type: str = "redis") -> None:
+        return None
 
-    def record_cache_miss(cache_key: str, cache_type: str = "redis"):
-        return
+    def record_cache_miss(cache_key: str, cache_type: str = "redis") -> None:
+        return None
 
 
 # Global cache instances

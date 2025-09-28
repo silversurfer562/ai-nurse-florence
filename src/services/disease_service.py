@@ -22,7 +22,9 @@ try:
     _has_httpx = True
 except ImportError:
     _has_httpx = False
-    httpx = None
+    from typing import Any as _Any
+
+    httpx: Optional[_Any] = None
 
 # Backwards-compatibility: expose legacy names for tests that monkeypatch
 _has_requests = False
@@ -327,15 +329,24 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
     # MyDisease.info API
     base_url = "https://mydisease.info/v1/query"
 
-    params = {"q": query, "fields": "disease_ontology,mondo,summary", "size": 1}
+    params: dict[str, str | int | float | bool | None] = {
+        "q": query,
+        "fields": "disease_ontology,mondo,summary",
+        "size": 1,
+    }
 
-    if _has_httpx:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+    if _has_httpx and httpx is not None:
+        # runtime check above ensures httpx is present; silence attr errors for static checker
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:  # type: ignore[attr-defined]
             response = await client.get(base_url, params=params)
             response.raise_for_status()
             data = response.json()
     else:
         # Call synchronous helper in a thread to avoid blocking the event loop
+        if _requests_get is None:
+            raise RuntimeError(
+                "requests/httpx helper not available in this environment"
+            )
         response = await asyncio.to_thread(
             _requests_get, base_url, {"params": params, "timeout": 10}
         )

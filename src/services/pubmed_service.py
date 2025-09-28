@@ -10,25 +10,25 @@ try:
     import httpx
 
     _has_httpx = True
-except ImportError:
+except ImportError:  # pragma: no cover - optional dependency
     _has_httpx = False
-    httpx = None
+    httpx = None  # type: ignore
 
 try:
     import requests
 
     _has_requests = True
-except Exception:
+except Exception:  # pragma: no cover - optional dependency
     _has_requests = False
-    requests = None
+    requests = None  # type: ignore
 
 try:
     from xml.etree import ElementTree as ET
 
     _has_xml = True
-except ImportError:
+except ImportError:  # pragma: no cover - optional dependency
     _has_xml = False
-    ET = None
+    ET = None  # type: ignore
 
 
 from .base_service import BaseService
@@ -108,7 +108,8 @@ class PubMedService(BaseService[Dict[str, Any]]):
 
         # Use httpx when available, otherwise call requests in a thread to avoid blocking
         search_url = f"{self.base_url}/esearch.fcgi"
-        search_params = {
+        # narrow typing to compatible QueryParams mapping
+        search_params: dict[str, str | int | float | bool | None] = {
             "db": "pubmed",
             "term": query,
             "retmax": max_results,
@@ -116,24 +117,27 @@ class PubMedService(BaseService[Dict[str, Any]]):
             "retmode": "xml",
         }
 
-        if _has_httpx:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+        if _has_httpx and httpx is not None:
+            # runtime check ensures httpx is present; silence static attribute checks
+            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:  # type: ignore[attr-defined]
                 search_response = await client.get(search_url, params=search_params)
                 search_response.raise_for_status()
                 search_content = search_response.content
         else:
-            if not _has_requests:
+            if not _has_requests or requests is None:
                 raise ExternalServiceException(
                     "httpx or requests library not available", "pubmed_service"
                 )
             search_resp = await asyncio.to_thread(
-                requests.get, search_url, params=search_params, timeout=15
+                requests.get, search_url, params=search_params, timeout=15  # type: ignore[attr-defined]
             )
             search_resp.raise_for_status()
             search_content = search_resp.content
 
         # Parse search results
-        search_root = ET.fromstring(search_content)
+        if ET is None:
+            raise ExternalServiceException("XML parsing unavailable", "pubmed_service")
+        search_root = ET.fromstring(search_content)  # type: ignore[attr-defined]
         pmids = [
             id_elem.text
             for id_elem in search_root.findall(".//Id")
@@ -145,20 +149,25 @@ class PubMedService(BaseService[Dict[str, Any]]):
 
         # Step 2: Fetch article details
         fetch_url = f"{self.base_url}/efetch.fcgi"
-        fetch_params = {
+        fetch_params: dict[str, str | int | float | bool | None] = {
             "db": "pubmed",
             "id": ",".join([p for p in pmids[:max_results] if p]),
             "retmode": "xml",
         }
 
-        if _has_httpx:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+        if _has_httpx and httpx is not None:
+            # runtime check ensures httpx is present; silence static attribute checks
+            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:  # type: ignore[attr-defined]
                 fetch_response = await client.get(fetch_url, params=fetch_params)
                 fetch_response.raise_for_status()
                 fetch_content = fetch_response.content
         else:
+            if requests is None:
+                raise ExternalServiceException(
+                    "requests library not available", "pubmed_service"
+                )
             fetch_resp = await asyncio.to_thread(
-                requests.get, fetch_url, params=fetch_params, timeout=15
+                requests.get, fetch_url, params=fetch_params, timeout=15  # type: ignore[attr-defined]
             )
             fetch_resp.raise_for_status()
             fetch_content = fetch_resp.content
@@ -182,10 +191,11 @@ class PubMedService(BaseService[Dict[str, Any]]):
         articles = []
 
         try:
-            if not _has_xml:
+            if not _has_xml or ET is None:
                 raise RuntimeError("XML parsing not available in this environment")
 
-            root = ET.fromstring(xml_content)
+            # ET is Optional[Module]; narrow for the runtime call
+            root = ET.fromstring(xml_content)  # type: ignore[attr-defined]
 
             for article_elem in root.findall(".//PubmedArticle"):
                 article_data = self._extract_article_data(article_elem)

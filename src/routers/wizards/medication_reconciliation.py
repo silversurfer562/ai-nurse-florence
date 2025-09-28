@@ -25,10 +25,10 @@ _wizard_sessions: Dict[str, Dict[str, Any]] = {}
 
 
 class MedicationItem(BaseModel):
-    name: str = Field(..., description="Medication name")
-    dosage: str = Field(..., description="Dosage information")
-    frequency: str = Field(..., description="Frequency of administration")
-    route: str = Field(..., description="Route of administration")
+    name: str = Field(default=..., description="Medication name")
+    dosage: str = Field(default=..., description="Dosage information")
+    frequency: str = Field(default=..., description="Frequency of administration")
+    route: str = Field(default=..., description="Route of administration")
 
 
 @router.post("/start")

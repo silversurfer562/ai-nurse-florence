@@ -83,7 +83,7 @@ def get_enhanced_swagger_ui_html(request: Request):
             "defaultModelsExpandDepth": 3,
             "filter": True,
             "tryItOutEnabled": True,
-        "syntaxHighlight.theme": "agate",
+            "syntaxHighlight.theme": "agate",
         },
     )
 

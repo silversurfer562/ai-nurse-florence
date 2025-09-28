@@ -27,17 +27,25 @@ _wizard_sessions: Dict[str, Dict[str, Any]] = {}
 class NursingAssessmentStep(BaseModel):
     """Pydantic model for nursing assessment step following API Design Standards."""
 
-    patient_id: Optional[str] = Field(None, description="Patient identifier")
+    patient_id: Optional[str] = Field(default=None, description="Patient identifier")
     assessment_type: str = Field(
-        ..., description="Type of assessment (initial, focused, etc.)"
+        default=..., description="Type of assessment (initial, focused, etc.)"
     )
-    vital_signs: Optional[Dict[str, Any]] = Field(None, description="Vital signs data")
+    vital_signs: Optional[Dict[str, Any]] = Field(
+        default=None, description="Vital signs data"
+    )
     pain_assessment: Optional[Dict[str, Any]] = Field(
-        None, description="Pain assessment data"
+        default=None, description="Pain assessment data"
     )
-    mobility_status: Optional[str] = Field(None, description="Patient mobility status")
-    cognitive_status: Optional[str] = Field(None, description="Cognitive assessment")
-    notes: Optional[str] = Field(None, description="Additional assessment notes")
+    mobility_status: Optional[str] = Field(
+        default=None, description="Patient mobility status"
+    )
+    cognitive_status: Optional[str] = Field(
+        default=None, description="Cognitive assessment"
+    )
+    notes: Optional[str] = Field(
+        default=None, description="Additional assessment notes"
+    )
 
 
 class WizardResponse(BaseModel):

@@ -27,12 +27,12 @@ class BaseService(ABC, Generic[T]):
         self.educational_banner = get_educational_banner()
 
     @abstractmethod
-    def _process_request(self, *args, **kwargs) -> T:
+    async def _process_request(self, *args, **kwargs) -> T:
         """
         Process the actual service request - to be implemented by subclasses
-        Following Service Layer Architecture pattern
+        Async-first signature so subclasses may implement async IO-heavy logic.
         """
-        pass
+        raise NotImplementedError()
 
     def _create_response(self, data: Any, query: str, **kwargs) -> Dict[str, Any]:
         """
@@ -68,8 +68,6 @@ class BaseService(ABC, Generic[T]):
                 },
             }
 
-        raise ExternalServiceException(
-            f"{self.service_name} temporarily unavailable",
-            self.service_name,
-            fallback_available=False,
-        )
+        # Raise a standardized ExternalServiceException with the original error
+        # signature: ExternalServiceException(service_name: str, message: str, original_error: Optional[Exception] = None)
+        raise ExternalServiceException(self.service_name, str(error), error)

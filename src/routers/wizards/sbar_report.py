@@ -27,11 +27,15 @@ _sbar_sessions: Dict[str, Dict[str, Any]] = {}
 class SBARStep(BaseModel):
     """SBAR step data following API Design Standards."""
 
-    situation: Optional[str] = Field(None, description="Current patient situation")
-    background: Optional[str] = Field(None, description="Relevant patient background")
-    assessment: Optional[str] = Field(None, description="Clinical assessment")
+    situation: Optional[str] = Field(
+        default=None, description="Current patient situation"
+    )
+    background: Optional[str] = Field(
+        default=None, description="Relevant patient background"
+    )
+    assessment: Optional[str] = Field(default=None, description="Clinical assessment")
     recommendation: Optional[str] = Field(
-        None, description="Recommendations and requests"
+        default=None, description="Recommendations and requests"
     )
 
 

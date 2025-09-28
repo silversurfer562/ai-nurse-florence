@@ -4,7 +4,7 @@ Following External Service Integration and Conditional Imports Pattern from codi
 """
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from ..utils.config import get_settings, get_educational_banner
 from ..utils.redis_cache import cached
 
@@ -18,6 +18,7 @@ try:
 except ImportError:
     _has_requests = False
     logger.warning("⚠️ Requests not available - using stub responses")
+    requests = None  # type: ignore
 
 try:
     import httpx
@@ -25,7 +26,9 @@ try:
     _has_httpx = True
 except Exception:
     _has_httpx = False
-    httpx = None
+    from typing import Any as _Any
+
+    httpx: Optional[_Any] = None
 
 try:
     from ..utils.prompt_enhancement import enhance_prompt
@@ -34,7 +37,7 @@ try:
 except ImportError:
     _has_prompt_enhancement = False
 
-    def enhance_prompt(query: str, context: str):
+    def enhance_prompt(query: str, context: str) -> tuple[str, bool, Optional[str]]:
         return query, False, None
 
 
@@ -45,7 +48,7 @@ try:
     _has_mesh = True
 except Exception:
 
-    def map_to_mesh(query: str, top_k: int = 5):
+    def map_to_mesh(query: str, top_k: int = 5) -> list[Dict[str, Any]]:
         return []
 
     _has_mesh = False
@@ -131,15 +134,18 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
         "sort": "relevance",
     }
 
-    if _has_httpx:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+    if _has_httpx and httpx is not None:
+        # runtime check ensures httpx is present; silence static attr errors
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:  # type: ignore[attr-defined]
             search_response = await client.get(search_url, params=search_params)
             search_response.raise_for_status()
             search_data = search_response.json()
-    else:
-        search_response = requests.get(search_url, params=search_params, timeout=10)
+    elif _has_requests and requests is not None:
+        search_response = requests.get(search_url, params=search_params, timeout=10)  # type: ignore[attr-defined]
         search_response.raise_for_status()
         search_data = search_response.json()
+    else:
+        raise RuntimeError("No HTTP client available for PubMed search")
 
     pmids = search_data.get("esearchresult", {}).get("idlist", [])
     total_results = int(search_data.get("esearchresult", {}).get("count", 0))
@@ -154,13 +160,15 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
             "retmode": "xml",
         }
 
-        if _has_httpx:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+        if _has_httpx and httpx is not None:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:  # type: ignore[attr-defined]
                 fetch_response = await client.get(fetch_url, params=fetch_params)
                 fetch_response.raise_for_status()
-        else:
-            fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)
+        elif _has_requests and requests is not None:
+            fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)  # type: ignore[attr-defined]
             fetch_response.raise_for_status()
+        else:
+            raise RuntimeError("No HTTP client available for PubMed fetch")
 
         # Parse XML response (simplified)
         articles = [

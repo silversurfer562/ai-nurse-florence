@@ -1,5 +1,5 @@
 """
-Clinical Trials Service - AI Nurse Florence  
+Clinical Trials Service - AI Nurse Florence
 Following Service Layer Architecture with ClinicalTrials.gov integration
 """
 
@@ -37,7 +37,7 @@ except Exception:
         def get(*args, **kwargs):
             raise RuntimeError("requests package not available in this environment")
 
-    requests = _RequestsStub()
+    requests = None  # type: ignore
 
 # Backwards compatibility: prefer httpx when available for async calls
 try:
@@ -46,7 +46,8 @@ try:
     _has_httpx = True
 except Exception:
     _has_httpx = False
-    httpx = None
+
+    httpx = None  # type: ignore
 
 
 class ClinicalTrialsService:
@@ -340,12 +341,14 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
     else:
         # Synchronous fallback for environments without httpx
         # Use asyncio.to_thread to avoid blocking the event loop
+        if requests is None:
+            raise RuntimeError("requests library not available in this environment")
         response = await asyncio.to_thread(
             requests.get, base_url, {"params": params, "timeout": 15}
         )
-        # If the requests stub raises, it will surface here
-        response.raise_for_status()
-        data = response.json()
+    # If the requests stub raises, it will surface here
+    response.raise_for_status()
+    data = response.json()
 
     studies = data.get("StudyFieldsResponse", {}).get("StudyFields", [])
     total_studies = len(studies)

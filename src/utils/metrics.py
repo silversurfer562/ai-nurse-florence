@@ -259,37 +259,3 @@ def setup_metrics(app, metrics_route: str = "/metrics") -> None:
         logger.info("Prometheus metrics mounted at %s", metrics_route)
     except Exception as e:
         logger.warning("Failed to mount prometheus ASGI app: %s", e)
-
-    def get_metrics_summary() -> Dict[str, Any]:
-        if not _METRICS_ENABLED:
-            return {"status": "disabled"}
-        if _PROM_AVAILABLE:
-            return {"status": "prometheus_enabled", "endpoint": "/metrics"}
-        with _metrics_lock:
-            return {
-                "status": "memory_only",
-                "metrics": {
-                    k: {
-                        "total": v["total"],
-                        "count": len(v["values"]),
-                        "labels": len(v["by_label"]),
-                    }
-                    for k, v in _metrics_store.items()
-                },
-            }
-
-    def setup_metrics(app, metrics_route: str = "/metrics") -> None:
-        if not _METRICS_ENABLED:
-            logger.debug("Metrics disabled; setup_metrics no-op")
-            return
-        if not _PROM_AVAILABLE:
-            logger.info("Prometheus client not available; using memory metrics")
-            return
-        try:
-            from prometheus_client import make_asgi_app
-
-            metrics_app = make_asgi_app()
-            app.mount(metrics_route, metrics_app)
-            logger.info("Prometheus metrics mounted at %s", metrics_route)
-        except Exception as e:
-            logger.warning("Failed to mount prometheus ASGI app: %s", e)

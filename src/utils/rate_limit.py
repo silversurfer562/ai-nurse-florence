@@ -6,19 +6,21 @@ IP-based rate limiting with Redis backend
 import time
 import logging
 from typing import Callable, Dict, Optional, List, Any, Tuple
-from fastapi import Request, Response, HTTPException, status
+from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 import threading
 
 # Conditional Redis import - graceful degradation
 try:
-    import redis.asyncio as redis
+    import redis.asyncio as redis  # type: ignore
 
     _redis_available = True
 except ImportError:
     _redis_available = False
-    redis = None
+    from types import ModuleType
+
+    redis: Optional[ModuleType] = None
 
 from src.utils.config import get_settings
 from src.utils.exceptions import ErrorType

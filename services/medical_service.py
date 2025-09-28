@@ -110,7 +110,11 @@ class MedicalDataService:
     """
 
     def __init__(self):
-        self.client = httpx.AsyncClient(timeout=TIMEOUT_SECONDS)
+        # Guard in case httpx is not available at import time in some environments
+        try:
+            self.client = httpx.AsyncClient(timeout=TIMEOUT_SECONDS)  # type: ignore[attr-defined]
+        except Exception:
+            self.client = None
         self.openai_client = get_openai_client() if _has_openai else None
 
     async def __aenter__(self):

@@ -15,11 +15,12 @@ try:
 except ImportError:
     _has_gpt_integration = False
 
-    def verify_gpt_token(token: str):
+    # Provide compatibility stubs with matching signatures
+    def verify_gpt_token(token: str) -> Optional[Dict[str, Any]]:  # type: ignore[name-defined]
         return None
 
-    def record_gpt_usage(usage_type: str):
-        pass
+    def record_gpt_usage(*args: Any, **kwargs: Any) -> None:
+        return None
 
 
 settings = get_settings()

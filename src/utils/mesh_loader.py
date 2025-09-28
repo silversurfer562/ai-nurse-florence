@@ -1,7 +1,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 
 class MeshIndex:
@@ -17,8 +17,9 @@ class MeshIndex:
     Matching is intentionally simple: exact (case-insensitive), prefix, then token-overlap scoring.
     """
 
-    def __init__(self, index: Optional[Dict[str, Dict]] = None):
-        self.index = {}
+    def __init__(self, index: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
+        # mapping: normalized_term -> {"term": str, "mesh_id": str, "synonyms": List[str]}
+        self.index: Dict[str, Dict[str, Any]] = {}
         if index:
             for term, data in index.items():
                 self._add_entry(term, data)
@@ -32,14 +33,18 @@ class MeshIndex:
         raw = json.loads(p.read_text(encoding="utf8"))
         return cls(raw)
 
-    def _add_entry(self, term: str, data):
+    def _add_entry(self, term: str, data: Any) -> None:
         term_norm = term.strip()
+        mesh_id: Optional[str]
+        synonyms: List[str]
         if isinstance(data, str):
             mesh_id = data
             synonyms = []
         elif isinstance(data, dict):
             mesh_id = data.get("mesh_id") or data.get("id") or data.get("MeshID")
             synonyms = data.get("synonyms") or data.get("alt") or []
+            # ensure synonyms are strings
+            synonyms = [str(s) for s in synonyms]
         else:
             mesh_id = None
             synonyms = []
@@ -60,7 +65,7 @@ class MeshIndex:
                 "synonyms": [s for s in synonyms],
             }
 
-    def map(self, query: str, top_k: int = 5) -> List[Dict]:
+    def map(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         q = (query or "").strip()
         if not q:
             return []
@@ -73,16 +78,16 @@ class MeshIndex:
             return [{"term": entry["term"], "mesh_id": entry["mesh_id"], "score": 1.0}]
 
         # prefix match
-        candidates = []
+        candidates: List[Tuple[Dict[str, Any], float]] = []
         for key, entry in self.index.items():
             if key.startswith(q_low):
                 candidates.append((entry, 0.9))
 
         # token overlap scoring fallback
         if not candidates:
-            q_tokens = set(re.findall(r"\w+", q_low))
+            q_tokens: Set[str] = set(re.findall(r"\w+", q_low))
             for key, entry in self.index.items():
-                key_tokens = set(re.findall(r"\w+", key))
+                key_tokens: Set[str] = set(re.findall(r"\w+", key))
                 if not key_tokens:
                     continue
                 overlap = q_tokens.intersection(key_tokens)
@@ -92,8 +97,8 @@ class MeshIndex:
 
         # sort and return top_k
         candidates_sorted = sorted(candidates, key=lambda t: t[1], reverse=True)
-        results = []
-        seen = set()
+        results: List[Dict[str, Any]] = []
+        seen: Set[str] = set()
         for entry, score in candidates_sorted[:top_k]:
             key = entry["mesh_id"]
             if key in seen:
