@@ -441,9 +441,60 @@ The application includes rate limiting. If you're getting 429 responses:
 - Implement backoff in your client
 - Contact admins for higher limits if needed
 
-## Additional Resources
+## Maintenance & CI
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Redis Documentation](https://redis.io/documentation)
-- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
-- [PubMed API Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25500/)
+This section helps maintainers run CI-like steps locally, reproduce failures, and perform routine maintenance.
+
+### Run CI steps locally (lightweight)
+1. Activate venv (if present) and install dependencies:
+
+```bash
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt  # optional for linting/tools
+```
+
+2. Run the repository healthcheck and tests as CI does:
+
+```bash
+# Ensure imports resolve
+export PYTHONPATH=$(pwd)
+# CI intentionally disables Redis for hermetic test runs
+export AI_NURSE_DISABLE_REDIS=1
+# Optional: disable pytest-postgresql plugin locally if libpq isn't installed
+./.venv/bin/python -m pytest -p no:pytest_postgresql -q
+```
+
+3. If CI needs full integration (Redis/Postgres), start local containers:
+
+```bash
+docker compose up -d postgres redis
+export REDIS_URL=redis://localhost:6379
+export DATABASE_URL=postgresql://postgres:password@localhost:5432/florence
+export AI_NURSE_DISABLE_REDIS=0
+./.venv/bin/python -m pytest -q
+```
+
+### CI troubleshooting notes
+- If tests hang: confirm `AI_NURSE_DISABLE_REDIS` is set to `1` for CI-style runs.
+- If pytest errors about `psycopg` / libpq: either install system `libpq` or run pytest with `-p no:pytest_postgresql` as shown above.
+- If GitHub Actions fails with dependency resolution, check pinned versions in `requirements.txt` and `requirements-dev.txt` for conflicts.
+
+### Routine maintenance tasks
+- Update dependency pins cautiously; run `pip-compile` or similar dependency pinning in a sandbox before updating `requirements*.txt`.
+- Keep `docs/` in sync with major architectural changes; add short migration notes for breaking changes.
+- Run `ruff`, `flake8`, and `mypy` locally before opening PRs.
+
+### Helpful commands
+```bash
+# Lint and type check
+./.venv/bin/python -m ruff check . || true
+./.venv/bin/python -m mypy src || true
+
+# Run unit tests only
+./.venv/bin/python -m pytest tests/unit/ -q
+
+# Run a specific test with verbose output
+AI_NURSE_DISABLE_REDIS=1 ./.venv/bin/python -m pytest tests/unit/test_cache_concurrency.py -q -vv -s -x
+```
