@@ -46,8 +46,13 @@ jobs:
 
       - name: Run tests
         run: |
+          # CI healthcheck: ensure code does not require Redis when AI_NURSE_DISABLE_REDIS=1
+          # This will fail loudly if a change makes Redis mandatory or blocks when Redis is absent.
+          python scripts/check_redis_health.py
+
           # Run quick critical tests first (fast feedback)
           AI_NURSE_DISABLE_REDIS=1 python -m pytest -q tests/unit/test_rate_limit_precedence.py || true
+
           # Then run the full test suite (disable Redis to prevent async hangs when Redis isn't provided)
           AI_NURSE_DISABLE_REDIS=1 python -m pytest -q -ra
 

@@ -129,6 +129,17 @@ DATABASE_URL=sqlite+aiosqlite:///./app.db  # Default: SQLite, Production: Postgr
 # Redis (Optional - improves performance)
 REDIS_URL=redis://localhost:6379  # Falls back to in-memory cache if unavailable
 
+CI / Testing note
+-----------------
+
+If Redis is not available in your test or CI environment, set the environment variable:
+
+```bash
+export AI_NURSE_DISABLE_REDIS=1
+```
+
+This forces the application to use the in-memory fallback for caching and rate limiting. The project's CI workflow runs a small healthcheck (`scripts/check_redis_health.py`) to ensure future changes do not accidentally make Redis required.
+
 # Rate Limiting
 RATE_LIMIT_PER_MINUTE=60  # Default: 60 requests per minute per IP
 
