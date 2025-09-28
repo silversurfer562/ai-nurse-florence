@@ -30,19 +30,15 @@ import logging
 import asyncio
 logger = logging.getLogger(__name__)
 
-
-# Provide a requests stub and a helper wrapper when the requests package is unavailable
-if not _has_requests:
-    class _RequestsStub:
-        @staticmethod
-        def get(*args, **kwargs):
-            raise RuntimeError("requests not available in this environment")
-
-    requests = _RequestsStub()
-
+# Backwards-compatibility for tests and older code: expose legacy
+# symbols that callers may monkeypatch. We now use httpx internally,
+# but keep `_has_requests`, `requests`, and `_requests_get` available so
+# tests written against the previous implementation still function.
+_has_requests = False
+requests = None
 
 def _requests_get(*args, **kwargs):
-    """Helper wrapper around requests.get to centralize availability checks."""
+    """Legacy helper kept for tests; raises if requests not available."""
     if not _has_requests:
         raise RuntimeError("requests not available in this environment")
     return requests.get(*args, **kwargs)

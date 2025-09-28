@@ -33,6 +33,14 @@ except Exception:
 
     requests = _RequestsStub()
 
+# Backwards compatibility: prefer httpx when available for async calls
+try:
+    import httpx
+    _has_httpx = True
+except Exception:
+    _has_httpx = False
+    httpx = None
+
 class ClinicalTrialsService:
     """
     Clinical trials service following Service Layer Architecture.
@@ -283,9 +291,16 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
         "fmt": "json"
     }
     
-    response = requests.get(base_url, params=params, timeout=15)
-    response.raise_for_status()
-    data = response.json()
+    if _has_httpx:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(base_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+    else:
+        # Synchronous fallback for environments without httpx
+        response = requests.get(base_url, params=params, timeout=15)
+        response.raise_for_status()
+        data = response.json()
     
     studies = data.get("StudyFieldsResponse", {}).get("StudyFields", [])
     total_studies = len(studies)

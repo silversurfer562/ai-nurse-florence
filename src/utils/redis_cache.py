@@ -298,42 +298,10 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
                 cache_key = _make_key(args, kwargs)
-                cached_result = await cache_get(cache_key)
-                if cached_result is not None:
-                    logging.debug(f"Cache hit for {cache_key}")
-                    return cached_result
 
-                logging.debug(f"Cache miss for {cache_key}")
-                result = await func(*args, **kwargs)
-                await cache_set(cache_key, result, ttl_seconds)
-                return result
-
-            return async_wrapper
-        else:
-            @wraps(func)
-            def sync_wrapper(*args, **kwargs):
-                cache_key = _make_key(args, kwargs)
-                # run async cache_get in event loop if available
+                # Try Redis/memory via async path
                 try:
-                    loop = asyncio.get_event_loop()
-                except RuntimeError:
-                    loop = None
-
-                cached_result = None
-                try:
-                    # If we have a running loop, use run_coroutine_threadsafe with a short timeout.
-                    if loop is not None and loop.is_running():
-                        future = asyncio.run_coroutine_threadsafe(cache_get(cache_key), loop)
-                        try:
-                            cached_result = future.result(timeout=5)
-                        except Exception:
-                            cached_result = None
-                    else:
-                        # No running loop available — run the coroutine synchronously (safe fallback)
-                        try:
-                            cached_result = asyncio.run(cache_get(cache_key))
-                        except Exception:
-                            cached_result = None
+                    cached_result = await cache_get(cache_key)
                 except Exception:
                     cached_result = None
 
@@ -342,20 +310,70 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
                     return cached_result
 
                 logging.debug(f"Cache miss for {cache_key}")
+                result = await func(*args, **kwargs)
+
+                # Best-effort store; allow cache_set errors to bubble silently
+                try:
+                    await cache_set(cache_key, result, ttl_seconds)
+                except Exception:
+                    logging.debug(f"Async cache_set failed for {cache_key}")
+
+                return result
+
+            return async_wrapper
+        else:
+            @wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                cache_key = _make_key(args, kwargs)
+
+                # Prefer deterministic in-memory cache first
+                try:
+                    mem_val = _memory_cache_get(cache_key)
+                    if mem_val is not None:
+                        if _has_metrics:
+                            record_cache_hit(cache_key, cache_type="memory")
+                        logging.debug(f"Memory cache hit for {cache_key}")
+                        return mem_val
+                except Exception:
+                    logging.debug("Memory cache access failed in sync wrapper")
+
+                # Cache miss: call the sync function
                 result = func(*args, **kwargs)
 
-                # store result: prefer in-memory (already set by wrapper); if
-                # no event loop is running we can update Redis synchronously.
+                # Store in memory immediately for deterministic sync behavior
                 try:
-                    if loop is not None and loop.is_running():
-                        # Skip Redis update when running inside an event loop
-                        # in the same thread to avoid blocking/deadlocks.
-                        pass
-                    else:
-                        asyncio.run(cache_set(cache_key, result, ttl_seconds))
+                    _memory_cache_set(cache_key, result, ttl_seconds)
+                    if _has_metrics:
+                        record_cache_miss(cache_key, cache_type="memory")
                 except Exception:
-                    # Best-effort: ignore cache update failures
-                    pass
+                    logging.debug("Memory cache set failed in sync wrapper")
+
+                # Schedule Redis update in background without blocking.
+                try:
+                    try:
+                        running_loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        running_loop = None
+
+                    if running_loop is not None:
+                        # We're in an async context but called a sync function; schedule
+                        # an async cache update task without awaiting it.
+                        def _schedule_update():
+                            try:
+                                asyncio.create_task(cache_set(cache_key, result, ttl_seconds))
+                            except Exception:
+                                pass
+
+                        running_loop.call_soon_threadsafe(_schedule_update)
+                    else:
+                        # No loop running: run cache_set in a background thread to
+                        # avoid blocking the caller thread.
+                        threading.Thread(
+                            target=lambda: asyncio.run(cache_set(cache_key, result, ttl_seconds)),
+                            daemon=True,
+                        ).start()
+                except Exception:
+                    logging.debug("Background cache update scheduling failed")
 
                 return result
 

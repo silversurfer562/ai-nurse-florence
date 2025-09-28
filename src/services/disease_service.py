@@ -16,26 +16,23 @@ logger = logging.getLogger(__name__)
 
 # Conditional imports following copilot-instructions.md
 try:
-    import requests
-    _has_requests = True
+    import httpx
+    _has_httpx = True
 except ImportError:
-    _has_requests = False
-    requests = None
+    _has_httpx = False
+    httpx = None
 
-if not _has_requests:
-    class _RequestsStub:
-        @staticmethod
-        def get(*args, **kwargs):
-            raise RuntimeError("requests not available in this environment")
-
-    requests = _RequestsStub()
-
+# Backwards-compatibility: expose legacy names for tests that monkeypatch
+_has_requests = False
+requests = None
 
 def _requests_get(*args, **kwargs):
-    """Helper wrapper around requests.get to centralize availability checks."""
-    if not _has_requests:
-        raise RuntimeError("requests not available in this environment")
-    return requests.get(*args, **kwargs)
+    """Legacy compatibility helper retained for tests; prefers httpx when available."""
+    if _has_httpx:
+        # Use httpx synchronously only if necessary; prefer async paths.
+        with httpx.Client(timeout=10) as client:
+            return client.get(*args, **kwargs)
+    raise RuntimeError("requests/httpx not available in this environment")
 try:
     from .mesh_service import map_to_mesh  # type: ignore
     _has_mesh = True
@@ -66,7 +63,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
     # Settings, logger and helpers are provided; class defines safe fallbacks below
     
     @cached(ttl_seconds=3600)
-    def lookup_disease(self, query: str, include_symptoms: bool = True, include_treatments: bool = True) -> Dict[str, Any]:
+    async def lookup_disease(self, query: str, include_symptoms: bool = True, include_treatments: bool = True) -> Dict[str, Any]:
         """
         Lookup disease information with caching
         Following Caching Strategy from copilot-instructions.md
@@ -75,8 +72,8 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         
         try:
             # Use live service if available and enabled
-            if self.settings.USE_LIVE_SERVICES and _has_requests:
-                result = self._fetch_from_api(query, include_symptoms, include_treatments)
+            if self.settings.USE_LIVE_SERVICES and _has_httpx:
+                result = await self._fetch_from_api(query, include_symptoms, include_treatments)
                 self._log_response(query, True, source="live_api")
                 return self._create_response(result, query, source="mydisease_api")
             else:
@@ -91,10 +88,10 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             fallback_data = self._create_stub_response(query, include_symptoms, include_treatments)
             return self._handle_external_service_error(e, fallback_data)
     
-    def _fetch_from_api(self, query: str, include_symptoms: bool, include_treatments: bool) -> Dict[str, Any]:
-        """Fetch disease data from MyDisease.info API"""
-        if not _has_requests:
-            raise ExternalServiceException("Requests library not available", "disease_service")
+    async def _fetch_from_api(self, query: str, include_symptoms: bool, include_treatments: bool) -> Dict[str, Any]:
+        """Fetch disease data from MyDisease.info API asynchronously using httpx"""
+        if not _has_httpx:
+            raise ExternalServiceException("httpx library not available", "disease_service")
 
         # Try MeSH normalization to improve lookup
         try:
@@ -115,11 +112,10 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             "size": 5
         }
 
-        response = _requests_get(search_url, params=params, timeout=10)
-        # propagate HTTP errors to caller
-        response.raise_for_status()
-
-        data = response.json()
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+            response = await client.get(search_url, params=params)
+            response.raise_for_status()
+            data = response.json()
         hits = data.get("hits", [])
 
         if not hits:
@@ -221,9 +217,9 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             ]
         }
     
-    def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
-        """Implementation of abstract method from BaseService"""
-        return self.lookup_disease(query, **kwargs)
+    async def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
+        """Implementation of abstract method from BaseService (async)"""
+        return await self.lookup_disease(query, **kwargs)
 # Service factory function following Conditional Imports Pattern
 def create_disease_service() -> Optional[DiseaseService]:
     """
