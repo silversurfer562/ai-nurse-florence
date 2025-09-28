@@ -9,6 +9,7 @@ from uuid import uuid4
 from datetime import datetime
 
 from src.services import get_service
+from src.utils.redis_cache import get_redis_client
 from src.models.schemas import SBARWizardRequest, SBARWizardResponse
 from src.utils.api_responses import create_success_response
 from src.utils.exceptions import ServiceException
@@ -187,7 +188,7 @@ async def _get_wizard_session(wizard_id: str) -> Optional[Dict[str, Any]]:
     """Get wizard session from storage following Conditional Imports Pattern."""
     if _has_redis:
         try:
-            redis_client = get_redis_client()
+            redis_client = await get_redis_client()
             if redis_client:
                 session_data = await redis_client.get(f"sbar_wizard:{wizard_id}")
                 return session_data if session_data else None
@@ -201,7 +202,7 @@ async def _store_wizard_session(wizard_id: str, session_data: Dict[str, Any]) ->
     """Store wizard session following Conditional Imports Pattern."""
     if _has_redis:
         try:
-            redis_client = get_redis_client()
+            redis_client = await get_redis_client()
             if redis_client:
                 await redis_client.setex(f"sbar_wizard:{wizard_id}", 3600, session_data)
                 return
@@ -244,7 +245,10 @@ async def _complete_sbar_wizard(
         )
 
     except Exception:
-        raise ServiceException("Failed to complete SBAR wizard", "sbar_wizard")
+        # Use proper ErrorType via ServiceException signature
+        from src.utils.exceptions import ErrorType
+
+        raise ServiceException("Failed to complete SBAR wizard", ErrorType.SERVICE_ERROR)
 
 
 def _get_step_data(step_number: int) -> Dict[str, Any]:
@@ -405,7 +409,7 @@ def _get_step_data(step_number: int) -> Dict[str, Any]:
 def _generate_sbar_report(collected_data: Dict[str, Any]) -> Dict[str, Any]:
     """Generate structured SBAR report from collected data."""
 
-    report = {
+    report: Dict[str, Any] = {
         "report_type": "SBAR",
         "generated_at": datetime.now().isoformat(),
         "banner": EDU_BANNER,
@@ -424,6 +428,7 @@ def _generate_sbar_report(collected_data: Dict[str, Any]) -> Dict[str, Any]:
             report["sections"][step_name.lower()] = collected_data[step_key]
 
     # Generate summary
+    # `report["sections"]` is Dict[str, Any] by construction
     report["summary"] = _generate_sbar_summary(report["sections"])
 
     return report

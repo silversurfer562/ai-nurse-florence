@@ -6,16 +6,16 @@ This keeps external dependencies optional and testable.
 
 import json
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
-_MESH_INDEX: Optional[Dict[str, Dict]] = None
+_MESH_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 def _default_mesh_path() -> Path:
     return Path(__file__).resolve().parents[1] / "data" / "mesh_stub.json"
 
 
-def load_mesh_index(path: Optional[str] = None) -> Dict[str, Dict]:
+def load_mesh_index(path: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
     global _MESH_INDEX
     if _MESH_INDEX is not None:
         return _MESH_INDEX
@@ -24,6 +24,7 @@ def load_mesh_index(path: Optional[str] = None) -> Dict[str, Dict]:
     if not p.exists():
         # Return empty index if file missing
         _MESH_INDEX = {}
+        assert _MESH_INDEX is not None
         return _MESH_INDEX
 
     with p.open("r", encoding="utf-8") as fh:
@@ -31,10 +32,14 @@ def load_mesh_index(path: Optional[str] = None) -> Dict[str, Dict]:
 
     # Expecting mapping of mesh_id -> metadata
     _MESH_INDEX = data
+    assert _MESH_INDEX is not None
     return _MESH_INDEX
 
 
-def get_mesh_term(mesh_id: str) -> Optional[Dict]:
+def get_mesh_term(mesh_id: str) -> Optional[Dict[str, Any]]:
     if _MESH_INDEX is None:
         load_mesh_index()
+    # _MESH_INDEX may still be None if loading failed; guard and return None
+    if not _MESH_INDEX:
+        return None
     return _MESH_INDEX.get(mesh_id)

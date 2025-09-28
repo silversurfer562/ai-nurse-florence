@@ -51,7 +51,7 @@ async def health_check():
 
     # Determine mesh index readiness
     try:
-        from src.services.mesh_service import get_mesh_index  # type: ignore
+        from src.services.mesh_service import get_mesh_index
 
         mesh_idx = get_mesh_index()
         mesh_ready = bool(mesh_idx)

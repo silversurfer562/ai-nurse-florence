@@ -11,16 +11,18 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 import threading
 
-# Conditional Redis import - graceful degradation
+from types import ModuleType
+import importlib
+
+# Conditional Redis import - graceful degradation (use importlib for typing clarity)
+redis: Optional[ModuleType] = None
+_redis_available = False
 try:
-    import redis.asyncio as redis  # type: ignore
-
+    _redis_mod = importlib.import_module("redis.asyncio")
+    redis = _redis_mod
     _redis_available = True
-except ImportError:
+except Exception:
     _redis_available = False
-    from types import ModuleType
-
-    redis: Optional[ModuleType] = None
 
 from src.utils.config import get_settings
 from src.utils.exceptions import ErrorType
@@ -58,7 +60,7 @@ return {count, limit, ttl}
 """
 
 
-async def get_redis_client():
+async def get_redis_client() -> Optional[Any]:
     """Get Redis client with graceful fallback"""
     from src.utils.redis_cache import get_redis_client as get_cache_redis_client
 

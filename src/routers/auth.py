@@ -6,7 +6,7 @@ Following Router Organization pattern for unprotected auth endpoints
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 from src.utils.config import get_settings
@@ -29,7 +29,7 @@ class AuthStatus(BaseModel):
 
     authenticated: bool
     user_type: Optional[str] = None
-    permissions: list[str] = []
+    permissions: Optional[List[str]] = None
     message: str
 
 

@@ -1,22 +1,26 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from types import ModuleType
+import importlib
 import asyncio
 
+httpx: Optional[ModuleType] = None
+requests: Optional[ModuleType] = None
+_has_httpx = False
+_has_requests = False
 try:
-    import httpx
-
+    _httpx_mod = importlib.import_module("httpx")
+    httpx = _httpx_mod
     _has_httpx = True
-except Exception:  # pragma: no cover - optional dependency
-    httpx = None  # type: ignore
+except Exception:
     _has_httpx = False
 
 try:
-    import requests
-
+    _requests_mod = importlib.import_module("requests")
+    requests = _requests_mod
     _has_requests = True
-except Exception:  # pragma: no cover - optional dependency
-    requests = None  # type: ignore
+except Exception:
     _has_requests = False
 
 from .exceptions import ExternalServiceException
@@ -43,6 +47,8 @@ async def safe_get_json(
         raise ExternalServiceException("http_client", "No HTTP client available")
 
     def _sync_get(u: str, p: Optional[dict[str, Any]], t: float) -> Any:
+        if not _has_requests or requests is None:
+            raise ExternalServiceException("http_client", "requests not available")
         r = requests.get(u, params=p, timeout=t)
         r.raise_for_status()
         return r.json()

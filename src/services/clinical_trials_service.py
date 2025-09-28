@@ -12,42 +12,42 @@ from src.utils.redis_cache import cached
 logger = logging.getLogger(__name__)
 
 # Conditional imports following Conditional Imports Pattern
-try:
-    from src.services.prompt_enhancement import enhance_prompt
+from types import ModuleType
+from typing import Optional, Callable
 
+# Ensure module-level aliases exist for optional dependencies
+_requests: Optional[ModuleType] = None
+_httpx: Optional[ModuleType] = None
+
+try:
+    enhance_prompt: Optional[Callable[[str, str], tuple[str, bool, Optional[str]]]] = (
+        getattr(__import__("src.services.prompt_enhancement", fromlist=["enhance_prompt"]), "enhance_prompt")
+    )
     _has_prompt_enhancement = True
 except Exception:
+    enhance_prompt = None
     _has_prompt_enhancement = False
 
-    # Provide a lightweight fallback to satisfy static analysis and runtime when missing
-    def enhance_prompt(prompt: str, purpose: str):
+    def enhance_prompt_stub(prompt: str, purpose: str) -> tuple[str, bool, Optional[str]]:
         return prompt, False, None
+    if enhance_prompt is None:
+        enhance_prompt = enhance_prompt_stub  # type: ignore[assignment]
 
 
 try:
-    import requests
-
+    import requests as _requests  # type: ignore
     _has_requests = True
 except Exception:
+    _requests = None
     _has_requests = False
-
-    # Fallback helper to raise a clear error if live API is attempted without requests
-    class _RequestsStub:
-        @staticmethod
-        def get(*args, **kwargs):
-            raise RuntimeError("requests package not available in this environment")
-
-    requests = None  # type: ignore
 
 # Backwards compatibility: prefer httpx when available for async calls
 try:
-    import httpx
-
+    import httpx as _httpx  # type: ignore
     _has_httpx = True
 except Exception:
+    _httpx = None
     _has_httpx = False
-
-    httpx = None  # type: ignore
 
 
 class ClinicalTrialsService:
@@ -281,21 +281,19 @@ async def search_clinical_trials(
 
     try:
         # Enhance prompt for better search results
-        if _has_prompt_enhancement:
-            effective_condition, needs_clarification, clarification_question = (
-                enhance_prompt(condition, "clinical_trials")
-            )
+        enhancer = enhance_prompt if enhance_prompt is not None else (lambda p, _: (p, False, None))
+        effective_condition, needs_clarification, clarification_question = enhancer(
+            condition, "clinical_trials"
+        )
 
-            if needs_clarification:
-                return {
-                    "banner": banner,
-                    "query": condition,
-                    "condition": condition,
-                    "needs_clarification": True,
-                    "clarification_question": clarification_question,
-                }
-        else:
-            effective_condition = condition
+        if needs_clarification:
+            return {
+                "banner": banner,
+                "query": condition,
+                "condition": condition,
+                "needs_clarification": True,
+                "clarification_question": clarification_question,
+            }
 
         # Use live ClinicalTrials.gov API if available and enabled
         if settings.effective_use_live_services and _has_requests:
@@ -325,7 +323,7 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
     # ClinicalTrials.gov API
     base_url = "https://clinicaltrials.gov/api/query/study_fields"
 
-    params = {
+    params: Dict[str, Any] = {
         "expr": condition,
         "fields": "NCTId,BriefTitle,Phase,OverallStatus,StudyType,Condition",
         "min_rnk": 1,
@@ -333,22 +331,32 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
         "fmt": "json",
     }
 
-    if _has_httpx:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            response = await client.get(base_url, params=params)
-            response.raise_for_status()
-            data = response.json()
+    if _has_httpx and _httpx is not None:
+        # _httpx is Optional[ModuleType]; cast after assert for attribute access
+        import typing as _typing
+
+        assert _httpx is not None
+        _httpx_client = _typing.cast(_typing.Any, _httpx)
+        async with _httpx_client.AsyncClient(timeout=_httpx_client.Timeout(15.0)) as client:
+            _httpx_response = await client.get(base_url, params=params)  # type: ignore[arg-type]
+            _httpx_response.raise_for_status()
+            data = _httpx_response.json()
     else:
         # Synchronous fallback for environments without httpx
         # Use asyncio.to_thread to avoid blocking the event loop
-        if requests is None:
+        if _requests is None:
             raise RuntimeError("requests library not available in this environment")
-        response = await asyncio.to_thread(
-            requests.get, base_url, {"params": params, "timeout": 15}
-        )
-    # If the requests stub raises, it will surface here
-    response.raise_for_status()
-    data = response.json()
+        # requests.get signature expects params mapping; pass params directly
+        # Run blocking requests.get in a thread-safe zero-arg callable to satisfy to_thread typing
+        # Assign the imported alias to a local variable that we know is not None
+        import typing as _typing
+
+        assert _requests is not None
+        _req = _typing.cast(_typing.Any, _requests)
+        _requests_response: Any = await asyncio.to_thread(lambda: _req.get(base_url, params=params, timeout=15))
+        # If the requests stub raises, it will surface here
+        _requests_response.raise_for_status()
+        data = _requests_response.json()
 
     studies = data.get("StudyFieldsResponse", {}).get("StudyFields", [])
     total_studies = len(studies)

@@ -176,21 +176,22 @@ class EvidenceService:
         """Generate summary of evidence findings"""
         if not articles:
             return f"No evidence found for '{query}'. Consider broadening search terms or consulting additional databases."
+        from src.models.schemas import EvidenceLevel as _EvidenceLevel
 
-        evidence_levels = {}
+        evidence_levels: Dict[_EvidenceLevel, int] = {}
         for article in articles:
-            level = article.evidence_level or EvidenceLevel.LEVEL_VII
+            level = article.evidence_level or _EvidenceLevel.LEVEL_VII
             evidence_levels[level] = evidence_levels.get(level, 0) + 1
 
         summary = f"Found {len(articles)} relevant studies for '{query}'.\n\n"
         summary += "Evidence Strength Distribution:\n"
 
         for level, count in sorted(evidence_levels.items(), key=lambda x: x[0].value):
-            summary += f"• {level.value}: {count} studies\n"
+            summary += f"\u2022 {level.value}: {count} studies\n"
 
         summary += "\nKey themes identified: "
         # Simple keyword extraction from titles
-        common_words = {}
+        common_words: Dict[str, int] = {}
         for article in articles:
             words = article.title.lower().split()
             for word in words:

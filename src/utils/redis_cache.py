@@ -11,16 +11,18 @@ from functools import wraps
 import threading
 from datetime import datetime, timedelta
 
-# Conditional Redis import - graceful degradation
+from types import ModuleType
+import importlib
+
+# Conditional Redis import - graceful degradation (use importlib for typing clarity)
+redis: Optional[ModuleType] = None
+_redis_available = False
 try:
-    import redis.asyncio as redis  # type: ignore
-
+    _redis_mod = importlib.import_module("redis.asyncio")
+    redis = _redis_mod
     _redis_available = True
-except ImportError:
+except Exception:
     _redis_available = False
-    from types import ModuleType
-
-    redis: Optional[ModuleType] = None
 
 import os
 from src.utils.config import get_redis_config
@@ -46,7 +48,7 @@ _memory_cache: Dict[str, Dict[str, Any]] = {}
 _cache_lock = threading.RLock()
 
 
-async def get_redis_client():
+async def get_redis_client() -> Optional[Any]:
     """Get Redis client with graceful fallback"""
     global _redis_client
 
@@ -75,6 +77,7 @@ async def get_redis_client():
                 retry_on_timeout=True,
             )
             # Test connection
+            assert _redis_client is not None
             await _redis_client.ping()
             logging.info("Redis connection established")
         except Exception as e:
@@ -84,7 +87,7 @@ async def get_redis_client():
     return _redis_client
 
 
-def _memory_cache_set(key: str, value: Any, ttl_seconds: int = 3600):
+def _memory_cache_set(key: str, value: Any, ttl_seconds: int = 3600) -> None:
     """Set value in memory cache with TTL"""
     with _cache_lock:
         expiry = datetime.utcnow() + timedelta(seconds=ttl_seconds)
@@ -105,7 +108,7 @@ def _memory_cache_get(key: str) -> Optional[Any]:
         return cache_entry["value"]
 
 
-def _memory_cache_delete(key: str):
+def _memory_cache_delete(key: str) -> None:
     """Delete value from memory cache"""
     with _cache_lock:
         _memory_cache.pop(key, None)
@@ -190,7 +193,7 @@ async def cache_delete(key: str) -> bool:
     return success
 
 
-def _run_sync(coro):
+def _run_sync(coro: Any) -> Any:
     """Run an async coroutine from sync code, handling running event loops."""
     try:
         loop = asyncio.get_event_loop()
@@ -289,13 +292,13 @@ def cache_delete_sync(key: str) -> bool:
         return False
 
 
-def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
+def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator for caching function results
     Supports async and sync functions. Uses Redis with in-memory fallback.
     """
 
-    def decorator(func: Callable):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         is_coro = asyncio.iscoroutinefunction(func)
 
         def _make_key(args, kwargs):
@@ -312,7 +315,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
         if is_coro:
 
             @wraps(func)
-            async def async_wrapper(*args, **kwargs):
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 cache_key = _make_key(args, kwargs)
 
                 # Try Redis/memory via async path
@@ -336,11 +339,11 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
 
                 return result
 
-            return async_wrapper
+            return async_wrapper  # type: ignore[return-value]
         else:
 
             @wraps(func)
-            def sync_wrapper(*args, **kwargs):
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 cache_key = _make_key(args, kwargs)
 
                 # Prefer deterministic in-memory cache first
@@ -398,7 +401,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
 
                 return result
 
-            return sync_wrapper
+            return sync_wrapper  # type: ignore[return-value]
 
     return decorator
 

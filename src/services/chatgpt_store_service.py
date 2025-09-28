@@ -8,15 +8,15 @@ from utils.config import get_settings
 
 # Conditional imports for ChatGPT Store features
 try:
-    from utils.auth import verify_gpt_token
-    from src.utils.metrics import record_gpt_usage
+    from utils.auth import verify_gpt_token  # type: ignore
+    from src.utils.metrics import record_gpt_usage  # type: ignore
 
     _has_gpt_integration = True
 except ImportError:
     _has_gpt_integration = False
 
-    # Provide compatibility stubs with matching signatures
-    def verify_gpt_token(token: str) -> Optional[Dict[str, Any]]:  # type: ignore[name-defined]
+    # Provide compatibility stubs with matching signatures for static checking
+    def verify_gpt_token(token: str) -> Optional[Dict[str, Any]]:
         return None
 
     def record_gpt_usage(*args: Any, **kwargs: Any) -> None:

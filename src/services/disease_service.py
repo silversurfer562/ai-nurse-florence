@@ -7,6 +7,8 @@ from typing import Dict, Any, List, Optional
 
 import logging
 import asyncio
+from types import ModuleType
+import importlib
 
 from .base_service import BaseService
 from ..utils.redis_cache import cached
@@ -16,15 +18,14 @@ from ..utils.exceptions import ExternalServiceException
 logger = logging.getLogger(__name__)
 
 # Conditional imports following copilot-instructions.md
+httpx: Optional[ModuleType] = None
+_has_httpx = False
 try:
-    import httpx
-
+    _httpx_mod = importlib.import_module("httpx")
+    httpx = _httpx_mod
     _has_httpx = True
-except ImportError:
+except Exception:
     _has_httpx = False
-    from typing import Any as _Any
-
-    httpx: Optional[_Any] = None
 
 # Backwards-compatibility: expose legacy names for tests that monkeypatch
 _has_requests = False
@@ -33,19 +34,21 @@ requests = None
 
 def _requests_get(*args, **kwargs):
     """Legacy compatibility helper retained for tests; prefers httpx when available."""
-    if _has_httpx:
+    if _has_httpx and httpx is not None:
         # Use httpx synchronously only if necessary; prefer async paths.
-        with httpx.Client(timeout=10) as client:
+        Client = getattr(httpx, "Client")
+        with Client(timeout=10) as client:
             return client.get(*args, **kwargs)
     raise RuntimeError("requests/httpx not available in this environment")
 
 
 try:
-    from .mesh_service import map_to_mesh  # type: ignore
+    import importlib
 
+    _mesh_mod = importlib.import_module("src.services.mesh_service")
+    map_to_mesh = getattr(_mesh_mod, "map_to_mesh")
     _has_mesh = True
 except Exception:
-
     def map_to_mesh(query: str, top_k: int = 5):
         return []
 
@@ -53,8 +56,10 @@ except Exception:
 
 # Optional prompt enhancement module (graceful degradation)
 try:
-    from .prompt_enhancement import enhance_prompt  # type: ignore
+    import importlib
 
+    _pe_mod = importlib.import_module("src.services.prompt_enhancement")
+    enhance_prompt = getattr(_pe_mod, "enhance_prompt")
     _has_prompt_enhancement = True
 except Exception:
     _has_prompt_enhancement = False
@@ -138,7 +143,9 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         search_url = f"{self.base_url}/query"
         params = {"q": query, "fields": "mondo,disgenet,ctd", "size": 5}
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+        AsyncClient = getattr(httpx, "AsyncClient")
+        Timeout = getattr(httpx, "Timeout")
+        async with AsyncClient(timeout=Timeout(10.0)) as client:
             response = await client.get(search_url, params=params)
             response.raise_for_status()
             data = response.json()
@@ -176,10 +183,10 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         return formatted
 
     # Minimal logging helpers in case BaseService doesn't provide them at runtime
-    def _log_request(self, *args, **kwargs) -> None:
+    def _log_request(self, *args: Any, **kwargs: Any) -> None:
         logger.debug(f"DiseaseService request: {args} {kwargs}")
 
-    def _log_response(self, *args, **kwargs) -> None:
+    def _log_response(self, *args: Any, **kwargs: Any) -> None:
         logger.debug(f"DiseaseService response: {args} {kwargs}")
 
     def _handle_external_service_error(
@@ -336,8 +343,10 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
     }
 
     if _has_httpx and httpx is not None:
-        # runtime check above ensures httpx is present; silence attr errors for static checker
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:  # type: ignore[attr-defined]
+        # runtime check above ensures httpx is present; narrow for static checkers
+        AsyncClient = getattr(httpx, "AsyncClient")
+        Timeout = getattr(httpx, "Timeout")
+        async with AsyncClient(timeout=Timeout(10.0)) as client:
             response = await client.get(base_url, params=params)
             response.raise_for_status()
             data = response.json()

@@ -3,18 +3,18 @@ Document Authoring Service - SBAR reports and clinical documentation
 Following Service Layer Architecture pattern
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from utils.redis_cache import cached
 
 # Conditional imports following coding instructions
 try:
-    from services.openai_client import get_openai_client
+    from services.openai_client import get_openai_client  # type: ignore
 
     _has_openai = True
 except ImportError:
     _has_openai = False
 
-    def get_openai_client():
+    def get_openai_client() -> Optional[object]:
         return None
 
 

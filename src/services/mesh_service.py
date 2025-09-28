@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import os
 from pathlib import Path
 
@@ -29,7 +29,7 @@ def get_mesh_index() -> Optional[MeshIndex]:
     return _mesh_index
 
 
-def map_to_mesh(term: str, top_k: int = 5) -> List[Dict]:
+def map_to_mesh(term: str, top_k: int = 5) -> List[Dict[str, Any]]:
     """Map an arbitrary query term to MeSH terms.
 
     Returns a list of dicts: {term, mesh_id, score}

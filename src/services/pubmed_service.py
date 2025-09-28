@@ -3,32 +3,40 @@ PubMed literature search service following External Service Integration
 PubMed API integration from copilot-instructions.md
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from types import ModuleType
+import importlib
 
 # Conditional imports following copilot-instructions.md
-try:
-    import httpx
+# Use importlib to import optional modules and keep typed variables
+httpx: Optional[ModuleType] = None
+requests: Optional[ModuleType] = None
+ET: Optional[ModuleType] = None
 
+_has_httpx = False
+_has_requests = False
+_has_xml = False
+
+try:
+    _httpx_mod = importlib.import_module("httpx")
+    httpx = _httpx_mod
     _has_httpx = True
-except ImportError:  # pragma: no cover - optional dependency
+except Exception:
     _has_httpx = False
-    httpx = None  # type: ignore
 
 try:
-    import requests
-
+    _requests_mod = importlib.import_module("requests")
+    requests = _requests_mod
     _has_requests = True
-except Exception:  # pragma: no cover - optional dependency
+except Exception:
     _has_requests = False
-    requests = None  # type: ignore
 
 try:
-    from xml.etree import ElementTree as ET
-
+    _xml_mod = importlib.import_module("xml.etree.ElementTree")
+    ET = _xml_mod
     _has_xml = True
-except ImportError:  # pragma: no cover - optional dependency
+except Exception:
     _has_xml = False
-    ET = None  # type: ignore
 
 
 from .base_service import BaseService
@@ -49,7 +57,7 @@ logger = logging.getLogger(__name__)
 
 def _requests_get(*args, **kwargs):
     """Legacy helper kept for tests; raises if requests not available."""
-    if _has_requests:
+    if _has_requests and requests is not None:
         return requests.get(*args, **kwargs)
     raise RuntimeError("requests not available in this environment")
 
@@ -118,8 +126,10 @@ class PubMedService(BaseService[Dict[str, Any]]):
         }
 
         if _has_httpx and httpx is not None:
-            # runtime check ensures httpx is present; silence static attribute checks
-            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:  # type: ignore[attr-defined]
+            # runtime check ensures httpx is present; narrow attributes for type checkers
+            AsyncClient = getattr(httpx, "AsyncClient")
+            Timeout = getattr(httpx, "Timeout")
+            async with AsyncClient(timeout=Timeout(15.0)) as client:
                 search_response = await client.get(search_url, params=search_params)
                 search_response.raise_for_status()
                 search_content = search_response.content
@@ -129,7 +139,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
                     "httpx or requests library not available", "pubmed_service"
                 )
             search_resp = await asyncio.to_thread(
-                requests.get, search_url, params=search_params, timeout=15  # type: ignore[attr-defined]
+                requests.get, search_url, params=search_params, timeout=15
             )
             search_resp.raise_for_status()
             search_content = search_resp.content
@@ -137,7 +147,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
         # Parse search results
         if ET is None:
             raise ExternalServiceException("XML parsing unavailable", "pubmed_service")
-        search_root = ET.fromstring(search_content)  # type: ignore[attr-defined]
+        search_root = ET.fromstring(search_content)
         pmids = [
             id_elem.text
             for id_elem in search_root.findall(".//Id")
@@ -156,8 +166,9 @@ class PubMedService(BaseService[Dict[str, Any]]):
         }
 
         if _has_httpx and httpx is not None:
-            # runtime check ensures httpx is present; silence static attribute checks
-            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:  # type: ignore[attr-defined]
+            AsyncClient = getattr(httpx, "AsyncClient")
+            Timeout = getattr(httpx, "Timeout")
+            async with AsyncClient(timeout=Timeout(15.0)) as client:
                 fetch_response = await client.get(fetch_url, params=fetch_params)
                 fetch_response.raise_for_status()
                 fetch_content = fetch_response.content
@@ -167,7 +178,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
                     "requests library not available", "pubmed_service"
                 )
             fetch_resp = await asyncio.to_thread(
-                requests.get, fetch_url, params=fetch_params, timeout=15  # type: ignore[attr-defined]
+                requests.get, fetch_url, params=fetch_params, timeout=15
             )
             fetch_resp.raise_for_status()
             fetch_content = fetch_resp.content
@@ -195,7 +206,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
                 raise RuntimeError("XML parsing not available in this environment")
 
             # ET is Optional[Module]; narrow for the runtime call
-            root = ET.fromstring(xml_content)  # type: ignore[attr-defined]
+            root = ET.fromstring(xml_content)
 
             for article_elem in root.findall(".//PubmedArticle"):
                 article_data = self._extract_article_data(article_elem)
@@ -211,7 +222,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
 
         return articles
 
-    def _extract_article_data(self, article_elem) -> Optional[Dict[str, Any]]:
+    def _extract_article_data(self, article_elem: Any) -> Optional[Dict[str, Any]]:
         """Extract article data from XML element"""
         try:
             # PMID
@@ -273,7 +284,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
                 pass
             return None
 
-    def _extract_publication_date(self, pub_date_elem) -> str:
+    def _extract_publication_date(self, pub_date_elem: Any) -> str:
         """Extract publication date from XML element"""
         if pub_date_elem is None:
             return "Unknown date"
@@ -347,10 +358,10 @@ class PubMedService(BaseService[Dict[str, Any]]):
         return await self.search_literature(query, **kwargs)
 
     # Minimal logging helpers in case BaseService doesn't provide them at runtime
-    def _log_request(self, *args, **kwargs) -> None:
+    def _log_request(self, *args: Any, **kwargs: Any) -> None:
         logger.debug(f"PubMedService request: {args} {kwargs}")
 
-    def _log_response(self, *args, **kwargs) -> None:
+    def _log_response(self, *args: Any, **kwargs: Any) -> None:
         logger.debug(f"PubMedService response: {args} {kwargs}")
 
     def _handle_external_service_error(

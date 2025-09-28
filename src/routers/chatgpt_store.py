@@ -4,7 +4,7 @@ Following OAuth2 + JWT authentication patterns
 """
 
 from fastapi import APIRouter, Depends, status
-from fastapi.security import HTTPBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from services.chatgpt_store_service import (
     get_chatgpt_store_service,
     ChatGPTStoreService,
@@ -49,7 +49,7 @@ async def get_clinical_interventions_for_gpt(
 
 @router.post("/verify-professional")
 async def verify_healthcare_professional(
-    token: str = Depends(security),
+    token: HTTPAuthorizationCredentials = Depends(security),
     gpt_service: ChatGPTStoreService = Depends(get_chatgpt_store_service),
 ):
     """Verify healthcare professional credentials through ChatGPT Store"""
@@ -58,9 +58,7 @@ async def verify_healthcare_professional(
     # TODO: License database integration
     # TODO: Institution validation
 
-    professional_data = await gpt_service.verify_healthcare_professional(
-        token.credentials
-    )
+    professional_data = await gpt_service.verify_healthcare_professional(token.credentials)
 
     if not professional_data:
         return create_error_response(

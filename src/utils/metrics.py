@@ -5,7 +5,7 @@ metrics store. Exposes compatibility functions used throughout the codebase.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING
 import threading
 
 logger = logging.getLogger(__name__)
@@ -19,19 +19,40 @@ try:
 except Exception:
     _METRICS_ENABLED = False
 
-# Prometheus optional imports
+# Prometheus optional imports and typing
 _PROM_AVAILABLE = False
-Counter = None
-try:
-    from prometheus_client import Counter  # type: ignore
 
+if TYPE_CHECKING:
+    # Prometheus Counter instance type for static analysis
+    from prometheus_client import Counter as PromCounter
+    _PromCounterInstance = PromCounter
+    _CounterClassType = Type[PromCounter]
+else:
+    PromCounter = Any  # runtime fallback for annotations
+    _PromCounterInstance = Any
+    _CounterClassType = Type[Any]
+
+# Runtime import guarded so module works without prometheus_client installed
+Counter: Optional[_CounterClassType]
+try:
+    from prometheus_client import Counter as _PromCounter  # runtime import
+
+    Counter = _PromCounter
     _PROM_AVAILABLE = True
 except Exception:
+    Counter = None
     logger.debug("prometheus_client not available; falling back to memory metrics")
 
 # In-memory store used as fallback
 _metrics_lock = threading.RLock()
 _metrics_store: Dict[str, Dict[str, Any]] = {}
+
+# Module-level Prometheus counter placeholders (initialized lazily at runtime)
+_CACHE_HITS: Optional[_PromCounterInstance] = None
+_CACHE_MISSES: Optional[_PromCounterInstance] = None
+_EXT_REQUESTS: Optional[_PromCounterInstance] = None
+_EXT_ERRORS: Optional[_PromCounterInstance] = None
+_OPENAI_TOKENS: Optional[_PromCounterInstance] = None
 
 
 def _memory_metrics_update(
@@ -56,11 +77,10 @@ def record_cache_hit(cache_key: str, cache_type: str = "redis") -> None:
     try:
         key_prefix = cache_key.split(":", 1)[0] if cache_key else "unknown"
         if _PROM_AVAILABLE and Counter is not None:
-            if "_CACHE_HITS" not in globals():
-                globals()["_CACHE_HITS"] = Counter("ai_nurse_cache_hits_total", "Cache hit count", ["cache_type", "key_prefix"])  # type: ignore
-            globals()["_CACHE_HITS"].labels(
-                cache_type=cache_type, key_prefix=key_prefix
-            ).inc()
+            global _CACHE_HITS
+            if _CACHE_HITS is None:
+                _CACHE_HITS = Counter("ai_nurse_cache_hits_total", "Cache hit count", ["cache_type", "key_prefix"])
+            _CACHE_HITS.labels(cache_type=cache_type, key_prefix=key_prefix).inc()
         else:
             _memory_metrics_update(
                 "cache_hits",
@@ -76,11 +96,10 @@ def record_cache_miss(cache_key: str, cache_type: str = "redis") -> None:
     try:
         key_prefix = cache_key.split(":", 1)[0] if cache_key else "unknown"
         if _PROM_AVAILABLE and Counter is not None:
-            if "_CACHE_MISSES" not in globals():
-                globals()["_CACHE_MISSES"] = Counter("ai_nurse_cache_misses_total", "Cache miss count", ["cache_type", "key_prefix"])  # type: ignore
-            globals()["_CACHE_MISSES"].labels(
-                cache_type=cache_type, key_prefix=key_prefix
-            ).inc()
+            global _CACHE_MISSES
+            if _CACHE_MISSES is None:
+                _CACHE_MISSES = Counter("ai_nurse_cache_misses_total", "Cache miss count", ["cache_type", "key_prefix"])
+            _CACHE_MISSES.labels(cache_type=cache_type, key_prefix=key_prefix).inc()
         else:
             _memory_metrics_update(
                 "cache_misses",
@@ -95,9 +114,10 @@ def record_external_request(service: str, operation: Optional[str] = None) -> No
         return
     try:
         if _PROM_AVAILABLE and Counter is not None:
-            if "_EXT_REQUESTS" not in globals():
-                globals()["_EXT_REQUESTS"] = Counter("ai_nurse_external_requests_total", "External API request count", ["service"])  # type: ignore
-            globals()["_EXT_REQUESTS"].labels(service=service).inc()
+            global _EXT_REQUESTS
+            if _EXT_REQUESTS is None:
+                _EXT_REQUESTS = Counter("ai_nurse_external_requests_total", "External API request count", ["service"])
+            _EXT_REQUESTS.labels(service=service).inc()
         else:
             labels = {"service": service}
             if operation:
@@ -114,11 +134,10 @@ def record_external_error(
         return
     try:
         if _PROM_AVAILABLE and Counter is not None:
-            if "_EXT_ERRORS" not in globals():
-                globals()["_EXT_ERRORS"] = Counter("ai_nurse_external_errors_total", "External API error count", ["service", "error_type"])  # type: ignore
-            globals()["_EXT_ERRORS"].labels(
-                service=service, error_type=error_type
-            ).inc()
+            global _EXT_ERRORS
+            if _EXT_ERRORS is None:
+                _EXT_ERRORS = Counter("ai_nurse_external_errors_total", "External API error count", ["service", "error_type"])
+            _EXT_ERRORS.labels(service=service, error_type=error_type).inc()
         else:
             labels = {"service": service, "error_type": error_type}
             if operation:
@@ -166,9 +185,10 @@ def record_gpt_usage(*args, **kwargs) -> None:
 
         tokens = int(tokens)
         if _PROM_AVAILABLE and Counter is not None:
-            if "_OPENAI_TOKENS" not in globals():
-                globals()["_OPENAI_TOKENS"] = Counter("ai_nurse_openai_tokens_total", "OpenAI tokens used", ["model", "type"])  # type: ignore
-            globals()["_OPENAI_TOKENS"].labels(model=model, type=token_type).inc(tokens)
+            global _OPENAI_TOKENS
+            if _OPENAI_TOKENS is None:
+                _OPENAI_TOKENS = Counter("ai_nurse_openai_tokens_total", "OpenAI tokens used", ["model", "type"])
+            _OPENAI_TOKENS.labels(model=model, type=token_type).inc(tokens)
         else:
             _memory_metrics_update(
                 "openai_tokens",

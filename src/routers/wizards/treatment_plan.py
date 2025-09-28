@@ -5,7 +5,7 @@ This shim imports the real router and exposes it for the src-based loader.
 """
 
 try:
-    from routers.wizards.treatment_plan import router  # type: ignore
+    from routers.wizards.treatment_plan import router
 except Exception:
     # Fallback: expose an empty APIRouter so imports don't fail
     from fastapi import APIRouter

@@ -1,0 +1,8 @@
+......................................................................   [100%]
+=============================== warnings summary ===============================
+tests/test_clinical_decision.py::test_interventions_endpoint_imports_app
+  /Users/patrickroebuck/projects/ai-nurse-florence/.venv/lib/python3.10/site-packages/pydantic/fields.py:799: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'init'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.5/migration/
+    warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+70 passed, 1 warning in 3.02s

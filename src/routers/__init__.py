@@ -168,7 +168,7 @@ def get_available_routers() -> Dict[str, APIRouter]:
     # expect a single canonical router object per logical route collection. We prefer
     # the first-seen name when duplicates are detected and log a warning.
     canonical: Dict[str, APIRouter] = {}
-    seen_router_ids = {}
+    seen_router_ids: Dict[int, str] = {}
 
     for name, router in _router_registry.items():
         if router is None:

@@ -4,37 +4,41 @@ Following External Service Integration and Conditional Imports Pattern from codi
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+from types import ModuleType
+import importlib
 from ..utils.config import get_settings, get_educational_banner
 from ..utils.redis_cache import cached
 
 logger = logging.getLogger(__name__)
 
 # Conditional imports following Conditional Imports Pattern
+requests: Optional[ModuleType] = None
+_has_requests = False
 try:
-    import requests
-
+    _requests_mod = importlib.import_module("requests")
+    requests = _requests_mod
     _has_requests = True
-except ImportError:
+except Exception:
     _has_requests = False
     logger.warning("⚠️ Requests not available - using stub responses")
-    requests = None  # type: ignore
 
+httpx: Optional[ModuleType] = None
+_has_httpx = False
 try:
-    import httpx
-
+    _httpx_mod = importlib.import_module("httpx")
+    httpx = _httpx_mod
     _has_httpx = True
 except Exception:
     _has_httpx = False
-    from typing import Any as _Any
-
-    httpx: Optional[_Any] = None
 
 try:
-    from ..utils.prompt_enhancement import enhance_prompt
+    import importlib
 
+    _pe_mod = importlib.import_module("src.utils.prompt_enhancement")
+    enhance_prompt = getattr(_pe_mod, "enhance_prompt")
     _has_prompt_enhancement = True
-except ImportError:
+except Exception:
     _has_prompt_enhancement = False
 
     def enhance_prompt(query: str, context: str) -> tuple[str, bool, Optional[str]]:
@@ -43,12 +47,13 @@ except ImportError:
 
 # Optional MeSH integration
 try:
-    from .mesh_service import map_to_mesh  # type: ignore
-
+    _mesh_mod = importlib.import_module("src.services.mesh_service")
+    map_to_mesh = getattr(_mesh_mod, "map_to_mesh")
     _has_mesh = True
 except Exception:
+    from typing import List, Any as _Any
 
-    def map_to_mesh(query: str, top_k: int = 5) -> list[Dict[str, Any]]:
+    def map_to_mesh(query: str, top_k: int = 5) -> List[Dict[str, _Any]]:
         return []
 
     _has_mesh = False
@@ -126,7 +131,7 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
 
     # Search for PMIDs
     search_url = f"{base_url}esearch.fcgi"
-    search_params = {
+    search_params: dict[str, str | int | float | bool | None] = {
         "db": "pubmed",
         "term": query,
         "retmode": "json",
@@ -135,13 +140,15 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
     }
 
     if _has_httpx and httpx is not None:
-        # runtime check ensures httpx is present; silence static attr errors
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:  # type: ignore[attr-defined]
+        # runtime check ensures httpx is present; narrow attributes for type checkers
+        AsyncClient = getattr(httpx, "AsyncClient")
+        Timeout = getattr(httpx, "Timeout")
+        async with AsyncClient(timeout=Timeout(10.0)) as client:
             search_response = await client.get(search_url, params=search_params)
             search_response.raise_for_status()
             search_data = search_response.json()
     elif _has_requests and requests is not None:
-        search_response = requests.get(search_url, params=search_params, timeout=10)  # type: ignore[attr-defined]
+        search_response = requests.get(search_url, params=search_params, timeout=10)
         search_response.raise_for_status()
         search_data = search_response.json()
     else:
@@ -161,11 +168,13 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
         }
 
         if _has_httpx and httpx is not None:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:  # type: ignore[attr-defined]
+            AsyncClient = getattr(httpx, "AsyncClient")
+            Timeout = getattr(httpx, "Timeout")
+            async with AsyncClient(timeout=Timeout(10.0)) as client:
                 fetch_response = await client.get(fetch_url, params=fetch_params)
                 fetch_response.raise_for_status()
         elif _has_requests and requests is not None:
-            fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)  # type: ignore[attr-defined]
+            fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)
             fetch_response.raise_for_status()
         else:
             raise RuntimeError("No HTTP client available for PubMed fetch")
