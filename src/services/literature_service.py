@@ -19,6 +19,13 @@ except ImportError:
     logger.warning("⚠️ Requests not available - using stub responses")
 
 try:
+    import httpx
+    _has_httpx = True
+except Exception:
+    _has_httpx = False
+    httpx = None
+
+try:
     from ..utils.prompt_enhancement import enhance_prompt
     _has_prompt_enhancement = True
 except ImportError:
@@ -112,9 +119,15 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
         "sort": "relevance"
     }
     
-    search_response = requests.get(search_url, params=search_params, timeout=10)
-    search_response.raise_for_status()
-    search_data = search_response.json()
+    if _has_httpx:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+            search_response = await client.get(search_url, params=search_params)
+            search_response.raise_for_status()
+            search_data = search_response.json()
+    else:
+        search_response = requests.get(search_url, params=search_params, timeout=10)
+        search_response.raise_for_status()
+        search_data = search_response.json()
     
     pmids = search_data.get("esearchresult", {}).get("idlist", [])
     total_results = int(search_data.get("esearchresult", {}).get("count", 0))
@@ -129,8 +142,13 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
             "retmode": "xml"
         }
         
-        fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)
-        fetch_response.raise_for_status()
+        if _has_httpx:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+                fetch_response = await client.get(fetch_url, params=fetch_params)
+                fetch_response.raise_for_status()
+        else:
+            fetch_response = requests.get(fetch_url, params=fetch_params, timeout=10)
+            fetch_response.raise_for_status()
         
         # Parse XML response (simplified)
         articles = [

@@ -140,6 +140,23 @@ export AI_NURSE_DISABLE_REDIS=1
 
 This forces the application to use the in-memory fallback for caching and rate limiting. The project's CI workflow runs a small healthcheck (`scripts/check_redis_health.py`) to ensure future changes do not accidentally make Redis required.
 
+## Testing & development toggles
+
+- AI_NURSE_DISABLE_REDIS
+   - Usage: `export AI_NURSE_DISABLE_REDIS=1`
+   - Effect: Forces the app to use the in-memory fallback for both the caching layer and the rate limiter. Use this in CI or local test runs when Redis is not available or when you want deterministic, fast tests.
+
+- Async-first caching decorator (how it behaves in tests)
+   - The caching decorator used across services is "async-first": it awaits cache lookups for async callables and supports sync callables as well.
+   - For sync callables the decorator returns an immediate in-memory cached value (if available) and schedules a non-blocking background update to Redis to keep the remote cache warm. This background update is best-effort and intentionally non-blocking so tests and sync code don't deadlock.
+   - Implication for tests: set `AI_NURSE_DISABLE_REDIS=1` to avoid timing-dependent background updates, or use the provided test utilities/monkeypatches to force synchronous cache behavior when you need to assert Redis writes.
+
+- Quick troubleshooting
+   - Tests hang on Redis calls? Set `AI_NURSE_DISABLE_REDIS=1` before running pytest.
+   - Pytest complains about missing libpq / pytest-postgresql plugin locally? Either install system `libpq`/`psycopg` or run tests locally with the plugin disabled: `pytest -p no:pytest_postgresql`.
+
+The CI job runs the healthcheck script and the test suite with Redis effectively disabled to keep the CI environment hermetic and fast.
+
 # Rate Limiting
 RATE_LIMIT_PER_MINUTE=60  # Default: 60 requests per minute per IP
 

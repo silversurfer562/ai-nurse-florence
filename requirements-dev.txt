@@ -78,10 +78,12 @@ watchdog>=3.0.0,<3.1.0
 watchfiles>=0.21.0,<0.22.0
 
 # Database Management
-alembic>=1.12.1,<1.13.0
+# Match production pin to avoid dependency resolution issues
+alembic==1.13.1
 
 # Debugging
-pdb++>=0.10.3,<0.11.0
+# Correct package name: pdbpp (not pdb++)
+pdbpp>=0.10.3,<0.11.0
 ipython>=8.17.2,<8.18.0
 
 # Performance Profiling

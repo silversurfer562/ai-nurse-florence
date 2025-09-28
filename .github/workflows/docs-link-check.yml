@@ -1,0 +1,86 @@
+name: Docs link check
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+  pull_request:
+    paths:
+      - 'docs/**'
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip requests
+      - name: Run docs link-check
+        run: |
+          python3 - << 'PY'
+          import re,os
+          root='docs'
+          ignore_dir=os.path.join(root,'archive')
+          pattern=re.compile(r'\]\(([^)]+\.md)\)')
+          missing=[]
+          for dirpath,dirs,files in os.walk(root):
+              if os.path.abspath(dirpath).startswith(os.path.abspath(ignore_dir)):
+                  continue
+              for f in files:
+                  if not f.endswith('.md'): continue
+                  path=os.path.join(dirpath,f)
+                  txt=open(path,'r',encoding='utf-8').read()
+                  for m in pattern.findall(txt):
+                      target=os.path.normpath(os.path.join(dirpath,m))
+                      if not os.path.exists(target):
+                          missing.append((path,m))
+          if missing:
+              print('Found missing doc links:')
+              for p,m in missing:
+                  print(f'{p} -> {m}')
+              raise SystemExit(1)
+          print('No missing internal markdown links found (excluding docs/archive/)')
+          PY
+      - name: Run external link-check (http/https)
+        run: |
+          python3 - << 'PY'
+          import re,os,sys
+          import requests
+          root='docs'
+          ignore_dir=os.path.join(root,'archive')
+          url_pattern=re.compile(r'\((https?://[^)\s]+)\)')
+          failures=[]
+          skip_domains = ['localhost','127.0.0.1','nurse.florence-ai.org','florence-ai.org']
+          for dirpath,dirs,files in os.walk(root):
+              if os.path.abspath(dirpath).startswith(os.path.abspath(ignore_dir)):
+                  continue
+              for f in files:
+                  if not f.endswith('.md'): continue
+                  path=os.path.join(dirpath,f)
+                  txt=open(path,'r',encoding='utf-8').read()
+                  for m in url_pattern.findall(txt):
+                      url=m.strip().rstrip('.,)')
+                      try:
+                          host = requests.utils.urlparse(url).hostname or ''
+                          if any(sd in host for sd in skip_domains):
+                              # skip local/private hosts
+                              continue
+                          # prefer HEAD, fall back to GET
+                          resp = requests.head(url, allow_redirects=True, timeout=10)
+                          if resp.status_code >= 400:
+                              resp = requests.get(url, allow_redirects=True, timeout=10)
+                          if resp.status_code >= 400:
+                              failures.append((path,url,resp.status_code))
+                      except Exception as e:
+                          failures.append((path,url,str(e)))
+          if failures:
+              print('External link check failures:')
+              for p,u,msg in failures:
+                  print(f'{p} -> {u} -> {msg}')
+              sys.exit(1)
+          print('External link-check passed (excluding docs/archive/ and configured skip domains)')
+          PY

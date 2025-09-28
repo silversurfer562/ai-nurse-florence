@@ -4,6 +4,7 @@ Following Service Layer Architecture with ClinicalTrials.gov integration
 """
 
 import logging
+import asyncio
 from typing import Optional, Dict, Any
 from src.utils.config import get_settings, get_educational_banner
 from src.utils.redis_cache import cached
@@ -32,6 +33,14 @@ except Exception:
             raise RuntimeError("requests package not available in this environment")
 
     requests = _RequestsStub()
+
+# Backwards compatibility: prefer httpx when available for async calls
+try:
+    import httpx
+    _has_httpx = True
+except Exception:
+    _has_httpx = False
+    httpx = None
 
 class ClinicalTrialsService:
     """
@@ -283,9 +292,21 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
         "fmt": "json"
     }
     
-    response = requests.get(base_url, params=params, timeout=15)
-    response.raise_for_status()
-    data = response.json()
+    if _has_httpx:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            response = await client.get(base_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+    else:
+        # Synchronous fallback for environments without httpx
+        # Use asyncio.to_thread to avoid blocking the event loop
+        response = await asyncio.to_thread(requests.get, base_url, {
+            "params": params,
+            "timeout": 15
+        })
+        # If the requests stub raises, it will surface here
+        response.raise_for_status()
+        data = response.json()
     
     studies = data.get("StudyFieldsResponse", {}).get("StudyFields", [])
     total_studies = len(studies)
