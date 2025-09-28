@@ -4,29 +4,31 @@ Welcome to the AI Nurse Florence documentation. This directory contains guides a
 
 ## User Documentation
 
-- [Nurse User Guide](nurse_user_guide.md) - A comprehensive guide for healthcare professionals
-- [Quick Start Guide](quick_start.md) - Get started with Florence in minutes
-- [FAQ](faq.md) - Frequently asked questions
-- [Usage Examples](usage_examples.md) - Common use cases and examples
+- [Nurse User Guide](../docs/clinical/nurse_user_guide.md) - A comprehensive guide for healthcare professionals (kept in `docs/clinical/`)
+- [Quick Start Guide](getting-started/quick-start.md) - Get started with Florence in minutes
+- [Clinical Workflows](clinical/clinical-workflows.md) - High-level clinical workflows and examples
 
 ## Developer Documentation
 
 - [Developer Guide](developer_guide.md) - Technical documentation for developers
-- [API Reference](api_reference.md) - Detailed API endpoint documentation
-- [Architecture Overview](architecture.md) - System architecture and design
-- [Prompt Enhancement](prompt_enhancement.md) - Guide to the prompt enhancement system
+- [API Reference](technical/api-documentation.md) - Detailed API endpoint documentation (also available live at `/docs`)
+- [Architecture Overview](technical/architecture-overview.md) - System architecture and design
+- [Prompt Enhancement](technical/prompt_enhancement.md) - Guide to the prompt enhancement system
 
 ## Deployment and Operations
 
-- [Deployment Guide](deployment.md) - Instructions for deploying Florence
-- [Monitoring](monitoring.md) - Setting up and using monitoring tools
-- [Performance Tuning](performance.md) - Optimizing Florence for performance
+- [Deployment Guide](deployment/deployment.md) - Instructions for deploying Florence
+- [Production Checklist](deployment/production-checklist.md) - Pre-deployment and security checklist
+- [Railway Deployment Notes](deployment/railway.md) - Host-specific notes (see `docs/archive/20250928/` for older Railway drafts)
 
 ## Contributing
 
-- [Contributing Guide](contributing.md) - How to contribute to Florence
-- [Code Style Guide](code_style.md) - Coding standards and conventions
-- [Testing Guide](testing.md) - How to write and run tests
+- [Contributing Guide](development/contributing.md) - How to contribute to Florence
+- [Testing Guide](development/testing-strategy.md) - How to write and run tests (consolidated)
+
+## Archived docs
+
+Older or superseded docs have been moved to `docs/archive/20250928/` for review and historical reference. See `docs/archive/20250928/README.md` for details.
 
 ## Support
 
