@@ -1,0 +1,47 @@
+name: Docs link check
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+  pull_request:
+    paths:
+      - 'docs/**'
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip
+      - name: Run docs link-check
+        run: |
+          python3 - << 'PY'
+          import re,os
+          root='docs'
+          ignore_dir=os.path.join(root,'archive')
+          pattern=re.compile(r'\]\(([^)]+\.md)\)')
+          missing=[]
+          for dirpath,dirs,files in os.walk(root):
+              if os.path.abspath(dirpath).startswith(os.path.abspath(ignore_dir)):
+                  continue
+              for f in files:
+                  if not f.endswith('.md'): continue
+                  path=os.path.join(dirpath,f)
+                  txt=open(path,'r',encoding='utf-8').read()
+                  for m in pattern.findall(txt):
+                      target=os.path.normpath(os.path.join(dirpath,m))
+                      if not os.path.exists(target):
+                          missing.append((path,m))
+          if missing:
+              print('Found missing doc links:')
+              for p,m in missing:
+                  print(f'{p} -> {m}')
+              raise SystemExit(1)
+          print('No missing internal markdown links found (excluding docs/archive/)')
+          PY

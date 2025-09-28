@@ -1,5 +1,31 @@
-# Contributing Guide (placeholder)
+# Contributing Guide
+## Development contribution guidelines
 
-This file was consolidated into the archived `docs/archive/20250928/development/` folder during cleanup.
+This guide provides an outline for contributing to AI Nurse Florence.
 
-If you maintain this repository, consider restoring a canonical contributing guide at `docs/development/contributing.md` by merging content from the archive.
+### Code style and workflow
+- Follow the Service Layer Architecture: `services/` for business logic, `routers/` for endpoints, `utils/` for shared utilities.
+- Use feature branches: `feature/<short-desc>` and open a PR against `main`.
+- Run tests and linters before opening a PR:
+	```bash
+	pytest
+	black .
+	flake8 .
+	mypy --ignore-missing-imports .
+	```
+
+### Testing and mocking
+- Use fixtures in `tests/conftest.py` for service mocks.
+- Mock external services (PubMed, MyDisease, ClinicalTrials) with type-safe fixtures that match Pydantic schemas.
+
+### Pull Requests
+- Write a clear PR description with rationale and testing steps.
+- Add reviewers and link related issues.
+- Keep PRs small and focused when possible.
+
+### Code reviews
+- Maintain backwards compatibility for public APIs.
+- Ensure new external calls are cached and have fallbacks when possible.
+
+### Licensing and expectations
+- All contributions are under the project's license. See `LICENSE` for details.
