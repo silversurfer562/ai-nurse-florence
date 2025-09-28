@@ -14,19 +14,27 @@ def test_clinical_decision_service_contract():
         svc.get_nursing_interventions(
             patient_condition="acute heart failure",
             severity="moderate",
-            comorbidities=["diabetes"]
+            comorbidities=["diabetes"],
         )
     )
 
     assert isinstance(result, dict), f"Service must return a dict, got {type(result)}"
 
     assert "nursing_interventions" in result, "Missing nursing_interventions"
-    assert isinstance(result["nursing_interventions"], str), "nursing_interventions must be a string"
-    assert result["nursing_interventions"].strip(), "nursing_interventions should not be empty"
+    assert isinstance(
+        result["nursing_interventions"], str
+    ), "nursing_interventions must be a string"
+    assert result[
+        "nursing_interventions"
+    ].strip(), "nursing_interventions should not be empty"
 
     assert "evidence_level" in result and isinstance(result["evidence_level"], str)
-    assert "safety_considerations" in result and isinstance(result["safety_considerations"], list)
+    assert "safety_considerations" in result and isinstance(
+        result["safety_considerations"], list
+    )
     assert "clinical_context" in result and isinstance(result["clinical_context"], dict)
 
     cc = result["clinical_context"]
-    assert ("comorbidities" in cc) or ("concerns" in cc), "clinical_context should include comorbidities or concerns"
+    assert ("comorbidities" in cc) or (
+        "concerns" in cc
+    ), "clinical_context should include comorbidities or concerns"

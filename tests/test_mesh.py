@@ -7,7 +7,7 @@ from src.services.mesh_service import get_mesh_index, map_to_mesh
 def test_mesh_index_basic_mapping(tmp_path):
     data = {
         "Hypertension": {"mesh_id": "D006973", "synonyms": ["High blood pressure"]},
-        "Diabetes Mellitus": {"mesh_id": "D003920", "synonyms": ["Diabetes"]}
+        "Diabetes Mellitus": {"mesh_id": "D003920", "synonyms": ["Diabetes"]},
     }
     p = tmp_path / "mesh.json"
     p.write_text(json.dumps(data), encoding="utf8")

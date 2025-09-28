@@ -13,6 +13,7 @@ example = {
     "references": [],
 }
 
+
 @router.get(
     "/",
     response_model=DiseaseSummary,
@@ -35,34 +36,36 @@ example = {
     - hypertension
     - multiple sclerosis
     - alzheimer's disease
-    """
+    """,
 )
 def disease_lookup(
     q: str = Query(
-        ..., 
+        ...,
         description="Disease term or ID",
         examples={
             "diabetes": {"summary": "Search for information about diabetes"},
-            "alzheimer": {"summary": "Search for information about Alzheimer's disease"},
-            "copd": {"summary": "Search for information about COPD"}
-        }
+            "alzheimer": {
+                "summary": "Search for information about Alzheimer's disease"
+            },
+            "copd": {"summary": "Search for information about COPD"},
+        },
     )
 ):
     """
     Lookup information about a disease or medical condition.
-    
+
     Args:
         q: The disease term or identifier to search for
-        
+
     Returns:
         A DiseaseSummary object containing name, summary, and references
-        
+
     Examples:
         /api/v1/disease?q=diabetes
         /api/v1/disease?q=asthma
     """
     result = lookup_disease(q)
-    
+
     # If clarification is needed, return a standardized error response
     if result.get("needs_clarification"):
         return create_error_response(
@@ -71,17 +74,15 @@ def disease_lookup(
             code="clarification_needed",
             details={
                 "clarification_question": result["clarification_question"],
-                "original_query": result["query"]
-            }
+                "original_query": result["query"],
+            },
         )
-    
+
     # Add educational banner if missing
     if not result.get("banner"):
         result["banner"] = educational_banner
-        
+
     # Add HATEOAS link to the advanced search wizard
-    links = {
-        "advanced_search": f"/api/v1/wizards/disease-search/start?topic={q}"
-    }
-    
+    links = {"advanced_search": f"/api/v1/wizards/disease-search/start?topic={q}"}
+
     return create_success_response(result, links=links)

@@ -13,7 +13,9 @@ async def test_disease_fallback_no_requests(monkeypatch):
     service = disease_service.create_disease_service()
     assert service is not None
 
-    maybe = service.lookup_disease("hypertension", include_symptoms=False, include_treatments=False)
+    maybe = service.lookup_disease(
+        "hypertension", include_symptoms=False, include_treatments=False
+    )
     if inspect.isawaitable(maybe):
         result = await maybe
     else:

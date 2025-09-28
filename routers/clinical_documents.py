@@ -7,28 +7,41 @@ from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any
 
-from services.clinical_templates import (
-    clinical_template_engine, 
-    TemplateContext
-)
+from services.clinical_templates import clinical_template_engine, TemplateContext
 
 router = APIRouter(prefix="/api/v2/clinical/documents", tags=["Clinical Documents"])
 
+
 class DocumentGenerationRequest(BaseModel):
     """Request model for document generation"""
+
     template_name: str = Field(..., description="Name of the template to use")
-    nurse_name: Optional[str] = Field(None, description="Name of the nurse generating the document")
+    nurse_name: Optional[str] = Field(
+        None, description="Name of the nurse generating the document"
+    )
     nurse_unit: Optional[str] = Field(None, description="Hospital unit/department")
     patient_name: Optional[str] = Field(None, description="Patient's name")
-    patient_id: Optional[str] = Field(None, description="Patient ID or medical record number")
+    patient_id: Optional[str] = Field(
+        None, description="Patient ID or medical record number"
+    )
     patient_age: Optional[int] = Field(None, description="Patient's age")
-    primary_diagnosis: Optional[str] = Field(None, description="Primary medical diagnosis")
-    clinical_data: Dict[str, Any] = Field(default_factory=dict, description="Clinical data (vitals, assessments, etc.)")
-    evidence_sources: List[str] = Field(default_factory=list, description="Evidence sources to cite")
-    custom_fields: Dict[str, Any] = Field(default_factory=dict, description="Additional template-specific data")
+    primary_diagnosis: Optional[str] = Field(
+        None, description="Primary medical diagnosis"
+    )
+    clinical_data: Dict[str, Any] = Field(
+        default_factory=dict, description="Clinical data (vitals, assessments, etc.)"
+    )
+    evidence_sources: List[str] = Field(
+        default_factory=list, description="Evidence sources to cite"
+    )
+    custom_fields: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional template-specific data"
+    )
+
 
 class DocumentResponse(BaseModel):
     """Response model for generated documents"""
+
     success: bool
     document_type: Optional[str] = None
     title: Optional[str] = None
@@ -39,18 +52,23 @@ class DocumentResponse(BaseModel):
     error: Optional[str] = None
     required_fields: Optional[List[str]] = None
 
+
 class TemplateListResponse(BaseModel):
     """Response model for template listing"""
+
     templates: List[Dict[str, Any]]
     categories: List[str]
 
+
 @router.get("/templates", response_model=TemplateListResponse)
 def list_document_templates(
-    category: Optional[str] = Query(None, description="Filter by category (communication, education, care_planning)")
+    category: Optional[str] = Query(
+        None, description="Filter by category (communication, education, care_planning)"
+    )
 ):
     """
     List all available clinical document templates
-    
+
     **Use Cases:**
     - SBAR reports for physician communication
     - Patient education handouts
@@ -61,19 +79,19 @@ def list_document_templates(
     try:
         templates = clinical_template_engine.list_templates(category)
         categories = list(set(t["category"] for t in templates))
-        
-        return TemplateListResponse(
-            templates=templates,
-            categories=categories
-        )
+
+        return TemplateListResponse(templates=templates, categories=categories)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to list templates: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to list templates: {str(e)}"
+        )
+
 
 @router.get("/templates/{template_name}/requirements")
 def get_template_requirements(template_name: str):
     """
     Get requirements and field descriptions for a specific template
-    
+
     **Purpose:** Helps nurses understand what information is needed before generating a document
     """
     try:
@@ -81,24 +99,27 @@ def get_template_requirements(template_name: str):
         return {
             "success": True,
             "template": requirements,
-            "example_usage": _get_template_example(template_name)
+            "example_usage": _get_template_example(template_name),
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get requirements: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get requirements: {str(e)}"
+        )
+
 
 @router.post("/generate", response_model=DocumentResponse)
 def generate_clinical_document(request: DocumentGenerationRequest):
     """
     Generate a clinical document from a template
-    
+
     **Continuing Education Focus:**
     - Provides structured, evidence-based templates
     - Supports work-related documentation needs
     - Generates professional communication formats
     - Creates editable drafts for review before use
-    
+
     **Document Types Available:**
     - **SBAR Reports:** Professional communication to physicians
     - **Patient Education:** Handouts and educational materials
@@ -117,20 +138,23 @@ def generate_clinical_document(request: DocumentGenerationRequest):
             primary_diagnosis=request.primary_diagnosis,
             clinical_data=request.clinical_data,
             evidence_sources=request.evidence_sources,
-            custom_fields=request.custom_fields
+            custom_fields=request.custom_fields,
         )
-        
+
         # Generate document
         result = clinical_template_engine.generate_document(
             template_name=request.template_name,
             context=context,
-            custom_data=request.custom_fields
+            custom_data=request.custom_fields,
         )
-        
+
         return DocumentResponse(**result)
-        
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Document generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Document generation failed: {str(e)}"
+        )
+
 
 @router.post("/sbar-report")
 def generate_sbar_report(
@@ -143,15 +167,15 @@ def generate_sbar_report(
     patient_id: Optional[str] = Body(None, description="Patient ID"),
     background_info: Optional[str] = Body(None, description="Relevant background"),
     vitals: Optional[Dict[str, Any]] = Body(None, description="Current vital signs"),
-    urgent: bool = Body(False, description="Mark as urgent communication")
+    urgent: bool = Body(False, description="Mark as urgent communication"),
 ):
     """
     **Quick SBAR Report Generator**
-    
-    Generate a professional SBAR (Situation, Background, Assessment, Recommendation) 
-    report for physician communication. This supports evidence-based nursing practice 
+
+    Generate a professional SBAR (Situation, Background, Assessment, Recommendation)
+    report for physician communication. This supports evidence-based nursing practice
     and continuing education in professional communication.
-    
+
     **Example Usage:**
     ```json
     {
@@ -162,48 +186,53 @@ def generate_sbar_report(
     }
     ```
     """
-    
+
     custom_data = {
         "situation_description": situation_description,
         "assessment_findings": assessment_findings,
         "recommendations": recommendations,
         "background_info": background_info,
         "urgent_actions": "**URGENT**" if urgent else "",
-        "recipient": "Attending Physician"
+        "recipient": "Attending Physician",
     }
-    
+
     if vitals:
         custom_data["clinical_data"] = {"vitals": vitals}
-    
+
     request = DocumentGenerationRequest(
         template_name="sbar_standard",
         nurse_name=nurse_name,
         nurse_unit=nurse_unit,
         patient_name=patient_name,
         patient_id=patient_id,
-        custom_fields=custom_data
+        custom_fields=custom_data,
     )
-    
+
     return generate_clinical_document(request)
+
 
 @router.post("/patient-education")
 def generate_patient_education(
     education_topic: str = Body(..., description="Topic for patient education"),
-    main_information: str = Body(..., description="Key information patient needs to know"),
+    main_information: str = Body(
+        ..., description="Key information patient needs to know"
+    ),
     instructions: str = Body(..., description="Specific instructions for patient"),
     warning_signs: str = Body(..., description="Warning signs to watch for"),
     contact_criteria: str = Body(..., description="When to contact healthcare team"),
     nurse_name: Optional[str] = Body(None, description="Your name"),
     nurse_unit: Optional[str] = Body(None, description="Your unit"),
-    additional_resources: Optional[str] = Body(None, description="Additional resources or websites")
+    additional_resources: Optional[str] = Body(
+        None, description="Additional resources or websites"
+    ),
 ):
     """
     **Patient Education Material Generator**
-    
-    Create professional patient education handouts that nurses can edit 
-    before providing to patients or families. Supports continuing education 
+
+    Create professional patient education handouts that nurses can edit
+    before providing to patients or families. Supports continuing education
     in patient teaching and health literacy.
-    
+
     **Example Usage:**
     ```json
     {
@@ -215,24 +244,25 @@ def generate_patient_education(
     }
     ```
     """
-    
+
     custom_data = {
         "education_topic": education_topic,
         "main_information": main_information,
         "instructions": instructions,
         "warning_signs": warning_signs,
         "contact_criteria": contact_criteria,
-        "additional_resources": additional_resources
+        "additional_resources": additional_resources,
     }
-    
+
     request = DocumentGenerationRequest(
         template_name="patient_education_standard",
         nurse_name=nurse_name,
         nurse_unit=nurse_unit,
-        custom_fields=custom_data
+        custom_fields=custom_data,
     )
-    
+
     return generate_clinical_document(request)
+
 
 @router.post("/physician-email")
 def generate_physician_email(
@@ -245,15 +275,15 @@ def generate_physician_email(
     physician_name: Optional[str] = Body(None, description="Physician's name"),
     patient_id: Optional[str] = Body(None, description="Patient ID"),
     actions_taken: Optional[str] = Body(None, description="Actions already taken"),
-    vitals: Optional[Dict[str, Any]] = Body(None, description="Current vital signs")
+    vitals: Optional[Dict[str, Any]] = Body(None, description="Current vital signs"),
 ):
     """
     **Professional Email to Physician**
-    
+
     Generate professional email communication to physicians or other providers.
-    Supports continuing education in interprofessional communication and 
+    Supports continuing education in interprofessional communication and
     evidence-based collaborative care.
-    
+
     **Example Usage:**
     ```json
     {
@@ -264,52 +294,59 @@ def generate_physician_email(
     }
     ```
     """
-    
+
     custom_data = {
         "clinical_update": clinical_update,
         "current_assessment": current_assessment,
         "concerns_questions": concerns_questions,
         "physician_name": physician_name,
         "actions_taken": actions_taken,
-        "email_subject": f"Patient Update - {patient_name}"
+        "email_subject": f"Patient Update - {patient_name}",
     }
-    
+
     if vitals:
         custom_data["clinical_data"] = {"vitals": vitals}
-    
+
     request = DocumentGenerationRequest(
         template_name="physician_email",
         nurse_name=nurse_name,
         nurse_unit=nurse_unit,
         patient_name=patient_name,
         patient_id=patient_id,
-        custom_fields=custom_data
+        custom_fields=custom_data,
     )
-    
+
     return generate_clinical_document(request)
+
 
 @router.post("/continuing-education/qa")
 def generate_continuing_education_response(
-    clinical_question: str = Body(..., description="Clinical question for continuing education"),
+    clinical_question: str = Body(
+        ..., description="Clinical question for continuing education"
+    ),
     evidence_answer: str = Body(..., description="Evidence-based answer"),
     key_points: str = Body(..., description="Key clinical points to remember"),
     practical_application: str = Body(..., description="How to apply in practice"),
     nurse_name: Optional[str] = Body(None, description="Your name"),
-    evidence_sources: List[str] = Body(default_factory=list, description="Evidence sources"),
-    related_considerations: Optional[str] = Body(None, description="Additional considerations")
+    evidence_sources: List[str] = Body(
+        default_factory=list, description="Evidence sources"
+    ),
+    related_considerations: Optional[str] = Body(
+        None, description="Additional considerations"
+    ),
 ):
     """
     **Continuing Education Q&A Response**
-    
+
     Generate structured responses to clinical questions for continuing education.
     Supports evidence-based practice development and work-related learning.
-    
-    **Purpose:** 
+
+    **Purpose:**
     - Answer work-related clinical questions as they arise
     - Provide evidence-based information for decision-making
     - Support continuing education requirements
     - Create reference materials for future use
-    
+
     **Example Usage:**
     ```json
     {
@@ -320,23 +357,24 @@ def generate_continuing_education_response(
     }
     ```
     """
-    
+
     custom_data = {
         "clinical_question": clinical_question,
         "evidence_answer": evidence_answer,
         "key_points": key_points,
         "practical_application": practical_application,
-        "related_considerations": related_considerations
+        "related_considerations": related_considerations,
     }
-    
+
     request = DocumentGenerationRequest(
         template_name="continuing_ed_qa",
         nurse_name=nurse_name,
         evidence_sources=evidence_sources,
-        custom_fields=custom_data
+        custom_fields=custom_data,
     )
-    
+
     return generate_clinical_document(request)
+
 
 def _get_template_example(template_name: str) -> Dict[str, Any]:
     """Get example usage for a template"""
@@ -347,8 +385,8 @@ def _get_template_example(template_name: str) -> Dict[str, Any]:
                 "patient_name": "John Smith",
                 "situation_description": "Patient experiencing increased shortness of breath post-surgery",
                 "assessment_findings": "Oxygen saturation 88%, increased work of breathing, crackles in bilateral lower lobes",
-                "recommendations": "Request chest X-ray, consider diuretic therapy, oxygen therapy initiated"
-            }
+                "recommendations": "Request chest X-ray, consider diuretic therapy, oxygen therapy initiated",
+            },
         },
         "patient_education_standard": {
             "description": "Patient education handout",
@@ -357,20 +395,23 @@ def _get_template_example(template_name: str) -> Dict[str, Any]:
                 "main_information": "Proper wound care prevents infection and promotes healing",
                 "instructions": "Keep wound clean and dry, change dressing daily as shown",
                 "warning_signs": "Increased redness, warmth, swelling, or discharge from wound",
-                "contact_criteria": "Call surgeon if temperature >101°F or wound shows signs of infection"
-            }
+                "contact_criteria": "Call surgeon if temperature >101°F or wound shows signs of infection",
+            },
         },
         "physician_email": {
             "description": "Professional email to physician",
             "example_data": {
                 "clinical_update": "Patient developed new onset chest pain at 1400 hours",
                 "current_assessment": "Pain 7/10, crushing quality, radiating to left arm, patient diaphoretic",
-                "concerns_questions": "Please evaluate for possible acute coronary syndrome"
-            }
-        }
+                "concerns_questions": "Please evaluate for possible acute coronary syndrome",
+            },
+        },
     }
-    
-    return examples.get(template_name, {"description": "Template example not available"})
+
+    return examples.get(
+        template_name, {"description": "Template example not available"}
+    )
+
 
 # Add banner for continuing education focus
 CONTINUING_EDUCATION_BANNER = """
@@ -380,7 +421,7 @@ CONTINUING_EDUCATION_BANNER = """
 This tool provides template-based document generation to support:
 ✓ Work-related clinical questions and scenarios
 ✓ Professional communication with healthcare team
-✓ Patient education material development  
+✓ Patient education material development
 ✓ Evidence-based nursing documentation
 ✓ Continuing education and skill development
 

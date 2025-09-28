@@ -10,12 +10,22 @@ if LIVE:
     except Exception:
         trials_live = None
 
-def search_trials(condition: str, status: Optional[str] = None, max_results: int = 10) -> Dict[str, Any]:
+
+def search_trials(
+    condition: str, status: Optional[str] = None, max_results: int = 10
+) -> Dict[str, Any]:
     banner = "Draft for clinician review — not medical advice. No PHI stored."
     if LIVE and trials_live and hasattr(trials_live, "search"):
         try:
-            results: List[Dict[str, Any]] = trials_live.search(condition=condition, status=status, max_results=max_results)
-            return {"banner": banner, "condition": condition, "status": status, "results": results}
+            results: List[Dict[str, Any]] = trials_live.search(
+                condition=condition, status=status, max_results=max_results
+            )
+            return {
+                "banner": banner,
+                "condition": condition,
+                "status": status,
+                "results": results,
+            }
         except Exception:
             pass
     return {

@@ -3,7 +3,7 @@ ChatGPT Store integration tests
 Following Testing Patterns from AI Nurse Florence coding instructions
 """
 
-# IMPLEMENTATION NEEDED  
+# IMPLEMENTATION NEEDED
 # TODO: Implement OAuth2 + JWT authentication tests
 # TODO: Add professional license validation tests
 # TODO: Create institution integration tests

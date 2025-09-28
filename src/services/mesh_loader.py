@@ -3,6 +3,7 @@
 Provides a fallback JSON loader for MeSH index data used by the disease service.
 This keeps external dependencies optional and testable.
 """
+
 import json
 from pathlib import Path
 from typing import Dict, Optional
@@ -11,7 +12,7 @@ _MESH_INDEX: Optional[Dict[str, Dict]] = None
 
 
 def _default_mesh_path() -> Path:
-    return Path(__file__).resolve().parents[1] / 'data' / 'mesh_stub.json'
+    return Path(__file__).resolve().parents[1] / "data" / "mesh_stub.json"
 
 
 def load_mesh_index(path: Optional[str] = None) -> Dict[str, Dict]:
@@ -25,7 +26,7 @@ def load_mesh_index(path: Optional[str] = None) -> Dict[str, Dict]:
         _MESH_INDEX = {}
         return _MESH_INDEX
 
-    with p.open('r', encoding='utf-8') as fh:
+    with p.open("r", encoding="utf-8") as fh:
         data = json.load(fh)
 
     # Expecting mapping of mesh_id -> metadata

@@ -11,20 +11,21 @@ from datetime import datetime
 from ..utils.config import get_settings, get_educational_banner
 from ..utils.exceptions import ExternalServiceException
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 class BaseService(ABC, Generic[T]):
     """
     Base service class implementing Service Layer Architecture patterns
     Following copilot-instructions.md Service Layer Architecture
     """
-    
+
     def __init__(self, service_name: str):
         self.service_name = service_name
         self.logger = logging.getLogger(f"ai_nurse_florence.services.{service_name}")
         self.settings = get_settings()
         self.educational_banner = get_educational_banner()
-    
+
     @abstractmethod
     def _process_request(self, *args, **kwargs) -> T:
         """
@@ -32,7 +33,7 @@ class BaseService(ABC, Generic[T]):
         Following Service Layer Architecture pattern
         """
         pass
-    
+
     def _create_response(self, data: Any, query: str, **kwargs) -> Dict[str, Any]:
         """
         Create standardized service response with educational banner
@@ -44,15 +45,17 @@ class BaseService(ABC, Generic[T]):
             "educational_banner": self.educational_banner,
             "service": self.service_name,
             "timestamp": datetime.now().isoformat(),
-            **kwargs
+            **kwargs,
         }
-    
-    def _handle_external_service_error(self, error: Exception, fallback_data: Any = None) -> Dict[str, Any]:
+
+    def _handle_external_service_error(
+        self, error: Exception, fallback_data: Any = None
+    ) -> Dict[str, Any]:
         """
         Handle external service errors with fallback following Conditional Imports Pattern
         """
         self.logger.warning(f"{self.service_name} external service error: {error}")
-        
+
         if fallback_data is not None:
             return {
                 "data": fallback_data,
@@ -61,12 +64,12 @@ class BaseService(ABC, Generic[T]):
                     "primary_service": self.service_name,
                     "status": "degraded",
                     "fallback_used": True,
-                    "error": str(error)
-                }
+                    "error": str(error),
+                },
             }
-        
+
         raise ExternalServiceException(
             f"{self.service_name} temporarily unavailable",
             self.service_name,
-            fallback_available=False
+            fallback_available=False,
         )

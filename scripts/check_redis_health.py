@@ -5,6 +5,7 @@ This script sets AI_NURSE_DISABLE_REDIS=1 and ensures that
 hang or return an active client. Exit code is non-zero on failure so
 CI will fail loudly when a change makes Redis required.
 """
+
 import os
 import sys
 import asyncio
@@ -24,12 +25,16 @@ async def _check():
         # run with a short timeout; if get_redis_client blocks, fail
         client = await asyncio.wait_for(get_redis_client(), timeout=3)
         if client:
-            print("ERROR: get_redis_client() returned a client while AI_NURSE_DISABLE_REDIS=1")
+            print(
+                "ERROR: get_redis_client() returned a client while AI_NURSE_DISABLE_REDIS=1"
+            )
             return 3
         print("OK: get_redis_client() returned falsy while Redis disabled")
         return 0
     except asyncio.TimeoutError:
-        print("ERROR: get_redis_client() timed out — Redis appears to be required or the call hung")
+        print(
+            "ERROR: get_redis_client() timed out — Redis appears to be required or the call hung"
+        )
         return 4
     except Exception as e:
         # Accept exceptions as a sign of graceful degradation if they are expected

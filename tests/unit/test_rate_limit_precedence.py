@@ -20,6 +20,7 @@ def test_middleware_config_overrides_global_flag():
 
     # Clear in-memory rate limit state to avoid cross-test pollution
     from src.utils import rate_limit as _rl
+
     _rl._memory_rate_limit.clear()
 
     app = FastAPI()

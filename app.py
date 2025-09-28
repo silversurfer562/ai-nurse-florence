@@ -16,25 +16,28 @@ from fastapi.responses import HTMLResponse
 
 # Configure logging following coding instructions
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # Import configuration following Configuration Management pattern
 try:
     from src.utils.config import get_settings
+
     settings = get_settings()
     logger.info(f"Configuration loaded: {settings.APP_NAME} v{settings.APP_VERSION}")
 except Exception as e:
     logger.error(f"Configuration failed: {e}")
+
     # Fallback configuration
     class FallbackSettings:
         APP_NAME = "AI Nurse Florence"
         APP_VERSION = "2.1.0"
         ALLOWED_ORIGINS = ["http://localhost:3000"]
         EDUCATIONAL_BANNER = "Educational purposes only"
+
     settings = FallbackSettings()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,40 +49,46 @@ async def lifespan(app: FastAPI):
     logger.info("=== AI NURSE FLORENCE STARTUP ===")
     logger.info(f"App: {getattr(settings, 'APP_NAME', 'AI Nurse Florence')}")
     logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.1.0')}")
-    logger.info(f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}")
+    logger.info(
+        f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}"
+    )
     logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}")
-    logger.info(f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}...")
+    logger.info(
+        f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}..."
+    )
     logger.info("Healthcare AI assistant ready - Educational use only")
 
     # Log effective base URL for observability and populate OpenAPI servers
     effective_base = None
     try:
         from src.utils.config import get_base_url
+
         effective_base = get_base_url()
         logger.info(f"Effective BASE_URL: {effective_base}")
     except Exception:
         logger.debug("Could not determine effective BASE_URL at startup")
 
     try:
-        if hasattr(app, 'openapi_schema') and app.openapi_schema is not None:
+        if hasattr(app, "openapi_schema") and app.openapi_schema is not None:
             if effective_base:
-                app.openapi_schema.setdefault('servers', [])
-                app.openapi_schema['servers'].append({"url": effective_base})
+                app.openapi_schema.setdefault("servers", [])
+                app.openapi_schema["servers"].append({"url": effective_base})
         else:
             # Force generation of openapi schema then set servers
             schema = app.openapi()
             if effective_base:
-                schema.setdefault('servers', [])
-                schema['servers'].append({"url": effective_base})
+                schema.setdefault("servers", [])
+                schema["servers"].append({"url": effective_base})
             app.openapi_schema = schema
     except Exception:
-        logger.debug('Failed to populate OpenAPI servers with BASE_URL')
+        logger.debug("Failed to populate OpenAPI servers with BASE_URL")
 
     try:
         yield
     finally:
         # Shutdown
         logger.info("Application shutdown complete")
+
 
 # Create FastAPI app following coding instructions
 app = FastAPI(
@@ -90,7 +99,7 @@ app = FastAPI(
     # servers list will be populated at startup with the effective base URL
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 # Create API router following Router Organization pattern
@@ -100,7 +109,7 @@ api_router = APIRouter(prefix="/api/v1")
 # CORS Configuration following Security & Middleware Stack
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=getattr(settings, 'ALLOWED_ORIGINS', ["http://localhost:3000"]),
+    allow_origins=getattr(settings, "ALLOWED_ORIGINS", ["http://localhost:3000"]),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -109,18 +118,23 @@ app.add_middleware(
 # Rate Limiting Middleware - conditionally loaded
 try:
     from src.utils.rate_limit import RateLimiter
-    if getattr(settings, 'RATE_LIMIT_ENABLED', True):
+
+    if getattr(settings, "RATE_LIMIT_ENABLED", True):
         # Define paths that are exempt from rate limiting
-        exempt_paths = ["/docs", "/redoc", "/openapi.json", "/api/v1/health", "/metrics"]
-        
+        exempt_paths = [
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+            "/api/v1/health",
+            "/metrics",
+        ]
+
         # Get rate limit value from settings
-        rate_limit = getattr(settings, 'RATE_LIMIT_REQUESTS', 60) 
-        
+        rate_limit = getattr(settings, "RATE_LIMIT_REQUESTS", 60)
+
         # Add RateLimiter middleware
         app.add_middleware(
-            RateLimiter,
-            requests_per_minute=rate_limit,
-            exempt_paths=exempt_paths
+            RateLimiter, requests_per_minute=rate_limit, exempt_paths=exempt_paths
         )
         logger.info(f"Rate limiting enabled: {rate_limit} requests per minute")
 except ImportError:
@@ -130,11 +144,11 @@ except ImportError:
 ROUTERS_LOADED = {}
 try:
     from src.routers import get_available_routers, get_router_status
-    
+
     # Get available routers following Conditional Imports Pattern
     available_routers = get_available_routers()
     router_status = get_router_status()
-    
+
     # Include routers onto `api_router` (it already has prefix='/api/v1') to avoid duplicate registration
     for router_name, router in available_routers.items():
         try:
@@ -142,7 +156,18 @@ try:
             api_router.include_router(router)
 
             # For wizard routers, also register a plural alias under '/wizards' (api_router prefix will make it '/api/v1/wizards')
-            if 'wizard' in getattr(router, 'prefix', '') or router_name.startswith('nursing') or router_name in ['treatment_plan', 'sbar_report', 'medication_reconciliation', 'care_plan', 'discharge_planning']:
+            if (
+                "wizard" in getattr(router, "prefix", "")
+                or router_name.startswith("nursing")
+                or router_name
+                in [
+                    "treatment_plan",
+                    "sbar_report",
+                    "medication_reconciliation",
+                    "care_plan",
+                    "discharge_planning",
+                ]
+            ):
                 try:
                     api_router.include_router(router, prefix="/wizards")
                 except Exception:
@@ -153,12 +178,13 @@ try:
         except Exception as e:
             logger.warning(f"Failed to register router {router_name}: {e}")
             ROUTERS_LOADED[router_name] = False
-    
+
     logger.info(f"Routers loaded: {sum(ROUTERS_LOADED.values())}/{len(router_status)}")
-    
+
 except Exception as e:
     logger.warning(f"Router loading failed: {e}")
     ROUTERS_LOADED = {}
+
 
 # Root endpoint
 @app.get("/")
@@ -166,66 +192,72 @@ async def root():
     """Root endpoint with application information."""
     return {
         "service": "ai-nurse-florence",
-        "version": getattr(settings, 'APP_VERSION', '2.1.0'),
+        "version": getattr(settings, "APP_VERSION", "2.1.0"),
         "description": "Healthcare AI assistant - Educational use only",
-        "banner": getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only'),
+        "banner": getattr(settings, "EDUCATIONAL_BANNER", "Educational purposes only"),
         "docs": "/docs",
         "health": "/api/v1/health",
         "routers_loaded": len(ROUTERS_LOADED),
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+
 
 # Enhanced health endpoint at root level
 @app.get("/api/v1/health")
 async def health_check():
     """Enhanced health check with router status."""
-    
+
     # Count routes by category
-    total_routes = len([r for r in app.routes if hasattr(r, 'path')])
-    
+    total_routes = len([r for r in app.routes if hasattr(r, "path")])
+
     # Categorize routes
-    wizard_routes = len([r for r in app.routes if 'wizard' in getattr(r, 'path', '')])
-    medical_routes = len([r for r in app.routes if any(term in getattr(r, 'path', '') for term in ['disease', 'literature', 'clinical'])])
-    
+    wizard_routes = len([r for r in app.routes if "wizard" in getattr(r, "path", "")])
+    medical_routes = len(
+        [
+            r
+            for r in app.routes
+            if any(
+                term in getattr(r, "path", "")
+                for term in ["disease", "literature", "clinical"]
+            )
+        ]
+    )
+
     # Service status
     try:
         from src.services import get_available_services
+
         services = get_available_services()
     except Exception:
         services = {"error": "Service registry unavailable"}
-    
+
     health_data = {
         "status": "healthy",
         "service": "ai-nurse-florence",
-        "version": getattr(settings, 'APP_VERSION', '2.1.0'),
-        "banner": getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only'),
+        "version": getattr(settings, "APP_VERSION", "2.1.0"),
+        "banner": getattr(settings, "EDUCATIONAL_BANNER", "Educational purposes only"),
         "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "development",
         "routes": {
             "total": total_routes,
             "wizards": wizard_routes,
             "medical": medical_routes,
-            "routers_loaded": ROUTERS_LOADED
+            "routers_loaded": ROUTERS_LOADED,
         },
         "services": services,
         "configuration": {
-            "live_services": getattr(settings, 'USE_LIVE_SERVICES', False),
-            "educational_mode": True
+            "live_services": getattr(settings, "USE_LIVE_SERVICES", False),
+            "educational_mode": True,
         },
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
-    
+
     return health_data
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
 
 # NOTE: Router registration is handled above by including routers onto `api_router`.
 # The previous duplicate registration block was removed to avoid double-including routers
@@ -241,18 +273,22 @@ os.makedirs("templates", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
 # Serve main healthcare interface
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def serve_frontend(request: Request):
     """Serve the main AI Nurse Florence healthcare interface."""
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 # Health dashboard redirect
 @app.get("/dashboard", include_in_schema=False)
 async def dashboard_redirect():
     """Redirect to main interface."""
     from fastapi.responses import RedirectResponse
+
     return RedirectResponse(url="/")
+
 
 # Register API router with main app following Router Organization
 app.include_router(api_router)

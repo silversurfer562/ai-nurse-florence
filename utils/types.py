@@ -4,6 +4,7 @@ Common type definitions for use throughout the application.
 This module defines reusable type annotations and protocols
 to ensure consistent typing across the codebase.
 """
+
 from typing import Dict, List, Any, Optional, TypeVar, Protocol, TypedDict
 
 # Simple type aliases
@@ -12,11 +13,13 @@ QueryParams = Dict[str, str]
 Headers = Dict[str, str]
 
 # Type variable for generic functions
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 # Service result types
 class ReferenceDict(TypedDict):
     """A reference to an external source."""
+
     title: str
     url: str
     source: str
@@ -24,6 +27,7 @@ class ReferenceDict(TypedDict):
 
 class DiseaseResult(TypedDict):
     """Result of a disease lookup."""
+
     banner: str
     query: str
     name: str
@@ -33,6 +37,7 @@ class DiseaseResult(TypedDict):
 
 class PubMedArticleDict(TypedDict):
     """A PubMed article result."""
+
     pmid: Optional[str]
     title: str
     abstract: Optional[str]
@@ -41,6 +46,7 @@ class PubMedArticleDict(TypedDict):
 
 class PubMedResult(TypedDict):
     """Result of a PubMed search."""
+
     banner: str
     query: str
     results: List[PubMedArticleDict]
@@ -49,6 +55,7 @@ class PubMedResult(TypedDict):
 
 class MedlinePlusResult(TypedDict):
     """Result of a MedlinePlus lookup."""
+
     topic: str
     summary: str
     references: List[ReferenceDict]
@@ -56,6 +63,7 @@ class MedlinePlusResult(TypedDict):
 
 class TrialLocationDict(TypedDict):
     """A clinical trial location."""
+
     facility: str
     city: str
     state: Optional[str]
@@ -64,6 +72,7 @@ class TrialLocationDict(TypedDict):
 
 class ClinicalTrialDict(TypedDict):
     """A clinical trial result."""
+
     nct_id: Optional[str]
     title: str
     status: Optional[str]
@@ -74,6 +83,7 @@ class ClinicalTrialDict(TypedDict):
 
 class TrialsResult(TypedDict):
     """Result of a clinical trials search."""
+
     banner: str
     condition: str
     status: Optional[str]
@@ -83,6 +93,7 @@ class TrialsResult(TypedDict):
 # Protocol definitions for service interfaces
 class DiseaseService(Protocol):
     """Protocol for disease information services."""
+
     def __call__(self, term: str) -> DiseaseResult:
         """Look up disease information."""
         ...
@@ -90,6 +101,7 @@ class DiseaseService(Protocol):
 
 class PubMedService(Protocol):
     """Protocol for PubMed search services."""
+
     def __call__(self, query: str, max_results: int = 10) -> PubMedResult:
         """Search PubMed for articles."""
         ...
@@ -97,6 +109,7 @@ class PubMedService(Protocol):
 
 class MedlinePlusService(Protocol):
     """Protocol for MedlinePlus services."""
+
     def __call__(self, topic: str) -> MedlinePlusResult:
         """Get a summary from MedlinePlus."""
         ...
@@ -104,6 +117,7 @@ class MedlinePlusService(Protocol):
 
 class TrialsService(Protocol):
     """Protocol for clinical trials services."""
+
     def __call__(
         self, condition: str, status: Optional[str] = None, max_results: int = 10
     ) -> TrialsResult:
@@ -113,6 +127,7 @@ class TrialsService(Protocol):
 
 class ReadabilityService(Protocol):
     """Protocol for readability analysis services."""
+
     def __call__(self, text: str) -> Dict[str, Any]:
         """Analyze the readability of text."""
         ...
@@ -120,6 +135,7 @@ class ReadabilityService(Protocol):
 
 class SummarizeService(Protocol):
     """Protocol for text summarization services."""
+
     def __call__(self, text: str, model: str = "gpt-4o-mini", **kwargs: Any) -> str:
         """Summarize text."""
         ...

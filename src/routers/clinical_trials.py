@@ -16,9 +16,10 @@ router = APIRouter(
     responses={
         200: {"description": "Clinical trials search completed successfully"},
         422: {"description": "Query needs clarification"},
-        500: {"description": "External service error"}
-    }
+        500: {"description": "External service error"},
+    },
 )
+
 
 class ClinicalTrialsResponse(BaseModel):
     banner: str = Field(default_factory=get_educational_banner)
@@ -30,19 +31,27 @@ class ClinicalTrialsResponse(BaseModel):
     sources: Optional[List[str]] = None
     needs_clarification: Optional[bool] = False
 
+
 @router.get("/search", response_model=ClinicalTrialsResponse)
 async def search_trials(
-    condition: Optional[str] = Query(None, 
-                          description="Medical condition for clinical trials search",
-                          examples=["diabetes", "hypertension", "cancer treatment"]),
+    condition: Optional[str] = Query(
+        None,
+        description="Medical condition for clinical trials search",
+        examples=["diabetes", "hypertension", "cancer treatment"],
+    ),
     q: Optional[str] = Query(None, description="Alias for condition"),
-    max_studies: int = Query(10, ge=1, le=50, description="Maximum number of studies to return")
+    max_studies: int = Query(
+        10, ge=1, le=50, description="Maximum number of studies to return"
+    ),
 ):
     # Support 'q' query param as an alias for condition for backward compatibility
     if not condition and q:
         condition = q
     if not condition:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Missing required query parameter 'condition' or 'q'")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Missing required query parameter 'condition' or 'q'",
+        )
     """
     Search clinical trials following External Service Integration pattern.
     
@@ -51,23 +60,23 @@ async def search_trials(
     """
     try:
         result = await search_clinical_trials(condition, max_studies=max_studies)
-        
+
         if result.get("needs_clarification"):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail={
                     "message": "Query needs clarification",
                     "clarification_question": result.get("clarification_question"),
-                    "banner": get_educational_banner()
-                }
+                    "banner": get_educational_banner(),
+                },
             )
-        
+
         return ClinicalTrialsResponse(**result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Clinical trials search failed: {str(e)}"
+            detail=f"Clinical trials search failed: {str(e)}",
         )

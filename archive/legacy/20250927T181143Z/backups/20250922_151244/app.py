@@ -21,14 +21,14 @@ logger = get_logger(__name__)
 # Define exempt paths for rate limiting
 EXEMPT_PATHS = {
     "/docs",
-    "/redoc", 
+    "/redoc",
     "/openapi.json",
     "/metrics",
     "/health",
     "/api/v1/health",
     "/",
     "/app",
-    "/static"
+    "/static",
 }
 
 # --- Import Routers (with explicit error handling) ---
@@ -37,6 +37,7 @@ routers_failed = []
 
 try:
     from routers.summarize import router as summarize_router
+
     routers_loaded.append("summarize")
 except Exception as e:
     logger.error(f"Failed to import summarize router: {e}")
@@ -45,6 +46,7 @@ except Exception as e:
 
 try:
     from routers.disease import router as disease_router
+
     routers_loaded.append("disease")
 except Exception as e:
     logger.error(f"Failed to import disease router: {e}")
@@ -53,6 +55,7 @@ except Exception as e:
 
 try:
     from routers.pubmed import router as pubmed_router
+
     routers_loaded.append("pubmed")
 except Exception as e:
     logger.error(f"Failed to import pubmed router: {e}")
@@ -61,6 +64,7 @@ except Exception as e:
 
 try:
     from routers.trials import router as trials_router
+
     routers_loaded.append("trials")
 except Exception as e:
     logger.error(f"Failed to import trials router: {e}")
@@ -69,6 +73,7 @@ except Exception as e:
 
 try:
     from routers.patient_education import router as patient_education_router
+
     routers_loaded.append("patient_education")
 except Exception as e:
     logger.error(f"Failed to import patient_education router: {e}")
@@ -77,6 +82,7 @@ except Exception as e:
 
 try:
     from routers.readability import router as readability_router
+
     routers_loaded.append("readability")
 except Exception as e:
     logger.error(f"Failed to import readability router: {e}")
@@ -85,6 +91,7 @@ except Exception as e:
 
 try:
     from routers.healthcheck import router as healthcheck_router
+
     routers_loaded.append("healthcheck")
 except Exception as e:
     logger.error(f"Failed to import healthcheck router: {e}")
@@ -97,6 +104,7 @@ logger.info(f"Routers failed: {routers_failed}")
 # Import auth if it exists
 try:
     from routers.auth import router as auth_router
+
     AUTH_AVAILABLE = True
 except ImportError:
     logger.warning("Auth router not available")
@@ -105,9 +113,12 @@ except ImportError:
 
 # Import wizards if they exist
 try:
-    from routers.wizards.patient_education import router as patient_education_wizard_router
+    from routers.wizards.patient_education import (
+        router as patient_education_wizard_router,
+    )
     from routers.wizards.sbar_report import router as sbar_report_wizard_router
     from routers.wizards.treatment_plan import router as treatment_plan_wizard_router
+
     WIZARDS_AVAILABLE = True
 except ImportError:
     logger.warning("Wizard routers not available")
@@ -123,7 +134,7 @@ app = FastAPI(
     version="2.0.1",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
 # Log startup diagnostics
@@ -149,26 +160,29 @@ print("Health endpoint will be available at /health")
 # Mount static files (HTML frontend)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+
 # Frontend route
 @app.get("/app", response_class=HTMLResponse)
 async def frontend():
     """Serve the main frontend application"""
     return FileResponse("static/index.html")
 
-# Root endpoint  
+
+# Root endpoint
 @app.get("/")
 async def root():
     """Root endpoint with service information"""
     return {
         "message": "AI Nurse Florence - Healthcare AI Assistant",
-        "status": "operational", 
+        "status": "operational",
         "version": "2.0.1",
         "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
         "docs": "/docs",
-        "health": "/health", 
+        "health": "/health",
         "api_health": "/api/v1/health",
-        "frontend": "/app"
+        "frontend": "/app",
     }
+
 
 # Health endpoint for Railway healthcheck
 @app.get("/health")
@@ -176,14 +190,15 @@ async def health():
     """Health check endpoint optimized for Railway deployment"""
     # Log that health check was called
     logger.info("Health check endpoint called")
-    
+
     return {
-        "status": "healthy", 
+        "status": "healthy",
         "timestamp": "2025-09-22",
         "service": "ai-nurse-florence",
         "version": "2.0.1",
-        "routers_count": len(routers_loaded)
+        "routers_count": len(routers_loaded),
     }
+
 
 # Diagnostic endpoint to see what loaded
 @app.get("/debug/status")
@@ -194,12 +209,13 @@ async def debug_status():
         "routers_failed": routers_failed,
         "wizards_available": WIZARDS_AVAILABLE,
         "auth_available": AUTH_AVAILABLE,
-        "version": "2.0.1"
+        "version": "2.0.1",
     }
+
 
 # --- API Versioning Router ---
 api_router = APIRouter(prefix="/api/v1")
-unprotected_router = APIRouter(prefix="/api/v1") 
+unprotected_router = APIRouter(prefix="/api/v1")
 
 # --- Middleware Configuration ---
 app.add_middleware(SecurityHeadersMiddleware)
@@ -209,17 +225,19 @@ app.add_middleware(LoggingMiddleware)
 # Setup metrics if available
 try:
     from utils.metrics import setup_metrics
+
     setup_metrics(app)
 except ImportError:
     logger.warning("Metrics not available")
 
-# Setup rate limiting if available  
+# Setup rate limiting if available
 try:
     from utils.rate_limit import RateLimiter
+
     app.add_middleware(
         RateLimiter,
         requests_per_minute=settings.RATE_LIMIT_PER_MINUTE,
-        exempt_paths=EXEMPT_PATHS
+        exempt_paths=EXEMPT_PATHS,
     )
 except ImportError:
     logger.warning("Rate limiting not available")
@@ -268,14 +286,16 @@ app.include_router(unprotected_router)
 # Register exception handlers if available
 try:
     from utils.error_handlers import register_exception_handlers
+
     register_exception_handlers(app)
 except ImportError:
     logger.warning("Exception handlers not available")
 
+
 @app.on_event("startup")
 async def startup_event() -> None:
     logger.info("AI Nurse Florence API starting up")
-    
+
     # Initialize database if needed
     try:
         if "sqlite" in settings.DATABASE_URL:
@@ -287,12 +307,14 @@ async def startup_event() -> None:
     if settings.OPENAI_API_KEY:
         try:
             from openai import OpenAI as OpenAIClient
+
             global client
             client = OpenAIClient(api_key=settings.OPENAI_API_KEY)
             logger.info("OpenAI client configured")
         except Exception as e:
             logger.warning(f"OpenAI client setup failed: {e}")
 
-@app.on_event("shutdown") 
+
+@app.on_event("shutdown")
 async def shutdown_event() -> None:
     logger.info("AI Nurse Florence API shutting down")

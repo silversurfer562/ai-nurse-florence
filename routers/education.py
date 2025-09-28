@@ -7,6 +7,7 @@ from utils.guardrails import educational_banner
 
 router = APIRouter(prefix="/v1", tags=["education"])
 
+
 @router.post("/patient-education", response_model=PatientEducation)
 def patient_education(payload: PatientEducationRequest):
     # Heuristic: nurse => high complexity; allied/public => medium by default

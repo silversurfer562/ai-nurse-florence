@@ -4,6 +4,7 @@ Test cases for the Treatment Plan Wizard functionality.
 This test suite validates the complete workflow of creating treatment plans
 through the multi-step wizard interface.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
@@ -20,11 +21,13 @@ def client():
 @pytest.fixture
 def mock_openai_client():
     """Mock OpenAI client to avoid actual API calls during testing."""
-    with patch('services.openai_client.get_client') as mock_get_client:
+    with patch("services.openai_client.get_client") as mock_get_client:
         mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = """
+        mock_response.choices[
+            0
+        ].message.content = """
 # COMPREHENSIVE TREATMENT PLAN
 
 ## PATIENT ASSESSMENT
@@ -99,7 +102,7 @@ class TestTreatmentPlanWizard:
     def test_start_wizard(self, client):
         """Test starting a new treatment plan wizard session."""
         response = client.post("/api/v1/wizards/treatment-plan/start")
-        
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert "wizard_id" in data
@@ -111,14 +114,16 @@ class TestTreatmentPlanWizard:
         # Start wizard
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
+
         # Add assessment
         assessment_data = {
             "wizard_id": wizard_id,
-            "text": "65-year-old male with Type 2 diabetes, hypertension, and chronic kidney disease."
+            "text": "65-year-old male with Type 2 diabetes, hypertension, and chronic kidney disease.",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/assessment", json=assessment_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/assessment", json=assessment_data
+        )
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["next_step"] == "goals"
@@ -129,17 +134,17 @@ class TestTreatmentPlanWizard:
         # Start wizard and add assessment
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
+
         assessment_data = {"wizard_id": wizard_id, "text": "Test assessment"}
         client.post("/api/v1/wizards/treatment-plan/assessment", json=assessment_data)
-        
+
         # Add goals
         goals_data = {
             "wizard_id": wizard_id,
-            "text": "Short-term: Stabilize glucose. Long-term: Achieve HbA1c <7%."
+            "text": "Short-term: Stabilize glucose. Long-term: Achieve HbA1c <7%.",
         }
         response = client.post("/api/v1/wizards/treatment-plan/goals", json=goals_data)
-        
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["next_step"] == "interventions"
@@ -150,21 +155,27 @@ class TestTreatmentPlanWizard:
         # Setup wizard with assessment and goals
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
-        client.post("/api/v1/wizards/treatment-plan/assessment", 
-                   json={"wizard_id": wizard_id, "text": "Test assessment"})
-        client.post("/api/v1/wizards/treatment-plan/goals", 
-                   json={"wizard_id": wizard_id, "text": "Test goals"})
-        
+
+        client.post(
+            "/api/v1/wizards/treatment-plan/assessment",
+            json={"wizard_id": wizard_id, "text": "Test assessment"},
+        )
+        client.post(
+            "/api/v1/wizards/treatment-plan/goals",
+            json={"wizard_id": wizard_id, "text": "Test goals"},
+        )
+
         # Add interventions
         interventions_data = {
             "wizard_id": wizard_id,
             "nursing_interventions": "Continuous monitoring, patient care",
             "medications": "Insulin therapy, fluid replacement",
-            "patient_education": "Diabetes management education"
+            "patient_education": "Diabetes management education",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/interventions", json=interventions_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/interventions", json=interventions_data
+        )
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["next_step"] == "monitoring"
@@ -174,14 +185,16 @@ class TestTreatmentPlanWizard:
         """Test adding monitoring plan to wizard."""
         # Setup wizard through interventions step
         wizard_id = self._setup_wizard_through_interventions(client)
-        
+
         # Add monitoring
         monitoring_data = {
             "wizard_id": wizard_id,
-            "text": "Vital signs q4h, glucose monitoring, daily labs"
+            "text": "Vital signs q4h, glucose monitoring, daily labs",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/monitoring", json=monitoring_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/monitoring", json=monitoring_data
+        )
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert data["next_step"] == "evaluation"
@@ -191,14 +204,16 @@ class TestTreatmentPlanWizard:
         """Test generating the complete treatment plan."""
         # Setup wizard through monitoring step
         wizard_id = self._setup_wizard_through_monitoring(client)
-        
+
         # Generate treatment plan
         evaluation_data = {
             "wizard_id": wizard_id,
-            "evaluation_criteria": "Success indicators and reassessment timeline"
+            "evaluation_criteria": "Success indicators and reassessment timeline",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/generate", json=evaluation_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/generate", json=evaluation_data
+        )
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert "treatment_plan" in data
@@ -211,13 +226,15 @@ class TestTreatmentPlanWizard:
         # Start wizard and add assessment
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
-        client.post("/api/v1/wizards/treatment-plan/assessment", 
-                   json={"wizard_id": wizard_id, "text": "Test assessment"})
-        
+
+        client.post(
+            "/api/v1/wizards/treatment-plan/assessment",
+            json={"wizard_id": wizard_id, "text": "Test assessment"},
+        )
+
         # Check session status
         response = client.get(f"/api/v1/wizards/treatment-plan/session/{wizard_id}")
-        
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert "completed_steps" in data
@@ -231,29 +248,30 @@ class TestTreatmentPlanWizard:
         # Start wizard
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
+
         # Cancel session
         response = client.delete(f"/api/v1/wizards/treatment-plan/session/{wizard_id}")
-        
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert "cancelled" in data["message"].lower()
-        
+
         # Verify session is gone
-        status_response = client.get(f"/api/v1/wizards/treatment-plan/session/{wizard_id}")
+        status_response = client.get(
+            f"/api/v1/wizards/treatment-plan/session/{wizard_id}"
+        )
         assert status_response.status_code == 404
 
     def test_invalid_wizard_id(self, client):
         """Test handling of invalid wizard IDs."""
         invalid_id = "invalid-wizard-id"
-        
+
         # Try to add assessment with invalid ID
-        assessment_data = {
-            "wizard_id": invalid_id,
-            "text": "Test assessment"
-        }
-        response = client.post("/api/v1/wizards/treatment-plan/assessment", json=assessment_data)
-        
+        assessment_data = {"wizard_id": invalid_id, "text": "Test assessment"}
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/assessment", json=assessment_data
+        )
+
         assert response.status_code == 404
         error_data = response.json()
         assert error_data["status"] == "error"
@@ -264,17 +282,21 @@ class TestTreatmentPlanWizard:
         # Start wizard but only add assessment
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
-        client.post("/api/v1/wizards/treatment-plan/assessment", 
-                   json={"wizard_id": wizard_id, "text": "Test assessment"})
-        
+
+        client.post(
+            "/api/v1/wizards/treatment-plan/assessment",
+            json={"wizard_id": wizard_id, "text": "Test assessment"},
+        )
+
         # Try to generate without all required components
         evaluation_data = {
             "wizard_id": wizard_id,
-            "evaluation_criteria": "Test criteria"
+            "evaluation_criteria": "Test criteria",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/generate", json=evaluation_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/generate", json=evaluation_data
+        )
+
         assert response.status_code == 400
         error_data = response.json()
         assert "missing components" in error_data["error"]["message"].lower()
@@ -283,28 +305,36 @@ class TestTreatmentPlanWizard:
         """Helper method to setup wizard through interventions step."""
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
-        client.post("/api/v1/wizards/treatment-plan/assessment", 
-                   json={"wizard_id": wizard_id, "text": "Test assessment"})
-        client.post("/api/v1/wizards/treatment-plan/goals", 
-                   json={"wizard_id": wizard_id, "text": "Test goals"})
-        client.post("/api/v1/wizards/treatment-plan/interventions", 
-                   json={
-                       "wizard_id": wizard_id,
-                       "nursing_interventions": "Test nursing",
-                       "medications": "Test medications",
-                       "patient_education": "Test education"
-                   })
-        
+
+        client.post(
+            "/api/v1/wizards/treatment-plan/assessment",
+            json={"wizard_id": wizard_id, "text": "Test assessment"},
+        )
+        client.post(
+            "/api/v1/wizards/treatment-plan/goals",
+            json={"wizard_id": wizard_id, "text": "Test goals"},
+        )
+        client.post(
+            "/api/v1/wizards/treatment-plan/interventions",
+            json={
+                "wizard_id": wizard_id,
+                "nursing_interventions": "Test nursing",
+                "medications": "Test medications",
+                "patient_education": "Test education",
+            },
+        )
+
         return wizard_id
 
     def _setup_wizard_through_monitoring(self, client):
         """Helper method to setup wizard through monitoring step."""
         wizard_id = self._setup_wizard_through_interventions(client)
-        
-        client.post("/api/v1/wizards/treatment-plan/monitoring", 
-                   json={"wizard_id": wizard_id, "text": "Test monitoring"})
-        
+
+        client.post(
+            "/api/v1/wizards/treatment-plan/monitoring",
+            json={"wizard_id": wizard_id, "text": "Test monitoring"},
+        )
+
         return wizard_id
 
 
@@ -314,21 +344,22 @@ class TestTreatmentPlanWizardValidation:
     def test_missing_wizard_id(self, client):
         """Test validation when wizard_id is missing."""
         assessment_data = {"text": "Test assessment"}
-        response = client.post("/api/v1/wizards/treatment-plan/assessment", json=assessment_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/assessment", json=assessment_data
+        )
+
         assert response.status_code == 422  # Validation error
 
     def test_empty_text_fields(self, client):
         """Test validation with empty text fields."""
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
-        assessment_data = {
-            "wizard_id": wizard_id,
-            "text": ""  # Empty text
-        }
-        response = client.post("/api/v1/wizards/treatment-plan/assessment", json=assessment_data)
-        
+
+        assessment_data = {"wizard_id": wizard_id, "text": ""}  # Empty text
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/assessment", json=assessment_data
+        )
+
         # Should still accept (validation might be at application level)
         assert response.status_code in [200, 422]
 
@@ -336,15 +367,17 @@ class TestTreatmentPlanWizardValidation:
         """Test interventions endpoint with missing required fields."""
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
+
         # Missing medications field
         interventions_data = {
             "wizard_id": wizard_id,
             "nursing_interventions": "Test nursing",
-            "patient_education": "Test education"
+            "patient_education": "Test education",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/interventions", json=interventions_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/interventions", json=interventions_data
+        )
+
         assert response.status_code == 422  # Validation error
 
 
@@ -358,51 +391,79 @@ class TestTreatmentPlanWizardIntegration:
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         assert start_response.status_code == 200
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
+
         # Add all components
         steps = [
-            ("assessment", {"wizard_id": wizard_id, "text": "Comprehensive patient assessment"}),
-            ("goals", {"wizard_id": wizard_id, "text": "Short and long-term treatment goals"}),
-            ("interventions", {
-                "wizard_id": wizard_id,
-                "nursing_interventions": "Comprehensive nursing care plan",
-                "medications": "Medication management strategy",
-                "patient_education": "Patient and family education plan"
-            }),
-            ("monitoring", {"wizard_id": wizard_id, "text": "Comprehensive monitoring plan"}),
+            (
+                "assessment",
+                {"wizard_id": wizard_id, "text": "Comprehensive patient assessment"},
+            ),
+            (
+                "goals",
+                {"wizard_id": wizard_id, "text": "Short and long-term treatment goals"},
+            ),
+            (
+                "interventions",
+                {
+                    "wizard_id": wizard_id,
+                    "nursing_interventions": "Comprehensive nursing care plan",
+                    "medications": "Medication management strategy",
+                    "patient_education": "Patient and family education plan",
+                },
+            ),
+            (
+                "monitoring",
+                {"wizard_id": wizard_id, "text": "Comprehensive monitoring plan"},
+            ),
         ]
-        
+
         for step_name, step_data in steps:
-            response = client.post(f"/api/v1/wizards/treatment-plan/{step_name}", json=step_data)
+            response = client.post(
+                f"/api/v1/wizards/treatment-plan/{step_name}", json=step_data
+            )
             assert response.status_code == 200
-        
+
         # Generate final plan
         evaluation_data = {
             "wizard_id": wizard_id,
-            "evaluation_criteria": "Comprehensive evaluation criteria and timeline"
+            "evaluation_criteria": "Comprehensive evaluation criteria and timeline",
         }
-        response = client.post("/api/v1/wizards/treatment-plan/generate", json=evaluation_data)
-        
+        response = client.post(
+            "/api/v1/wizards/treatment-plan/generate", json=evaluation_data
+        )
+
         assert response.status_code == 200
         data = response.json()["data"]
         assert len(data["treatment_plan"]) > 100  # Substantial content
-        assert all(key in data["summary"] for key in ["primary_diagnosis", "key_goals", "main_interventions", "monitoring_focus"])
+        assert all(
+            key in data["summary"]
+            for key in [
+                "primary_diagnosis",
+                "key_goals",
+                "main_interventions",
+                "monitoring_focus",
+            ]
+        )
 
     def test_wizard_session_persistence(self, client):
         """Test that wizard sessions persist data correctly."""
         # Start wizard and add data
         start_response = client.post("/api/v1/wizards/treatment-plan/start")
         wizard_id = start_response.json()["data"]["wizard_id"]
-        
+
         # Add assessment
         assessment_text = "Detailed patient assessment with multiple conditions"
-        client.post("/api/v1/wizards/treatment-plan/assessment", 
-                   json={"wizard_id": wizard_id, "text": assessment_text})
-        
+        client.post(
+            "/api/v1/wizards/treatment-plan/assessment",
+            json={"wizard_id": wizard_id, "text": assessment_text},
+        )
+
         # Verify data is stored by checking session status
-        status_response = client.get(f"/api/v1/wizards/treatment-plan/session/{wizard_id}")
+        status_response = client.get(
+            f"/api/v1/wizards/treatment-plan/session/{wizard_id}"
+        )
         assert status_response.status_code == 200
-        
+
         data = status_response.json()["data"]
         assert "assessment" in data["completed_steps"]
         assert data["next_step"] == "goals"

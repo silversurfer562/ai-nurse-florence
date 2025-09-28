@@ -12,6 +12,7 @@ import sys
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+
 def test_sbar_wizard():
     """Wrapper to run the async SBAR wizard test synchronously for pytest."""
 
@@ -24,7 +25,7 @@ def test_sbar_wizard():
             print("\n🔧 SERVICE AVAILABILITY TEST:")
             from src.services import get_service
 
-            sbar_service = get_service('sbar')
+            sbar_service = get_service("sbar")
             if sbar_service:
                 print("✅ SBAR service: Available")
             else:
@@ -33,6 +34,7 @@ def test_sbar_wizard():
             # Test router import
             print("\n🌐 ROUTER IMPORT TEST:")
             from src.routers.wizards.sbar_wizard import router as sbar_router
+
             print(f"✅ SBAR router imported: {len(sbar_router.routes)} routes")
 
             # Test step data generation
@@ -41,7 +43,9 @@ def test_sbar_wizard():
 
             for step in range(1, 5):
                 step_data = _get_step_data(step)
-                print(f"✅ Step {step} ({step_data['step_name']}): {len(step_data['fields'])} fields")
+                print(
+                    f"✅ Step {step} ({step_data['step_name']}): {len(step_data['fields'])} fields"
+                )
 
             # Test wizard session creation (simulate)
             print("\n🎯 WIZARD SESSION TEST:")
@@ -55,7 +59,7 @@ def test_sbar_wizard():
                 "current_step": 1,
                 "total_steps": 4,
                 "collected_data": {},
-                "created_at": datetime.now().isoformat()
+                "created_at": datetime.now().isoformat(),
             }
             print(f"✅ Session created: {wizard_id}")
 
@@ -65,13 +69,15 @@ def test_sbar_wizard():
                 test_data = {
                     "patient_condition": "Patient experiencing chest pain",
                     "immediate_concerns": "Possible cardiac event",
-                    "vital_signs": "BP: 180/95, HR: 110"
+                    "vital_signs": "BP: 180/95, HR: 110",
                 }
 
                 validation_result = await sbar_service.validate_sbar_step(1, test_data)
-                print(f"✅ Step 1 validation: Score {validation_result.get('completeness_score', 0):.1f}")
+                print(
+                    f"✅ Step 1 validation: Score {validation_result.get('completeness_score', 0):.1f}"
+                )
 
-                if validation_result.get('clinical_flags'):
+                if validation_result.get("clinical_flags"):
                     print(f"⚠️  Clinical flags: {validation_result['clinical_flags']}")
 
             print("\n🎉 SBAR WIZARD TEST COMPLETE")
@@ -85,6 +91,7 @@ def test_sbar_wizard():
         except Exception as e:
             print(f"❌ Test failed: {e}")
             import traceback
+
             traceback.print_exc()
 
     asyncio.run(_main())

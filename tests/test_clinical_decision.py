@@ -4,7 +4,8 @@ from fastapi.testclient import TestClient
 def test_interventions_endpoint_imports_app():
     """Sanity test: importing app and hitting the interventions endpoint returns 200."""
     import importlib
-    app_module = importlib.import_module('app')
+
+    app_module = importlib.import_module("app")
     client = TestClient(app_module.app)
 
     response = client.post(
@@ -12,7 +13,7 @@ def test_interventions_endpoint_imports_app():
         params={
             "patient_condition": "acute heart failure",
             "severity": "moderate",
-        }
+        },
     )
 
     assert response.status_code == 200, response.text

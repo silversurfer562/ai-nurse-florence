@@ -48,9 +48,17 @@ class MeshIndex:
             return
 
         # store primary term and synonyms
-        self.index[term_norm.lower()] = {"term": term_norm, "mesh_id": mesh_id, "synonyms": [s for s in synonyms]}
+        self.index[term_norm.lower()] = {
+            "term": term_norm,
+            "mesh_id": mesh_id,
+            "synonyms": [s for s in synonyms],
+        }
         for s in synonyms:
-            self.index[str(s).strip().lower()] = {"term": term_norm, "mesh_id": mesh_id, "synonyms": [s for s in synonyms]}
+            self.index[str(s).strip().lower()] = {
+                "term": term_norm,
+                "mesh_id": mesh_id,
+                "synonyms": [s for s in synonyms],
+            }
 
     def map(self, query: str, top_k: int = 5) -> List[Dict]:
         q = (query or "").strip()
@@ -87,11 +95,17 @@ class MeshIndex:
         results = []
         seen = set()
         for entry, score in candidates_sorted[:top_k]:
-            key = (entry['mesh_id'])
+            key = entry["mesh_id"]
             if key in seen:
                 continue
             seen.add(key)
-            results.append({"term": entry["term"], "mesh_id": entry["mesh_id"], "score": float(score)})
+            results.append(
+                {
+                    "term": entry["term"],
+                    "mesh_id": entry["mesh_id"],
+                    "score": float(score),
+                }
+            )
 
         return results
 

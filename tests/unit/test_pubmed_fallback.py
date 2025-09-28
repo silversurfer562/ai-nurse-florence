@@ -19,7 +19,7 @@ async def test_pubmed_fallback_no_requests_or_xml(monkeypatch):
     assert "data" in result
     data = result["data"]
     assert "articles" in data
-    assert data["total_results"] == len(data["articles"]) 
+    assert data["total_results"] == len(data["articles"])
     # Stub articles use pmid like 'stub_1'
     assert data["articles"][0]["pmid"].startswith("stub_")
 
@@ -42,4 +42,4 @@ async def test_pubmed_handles_request_errors(monkeypatch):
     assert "data" in result
     data = result["data"]
     assert "articles" in data
-    assert data["total_results"] == len(data["articles"]) 
+    assert data["total_results"] == len(data["articles"])

@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 # Conditional Redis import - graceful degradation
 try:
     import redis.asyncio as redis
+
     _redis_available = True
 except ImportError:
     _redis_available = False
@@ -25,23 +26,28 @@ from src.utils.config import get_redis_config
 # Optional metrics - record cache hits/misses when available
 try:
     from src.utils.metrics import record_cache_hit, record_cache_miss
+
     _has_metrics = True
 except Exception:
     _has_metrics = False
+
     def record_cache_hit(cache_key: str, cache_type: str = "redis"):
         return
+
     def record_cache_miss(cache_key: str, cache_type: str = "redis"):
         return
+
 
 # Global cache instances
 _redis_client: Optional[Any] = None
 _memory_cache: Dict[str, Dict[str, Any]] = {}
 _cache_lock = threading.RLock()
 
+
 async def get_redis_client():
     """Get Redis client with graceful fallback"""
     global _redis_client
-    
+
     # Allow tests or environments to force in-memory-only mode by setting
     # AI_NURSE_DISABLE_REDIS=1 in the environment. This prevents background
     # Redis connection attempts that can leave pending tasks during test runs.
@@ -50,12 +56,12 @@ async def get_redis_client():
 
     if not _redis_available:
         return None
-    
+
     if _redis_client is None:
         redis_config = get_redis_config()
         if not redis_config:
             return None
-        
+
         try:
             # redis is imported conditionally; ensure the name is not None for static checkers
             assert redis is not None
@@ -64,7 +70,7 @@ async def get_redis_client():
                 decode_responses=redis_config.get("decode_responses", True),
                 socket_connect_timeout=5,
                 socket_timeout=5,
-                retry_on_timeout=True
+                retry_on_timeout=True,
             )
             # Test connection
             await _redis_client.ping()
@@ -72,35 +78,36 @@ async def get_redis_client():
         except Exception as e:
             logging.warning(f"Redis connection failed: {e}, using in-memory cache")
             _redis_client = None
-    
+
     return _redis_client
+
 
 def _memory_cache_set(key: str, value: Any, ttl_seconds: int = 3600):
     """Set value in memory cache with TTL"""
     with _cache_lock:
         expiry = datetime.utcnow() + timedelta(seconds=ttl_seconds)
-        _memory_cache[key] = {
-            "value": value,
-            "expiry": expiry
-        }
+        _memory_cache[key] = {"value": value, "expiry": expiry}
+
 
 def _memory_cache_get(key: str) -> Optional[Any]:
     """Get value from memory cache"""
     with _cache_lock:
         if key not in _memory_cache:
             return None
-        
+
         cache_entry = _memory_cache[key]
         if datetime.utcnow() > cache_entry["expiry"]:
             del _memory_cache[key]
             return None
-        
+
         return cache_entry["value"]
+
 
 def _memory_cache_delete(key: str):
     """Delete value from memory cache"""
     with _cache_lock:
         _memory_cache.pop(key, None)
+
 
 async def cache_set(key: str, value: Any, ttl_seconds: int = 3600) -> bool:
     """Set cache value with Redis fallback to memory"""
@@ -118,7 +125,7 @@ async def cache_set(key: str, value: Any, ttl_seconds: int = 3600) -> bool:
                 logging.warning(f"Redis cache set serialization/storing failed: {e}")
     except Exception as e:
         logging.warning(f"Redis cache set failed: {e}")
-    
+
     # Fallback to memory cache
     try:
         _memory_cache_set(key, value, ttl_seconds)
@@ -127,6 +134,7 @@ async def cache_set(key: str, value: Any, ttl_seconds: int = 3600) -> bool:
     except Exception as e:
         logging.warning(f"Memory cache set failed: {e}")
     return True
+
 
 async def cache_get(key: str) -> Optional[Any]:
     """Get cache value with Redis fallback to memory"""
@@ -144,7 +152,7 @@ async def cache_get(key: str) -> Optional[Any]:
                 logging.warning(f"Redis cache get/deserialize failed: {e}")
     except Exception as e:
         logging.warning(f"Redis cache get failed: {e}")
-    
+
     # Fallback to memory cache
     try:
         val = _memory_cache_get(key)
@@ -155,10 +163,11 @@ async def cache_get(key: str) -> Optional[Any]:
         logging.warning(f"Memory cache get failed: {e}")
         return None
 
+
 async def cache_delete(key: str) -> bool:
     """Delete cache value from both Redis and memory"""
     success = False
-    
+
     try:
         # Try Redis first
         redis_client = await get_redis_client()
@@ -170,7 +179,7 @@ async def cache_delete(key: str) -> bool:
                 logging.warning(f"Redis cache delete failed for key {key}: {e}")
     except Exception as e:
         logging.warning(f"Redis cache delete failed: {e}")
-    
+
     # Also delete from memory cache
     try:
         _memory_cache_delete(key)
@@ -277,17 +286,21 @@ def cache_delete_sync(key: str) -> bool:
     except Exception:
         return False
 
+
 def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
     """
     Decorator for caching function results
     Supports async and sync functions. Uses Redis with in-memory fallback.
     """
+
     def decorator(func: Callable):
         is_coro = asyncio.iscoroutinefunction(func)
 
         def _make_key(args, kwargs):
             try:
-                key_body = json.dumps({"args": args, "kwargs": kwargs}, default=str, sort_keys=True)
+                key_body = json.dumps(
+                    {"args": args, "kwargs": kwargs}, default=str, sort_keys=True
+                )
             except Exception:
                 key_body = str((args, tuple(sorted(kwargs.items()))))
             # Keep key length reasonable
@@ -295,6 +308,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
             return f"{key_prefix}:{func.__name__}:{suffix}"
 
         if is_coro:
+
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
                 cache_key = _make_key(args, kwargs)
@@ -322,6 +336,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
 
             return async_wrapper
         else:
+
             @wraps(func)
             def sync_wrapper(*args, **kwargs):
                 cache_key = _make_key(args, kwargs)
@@ -360,7 +375,9 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
                         # an async cache update task without awaiting it.
                         def _schedule_update():
                             try:
-                                asyncio.create_task(cache_set(cache_key, result, ttl_seconds))
+                                asyncio.create_task(
+                                    cache_set(cache_key, result, ttl_seconds)
+                                )
                             except Exception:
                                 pass
 
@@ -369,7 +386,9 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
                         # No loop running: run cache_set in a background thread to
                         # avoid blocking the caller thread.
                         threading.Thread(
-                            target=lambda: asyncio.run(cache_set(cache_key, result, ttl_seconds)),
+                            target=lambda: asyncio.run(
+                                cache_set(cache_key, result, ttl_seconds)
+                            ),
                             daemon=True,
                         ).start()
                 except Exception:
@@ -381,12 +400,13 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
 
     return decorator
 
+
 # Cache status helper for monitoring
 async def get_cache_status() -> Dict[str, Any]:
     """Get cache system status"""
     redis_status = "unavailable"
     redis_info = {}
-    
+
     try:
         redis_client = await get_redis_client()
         if redis_client:
@@ -394,37 +414,33 @@ async def get_cache_status() -> Dict[str, Any]:
             redis_status = "connected"
     except Exception:
         redis_status = "error"
-    
+
     memory_entries = len(_memory_cache)
-    
+
     return {
-        "redis": {
-            "status": redis_status,
-            "info": redis_info
-        },
-        "memory": {
-            "entries": memory_entries,
-            "status": "active"
-        },
-        "fallback_mode": redis_status != "connected"
+        "redis": {"status": redis_status, "info": redis_info},
+        "memory": {"entries": memory_entries, "status": "active"},
+        "fallback_mode": redis_status != "connected",
     }
+
 
 # Cleanup function for graceful shutdown
 async def cleanup_cache():
     """Cleanup cache connections"""
     global _redis_client, _memory_cache
-    
+
     if _redis_client:
         try:
             await _redis_client.close()
         except Exception:
             pass
         _redis_client = None
-    
+
     with _cache_lock:
         _memory_cache.clear()
-    
+
     logging.info("Cache cleanup completed")
+
 
 def get_cache_client():
     """Return cache client status information.

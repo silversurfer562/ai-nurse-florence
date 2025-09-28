@@ -103,6 +103,7 @@ class ReadabilityResponse(BaseModel):
 
 # --- Schemas for User and Token Handling ---
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -118,9 +119,8 @@ class User(BaseModel):
     provider_user_id: str
 
     # pydantic v2: replace legacy Config.orm_mode with model_config.from_attributes
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
+
 
 # Backwards-compatible re-exports: some parts of the app import these from `models.schemas`
 # but the canonical implementations live under `src.models.schemas` for the richer clinical schemas.
@@ -133,4 +133,6 @@ except Exception:
         patient_condition: str = Field(..., description="Primary patient condition")
 
     class ClinicalDecisionResponse(BaseModel):
-        nursing_interventions: str = Field(..., description="Evidence-based nursing interventions")
+        nursing_interventions: str = Field(
+            ..., description="Evidence-based nursing interventions"
+        )

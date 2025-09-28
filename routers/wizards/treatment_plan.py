@@ -4,6 +4,7 @@ A wizard for generating comprehensive treatment plans for healthcare professiona
 This multi-step wizard guides users through creating structured treatment plans
 that include assessment, goals, interventions, monitoring, and evaluation components.
 """
+
 from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
 from typing import Dict, Optional
@@ -20,88 +21,128 @@ treatment_wizard_sessions: Dict[str, Dict[str, str]] = {}
 
 # --- Pydantic Models for Wizard Steps ---
 
+
 class StartTreatmentResponse(BaseModel):
     wizard_id: str
     message: str
     next_step: str
 
+
 class TreatmentStepInput(BaseModel):
     wizard_id: str = Field(..., description="The unique ID for this wizard session.")
     text: str = Field(..., description="The text content for the current step.")
+
 
 class TreatmentStepResponse(BaseModel):
     wizard_id: str
     next_step: str
     message: str
 
+
 class InterventionsInput(BaseModel):
     wizard_id: str = Field(..., description="The unique ID for this wizard session.")
-    nursing_interventions: str = Field(..., description="Planned nursing interventions.")
+    nursing_interventions: str = Field(
+        ..., description="Planned nursing interventions."
+    )
     medications: str = Field(..., description="Medication management plan.")
-    patient_education: str = Field(..., description="Patient and family education plan.")
+    patient_education: str = Field(
+        ..., description="Patient and family education plan."
+    )
+
 
 class InterventionsResponse(BaseModel):
     wizard_id: str
     next_step: str
     message: str
 
+
 class GenerateTreatmentInput(BaseModel):
     wizard_id: str = Field(..., description="The unique ID for this wizard session.")
-    evaluation_criteria: str = Field(..., description="Evaluation criteria and timeline.")
+    evaluation_criteria: str = Field(
+        ..., description="Evaluation criteria and timeline."
+    )
+
 
 class GenerateTreatmentResponse(BaseModel):
     wizard_id: str
     treatment_plan: str
     summary: Dict[str, str]
 
+
 # --- Wizard Endpoints ---
 
-@router.post("/start", response_model=StartTreatmentResponse, summary="Step 1: Start the Treatment Plan wizard")
+
+@router.post(
+    "/start",
+    response_model=StartTreatmentResponse,
+    summary="Step 1: Start the Treatment Plan wizard",
+)
 async def start_treatment_wizard():
     """
     Initializes a new Treatment Plan wizard session and returns a unique `wizard_id`.
-    
+
     The treatment plan wizard follows a structured approach:
     1. Patient Assessment
     2. Treatment Goals
     3. Interventions (Nursing, Medications, Education)
     4. Monitoring Plan
     5. Evaluation Criteria
-    
+
     Each step builds upon the previous to create a comprehensive care plan.
     """
     import uuid
+
     wizard_id = str(uuid.uuid4())
     treatment_wizard_sessions[wizard_id] = {}
     logger.info(f"Started Treatment Plan wizard session: {wizard_id}")
-    
-    return create_success_response({
-        "wizard_id": wizard_id,
-        "message": "Treatment Plan wizard started. Please provide the patient assessment including primary diagnosis, symptoms, and relevant history.",
-        "next_step": "assessment"
-    })
 
-def _update_treatment_step(wizard_id: str, step_name: str, text: str, next_step_name: str, custom_message: Optional[str] = None):
+    return create_success_response(
+        {
+            "wizard_id": wizard_id,
+            "message": "Treatment Plan wizard started. Please provide the patient assessment including primary diagnosis, symptoms, and relevant history.",
+            "next_step": "assessment",
+        }
+    )
+
+
+def _update_treatment_step(
+    wizard_id: str,
+    step_name: str,
+    text: str,
+    next_step_name: str,
+    custom_message: Optional[str] = None,
+):
     """Helper function to update a step in the treatment wizard session."""
     if wizard_id not in treatment_wizard_sessions:
-        return create_error_response("Treatment wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
-    
+        return create_error_response(
+            "Treatment wizard session not found.",
+            status.HTTP_404_NOT_FOUND,
+            "wizard_not_found",
+        )
+
     treatment_wizard_sessions[wizard_id][step_name] = text
     logger.info(f"Updated Treatment Plan session {wizard_id} with step: {step_name}")
-    
-    default_message = f"'{step_name.replace('_', ' ').title()}' received. Please proceed to add the '{next_step_name.replace('_', ' ').title()}'."
-    
-    return create_success_response({
-        "wizard_id": wizard_id,
-        "message": custom_message or default_message,
-        "next_step": next_step_name
-    })
 
-@router.post("/assessment", response_model=TreatmentStepResponse, summary="Step 2: Add Patient Assessment")
+    default_message = f"'{step_name.replace('_', ' ').title()}' received. Please proceed to add the '{next_step_name.replace('_', ' ').title()}'."
+
+    return create_success_response(
+        {
+            "wizard_id": wizard_id,
+            "message": custom_message or default_message,
+            "next_step": next_step_name,
+        }
+    )
+
+
+@router.post(
+    "/assessment",
+    response_model=TreatmentStepResponse,
+    summary="Step 2: Add Patient Assessment",
+)
 async def add_patient_assessment(step_input: TreatmentStepInput):
     """
     Adds the **Patient Assessment** component to the treatment plan.
-    
+
     Include:
     - Primary diagnosis and secondary conditions
     - Current symptoms and severity
@@ -110,18 +151,23 @@ async def add_patient_assessment(step_input: TreatmentStepInput):
     - Psychosocial factors
     """
     return _update_treatment_step(
-        step_input.wizard_id, 
-        "assessment", 
-        step_input.text, 
+        step_input.wizard_id,
+        "assessment",
+        step_input.text,
         "goals",
-        "Patient assessment received. Please define the treatment goals including both short-term and long-term objectives."
+        "Patient assessment received. Please define the treatment goals including both short-term and long-term objectives.",
     )
 
-@router.post("/goals", response_model=TreatmentStepResponse, summary="Step 3: Add Treatment Goals")
+
+@router.post(
+    "/goals",
+    response_model=TreatmentStepResponse,
+    summary="Step 3: Add Treatment Goals",
+)
 async def add_treatment_goals(step_input: TreatmentStepInput):
     """
     Adds the **Treatment Goals** component to the treatment plan.
-    
+
     Include:
     - Short-term goals (24-72 hours)
     - Long-term goals (weeks to months)
@@ -130,18 +176,23 @@ async def add_treatment_goals(step_input: TreatmentStepInput):
     - Expected timeframes
     """
     return _update_treatment_step(
-        step_input.wizard_id, 
-        "goals", 
-        step_input.text, 
+        step_input.wizard_id,
+        "goals",
+        step_input.text,
         "interventions",
-        "Treatment goals received. Please provide the planned interventions including nursing care, medications, and patient education."
+        "Treatment goals received. Please provide the planned interventions including nursing care, medications, and patient education.",
     )
 
-@router.post("/interventions", response_model=InterventionsResponse, summary="Step 4: Add Interventions")
+
+@router.post(
+    "/interventions",
+    response_model=InterventionsResponse,
+    summary="Step 4: Add Interventions",
+)
 async def add_interventions(interventions_input: InterventionsInput):
     """
     Adds the **Interventions** components to the treatment plan.
-    
+
     This step captures three key intervention categories:
     - Nursing interventions and care activities
     - Medication management and administration
@@ -149,26 +200,37 @@ async def add_interventions(interventions_input: InterventionsInput):
     """
     wizard_id = interventions_input.wizard_id
     if wizard_id not in treatment_wizard_sessions:
-        return create_error_response("Treatment wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
-    
+        return create_error_response(
+            "Treatment wizard session not found.",
+            status.HTTP_404_NOT_FOUND,
+            "wizard_not_found",
+        )
+
     session_data = treatment_wizard_sessions[wizard_id]
     session_data["nursing_interventions"] = interventions_input.nursing_interventions
     session_data["medications"] = interventions_input.medications
     session_data["patient_education"] = interventions_input.patient_education
-    
-    logger.info(f"Updated Treatment Plan session {wizard_id} with interventions")
-    
-    return create_success_response({
-        "wizard_id": wizard_id,
-        "message": "Interventions received. Please provide the monitoring plan including vital signs, lab values, and symptom tracking.",
-        "next_step": "monitoring"
-    })
 
-@router.post("/monitoring", response_model=TreatmentStepResponse, summary="Step 5: Add Monitoring Plan")
+    logger.info(f"Updated Treatment Plan session {wizard_id} with interventions")
+
+    return create_success_response(
+        {
+            "wizard_id": wizard_id,
+            "message": "Interventions received. Please provide the monitoring plan including vital signs, lab values, and symptom tracking.",
+            "next_step": "monitoring",
+        }
+    )
+
+
+@router.post(
+    "/monitoring",
+    response_model=TreatmentStepResponse,
+    summary="Step 5: Add Monitoring Plan",
+)
 async def add_monitoring_plan(step_input: TreatmentStepInput):
     """
     Adds the **Monitoring Plan** component to the treatment plan.
-    
+
     Include:
     - Vital signs monitoring frequency
     - Laboratory values to track
@@ -177,19 +239,24 @@ async def add_monitoring_plan(step_input: TreatmentStepInput):
     - Safety parameters and alerts
     """
     return _update_treatment_step(
-        step_input.wizard_id, 
-        "monitoring", 
-        step_input.text, 
+        step_input.wizard_id,
+        "monitoring",
+        step_input.text,
         "evaluation",
-        "Monitoring plan received. Please provide the evaluation criteria including success indicators and timeline for reassessment."
+        "Monitoring plan received. Please provide the evaluation criteria including success indicators and timeline for reassessment.",
     )
 
-@router.post("/generate", response_model=GenerateTreatmentResponse, summary="Step 6: Add Evaluation Criteria and Generate Plan")
+
+@router.post(
+    "/generate",
+    response_model=GenerateTreatmentResponse,
+    summary="Step 6: Add Evaluation Criteria and Generate Plan",
+)
 async def generate_treatment_plan(step_input: GenerateTreatmentInput):
     """
     Adds the final **Evaluation Criteria** component and generates the complete,
     formatted treatment plan using an AI model.
-    
+
     The generated plan will include:
     - Structured treatment plan document
     - Summary of key components
@@ -197,19 +264,35 @@ async def generate_treatment_plan(step_input: GenerateTreatmentInput):
     """
     wizard_id = step_input.wizard_id
     if wizard_id not in treatment_wizard_sessions:
-        return create_error_response("Treatment wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
+        return create_error_response(
+            "Treatment wizard session not found.",
+            status.HTTP_404_NOT_FOUND,
+            "wizard_not_found",
+        )
 
     session_data = treatment_wizard_sessions[wizard_id]
     session_data["evaluation_criteria"] = step_input.evaluation_criteria
 
     # Verify all parts are present
-    required_parts = ["assessment", "goals", "nursing_interventions", "medications", "patient_education", "monitoring", "evaluation_criteria"]
+    required_parts = [
+        "assessment",
+        "goals",
+        "nursing_interventions",
+        "medications",
+        "patient_education",
+        "monitoring",
+        "evaluation_criteria",
+    ]
     if not all(part in session_data for part in required_parts):
-        missing = [part.replace('_', ' ').title() for part in required_parts if part not in session_data]
+        missing = [
+            part.replace("_", " ").title()
+            for part in required_parts
+            if part not in session_data
+        ]
         return create_error_response(
             f"Cannot generate treatment plan. Missing components: {', '.join(missing)}",
             status.HTTP_400_BAD_REQUEST,
-            "missing_treatment_components"
+            "missing_treatment_components",
         )
 
     prompt = (
@@ -266,52 +349,76 @@ async def generate_treatment_plan(step_input: GenerateTreatmentInput):
         logger.info(f"Successfully generated treatment plan for session {wizard_id}")
 
         summary = {
-            "primary_diagnosis": (session_data.get('assessment') or '')[:100] + "...",
-            "key_goals": (session_data.get('goals') or '')[:100] + "...",
-            "main_interventions": (session_data.get('nursing_interventions') or '')[:100] + "...",
-            "monitoring_focus": (session_data.get('monitoring') or '')[:100] + "...",
+            "primary_diagnosis": (session_data.get("assessment") or "")[:100] + "...",
+            "key_goals": (session_data.get("goals") or "")[:100] + "...",
+            "main_interventions": (session_data.get("nursing_interventions") or "")[
+                :100
+            ]
+            + "...",
+            "monitoring_focus": (session_data.get("monitoring") or "")[:100] + "...",
         }
 
         # Clean up session
         treatment_wizard_sessions.pop(wizard_id, None)
 
-        return create_success_response({
-            "wizard_id": wizard_id,
-            "treatment_plan": treatment_plan,
-            "summary": summary,
-        })
+        return create_success_response(
+            {
+                "wizard_id": wizard_id,
+                "treatment_plan": treatment_plan,
+                "summary": summary,
+            }
+        )
 
     except Exception as e:
-        logger.error(f"Treatment plan generation failed for session {wizard_id}: {e}", exc_info=True)
+        logger.error(
+            f"Treatment plan generation failed for session {wizard_id}: {e}",
+            exc_info=True,
+        )
         return create_error_response(
             "Failed to generate treatment plan from AI model.",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "generation_failed",
         )
 
+
 @router.get("/session/{wizard_id}", summary="Get Current Session Status")
 async def get_session_status(wizard_id: str):
     """
     Retrieves the current status of a treatment plan wizard session.
-    
+
     Returns the completed steps and what step is needed next.
     Useful for resuming interrupted sessions or checking progress.
     """
     if wizard_id not in treatment_wizard_sessions:
-        return create_error_response("Treatment wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
-    
+        return create_error_response(
+            "Treatment wizard session not found.",
+            status.HTTP_404_NOT_FOUND,
+            "wizard_not_found",
+        )
+
     session_data = treatment_wizard_sessions[wizard_id]
     completed_steps = list(session_data.keys())
-    
+
     # Determine next step based on what's completed
-    step_order = ["assessment", "goals", "nursing_interventions", "medications", "patient_education", "monitoring", "evaluation_criteria"]
+    step_order = [
+        "assessment",
+        "goals",
+        "nursing_interventions",
+        "medications",
+        "patient_education",
+        "monitoring",
+        "evaluation_criteria",
+    ]
     next_step = None
-    
+
     if "assessment" not in completed_steps:
         next_step = "assessment"
     elif "goals" not in completed_steps:
         next_step = "goals"
-    elif not all(key in completed_steps for key in ["nursing_interventions", "medications", "patient_education"]):
+    elif not all(
+        key in completed_steps
+        for key in ["nursing_interventions", "medications", "patient_education"]
+    ):
         next_step = "interventions"
     elif "monitoring" not in completed_steps:
         next_step = "monitoring"
@@ -319,29 +426,38 @@ async def get_session_status(wizard_id: str):
         next_step = "evaluation"
     else:
         next_step = "generate"
-    
-    return create_success_response({
-        "wizard_id": wizard_id,
-        "completed_steps": completed_steps,
-        "next_step": next_step,
-        "progress": f"{len(completed_steps)}/{len(step_order)} steps completed"
-    })
+
+    return create_success_response(
+        {
+            "wizard_id": wizard_id,
+            "completed_steps": completed_steps,
+            "next_step": next_step,
+            "progress": f"{len(completed_steps)}/{len(step_order)} steps completed",
+        }
+    )
+
 
 @router.delete("/session/{wizard_id}", summary="Cancel Treatment Plan Session")
 async def cancel_session(wizard_id: str):
     """
     Cancels and removes a treatment plan wizard session.
-    
+
     Use this endpoint to clean up sessions that are no longer needed
     or to start over with a fresh session.
     """
     if wizard_id not in treatment_wizard_sessions:
-        return create_error_response("Treatment wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found")
-    
+        return create_error_response(
+            "Treatment wizard session not found.",
+            status.HTTP_404_NOT_FOUND,
+            "wizard_not_found",
+        )
+
     del treatment_wizard_sessions[wizard_id]
     logger.info(f"Cancelled treatment plan wizard session: {wizard_id}")
-    
-    return create_success_response({
-        "message": f"Treatment plan wizard session {wizard_id} has been cancelled.",
-        "wizard_id": wizard_id
-    })
+
+    return create_success_response(
+        {
+            "message": f"Treatment plan wizard session {wizard_id} has been cancelled.",
+            "wizard_id": wizard_id,
+        }
+    )

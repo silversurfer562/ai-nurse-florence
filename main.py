@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="AI Nurse Florence",
     description="Clinical Decision Support System API",
-    version="2.0.1"
+    version="2.0.1",
 )
 
 # Configure CORS
@@ -33,17 +33,22 @@ if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
     logger.info("Static files mounted at /static/")
 else:
-    logger.warning("Static directory not found. Create 'static' folder for frontend files.")
+    logger.warning(
+        "Static directory not found. Create 'static' folder for frontend files."
+    )
+
 
 # Pydantic models for request/response
 class ChatRequest(BaseModel):
     message: str
     language: str = "en"
 
+
 class ChatResponse(BaseModel):
     response: str
     language: str
     timestamp: str
+
 
 class HealthResponse(BaseModel):
     status: str
@@ -51,19 +56,21 @@ class HealthResponse(BaseModel):
     version: str
     timestamp: str
 
+
 # Root endpoint
 @app.get("/")
 async def root():
     return {
         "message": "AI Nurse Florence - Healthcare AI Assistant",
-        "status": "operational", 
+        "status": "operational",
         "version": "2.0.1",
         "banner": "Educational purposes only — verify with healthcare providers. No PHI stored.",
         "docs": "/docs",
         "health": "/health",
         "api_health": "/api/v1/health",
-        "frontend": "/static/index.html"
+        "frontend": "/static/index.html",
     }
+
 
 # Health check endpoint
 @app.get("/health")
@@ -73,8 +80,9 @@ async def health_check():
         status="operational",
         message="AI Nurse Florence API is running",
         version="2.0.1",
-        timestamp=datetime.utcnow().isoformat()
+        timestamp=datetime.utcnow().isoformat(),
     )
+
 
 # Chat endpoint for clinical consultations
 @app.post("/api/v1/chat")
@@ -82,20 +90,21 @@ async def clinical_chat(chat_request: ChatRequest):
     try:
         # Log the incoming request
         logger.info(f"Clinical chat request: {chat_request.message[:100]}...")
-        
+
         # For now, return a standard response
         # In production, this would call your AI model
         response_text = generate_clinical_response(chat_request.message)
-        
+
         return ChatResponse(
             response=response_text,
             language=chat_request.language,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Error in clinical_chat: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
 
 # Additional API endpoints for clinical features
 @app.get("/api/v1/protocols/{protocol_type}")
@@ -105,42 +114,44 @@ async def get_protocol(protocol_type: str):
         "sepsis": "Sepsis recognition and management protocols...",
         "medication": "Medication safety and administration protocols...",
         "assessment": "Patient assessment protocols and tools...",
-        "documentation": "Clinical documentation standards..."
+        "documentation": "Clinical documentation standards...",
     }
-    
+
     if protocol_type.lower() in protocols:
         return {
             "protocol_type": protocol_type,
             "content": protocols[protocol_type.lower()],
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
     else:
         raise HTTPException(status_code=404, detail="Protocol not found")
 
+
 @app.get("/api/v1/calculations/dosage")
 async def dosage_calculator(
-    desired_dose: float,
-    stock_strength: float, 
-    stock_volume: float = 1.0
+    desired_dose: float, stock_strength: float, stock_volume: float = 1.0
 ):
     """Calculate medication dosage"""
     try:
         if stock_strength <= 0:
-            raise HTTPException(status_code=400, detail="Stock strength must be greater than 0")
-        
+            raise HTTPException(
+                status_code=400, detail="Stock strength must be greater than 0"
+            )
+
         volume_to_give = (desired_dose / stock_strength) * stock_volume
-        
+
         return {
             "desired_dose": desired_dose,
             "stock_strength": stock_strength,
             "stock_volume": stock_volume,
             "volume_to_give": round(volume_to_give, 2),
             "calculation": f"({desired_dose} ÷ {stock_strength}) × {stock_volume} = {volume_to_give:.2f}",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
     except Exception as e:
         logger.error(f"Error in dosage calculation: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid calculation parameters")
+
 
 # Error handlers
 @app.exception_handler(404)
@@ -150,9 +161,10 @@ async def not_found_handler(request: Request, exc):
         content={
             "detail": "Resource not found",
             "path": str(request.url.path),
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
+
 
 @app.exception_handler(500)
 async def internal_error_handler(request: Request, exc):
@@ -160,9 +172,10 @@ async def internal_error_handler(request: Request, exc):
         status_code=500,
         content={
             "detail": "Internal server error",
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.utcnow().isoformat(),
+        },
     )
+
 
 def generate_clinical_response(message: str) -> str:
     """
@@ -170,7 +183,7 @@ def generate_clinical_response(message: str) -> str:
     In production, this would interface with your AI model.
     """
     message_lower = message.lower()
-    
+
     if "sepsis" in message_lower:
         return """**Sepsis Recognition & Management Protocol:**
 
@@ -294,17 +307,18 @@ As your clinical decision support assistant, I can provide evidence-based guidan
 
 **Remember:** This is educational support. Always follow institutional protocols and consult healthcare team members for patient care decisions."""
 
+
 if __name__ == "__main__":
     import uvicorn
-    
+
     # Get port from environment variable (Railway sets this automatically)
     port = int(os.environ.get("PORT", 8000))
-    
+
     # Run the application
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=port,
         reload=False,  # Set to True for development
-        log_level="info"
+        log_level="info",
     )

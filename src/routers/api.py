@@ -10,6 +10,7 @@ from routers.wizards import treatment_plan, sbar_report
 # Conditional imports for enhanced features
 try:
     from routers import chatgpt_store
+
     _has_gpt_store = True
 except ImportError:
     _has_gpt_store = False
