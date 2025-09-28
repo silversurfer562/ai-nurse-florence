@@ -6,6 +6,7 @@ MyDisease.info API integration from copilot-instructions.md
 from typing import Dict, Any, List, Optional
 
 import logging
+import asyncio
 
 from .base_service import BaseService
 from ..utils.redis_cache import cached
@@ -290,9 +291,16 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
         "size": 1
     }
     
-    response = _requests_get(base_url, params=params, timeout=10)
-    response.raise_for_status()
-    data = response.json()
+    if _has_httpx:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+            response = await client.get(base_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+    else:
+        # Call synchronous helper in a thread to avoid blocking the event loop
+        response = await asyncio.to_thread(_requests_get, base_url, {"params": params, "timeout": 10})
+        response.raise_for_status()
+        data = response.json()
     
     hits = data.get("hits", [])
     if hits:
