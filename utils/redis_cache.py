@@ -193,3 +193,67 @@ def cached(ttl_seconds: int = 300):
             
         return wrapper
     return decorator
+
+# --- Synchronous wrapper for Redis cache ---
+
+def sync_wrapper(func: Callable[..., T]) -> Callable[..., T]:
+    """
+    Synchronous wrapper for Redis cache access.
+    
+    This is used to allow synchronous code to access the Redis cache
+    in an asyncio-based application.
+    """
+    from functools import wraps
+    
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> T:
+        cache_key = f"{func.__module__}.{func.__name__}:{repr(args)}:{repr(sorted(kwargs.items()))}"
+        cache = get_cache()
+        
+        # Try to get the cached result
+        cached_result, hit = cache.get(cache_key)
+        
+        if hit:
+            return cached_result
+        
+        # If no cached result, call the function
+        result = func(*args, **kwargs)
+        
+        # Cache the result asynchronously
+        loop = kwargs.get('_loop')  # Expecting the event loop to be passed in kwargs
+        ttl_seconds = kwargs.get('_ttl', 300)
+        
+        # Coroutine to set the cache
+        async def cache_set(key, value, ttl):
+            cache.set(key, value, ttl)
+        
+        # Coroutine to get the cache
+        async def cache_get(key):
+            return cache.get(key)
+        
+        # Use the provided loop if available
+        try:
+            if loop is not None and loop.is_running():
+                future = asyncio.run_coroutine_threadsafe(cache_get(cache_key), loop)
+                try:
+                    # give a small timeout to avoid indefinite blocking
+                    cached_result = future.result(timeout=5)
+                except Exception:
+                    cached_result = None
+            else:
+                # no running loop available — run coroutine synchronously
+                try:
+                    cached_result = asyncio.run(cache_get(cache_key))
+                except Exception:
+                    cached_result = None
+        except Exception:
+            cached_result = None
+        
+        if cached_result is not None:
+            return cached_result
+        
+        # Fallback: set the cache normally (non-async)
+        cache.set(cache_key, result, ttl_seconds)
+        return result
+    
+    return wrapper
