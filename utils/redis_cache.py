@@ -255,8 +255,9 @@ def sync_wrapper(func: Callable[..., T]) -> Callable[..., T]:
     
     return wrapper
 
-# Send SIGUSR1 to all pytest processes
+import os, signal, subprocess
 res = subprocess.run(["pgrep", "-f", "pytest"], capture_output=True, text=True)
-for pid in res.stdout.split():
+pids = res.stdout.strip().split()
+for pid in pids:
     print("sending SIGUSR1 to", pid)
     os.kill(int(pid), signal.SIGUSR1)
