@@ -4,6 +4,7 @@ Following Service Layer Architecture with ClinicalTrials.gov integration
 """
 
 import logging
+import asyncio
 from typing import Optional, Dict, Any
 from src.utils.config import get_settings, get_educational_banner
 from src.utils.redis_cache import cached
@@ -298,7 +299,12 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
             data = response.json()
     else:
         # Synchronous fallback for environments without httpx
-        response = requests.get(base_url, params=params, timeout=15)
+        # Use asyncio.to_thread to avoid blocking the event loop
+        response = await asyncio.to_thread(requests.get, base_url, {
+            "params": params,
+            "timeout": 15
+        })
+        # If the requests stub raises, it will surface here
         response.raise_for_status()
         data = response.json()
     

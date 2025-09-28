@@ -41,8 +41,6 @@ logger = logging.getLogger(__name__)
 # symbols that callers may monkeypatch. We now use httpx internally,
 # but keep `_has_requests`, `requests`, and `_requests_get` available so
 # tests written against the previous implementation still function.
-_has_requests = False
-requests = None
 
 def _requests_get(*args, **kwargs):
     """Legacy helper kept for tests; raises if requests not available."""
@@ -149,16 +147,16 @@ class PubMedService(BaseService[Dict[str, Any]]):
         # Parse article details
         articles = self._parse_pubmed_xml(fetch_content)
 
-            return {
-                "articles": articles,
-                "total_results": len(pmids),
-                "query_terms": query,
-                "search_metadata": {
-                    "max_results": max_results,
-                    "sort_by": sort_by,
-                    "retrieved": len(articles)
-                }
+        return {
+            "articles": articles,
+            "total_results": len(pmids),
+            "query_terms": query,
+            "search_metadata": {
+                "max_results": max_results,
+                "sort_by": sort_by,
+                "retrieved": len(articles)
             }
+        }
     
     def _parse_pubmed_xml(self, xml_content: bytes) -> List[Dict[str, Any]]:
         """Parse PubMed XML response into structured data"""
