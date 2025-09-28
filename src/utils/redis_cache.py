@@ -233,9 +233,32 @@ def cache_get_sync(key: str) -> Optional[Any]:
 
     # If not in memory, try Redis (best-effort)
     try:
-        return _run_sync(cache_get(key))
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
+    cached_result = None
+    try:
+        # If we have a running loop in the current thread, avoid submitting
+        # coroutines into it from sync code (this can deadlock in pytest's
+        # asyncio runner). Prefer the deterministic in-memory cache in that
+        # case and skip attempting a Redis read from sync contexts.
+        if loop is not None and loop.is_running():
+            cached_result = None
+        else:
+            # No running loop available — run the coroutine synchronously (safe fallback)
+            try:
+                cached_result = asyncio.run(cache_get(key))
+            except Exception:
+                cached_result = None
     except Exception:
-        return None
+        cached_result = None
+
+    if cached_result is not None:
+        logging.debug(f"Cache hit for {key}")
+        return cached_result
+
+    return None
 
 
 def cache_delete_sync(key: str) -> bool:
@@ -297,11 +320,22 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
                     loop = None
 
                 cached_result = None
-                if loop and loop.is_running():
-                    # If running inside an event loop, schedule and wait
-                    cached_result = asyncio.run_coroutine_threadsafe(cache_get(cache_key), loop).result()
-                else:
-                    cached_result = asyncio.run(cache_get(cache_key))
+                try:
+                    # If we have a running loop, use run_coroutine_threadsafe with a short timeout.
+                    if loop is not None and loop.is_running():
+                        future = asyncio.run_coroutine_threadsafe(cache_get(cache_key), loop)
+                        try:
+                            cached_result = future.result(timeout=5)
+                        except Exception:
+                            cached_result = None
+                    else:
+                        # No running loop available — run the coroutine synchronously (safe fallback)
+                        try:
+                            cached_result = asyncio.run(cache_get(cache_key))
+                        except Exception:
+                            cached_result = None
+                except Exception:
+                    cached_result = None
 
                 if cached_result is not None:
                     logging.debug(f"Cache hit for {cache_key}")
@@ -310,11 +344,18 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"):
                 logging.debug(f"Cache miss for {cache_key}")
                 result = func(*args, **kwargs)
 
-                # store result
-                if loop and loop.is_running():
-                    asyncio.run_coroutine_threadsafe(cache_set(cache_key, result, ttl_seconds), loop)
-                else:
-                    asyncio.run(cache_set(cache_key, result, ttl_seconds))
+                # store result: prefer in-memory (already set by wrapper); if
+                # no event loop is running we can update Redis synchronously.
+                try:
+                    if loop is not None and loop.is_running():
+                        # Skip Redis update when running inside an event loop
+                        # in the same thread to avoid blocking/deadlocks.
+                        pass
+                    else:
+                        asyncio.run(cache_set(cache_key, result, ttl_seconds))
+                except Exception:
+                    # Best-effort: ignore cache update failures
+                    pass
 
                 return result
 

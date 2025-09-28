@@ -7,11 +7,11 @@ from typing import Dict, Any, List, Optional
 
 # Conditional imports following copilot-instructions.md
 try:
-    import requests
-    _has_requests = True
+    import httpx
+    _has_httpx = True
 except ImportError:
-    _has_requests = False
-    requests = None
+    _has_httpx = False
+    httpx = None
 
 try:
     from xml.etree import ElementTree as ET
@@ -27,6 +27,7 @@ from ..utils.config import get_settings
 from ..utils.exceptions import ExternalServiceException
 
 import logging
+import asyncio
 logger = logging.getLogger(__name__)
 
 
@@ -56,24 +57,23 @@ class PubMedService(BaseService[Dict[str, Any]]):
         super().__init__("pubmed")
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
         self.settings = get_settings()
-    
+
     @cached(ttl_seconds=3600)
-    def search_literature(
-        self, 
-        query: str, 
-        max_results: int = 10, 
+    async def search_literature(
+        self,
+        query: str,
+        max_results: int = 10,
         sort_by: str = "relevance"
     ) -> Dict[str, Any]:
         """
-        Search medical literature with caching
-        Following Caching Strategy from copilot-instructions.md
+        Async search of medical literature with caching using httpx AsyncClient.
         """
         self._log_request(query, max_results=max_results, sort_by=sort_by)
-        
+
         try:
             # Use live service if available and enabled
-            if self.settings.USE_LIVE_SERVICES and _has_requests and _has_xml:
-                result = self._fetch_from_pubmed(query, max_results, sort_by)
+            if self.settings.USE_LIVE_SERVICES and _has_httpx and _has_xml:
+                result = await self._fetch_from_pubmed(query, max_results, sort_by)
                 self._log_response(query, True, source="pubmed_api")
                 return self._create_response(result, query, source="pubmed_api")
             else:
@@ -81,65 +81,66 @@ class PubMedService(BaseService[Dict[str, Any]]):
                 result = self._create_stub_response(query, max_results, sort_by)
                 self._log_response(query, True, source="stub_data")
                 return self._create_response(result, query, source="stub_data")
-                
+
         except Exception as e:
             self._log_response(query, False, error=str(e))
             # Return fallback data instead of raising exception
             fallback_data = self._create_stub_response(query, max_results, sort_by)
             return self._handle_external_service_error(e, fallback_data)
     
-    def _fetch_from_pubmed(self, query: str, max_results: int, sort_by: str) -> Dict[str, Any]:
-        """Fetch literature data from PubMed API"""
-        if not _has_requests:
-            raise ExternalServiceException("Requests library not available", "pubmed_service")
-        
+    async def _fetch_from_pubmed(self, query: str, max_results: int, sort_by: str) -> Dict[str, Any]:
+        """Fetch literature data from PubMed API asynchronously using httpx."""
+        if not _has_httpx:
+            raise ExternalServiceException("httpx library not available", "pubmed_service")
+
         if not _has_xml:
             raise ExternalServiceException("XML parsing not available", "pubmed_service")
-        
-        # Step 1: Search for PMIDs
-        search_url = f"{self.base_url}/esearch.fcgi"
-        search_params = {
-            "db": "pubmed",
-            "term": query,
-            "retmax": max_results,
-            "sort": "relevance" if sort_by == "relevance" else "pub_date",
-            "retmode": "xml"
-        }
-        
-        search_response = requests.get(search_url, params=search_params, timeout=10)
-        search_response.raise_for_status()
-        
-        # Parse search results
-        search_root = ET.fromstring(search_response.content)
-        pmids = [id_elem.text for id_elem in search_root.findall(".//Id")]
-        
-        if not pmids:
-            return self._create_no_results_response(query)
-        
-        # Step 2: Fetch article details
-        fetch_url = f"{self.base_url}/efetch.fcgi"
-        fetch_params = {
-            "db": "pubmed",
-            "id": ",".join(pmids[:max_results]),
-            "retmode": "xml"
-        }
-        
-        fetch_response = requests.get(fetch_url, params=fetch_params, timeout=15)
-        fetch_response.raise_for_status()
-        
-        # Parse article details
-        articles = self._parse_pubmed_xml(fetch_response.content)
-        
-        return {
-            "articles": articles,
-            "total_results": len(pmids),
-            "query_terms": query,
-            "search_metadata": {
-                "max_results": max_results,
-                "sort_by": sort_by,
-                "retrieved": len(articles)
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            # Step 1: Search for PMIDs
+            search_url = f"{self.base_url}/esearch.fcgi"
+            search_params = {
+                "db": "pubmed",
+                "term": query,
+                "retmax": max_results,
+                "sort": "relevance" if sort_by == "relevance" else "pub_date",
+                "retmode": "xml"
             }
-        }
+
+            search_response = await client.get(search_url, params=search_params)
+            search_response.raise_for_status()
+
+            # Parse search results
+            search_root = ET.fromstring(search_response.content)
+            pmids = [id_elem.text for id_elem in search_root.findall(".//Id") if id_elem is not None]
+
+            if not pmids:
+                return self._create_no_results_response(query)
+
+            # Step 2: Fetch article details
+            fetch_url = f"{self.base_url}/efetch.fcgi"
+            fetch_params = {
+                "db": "pubmed",
+                "id": ",".join([p for p in pmids[:max_results] if p]),
+                "retmode": "xml"
+            }
+
+            fetch_response = await client.get(fetch_url, params=fetch_params)
+            fetch_response.raise_for_status()
+
+            # Parse article details
+            articles = self._parse_pubmed_xml(fetch_response.content)
+
+            return {
+                "articles": articles,
+                "total_results": len(pmids),
+                "query_terms": query,
+                "search_metadata": {
+                    "max_results": max_results,
+                    "sort_by": sort_by,
+                    "retrieved": len(articles)
+                }
+            }
     
     def _parse_pubmed_xml(self, xml_content: bytes) -> List[Dict[str, Any]]:
         """Parse PubMed XML response into structured data"""
@@ -288,9 +289,9 @@ class PubMedService(BaseService[Dict[str, Any]]):
             ]
         }
     
-    def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
-        """Implementation of abstract method from BaseService"""
-        return self.search_literature(query, **kwargs)
+    async def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
+        """Implementation of abstract method from BaseService (async)."""
+        return await self.search_literature(query, **kwargs)
 # Minimal logging helpers in case BaseService doesn't provide them at runtime
     def _log_request(self, *args, **kwargs) -> None:
         logger.debug(f"PubMedService request: {args} {kwargs}")
