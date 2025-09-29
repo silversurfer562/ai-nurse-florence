@@ -44,10 +44,14 @@ def _load_core_routers():
         from .auth import router
         _router_registry['auth'] = router
         router_status['auth'] = True
-        logger.info("✅ Auth router loaded")
+        logger.info("✅ Enhanced Auth router loaded successfully")
+        logger.info(f"Auth router endpoints: {len(router.routes)}")
     except (ImportError, AttributeError) as e:
-        logger.warning(f"⚠️ Auth router unavailable: {e}")
+        logger.error(f"❌ Enhanced Auth router import failed: {e}")
         router_status['auth'] = False
+        # Import traceback for detailed error logging
+        import traceback
+        logger.error(f"Enhanced Auth router traceback: {traceback.format_exc()}")
 
 def _load_medical_routers():
     """Load medical information routers following External Service Integration."""
