@@ -34,11 +34,14 @@
 - Mobile-responsive healthcare UI
 
 ### 🔄 **IN PROGRESS**
-- Custom domain SSL configuration (ainurseflorence.com)
+- Custom domain SSL configuration (ainurseflorence.com) - DNS propagation pending
 - Production monitoring and logging optimization
 - Performance optimization based on live metrics
 - API documentation enhancement
 - Live service integration testing
+
+**⚠️ TESTING NOTE**: Currently using Railway domain for testing while DNS resolves:
+**Primary Testing URL**: https://ai-nurse-florence-production.up.railway.app
 
 ### 📋 **NEXT PRIORITIES (Post-Deployment)**
 | Category | Priority | Status |

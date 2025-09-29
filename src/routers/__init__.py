@@ -200,3 +200,10 @@ except Exception as e:
 # Export a canonical mapping at import time, but prefer callers to call get_available_routers()
 available_routers = get_available_routers()
 __all__ = ['available_routers', 'router_status', 'get_available_routers', 'get_router_status', 'reload_routers']
+
+# Add monitoring router to __init__.py
+monitoring = {
+    'router': 'src.routers.monitoring:router',
+    'name': 'monitoring',
+    'description': 'Production monitoring and health metrics'
+}
