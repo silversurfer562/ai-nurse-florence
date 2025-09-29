@@ -11,13 +11,25 @@ logger = logging.getLogger(__name__)
 
 # Router registry with conditional imports following Conditional Imports Pattern
 _router_registry: Dict[str, APIRouter] = {}
+        _load_monitoring_router()
 router_status: Dict[str, bool] = {}
 
 def _load_core_routers():
     """Load core routers following Conditional Imports Pattern."""
     
     # Health router
+    
+    # Monitoring router
     try:
+        from .monitoring import router
+        _router_registry["monitoring"] = router
+        router_status["monitoring"] = True
+        logger.info("✅ Monitoring router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Monitoring router unavailable: {e}")
+        router_status["monitoring"] = False
+    try:
+        _load_monitoring_router()
         from .health import router
         _router_registry['health'] = router
         router_status['health'] = True
@@ -28,6 +40,7 @@ def _load_core_routers():
 
     # Auth router  
     try:
+        _load_monitoring_router()
         from .auth import router
         _router_registry['auth'] = router
         router_status['auth'] = True
@@ -41,6 +54,7 @@ def _load_medical_routers():
     
     # Disease router
     try:
+        _load_monitoring_router()
         from .disease import router
         _router_registry['disease'] = router
         router_status['disease'] = True
@@ -51,6 +65,7 @@ def _load_medical_routers():
 
     # Literature router
     try:
+        _load_monitoring_router()
         from .literature import router
         _router_registry['literature'] = router
         router_status['literature'] = True
@@ -61,6 +76,7 @@ def _load_medical_routers():
 
     # Clinical trials router
     try:
+        _load_monitoring_router()
         from .clinical_trials import router
         _router_registry['clinical_trials'] = router
         router_status['clinical_trials'] = True
@@ -71,6 +87,7 @@ def _load_medical_routers():
 
     # Clinical decision support router
     try:
+        _load_monitoring_router()
         from .clinical_decision_support import router
         _router_registry['clinical_decision_support'] = router
         router_status['clinical_decision_support'] = True
@@ -93,6 +110,7 @@ def _load_wizard_routers():
     
     for wizard_name, module_path in wizard_routers.items():
         try:
+        _load_monitoring_router()
             import importlib
             module = importlib.import_module(module_path)
             
@@ -116,6 +134,7 @@ def _load_routers():
     logger.info("Loading routers following Router Organization pattern...")
     
     try:
+        _load_monitoring_router()
         _load_core_routers()
         _load_medical_routers()
         _load_wizard_routers()
@@ -140,7 +159,8 @@ def _load_routers():
                 'sbar_report': False,
                 'medication_reconciliation': False,
                 'care_plan': False,
-                'discharge_planning': False
+                'discharge_planning': False,
+        'monitoring': False
             })
 
 def get_available_routers() -> Dict[str, APIRouter]:
@@ -179,6 +199,7 @@ def reload_routers():
 
 # Initialize routers on module import with graceful degradation
 try:
+        _load_monitoring_router()
     _load_routers()
 except Exception as e:
     logger.error(f"Initial router loading failed: {e}")
@@ -194,16 +215,11 @@ except Exception as e:
         'sbar_report': False,
         'medication_reconciliation': False,
         'care_plan': False,
-        'discharge_planning': False
+        'discharge_planning': False,
+        'monitoring': False
     }
 
 # Export a canonical mapping at import time, but prefer callers to call get_available_routers()
 available_routers = get_available_routers()
 __all__ = ['available_routers', 'router_status', 'get_available_routers', 'get_router_status', 'reload_routers']
 
-# Add monitoring router to __init__.py
-monitoring = {
-    'router': 'src.routers.monitoring:router',
-    'name': 'monitoring',
-    'description': 'Production monitoring and health metrics'
-}
