@@ -62,7 +62,7 @@ async def health_check():
         "version": settings.APP_VERSION,
         "timestamp": datetime.now().isoformat(),
         "banner": settings.EDUCATIONAL_BANNER,
-    "base_url": get_base_url(),
+        "base_url": get_base_url(),
         "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "development",
         "services": services,
         "configuration": {
@@ -80,6 +80,25 @@ async def health_check():
     }
     # include mesh readiness
     health_data["services"]["mesh_index"] = {"available": mesh_ready}
+    
+    # Add Step 2 Production Monitoring Data
+    try:
+        from src.utils.monitoring import get_monitoring_data, performance_monitor, alert_manager
+        monitoring_data = get_monitoring_data()
+        performance_metrics = performance_monitor.get_metrics()
+        alerts = alert_manager.check_alerts(monitoring_data)
+        
+        health_data["monitoring"] = {
+            "step_2_status": "complete",
+            "performance": performance_metrics,
+            "alerts": alerts,
+            "full_data": monitoring_data
+        }
+    except Exception as e:
+        health_data["monitoring"] = {
+            "step_2_status": "partial",
+            "error": str(e)
+        }
     
     return health_data
 
