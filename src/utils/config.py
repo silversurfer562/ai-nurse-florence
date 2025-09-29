@@ -44,6 +44,46 @@ class Settings(BaseSettings):
         description="API Bearer token"
     )
     
+    # JWT Configuration for Phase 3.1: Core Authentication System
+    JWT_SECRET_KEY: str = Field(
+        default="your-super-secret-jwt-key-change-in-production-min-32-chars",
+        description="JWT secret key for token signing (must be at least 32 characters)"
+    )
+    JWT_ALGORITHM: str = Field(
+        default="HS256",
+        description="JWT signing algorithm"
+    )
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=30,
+        description="Access token expiration time in minutes"
+    )
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
+        default=7,
+        description="Refresh token expiration time in days"
+    )
+    
+    # Password Security Configuration
+    PASSWORD_MIN_LENGTH: int = Field(
+        default=8,
+        description="Minimum password length for healthcare security"
+    )
+    PASSWORD_REQUIRE_UPPERCASE: bool = Field(
+        default=True,
+        description="Require uppercase letters in passwords"
+    )
+    PASSWORD_REQUIRE_LOWERCASE: bool = Field(
+        default=True,
+        description="Require lowercase letters in passwords"
+    )
+    PASSWORD_REQUIRE_NUMBERS: bool = Field(
+        default=True,
+        description="Require numbers in passwords"
+    )
+    PASSWORD_REQUIRE_SPECIAL: bool = Field(
+        default=True,
+        description="Require special characters in passwords"
+    )
+    
     # Database Configuration following Database Patterns
     DATABASE_URL: str = Field(
         default="sqlite:///./ai_nurse_florence.db",
