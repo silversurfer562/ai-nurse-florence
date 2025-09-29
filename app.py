@@ -169,6 +169,16 @@ except Exception as e:
     logger.warning(f"Failed to register admin router: {e}")
     ROUTERS_LOADED["admin"] = False
 
+# Add cache monitoring router (Phase 4.1 - Enhanced Redis Caching)
+try:
+    from src.routers.cache_monitoring import router as cache_monitoring_router
+    api_router.include_router(cache_monitoring_router)
+    ROUTERS_LOADED["cache_monitoring"] = True
+    logger.info("Cache monitoring router registered successfully - Phase 4.1 Enhanced Caching")
+except Exception as e:
+    logger.warning(f"Failed to register cache monitoring router: {e}")
+    ROUTERS_LOADED["cache_monitoring"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 

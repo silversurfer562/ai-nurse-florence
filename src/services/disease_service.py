@@ -9,7 +9,19 @@ import logging
 import asyncio
 
 from .base_service import BaseService
-from ..utils.redis_cache import cached
+try:
+    from src.utils.smart_cache import smart_cached, CacheStrategy
+    _has_smart_cache = True
+except ImportError:
+    _has_smart_cache = False
+    # Fallback to regular caching
+    try:
+        from src.utils.redis_cache import cached
+    except ImportError:
+        def cached(ttl_seconds=3600):
+            def decorator(func):
+                return func
+            return decorator
 from ..utils.config import get_settings, get_educational_banner
 from ..utils.exceptions import ExternalServiceException
 
@@ -63,11 +75,17 @@ class DiseaseService(BaseService[Dict[str, Any]]):
         self.settings = get_settings()
     # Settings, logger and helpers are provided; class defines safe fallbacks below
     
-    @cached(ttl_seconds=3600)
+    # Apply appropriate caching decorator based on availability
+    if _has_smart_cache:
+        decorator = smart_cached(CacheStrategy.MEDICAL_REFERENCE, similarity_check=True)
+    else:
+        decorator = cached(ttl_seconds=3600)
+    
+    @decorator
     async def lookup_disease(self, query: str, include_symptoms: bool = True, include_treatments: bool = True) -> Dict[str, Any]:
         """
-        Lookup disease information with caching
-        Following Caching Strategy from copilot-instructions.md
+        Lookup disease information with enhanced caching
+        Uses smart caching with medical query normalization if available
         """
         self._log_request(query, include_symptoms=include_symptoms, include_treatments=include_treatments)
         
