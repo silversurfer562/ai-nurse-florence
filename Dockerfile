@@ -17,20 +17,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Copy application files
+COPY . /app
+RUN chown -R florence:florence /app
 
-# Copy application code
-COPY . .
+# Make the startup script executable
+RUN chmod +x /app/start-railway.sh
 
-# Expose the application port
+USER florence
+
+# Expose application port
 EXPOSE 8000
 
-# Health check - let Railway handle this with its own health check
-# CMD will use the proper PORT environment variable at runtime
-
-# Ensure start script exists and is executable (uses $PORT on Railway)
-COPY run.sh .
-RUN chmod +x run.sh
-
-# Command to run the application - binds to $PORT provided by Railway
-CMD ["./run.sh"]
+# Default command: use our startup script that handles PORT properly
+CMD ["/app/start-railway.sh"]
