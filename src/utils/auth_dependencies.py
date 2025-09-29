@@ -1,12 +1,12 @@
 """
 Authentication Dependencies for AI Nurse Florence
-Phase 3.1: Core Authentication System Dependencies
+Phase 3.2: Complete Authentication System Dependencies
 
 Following Conditional Imports Pattern and dependency injection from coding instructions.
 """
 
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -17,7 +17,7 @@ security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-):
+) -> Dict[str, Any]:
     """
     Dependency to get current authenticated user.
     Following Authentication & Authorization pattern from coding instructions.
@@ -34,13 +34,14 @@ async def get_current_user(
         from src.utils.auth_enhanced import verify_token
         
         # Verify the access token
-        payload = verify_token(credentials.credentials, "access")
+        payload = verify_token(credentials.credentials)
         
         # Extract user information
         user_id = payload.get("sub")
         email = payload.get("email")
-        role = payload.get("role")
+        role = payload.get("role", "user")
         permissions = payload.get("permissions", [])
+        session_id = payload.get("session_id")
         
         if not user_id:
             raise HTTPException(
@@ -49,99 +50,32 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"}
             )
         
-        # Return user data (in Phase 3.2, this will be from database)
         return {
-            "id": user_id,
+            "user_id": user_id,
             "email": email,
             "role": role,
             "permissions": permissions,
-            "authenticated": True
+            "session_id": session_id,
+            "is_authenticated": True,
+            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.warning(f"Authentication failed: {e}")
+        logger.error(f"Authentication failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"}
         )
 
-async def get_current_active_user(current_user: dict = Depends(get_current_user)):
-    """
-    Dependency to get current active user.
-    Ensures user is active and verified for healthcare operations.
-    """
-    # In Phase 3.2, this will check database for is_active status
-    if not current_user.get("authenticated"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is not active"
-        )
-    
-    return current_user
-
-def require_role(required_role: str):
-    """
-    Dependency factory to require specific user role.
-    
-    Usage:
-        @router.get("/admin-only")
-        async def admin_endpoint(user = Depends(require_role("admin"))):
-            return {"message": "Admin access granted"}
-    """
-    async def role_checker(current_user: dict = Depends(get_current_active_user)):
-        user_role = current_user.get("role")
-        
-        if user_role != required_role:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required role: {required_role}"
-            )
-        
-        return current_user
-    
-    return role_checker
-
-def require_permission(required_permission: str):
-    """
-    Dependency factory to require specific permission.
-    
-    Usage:
-        @router.get("/clinical-data")
-        async def clinical_endpoint(user = Depends(require_permission("view_patients"))):
-            return {"message": "Clinical access granted"}
-    """
-    async def permission_checker(current_user: dict = Depends(get_current_active_user)):
-        user_permissions = current_user.get("permissions", [])
-        
-        if required_permission not in user_permissions:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required permission: {required_permission}"
-            )
-        
-        return current_user
-    
-    return permission_checker
-
-# Healthcare-specific role dependencies
-require_admin = require_role("admin")
-require_nurse = require_role("nurse")
-
-# Healthcare-specific permission dependencies  
-require_clinical_access = require_permission("view_patients")
-require_write_access = require_permission("write")
-require_manage_users = require_permission("manage_users")
-
 async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-):
+) -> Optional[Dict[str, Any]]:
     """
-    Optional authentication dependency.
-    Returns user if authenticated, None otherwise.
-    Useful for endpoints that work with or without authentication.
+    Dependency for optional authentication.
+    Returns user data if authenticated, None if not.
     """
     if not credentials:
         return None
@@ -150,5 +84,101 @@ async def get_optional_user(
         return await get_current_user(credentials)
     except HTTPException:
         return None
-    except Exception:
-        return None
+
+def require_permission(permission: str):
+    """
+    Dependency factory for role-based access control.
+    Following role-based access patterns for healthcare applications.
+    """
+    async def permission_dependency(
+        current_user: Dict[str, Any] = Depends(get_current_user)
+    ) -> Dict[str, Any]:
+        try:
+            from src.utils.auth_enhanced import validate_user_role
+            
+            if not validate_user_role(current_user, permission):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Insufficient permissions. Required: {permission}"
+                )
+            
+            return current_user
+            
+        except Exception as e:
+            logger.error(f"Permission validation failed: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission validation failed"
+            )
+    
+    return permission_dependency
+
+def require_role(role: str):
+    """
+    Dependency factory for role-based access control.
+    Following role-based access patterns for healthcare applications.
+    """
+    async def role_dependency(
+        current_user: Dict[str, Any] = Depends(get_current_user)
+    ) -> Dict[str, Any]:
+        user_role = current_user.get("role", "user")
+        
+        if user_role != role and user_role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required role: {role}"
+            )
+        
+        return current_user
+    
+    return role_dependency
+
+# Convenience dependencies for common roles
+require_nurse = require_role("nurse")
+require_admin = require_role("admin")
+
+# Convenience dependencies for common permissions
+require_clinical_access = require_permission("read:clinical_decisions")
+require_literature_access = require_permission("read:literature")
+require_sbar_access = require_permission("create:sbar_reports")
+
+async def get_api_key_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> Dict[str, Any]:
+    """
+    Alternative authentication for API key based access.
+    Following API key auth patterns from coding instructions.
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key required",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    try:
+        from src.utils.config import get_settings
+        settings = get_settings()
+        
+        if credentials.credentials == settings.API_BEARER:
+            return {
+                "user_id": "api_user",
+                "email": "api@ai-nurse-florence.org",
+                "role": "api",
+                "permissions": ["read:*"],
+                "session_id": "api_session",
+                "is_authenticated": True,
+                "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid API key"
+            )
+            
+    except Exception as e:
+        logger.error(f"API key authentication failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key authentication failed"
+        )
