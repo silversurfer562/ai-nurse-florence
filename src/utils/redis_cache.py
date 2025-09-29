@@ -287,7 +287,8 @@ def cache_delete_sync(key: str) -> bool:
         logging.debug("Memory cache delete failed in sync wrapper")
 
     try:
-        return _run_sync(cache_delete(key))
+        result = _run_sync(cache_delete(key))
+        return bool(result)
     except Exception:
         return False
 
@@ -301,7 +302,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse") -> Callable[[C
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         is_coro = asyncio.iscoroutinefunction(func)
 
-        def _make_key(args, kwargs):
+        def _make_key(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
             try:
                 key_body = json.dumps(
                     {"args": args, "kwargs": kwargs}, default=str, sort_keys=True
@@ -339,7 +340,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse") -> Callable[[C
 
                 return result
 
-            return async_wrapper  # type: ignore[return-value]
+            return async_wrapper
         else:
 
             @wraps(func)
@@ -378,7 +379,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse") -> Callable[[C
                     if running_loop is not None:
                         # We're in an async context but called a sync function; schedule
                         # an async cache update task without awaiting it.
-                        def _schedule_update():
+                        def _schedule_update() -> None:
                             try:
                                 asyncio.create_task(
                                     cache_set(cache_key, result, ttl_seconds)
@@ -401,7 +402,7 @@ def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse") -> Callable[[C
 
                 return result
 
-            return sync_wrapper  # type: ignore[return-value]
+            return sync_wrapper
 
     return decorator
 
@@ -430,7 +431,7 @@ async def get_cache_status() -> Dict[str, Any]:
 
 
 # Cleanup function for graceful shutdown
-async def cleanup_cache():
+async def cleanup_cache() -> None:
     """Cleanup cache connections"""
     global _redis_client, _memory_cache
 
@@ -447,7 +448,7 @@ async def cleanup_cache():
     logging.info("Cache cleanup completed")
 
 
-def get_cache_client():
+def get_cache_client() -> dict[str, Any]:
     """Return cache client status information.
 
     Returns a dict: {"available": bool, "url": Optional[str]}

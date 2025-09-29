@@ -9,20 +9,20 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 # Service registry following Service Layer Architecture
-_service_registry = {}
-_service_status = {}
+_service_registry: Dict[str, Any] = {}
+_service_status: Dict[str, bool] = {}
 
 
-def _load_services():
+def _load_services() -> None:
     """Load all services following Conditional Imports Pattern."""
 
     # Disease service
     try:
         from .disease_service import create_disease_service
 
-        service = create_disease_service()
-        _service_registry["disease"] = service
-        _service_status["disease"] = service is not None
+        disease_service = create_disease_service()
+        _service_registry["disease"] = disease_service
+        _service_status["disease"] = disease_service is not None
         logger.info("Disease service registered")
     except ImportError as e:
         logger.warning(f"Disease service unavailable: {e}")
@@ -32,9 +32,9 @@ def _load_services():
     try:
         from .pubmed_service import create_pubmed_service
 
-        service = create_pubmed_service()
-        _service_registry["pubmed"] = service
-        _service_status["pubmed"] = service is not None
+        pubmed_service = create_pubmed_service()
+        _service_registry["pubmed"] = pubmed_service
+        _service_status["pubmed"] = pubmed_service is not None
         logger.info("PubMed service registered")
     except ImportError as e:
         logger.warning(f"PubMed service unavailable: {e}")
@@ -44,9 +44,9 @@ def _load_services():
     try:
         from .clinical_trials_service import create_clinical_trials_service
 
-        service = create_clinical_trials_service()
-        _service_registry["clinical_trials"] = service
-        _service_status["clinical_trials"] = service is not None
+        clinical_trials_service = create_clinical_trials_service()
+        _service_registry["clinical_trials"] = clinical_trials_service
+        _service_status["clinical_trials"] = clinical_trials_service is not None
         logger.info("Clinical trials service registered")
     except ImportError as e:
         logger.warning(f"Clinical trials service unavailable: {e}")
@@ -56,9 +56,9 @@ def _load_services():
     try:
         from .sbar_service import create_sbar_service
 
-        service = create_sbar_service()
-        _service_registry["sbar"] = service
-        _service_status["sbar"] = service is not None
+        sbar_service = create_sbar_service()
+        _service_registry["sbar"] = sbar_service
+        _service_status["sbar"] = sbar_service is not None
         logger.info("SBAR service registered")
     except ImportError as e:
         logger.warning(f"SBAR service unavailable: {e}")
@@ -68,9 +68,9 @@ def _load_services():
     try:
         from .openai_client import create_openai_service
 
-        service = create_openai_service()
-        _service_registry["openai"] = service
-        _service_status["openai"] = service is not None
+        openai_service = create_openai_service()
+        _service_registry["openai"] = openai_service
+        _service_status["openai"] = openai_service is not None
         logger.info("OpenAI service registered")
     except ImportError as e:
         logger.warning(f"OpenAI service unavailable: {e}")
@@ -97,9 +97,9 @@ _load_services()
 __all__ = ["get_service", "get_available_services"]
 
 
-def reload_services():
+def reload_services() -> None:
     """Reload all services (useful for testing) following Service Layer Architecture."""
     global _service_registry, _service_status
-    _service_registry = {}
-    _service_status = {}
+    _service_registry.clear()
+    _service_status.clear()
     _load_services()

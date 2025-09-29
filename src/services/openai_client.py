@@ -4,7 +4,10 @@ Following OpenAI Integration pattern with environment-based API key loading
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import openai
 from src.utils.config import get_settings, get_educational_banner, get_openai_config
 
 logger = logging.getLogger(__name__)
@@ -16,16 +19,16 @@ class OpenAIService:
     Implements Conditional Imports Pattern for graceful degradation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.settings = get_settings()
         self.config = get_openai_config()
         self.banner = get_educational_banner()
 
         # Try to initialize OpenAI client following lazy client pattern
-        self._client = None
+        self._client: Optional['openai.OpenAI'] = None
         self._initialize_client()
 
-    def _initialize_client(self):
+    def _initialize_client(self) -> None:
         """Initialize OpenAI client if API key is available."""
         if self.config["available"]:
             try:
@@ -33,7 +36,11 @@ class OpenAIService:
                 try:
                     import openai
 
-                    self._client = openai.OpenAI(api_key=self.config["api_key"])
+                    api_key = self.config["api_key"]
+                    if isinstance(api_key, str):
+                        self._client = openai.OpenAI(api_key=api_key)
+                    else:
+                        self._client = None
                     logger.info("OpenAI service: Client initialized successfully")
                 except ImportError:
                     logger.info(
@@ -100,9 +107,14 @@ class OpenAIService:
 
             messages.append({"role": "user", "content": prompt})
 
-            # Make API call
-            response = await self._client.chat.completions.create(
-                model=self.config["model"],
+            # Make API call (client is guaranteed to be available here)
+            if self._client is None:
+                raise ValueError("OpenAI client not initialized")
+            model = self.config["model"]
+            if not isinstance(model, str):
+                raise ValueError("Model must be a string")
+            response = self._client.chat.completions.create(
+                model=model,
                 messages=messages,
                 max_tokens=1000,
                 temperature=0.7,
@@ -184,8 +196,8 @@ class OpenAIService:
 
 
 async def clinical_decision_support(
-    patient_data: dict, clinical_question: str, context: str = "general"
-) -> dict:
+    patient_data: dict[str, Any], clinical_question: str, context: str = "general"
+) -> dict[str, Any]:
     """
     Clinical decision support using OpenAI following OpenAI Integration pattern.
 
@@ -261,7 +273,8 @@ def is_openai_available() -> bool:
     """
     try:
         config = get_openai_config()
-        return config["available"]
+        available = config["available"]
+        return bool(available)
     except Exception:
         return False
 
