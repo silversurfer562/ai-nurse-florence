@@ -24,7 +24,7 @@ _wizard_sessions: Dict[str, Dict[str, Any]] = {}
 
 
 @router.post("/start")
-async def start_discharge_planning():
+async def start_discharge_planning() -> Dict[str, Any]:
     """Start discharge planning wizard following Wizard Pattern Implementation."""
     wizard_id = str(uuid4())
 
@@ -52,7 +52,7 @@ async def start_discharge_planning():
 
 
 @router.get("/{wizard_id}/status")
-async def get_discharge_planning_status(wizard_id: str):
+async def get_discharge_planning_status(wizard_id: str) -> Dict[str, Any]:
     """Get discharge planning wizard status following Wizard Pattern Implementation."""
 
     if wizard_id not in _wizard_sessions:

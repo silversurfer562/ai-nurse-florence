@@ -112,19 +112,19 @@ def create_error_response(exception: ServiceException) -> Dict[str, Any]:
 
 
 # HTTP Exception helpers for FastAPI
-def raise_validation_error(field: str, value: Any, reason: str):
+def raise_validation_error(field: str, value: Any, reason: str) -> None:
     """Raise HTTP validation error"""
     exc = ValidationException(field, value, reason)
     raise HTTPException(status_code=exc.status_code, detail=exc.to_dict())
 
 
-def raise_service_error(message: str, status_code: int = 500):
+def raise_service_error(message: str, status_code: int = 500) -> None:
     """Raise HTTP service error"""
     exc = ServiceException(message, status_code=status_code)
     raise HTTPException(status_code=exc.status_code, detail=exc.to_dict())
 
 
-def raise_external_service_error(service_name: str, message: str):
+def raise_external_service_error(service_name: str, message: str) -> None:
     """Raise HTTP external service error"""
     exc = ExternalServiceException(service_name, message)
     raise HTTPException(status_code=exc.status_code, detail=exc.to_dict())

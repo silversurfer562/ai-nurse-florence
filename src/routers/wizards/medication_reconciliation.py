@@ -32,7 +32,7 @@ class MedicationItem(BaseModel):
 
 
 @router.post("/start")
-async def start_medication_reconciliation():
+async def start_medication_reconciliation() -> Dict[str, Any]:
     """Start medication reconciliation wizard following Wizard Pattern Implementation."""
     wizard_id = str(uuid4())
 
@@ -60,7 +60,7 @@ async def start_medication_reconciliation():
 
 
 @router.get("/{wizard_id}/status")
-async def get_wizard_status(wizard_id: str):
+async def get_wizard_status(wizard_id: str) -> Dict[str, Any]:
     """Get current wizard status following Wizard Pattern Implementation."""
 
     if wizard_id not in _wizard_sessions:

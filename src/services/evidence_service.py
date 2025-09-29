@@ -17,7 +17,7 @@ from ..utils.redis_cache import cached
 class EvidenceService:
     """Evidence-based literature and guidelines service"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.mock_database = self._load_mock_literature()
 
     @cached(ttl_seconds=7200, key_prefix="literature_search")

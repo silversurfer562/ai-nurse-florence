@@ -4,7 +4,7 @@ Following Service Layer Architecture
 """
 
 from fastapi import APIRouter, Query, Depends, status, Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from src.services.clinical_decision_service import (
     get_clinical_decision_service,
     ClinicalDecisionService,
@@ -37,7 +37,7 @@ async def get_nursing_interventions(
         enum=["ICU", "med-surg", "ED", "community", "cardiac", "orthopedic"],
     ),
     clinical_service: ClinicalDecisionService = Depends(get_clinical_decision_service),
-):
+) -> Dict[str, Any]:
     """
     Evidence-based nursing interventions endpoint
     Following API design standards from coding instructions
@@ -67,7 +67,7 @@ async def get_risk_assessment(
         description="Type of risk assessment",
         enum=["falls", "pressure_ulcer", "deterioration"],
     )
-):
+) -> Dict[str, Any]:
     """Risk assessment tools endpoint"""
 
     # TODO: Integrate with risk assessment service

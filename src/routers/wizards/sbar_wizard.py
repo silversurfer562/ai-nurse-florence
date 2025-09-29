@@ -47,7 +47,7 @@ _wizard_sessions: Dict[str, Dict[str, Any]] = {}
     summary="Start SBAR Documentation Wizard",
     description="Initialize a new SBAR (Situation, Background, Assessment, Recommendation) documentation workflow.",
 )
-async def start_sbar_wizard():
+async def start_sbar_wizard() -> Dict[str, Any]:
     """Start SBAR wizard following Wizard Pattern Implementation."""
     try:
         wizard_id = str(uuid4())
@@ -92,7 +92,7 @@ async def start_sbar_wizard():
     summary="Submit SBAR wizard step",
     description="Submit data for current step and advance to next step in SBAR workflow.",
 )
-async def submit_wizard_step(wizard_id: str, step_data: SBARWizardRequest):
+async def submit_wizard_step(wizard_id: str, step_data: SBARWizardRequest) -> Dict[str, Any]:
     """Submit wizard step following Wizard Pattern Implementation."""
     try:
         # Get session
@@ -161,7 +161,7 @@ async def submit_wizard_step(wizard_id: str, step_data: SBARWizardRequest):
     summary="Get SBAR wizard status",
     description="Retrieve current status and progress of SBAR wizard session.",
 )
-async def get_wizard_status(wizard_id: str):
+async def get_wizard_status(wizard_id: str) -> Dict[str, Any]:
     """Get wizard session status following Wizard Pattern Implementation."""
 
     session = await _get_wizard_session(wizard_id)

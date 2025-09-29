@@ -1,36 +1,43 @@
-FROM python:3.11-slim
+### Builder stage: create a virtualenv and install dependencies
+FROM python:3.11-slim AS builder
+WORKDIR /install
 
-WORKDIR /app
-
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    ca-certificates \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on
+ENV VENV_PATH=/opt/venv
+RUN python -m venv $VENV_PATH
+ENV PATH="$VENV_PATH/bin:$PATH"
 
-# Install Python dependencies
+# Copy and install python deps into the virtualenv
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+### Final image: copy virtualenv and application, run as non-root user
+FROM python:3.11-slim
+ENV VENV_PATH=/opt/venv
+COPY --from=builder $VENV_PATH $VENV_PATH
+ENV PATH="$VENV_PATH/bin:$PATH"
 
-# Expose the application port
+WORKDIR /app
+
+# Add a non-root user for security
+RUN useradd --create-home --shell /bin/bash --uid 1000 florence || true
+
+# Copy application files
+COPY . /app
+RUN chown -R florence:florence /app
+
+USER florence
+
+# Expose application port
 EXPOSE 8000
 
-# Health check - let Railway handle this with its own health check
-# CMD will use the proper PORT environment variable at runtime
-
-# Ensure start script exists and is executable (uses $PORT on Railway)
-COPY run.sh .
-RUN chmod +x run.sh
-
-# Command to run the application - binds to $PORT provided by Railway
-CMD ["./run.sh"]
+# Default command: production Gunicorn with Uvicorn workers
+# The PORT environment variable is honored by Docker/hosting platforms
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--workers", "4", "--bind", "0.0.0.0:${PORT:-8000}", "app:app"]

@@ -5,7 +5,7 @@ From copilot-instructions.md patterns
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, TypeVar, Generic
+from typing import Any, Dict, TypeVar, Generic, Tuple
 from datetime import datetime
 
 from ..utils.config import get_settings, get_educational_banner
@@ -27,14 +27,14 @@ class BaseService(ABC, Generic[T]):
         self.educational_banner = get_educational_banner()
 
     @abstractmethod
-    async def _process_request(self, *args, **kwargs) -> T:
+    async def _process_request(self, *args: Any, **kwargs: Any) -> T:
         """
         Process the actual service request - to be implemented by subclasses
         Async-first signature so subclasses may implement async IO-heavy logic.
         """
         raise NotImplementedError()
 
-    def _create_response(self, data: Any, query: str, **kwargs) -> Dict[str, Any]:
+    def _create_response(self, data: Any, query: str, **kwargs: Any) -> Dict[str, Any]:
         """
         Create standardized service response with educational banner
         Following API Design Standards from copilot-instructions.md

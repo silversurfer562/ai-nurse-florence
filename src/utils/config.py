@@ -4,7 +4,7 @@ Following coding instructions centralized configuration with Pydantic Settings
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Union, Any
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
@@ -170,7 +170,7 @@ def get_educational_banner() -> str:
     return settings.EDUCATIONAL_BANNER
 
 
-def get_openai_config() -> dict[str, str | bool]:
+def get_openai_config() -> dict[str, Union[str, bool, None]]:
     """Get OpenAI configuration following OpenAI Integration pattern."""
     settings = get_settings()
     return {
@@ -180,7 +180,7 @@ def get_openai_config() -> dict[str, str | bool]:
     }
 
 
-def get_redis_config() -> dict[str, str | bool | int]:
+def get_redis_config() -> dict[str, Union[str, bool, int, None]]:
     """Get Redis configuration following Caching Strategy pattern."""
     settings = get_settings()
     return {

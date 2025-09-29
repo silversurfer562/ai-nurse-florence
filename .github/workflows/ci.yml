@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   lint-and-test:
@@ -38,11 +38,11 @@ jobs:
 
       - name: Run pre-commit hooks
         run: |
-          pre-commit run --all-files || true
+          pre-commit run --all-files
 
       - name: Lint with ruff
         run: |
-          python -m ruff check . || true
+          python -m ruff check .
 
       - name: Run tests
         run: |

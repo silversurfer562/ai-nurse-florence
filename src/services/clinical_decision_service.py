@@ -19,7 +19,7 @@ class ClinicalDecisionService:
     Provides AI-assisted clinical guidance with educational disclaimers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.settings = get_settings()
         self.banner = get_educational_banner()
         self.openai_available = is_openai_available()

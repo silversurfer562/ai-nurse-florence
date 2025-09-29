@@ -61,7 +61,7 @@ class WizardResponse(BaseModel):
 
 
 @router.post("/start", response_model=WizardResponse)
-async def start_nursing_assessment():
+async def start_nursing_assessment() -> WizardResponse:
     """
     Start nursing assessment wizard following Wizard Pattern Implementation.
     Creates new wizard session with UUID-based tracking.
@@ -95,7 +95,7 @@ async def start_nursing_assessment():
 
 
 @router.post("/{wizard_id}/step", response_model=WizardResponse)
-async def submit_assessment_step(wizard_id: str, step_data: NursingAssessmentStep):
+async def submit_assessment_step(wizard_id: str, step_data: NursingAssessmentStep) -> WizardResponse:
     """
     Submit nursing assessment step following Wizard Pattern Implementation.
     Validates step data and advances wizard state.
@@ -159,7 +159,7 @@ async def submit_assessment_step(wizard_id: str, step_data: NursingAssessmentSte
 
 
 @router.get("/{wizard_id}/status", response_model=WizardResponse)
-async def get_assessment_status(wizard_id: str):
+async def get_assessment_status(wizard_id: str) -> WizardResponse:
     """Get current wizard status following Wizard Pattern Implementation."""
     if wizard_id not in _wizard_sessions:
         raise HTTPException(

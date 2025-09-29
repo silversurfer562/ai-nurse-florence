@@ -24,13 +24,13 @@ class DocumentAuthoringService:
     Following wizard pattern implementation from coding instructions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.openai_client = get_openai_client() if _has_openai else None
         self.edu_banner = (
             "Draft for clinician review — not medical advice. No PHI stored."
         )
 
-    @cached(ttl_seconds=600)  # 10-minute cache for generated documents
+    @cached(ttl_seconds=600)  # type: ignore[misc]  # 10-minute cache for generated documents
     async def generate_sbar_report(self, sbar_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate structured SBAR report

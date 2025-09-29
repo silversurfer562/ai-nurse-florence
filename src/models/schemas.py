@@ -70,7 +70,7 @@ class ClinicalDecisionRequest(BaseModel):
     )
 
     @field_validator("patient_condition")
-    def validate_condition(cls, v):
+    def validate_condition(cls, v: str) -> str:
         if len(v.strip()) < 3:
             raise ValueError("Patient condition must be at least 3 characters")
         return v.strip()
@@ -121,7 +121,7 @@ class SBARRequest(BaseModel):
     recommendation: str = Field(default=..., description="Recommendations for care")
 
     @field_validator("situation", "background", "assessment", "recommendation")
-    def validate_sbar_fields(cls, v, info):
+    def validate_sbar_fields(cls, v: str, info: Any) -> str:
         if len(v.strip()) < 10:
             raise ValueError("SBAR fields must be at least 10 characters")
         return v.strip()

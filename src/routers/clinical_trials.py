@@ -43,7 +43,7 @@ async def search_trials(
     max_studies: int = Query(
         10, ge=1, le=50, description="Maximum number of studies to return"
     ),
-):
+) -> ClinicalTrialsResponse:
     # Support 'q' query param as an alias for condition for backward compatibility
     if not condition and q:
         condition = q

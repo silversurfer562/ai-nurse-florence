@@ -38,7 +38,7 @@ async def lookup_disease(
         description="Disease name or condition to look up",
         examples=["hypertension", "diabetes mellitus", "pneumonia"],
     )
-):
+) -> DiseaseResponse:
     """
     Look up disease information following External Service Integration pattern.
 

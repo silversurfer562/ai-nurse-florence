@@ -5,7 +5,7 @@ Following OAuth2 + JWT authentication patterns
 
 from typing import Optional, Dict, Any
 from fastapi import HTTPException, status
-from utils.config import get_settings
+from src.utils.config import get_settings
 
 settings = get_settings()
 
@@ -16,7 +16,7 @@ class ChatGPTStoreAuth:
     Following authentication & authorization patterns from coding instructions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enabled = (
             settings.CHATGPT_STORE_ENABLED
             if hasattr(settings, "CHATGPT_STORE_ENABLED")

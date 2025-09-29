@@ -40,7 +40,7 @@ class SBARStep(BaseModel):
 
 
 @router.post("/start")
-async def start_sbar_report():
+async def start_sbar_report() -> Dict[str, Any]:
     """Start SBAR report wizard following Wizard Pattern Implementation."""
     wizard_id = str(uuid4())
 
@@ -63,7 +63,7 @@ async def start_sbar_report():
 
 
 @router.post("/{wizard_id}/step")
-async def submit_sbar_step(wizard_id: str, step_data: SBARStep):
+async def submit_sbar_step(wizard_id: str, step_data: SBARStep) -> Dict[str, Any]:
     """Submit SBAR step following clinical documentation standards."""
     if wizard_id not in _sbar_sessions:
         raise HTTPException(status_code=404, detail="SBAR session not found")

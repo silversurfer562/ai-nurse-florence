@@ -41,7 +41,7 @@ async def search_literature(
     max_results: int = Query(
         10, ge=1, le=50, description="Maximum number of results to return"
     ),
-):
+) -> LiteratureResponse:
     """
     Search medical literature following External Service Integration pattern.
 

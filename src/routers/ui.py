@@ -18,7 +18,7 @@ router = APIRouter(prefix="/ui", tags=["Enhanced UI"])
 
 
 @router.get("/clinical-decision", response_class=HTMLResponse)
-async def clinical_decision_interface(request: Request):
+async def clinical_decision_interface(request: Request) -> HTMLResponse:
     """
     Enhanced clinical decision support interface
     Following progressive enhancement strategy
@@ -45,7 +45,7 @@ async def clinical_decision_interface(request: Request):
 
 
 @router.get("/sbar-wizard", response_class=HTMLResponse)
-async def sbar_wizard_interface(request: Request):
+async def sbar_wizard_interface(request: Request) -> HTMLResponse:
     """SBAR report generation wizard interface"""
 
     if not _has_templates:

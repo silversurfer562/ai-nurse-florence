@@ -24,6 +24,20 @@
             background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
             border-radius: 2px;
         }
+        /* Accessibility improvements: visible focus outlines and higher contrast for key controls */
+        :focus {
+            outline: 3px solid #2563eb; /* blue-600 */
+            outline-offset: 2px;
+        }
+    /* Slightly darker backgrounds are handled by existing utility classes; avoid empty rules */
+        .modal-status {
+            position: absolute;
+            left: -9999px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -77,16 +91,16 @@
                         Boosts accuracy by 40%
                     </span>
                 </h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Patient Age
                             <i class="fas fa-info-circle text-blue-500 ml-1" title="Age affects normal ranges and treatment approaches"></i>
                         </label>
-                        <input 
-                            type="number" 
-                            id="patientAge" 
+                        <input
+                            type="number"
+                            id="patientAge"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="e.g., 65"
                             onchange="updateOptimization()"
@@ -99,9 +113,9 @@
                             Primary Diagnosis
                             <i class="fas fa-info-circle text-blue-500 ml-1" title="Current diagnosis affects assessment priorities"></i>
                         </label>
-                        <input 
-                            type="text" 
-                            id="primaryDiagnosis" 
+                        <input
+                            type="text"
+                            id="primaryDiagnosis"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="e.g., Congestive Heart Failure"
                             onchange="updateOptimization()"
@@ -118,8 +132,8 @@
                             Relevant Comorbidities
                             <i class="fas fa-info-circle text-blue-500 ml-1" title="Medical history affects assessment interpretation"></i>
                         </label>
-                        <textarea 
-                            id="comorbidities" 
+                        <textarea
+                            id="comorbidities"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             rows="2"
                             placeholder="e.g., Diabetes Type 2, Hypertension"
@@ -138,15 +152,15 @@
                         Critical for assessment
                     </span>
                 </h3>
-                
+
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Primary Concern/Symptom
                             <span class="text-red-500">*</span>
                         </label>
-                        <textarea 
-                            id="primaryConcern" 
+                        <textarea
+                            id="primaryConcern"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             rows="3"
                             placeholder="Describe the main clinical concern or symptom presentation..."
@@ -161,9 +175,9 @@
                                 Timeline/Onset
                                 <i class="fas fa-clock text-orange-500 ml-1"></i>
                             </label>
-                            <input 
-                                type="text" 
-                                id="timeline" 
+                            <input
+                                type="text"
+                                id="timeline"
                                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="e.g., Gradual onset over 3 days"
                                 onchange="updateOptimization()"
@@ -175,8 +189,8 @@
                                 Severity Assessment
                                 <i class="fas fa-thermometer-half text-red-500 ml-1"></i>
                             </label>
-                            <select 
-                                id="severity" 
+                            <select
+                                id="severity"
                                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 onchange="updateOptimization()"
                             >
@@ -193,8 +207,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Associated Signs & Symptoms
                         </label>
-                        <textarea 
-                            id="associatedSymptoms" 
+                        <textarea
+                            id="associatedSymptoms"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             rows="2"
                             placeholder="Related symptoms, vital sign changes, physical findings..."
@@ -213,7 +227,7 @@
                         Customizes output format
                     </span>
                 </h3>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-3">
@@ -247,8 +261,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Evidence Level Preference
                         </label>
-                        <select 
-                            id="evidenceLevel" 
+                        <select
+                            id="evidenceLevel"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
                             onchange="updateOptimization()"
                         >
@@ -261,8 +275,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Urgency Level
                         </label>
-                        <select 
-                            id="urgencyLevel" 
+                        <select
+                            id="urgencyLevel"
                             class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             onchange="updateOptimization()"
                         >
@@ -290,27 +304,28 @@
                     <div id="queryPreview" class="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-sm text-gray-600">
                         Your enhanced query will appear here as you fill out the optimization fields...
                     </div>
-                    
+
                     <div class="flex justify-between items-center mt-6">
-                        <button 
-                            type="button" 
-                            onclick="resetForm()" 
+                        <button
+                            type="button"
+                            onclick="resetForm()"
                             class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                         >
                             <i class="fas fa-undo mr-2"></i>Reset Form
                         </button>
-                        
+
                         <div class="flex space-x-3">
-                            <button 
-                                type="button" 
-                                onclick="saveAsTemplate()" 
+                            <button
+                                type="button"
+                                id="viewResultsBtn"
+                                onclick="viewResults()"
                                 class="px-4 py-2 border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50 transition-colors"
                             >
-                                <i class="fas fa-save mr-2"></i>Save as Template
+                                <i class="fas fa-eye mr-2"></i>View Results
                             </button>
-                            
-                            <button 
-                                type="submit" 
+
+                            <button
+                                type="submit"
                                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                                 disabled
                                 id="generateButton"
@@ -330,27 +345,29 @@
         function updateOptimization() {
             // Calculate optimization score based on filled fields
             const fields = [
-                'patientAge', 'primaryDiagnosis', 'comorbidities', 
+                'patientAge', 'primaryDiagnosis', 'comorbidities',
                 'primaryConcern', 'timeline', 'severity', 'associatedSymptoms'
             ];
-            
+
             const checkboxes = [
-                'focus_nursing', 'focus_safety', 'focus_escalation', 
+                'focus_nursing', 'focus_safety', 'focus_escalation',
                 'focus_education', 'focus_documentation'
             ];
-            
+
             let filledFields = 0;
             let totalFields = fields.length + checkboxes.length + 2; // +2 for select fields
-            
+
             // Check text fields
             fields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field && field.value.trim()) {
                     filledFields++;
                     field.classList.add('field-enhanced');
+                } else if (field) {
+                    field.classList.remove('field-enhanced');
                 }
             });
-            
+
             // Check checkboxes
             checkboxes.forEach(checkboxId => {
                 const checkbox = document.getElementById(checkboxId);
@@ -358,7 +375,7 @@
                     filledFields++;
                 }
             });
-            
+
             // Check select fields
             const selects = ['evidenceLevel', 'urgencyLevel'];
             selects.forEach(selectId => {
@@ -367,12 +384,12 @@
                     filledFields++;
                 }
             });
-            
+
             // Update optimization score
             optimizationScore = Math.round((filledFields / totalFields) * 100);
             document.getElementById('optimizationScore').textContent = `Optimization Score: ${optimizationScore}%`;
             document.getElementById('progressBar').style.width = `${optimizationScore}%`;
-            
+
             // Update enhancement indicator
             const indicator = document.getElementById('enhancementIndicator');
             if (optimizationScore < 30) {
@@ -385,7 +402,7 @@
                 indicator.textContent = 'Optimized query';
                 indicator.className = 'ml-2 text-sm bg-green-100 text-green-800 px-2 py-1 rounded';
             }
-            
+
             // Enable/disable generate button
             const generateButton = document.getElementById('generateButton');
             if (optimizationScore >= 30) {
@@ -395,10 +412,10 @@
                 generateButton.disabled = true;
                 generateButton.classList.add('opacity-50', 'cursor-not-allowed');
             }
-            
+
             // Update query preview
             updateQueryPreview();
-            
+
             // Show smart suggestions
             showSmartSuggestions();
         }
@@ -413,7 +430,7 @@
             const primaryConcern = getElementValue('primaryConcern');
             const patientAge = getElementValue('patientAge');
             const diagnosis = getElementValue('primaryDiagnosis');
-            
+
             if (!primaryConcern) {
                 const preview = document.getElementById('queryPreview');
                 if (preview) {
@@ -421,24 +438,24 @@
                 }
                 return;
             }
-            
+
             let enhancedQuery = `Clinical Assessment Request:\n\n`;
             enhancedQuery += `Primary Concern: ${primaryConcern}\n\n`;
-            
+
             if (patientAge || diagnosis) {
                 enhancedQuery += `Patient Context:\n`;
                 if (patientAge) enhancedQuery += `- Age: ${patientAge} years\n`;
                 if (diagnosis) enhancedQuery += `- Primary Diagnosis: ${diagnosis}\n`;
                 enhancedQuery += `\n`;
             }
-            
+
             enhancedQuery += `Please provide evidence-based assessment guidance focusing on:\n`;
             enhancedQuery += `- Nursing assessment priorities and interventions\n`;
             enhancedQuery += `- Patient safety considerations\n`;
             enhancedQuery += `- When to escalate care\n`;
             enhancedQuery += `- Documentation requirements\n\n`;
             enhancedQuery += `Include citations from authoritative medical sources.`;
-            
+
             const preview = document.getElementById('queryPreview');
             if (preview) {
                 preview.textContent = enhancedQuery;
@@ -448,11 +465,11 @@
         function showSmartSuggestions() {
             const diagnosisElement = document.getElementById('primaryDiagnosis');
             const suggestionsElement = document.getElementById('diagnosisSuggestions');
-            
+
             if (!diagnosisElement || !suggestionsElement) return;
-            
+
             const diagnosis = diagnosisElement.value.toLowerCase();
-            
+
             if (diagnosis.includes('heart') || diagnosis.includes('chf') || diagnosis.includes('cardiac')) {
                 suggestionsElement.classList.remove('hidden');
             } else {
@@ -480,19 +497,19 @@
         // Form submission - NOW WITH REAL API INTEGRATION!
         document.getElementById('assessmentOptimizer').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             // Show loading state
             const button = document.getElementById('generateButton');
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Optimizing Query...';
             button.disabled = true;
-            
+
             try {
                 // Collect form data
                 // Helper function to safely get element value
                 function getElementValue(id, defaultValue = '') {
                     const element = document.getElementById(id);
-                    return element ? element.value : defaultValue;
+                    return element ? String(element.value).trim() : defaultValue;
                 }
 
                 const formData = {
@@ -507,30 +524,32 @@
                     evidence_level: getElementValue('evidenceLevel', 'guidelines'),
                     urgency_level: getElementValue('urgencyLevel', 'routine')
                 };
-                
+
                 // Call the optimization API
                 const response = await fetch('/api/v1/clinical/optimize-query', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`API Error: ${response.status}`);
                 }
-                
+
                 const result = await response.json();
-                
+
                 if (result.status === 'success') {
                     // Show the enhanced prompt in a modal or new screen
+                    // Store minimal context in sessionStorage for the chat flow (session only)
+                    try { sessionStorage.setItem('optimizedQuery', result.enhanced_prompt || ''); sessionStorage.setItem('querySource', 'clinical-optimizer'); } catch (err) { /* ignore */ }
                     showOptimizedQuery(result);
                 } else {
                     throw new Error(result.message || 'Optimization failed');
                 }
-                
+
             } catch (error) {
                 console.error('Optimization error:', error);
                 alert(`⚠️ Optimization Error: ${error.message}\n\nFalling back to preview mode.`);
@@ -542,10 +561,10 @@
                 button.disabled = false;
             }
         });
-        
+
         function getFocusAreas() {
             const checkboxes = [
-                'focus_nursing', 'focus_safety', 'focus_escalation', 
+                'focus_nursing', 'focus_safety', 'focus_escalation',
                 'focus_education', 'focus_documentation'
             ];
             const focusTexts = {
@@ -555,7 +574,7 @@
                 'focus_education': 'Patient/family education points',
                 'focus_documentation': 'Documentation requirements'
             };
-            
+
             return checkboxes
                 .filter(id => {
                     const element = document.getElementById(id);
@@ -564,22 +583,100 @@
                 .map(id => focusTexts[id])
                 .join(', ');
         }
-        
+
+        // New: two-step flow to optimize the query then request an AI-generated response
+        async function viewResults() {
+            const btn = document.getElementById('viewResultsBtn');
+            if (btn) {
+                btn.disabled = true;
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            }
+
+            try {
+                // Collect the same form data as the submit handler
+                function getElementValue(id, defaultValue = '') {
+                    const element = document.getElementById(id);
+                    return element ? String(element.value).trim() : defaultValue;
+                }
+
+                const formData = {
+                    primary_concern: getElementValue('primaryConcern'),
+                    patient_age: getElementValue('patientAge'),
+                    primary_diagnosis: getElementValue('primaryDiagnosis'),
+                    comorbidities: getElementValue('comorbidities'),
+                    timeline: getElementValue('timeline'),
+                    severity: getElementValue('severity'),
+                    associated_symptoms: getElementValue('associatedSymptoms'),
+                    focus_areas: getFocusAreas(),
+                    evidence_level: getElementValue('evidenceLevel', 'guidelines'),
+                    urgency_level: getElementValue('urgencyLevel', 'routine')
+                };
+
+                // Step 1: optimize
+                const optResp = await fetch('/api/v1/clinical/optimize-query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!optResp.ok) throw new Error(`Optimize API Error: ${optResp.status}`);
+                const optJson = await optResp.json();
+                if (optJson.status !== 'success') throw new Error(optJson.message || 'Optimization failed');
+
+                const enhancedPrompt = optJson.enhanced_prompt || '';
+
+                // Step 2: ask AI to generate a response using the enhanced prompt
+                const genResp = await fetch('/api/v1/clinical/generate-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ prompt: enhancedPrompt })
+                });
+
+                if (!genResp.ok) throw new Error(`Generate API Error: ${genResp.status}`);
+                const genJson = await genResp.json();
+
+                // Build result object and show in modal. Use sessionStorage for temporary persistence only.
+                const result = {
+                    enhanced_prompt: enhancedPrompt,
+                    ai_response: genJson.answer || genJson.output || genJson.text || ''
+                };
+
+                try {
+                    sessionStorage.setItem('optimizedQuery', enhancedPrompt);
+                    sessionStorage.setItem('querySource', 'clinical-optimizer');
+                } catch (err) { /* ignore storage errors */ }
+
+                showOptimizedQuery(result);
+
+            } catch (error) {
+                console.error('View Results error:', error);
+                alert(`⚠️ Error fetching results: ${error.message}\n\nFalling back to preview mode.`);
+                showPreviewModal();
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-eye mr-2"></i>View Results';
+                }
+            }
+        }
+
         function showOptimizedQuery(result) {
             // Create a beautiful modal to show the optimized query
             const modalHTML = `
-                <div id="optimizedModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div id="optimizedModal" role="dialog" aria-modal="true" aria-labelledby="optimizedModalTitle" aria-describedby="optimizedModalDesc" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div class="bg-white rounded-lg p-8 max-w-4xl max-h-[90vh] overflow-y-auto">
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-2xl font-bold text-gray-900">
+                            <h3 id="optimizedModalTitle" class="text-2xl font-bold text-gray-900">
                                 <i class="fas fa-brain text-blue-600 mr-2"></i>
                                 Optimized Clinical Query
                             </h3>
-                            <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                            <button id="optimizedModalClose" onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
                                 <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
-                        
+                        <p id="optimizedModalDesc" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Contains enhanced prompt and AI response. Use Start AI Conversation, Copy Query, or Open Chat buttons to continue.</p>
+
                         <div class="mb-6">
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                                 <div class="flex items-center">
@@ -591,26 +688,36 @@
                                 </p>
                             </div>
                         </div>
-                        
+
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Enhanced Clinical Query:</label>
                             <div class="bg-gray-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
-                                <pre class="whitespace-pre-wrap text-sm text-gray-800" id="enhancedPromptText">${result.enhanced_prompt}</pre>
+                                <pre class="whitespace-pre-wrap text-sm text-gray-800" id="enhancedPromptText"></pre>
                             </div>
                         </div>
-                        
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">AI-generated Response:</label>
+                            <div class="bg-gray-50 border rounded-lg p-4 max-h-64 overflow-y-auto">
+                                <pre class="whitespace-pre-wrap text-sm text-gray-800" id="aiResponseText"></pre>
+                            </div>
+                        </div>
+
+                        <!-- Live region for status updates and errors (announced to screen readers) -->
+                        <div id="modalStatus" class="modal-status" aria-live="polite"></div>
+
                         <div class="flex space-x-4">
-                            <button id="startConversationBtn" 
+                            <button id="startConversationBtn"
                                     class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center">
                                 <i class="fas fa-comments mr-2"></i>
                                 Start AI Conversation
                             </button>
-                            <button id="copyQueryBtn" 
+                            <button id="copyQueryBtn"
                                     class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center">
                                 <i class="fas fa-copy mr-2"></i>
                                 Copy Query
                             </button>
-                            <button id="openChatBtn" 
+                            <button id="openChatBtn"
                                     class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center">
                                 <i class="fas fa-external-link-alt mr-2"></i>
                                 Open Chat in New Tab
@@ -619,32 +726,81 @@
                     </div>
                 </div>
             `;
-            
+
+            // Insert modal skeleton and then safely set textContent for server-provided strings
             document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
+
+            // Safely set server-provided content using textContent to avoid XSS
+            const enhancedEl = document.getElementById('enhancedPromptText');
+            const aiResponseEl = document.getElementById('aiResponseText');
+            if (enhancedEl) enhancedEl.textContent = result.enhanced_prompt || '';
+            if (aiResponseEl) aiResponseEl.textContent = result.ai_response || '';
+
             // Add event listeners after modal is added to DOM
             document.getElementById('startConversationBtn').addEventListener('click', () => {
                 startConversation(result.enhanced_prompt);
             });
-            
+
             document.getElementById('copyQueryBtn').addEventListener('click', () => {
                 copyQuery(result.enhanced_prompt);
             });
-            
+
             document.getElementById('openChatBtn').addEventListener('click', () => {
                 openChatInNewTab(result.enhanced_prompt);
             });
+
+            // Accessibility: focus management and simple focus trap
+            const modal = document.getElementById('optimizedModal');
+            const previousActive = document.activeElement;
+            try { window._previousActiveElement = previousActive; } catch (err) { /* ignore */ }
+
+            const focusableSelector = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+            const focusableElements = modal ? Array.from(modal.querySelectorAll(focusableSelector)) : [];
+            const firstFocusable = focusableElements[0] || document.getElementById('startConversationBtn');
+            const lastFocusable = focusableElements[focusableElements.length - 1] || document.getElementById('openChatBtn');
+
+            // Key handler to trap focus and handle Escape
+            function modalKeyHandler(e) {
+                if (e.key === 'Escape' || e.key === 'Esc') {
+                    e.preventDefault();
+                    closeModal();
+                    return;
+                }
+
+                if (e.key === 'Tab') {
+                    if (!modal) return;
+                    const active = document.activeElement;
+                    if (e.shiftKey) {
+                        if (active === firstFocusable || active === modal) {
+                            e.preventDefault();
+                            (lastFocusable || firstFocusable).focus();
+                        }
+                    } else {
+                        if (active === lastFocusable) {
+                            e.preventDefault();
+                            (firstFocusable || lastFocusable).focus();
+                        }
+                    }
+                }
+            }
+
+            // Attach key handler
+            document.addEventListener('keydown', modalKeyHandler);
+            // Store handler for cleanup
+            try { window._optimizedModalKeyHandler = modalKeyHandler; } catch (err) { /* ignore */ }
+
+            // Move focus into modal
+            if (firstFocusable) firstFocusable.focus();
         }
-        
+
         function openChatInNewTab(enhancedPrompt) {
             try {
-                // Store the enhanced prompt for the new tab
-                localStorage.setItem('optimizedQuery', enhancedPrompt);
-                localStorage.setItem('querySource', 'clinical-optimizer');
-                
+                // Store the enhanced prompt for the new tab in sessionStorage (not persistent)
+                try { sessionStorage.setItem('optimizedQuery', enhancedPrompt); sessionStorage.setItem('querySource', 'clinical-optimizer'); } catch (err) { /* ignore */ }
+
                 // Open in a proper new tab (not popup)
                 const newTab = window.open('clinical-workspace.html?tab=chat&optimized=true', '_blank');
-                
+
                 // Check if popup was blocked
                 if (!newTab || newTab.closed || typeof newTab.closed == 'undefined') {
                     // Fallback: show direct link
@@ -669,31 +825,30 @@
         function startConversation(enhancedPrompt) {
             try {
                 // Store the enhanced prompt and redirect to chat interface
-                localStorage.setItem('optimizedQuery', enhancedPrompt);
-                localStorage.setItem('querySource', 'clinical-optimizer');
-                
+                try { sessionStorage.setItem('optimizedQuery', enhancedPrompt); sessionStorage.setItem('querySource', 'clinical-optimizer'); } catch (err) { /* ignore */ }
+
                 // Show loading feedback
                 const button = document.getElementById('startConversationBtn');
                 if (button) {
                     button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Redirecting...';
                     button.disabled = true;
                 }
-                
+
                 // Close modal first
                 closeModal();
-                
-                // Add a small delay to ensure localStorage is written
+
+                // Add a small delay to ensure sessionStorage is written
                 setTimeout(() => {
                     // Redirect to chat interface with the optimized query
                     window.location.href = 'clinical-workspace.html?tab=chat&optimized=true';
                 }, 100);
-                
+
             } catch (error) {
                 console.error('Error starting conversation:', error);
                 alert('Error redirecting to chat. Please try copying the query and navigating manually.');
             }
         }
-        
+
         function copyQuery(query) {
             navigator.clipboard.writeText(query).then(() => {
                 // Show success feedback on the copy button
@@ -714,12 +869,27 @@
                 alert('Failed to copy to clipboard. Please select and copy the text manually.');
             });
         }
-        
+
         function closeModal() {
             const modal = document.getElementById('optimizedModal');
             if (modal) modal.remove();
+
+            // Remove key handler if present
+            try {
+                if (window._optimizedModalKeyHandler) {
+                    document.removeEventListener('keydown', window._optimizedModalKeyHandler);
+                    window._optimizedModalKeyHandler = null;
+                }
+            } catch (err) { /* ignore */ }
+
+            // Restore focus to previous active element if stored
+            try {
+                const prev = window._previousActiveElement;
+                if (prev && typeof prev.focus === 'function') prev.focus();
+                window._previousActiveElement = null;
+            } catch (err) { /* ignore */ }
         }
-        
+
         function showPreviewModal() {
             // Fallback to current preview behavior
             alert('🎉 Enhanced query generated!\n\nThis optimized prompt will provide significantly better, more relevant, and actionable clinical guidance.');
@@ -727,6 +897,42 @@
 
         // Initialize
         updateOptimization();
+    </script>
+    <script>
+        // Accessibility: announce modal open/close and generation status
+        function announceStatus(message) {
+            const el = document.getElementById('modalStatus');
+            if (!el) return;
+            // Clear then set to ensure screen readers re-announce
+            el.textContent = '';
+            setTimeout(() => { el.textContent = message; }, 50);
+        }
+
+        // Enhance existing showOptimizedQuery / closeModal hooks if present
+        const originalShow = window.showOptimizedQuery;
+        window.showOptimizedQuery = function (result) {
+            announceStatus('Optimized query ready. Dialog opened.');
+            if (typeof originalShow === 'function') originalShow(result);
+        };
+
+        const originalClose = window.closeModal;
+        window.closeModal = function () {
+            announceStatus('Dialog closed. Focus restored.');
+            if (typeof originalClose === 'function') originalClose();
+        };
+
+        // When generate starts/ends (viewResults uses fetch), we emit status updates if hooks exist
+        const originalViewResults = window.viewResults;
+        window.viewResults = async function () {
+            try {
+                announceStatus('Generating AI response — please wait');
+                if (typeof originalViewResults === 'function') await originalViewResults();
+                announceStatus('AI response generated and displayed.');
+            } catch (err) {
+                announceStatus('An error occurred while generating the response.');
+                throw err;
+            }
+        };
     </script>
 </body>
 </html>

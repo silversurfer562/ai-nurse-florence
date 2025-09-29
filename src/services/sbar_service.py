@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class SBARService:
     """SBAR service following Service Layer Architecture."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.settings = get_settings()
         self.banner = self.settings.EDUCATIONAL_BANNER
 

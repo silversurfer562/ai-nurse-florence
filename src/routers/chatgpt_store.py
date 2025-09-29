@@ -5,11 +5,12 @@ Following OAuth2 + JWT authentication patterns
 
 from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from services.chatgpt_store_service import (
+from typing import Dict, Any
+from src.services.chatgpt_store_service import (
     get_chatgpt_store_service,
     ChatGPTStoreService,
 )
-from utils.api_responses import create_success_response, create_error_response
+from src.utils.api_responses import create_success_response, create_error_response
 
 # OAuth2 + JWT authentication following coding instructions
 security = HTTPBearer()
@@ -27,7 +28,7 @@ async def get_clinical_interventions_for_gpt(
     severity: str = "moderate",
     care_setting: str = "med-surg",
     gpt_service: ChatGPTStoreService = Depends(get_chatgpt_store_service),
-):
+) -> Dict[str, Any]:
     """
     Clinical interventions endpoint optimized for ChatGPT Store
     Following authentication & authorization patterns
@@ -51,7 +52,7 @@ async def get_clinical_interventions_for_gpt(
 async def verify_healthcare_professional(
     token: HTTPAuthorizationCredentials = Depends(security),
     gpt_service: ChatGPTStoreService = Depends(get_chatgpt_store_service),
-):
+) -> Dict[str, Any]:
     """Verify healthcare professional credentials through ChatGPT Store"""
 
     # TODO: Implement professional verification

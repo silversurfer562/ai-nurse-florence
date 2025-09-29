@@ -3,7 +3,10 @@ Risk Assessment Service - Clinical risk scoring
 Following caching strategy patterns
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Callable, Awaitable
 from utils.redis_cache import cached
 
 
@@ -13,10 +16,10 @@ class RiskAssessmentService:
     Following Service Layer Architecture from coding instructions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.edu_banner = "Educational use only — not medical advice. No PHI stored."
 
-    @cached(ttl_seconds=300)  # 5-minute cache for risk calculations
+    @cached(ttl_seconds=300)  # type: ignore[misc]  # 5-minute cache for risk calculations
     async def calculate_falls_risk(
         self, patient_data: Dict[str, Any]
     ) -> Dict[str, Any]:
