@@ -55,8 +55,6 @@ passlib[bcrypt]==1.7.4
 
 # Monitoring Dependencies (enabled for production)
 prometheus-client==0.19.0
-docker compose build --no-cache
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/workdir --workdir /workdir ghcr.io/aquasecurity/trivy:latest image --format json --output [trivy-report.json](http://_vscodecontentref_/7) localhost/ai-nurse-florence:latest
 python-json-logger>=2.0.7,<2.1.0
 PyYAML==6.0.1
 requests==2.31.0
