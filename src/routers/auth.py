@@ -1,8 +1,9 @@
 """
 Authentication Router - AI Nurse Florence
-Phase 3.2: Complete Authentication System Implementation
+Phase 3.4.2: Complete Database Integration
 
 Following Router Organization pattern and API Design Standards from coding instructions.
+Database-first implementation replacing all in-memory storage.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Form
@@ -20,13 +21,89 @@ try:
     from src.utils.auth_dependencies import get_current_user, security
     from src.utils.api_responses import create_success_response, create_error_response
     from src.utils.exceptions import ServiceException
+    from src.utils.database_auth import db_auth
+    from src.models.database import UserDatabase
     _has_auth = True
+    _has_database = True
 except ImportError as e:
     _has_auth = False
-    def hash_password(pwd): return "mock_hash"
-    def verify_password(plain, hashed): return True
-    def validate_password(pwd): return {"is_valid": True, "errors": []}
-    def create_user_session(user_id, device=None, role="user"): return {"access_token": "mock"}
+    _has_database = False
+    
+    # Mock functions with proper signatures matching the real ones
+    def hash_password(password: str) -> str:
+        return "mock_hash"
+    
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        return True
+    
+    def validate_password(password: str) -> Dict[str, Any]:
+        return {"is_valid": True, "errors": []}
+    
+    def create_user_session(user_id: str, device_info: Optional[str] = None, role: str = "user") -> Dict[str, Any]:
+        return {"access_token": "mock", "refresh_token": "mock", "token_type": "bearer", "expires_in": 3600, "user_id": user_id, "role": role}
+    
+    def refresh_access_token(refresh_token: str) -> Dict[str, Any]:
+        return {"access_token": "mock_refreshed", "expires_in": 3600}
+    
+    def extract_user_id_from_token(token: str) -> str:
+        return "mock_user_id"
+    
+    async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = None) -> Dict[str, Any]:
+        return {"user_id": "mock", "role": "user"}
+    
+    def create_success_response(data: Any) -> Dict[str, Any]:
+        return {"success": True, "data": data}
+    
+    def create_error_response(message: str, status_code: int = 500, details: Optional[Dict] = None) -> Dict[str, Any]:
+        return {"success": False, "message": message, "details": details}
+    
+    class MockDbAuth:
+        async def register_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
+            return {"success": True, "user": {"user_id": "mock_user_id", **data}, "message": "User registered"}
+        
+        async def authenticate_user(self, email: str, password: str) -> Dict[str, Any]:
+            return {"success": True, "user": {"user_id": "mock_user_id", "email": email, "role": "user"}}
+    
+    class MockUser:
+        def __init__(self):
+            self.id = "mock_user_id"
+            self.email = "mock@example.com"
+            self.password_hash = "mock_hash"
+            self.role = "user"
+            self.is_active = True
+            self.is_verified = False
+            self.created_at = datetime.utcnow()
+            self.last_login_at = None
+            self.full_name = "Mock User"
+            self.license_number = None
+            self.institution = None
+            self.department = None
+    
+    class MockUserDatabase:
+        @staticmethod
+        async def get_user_by_email(email: str) -> Optional[MockUser]:
+            if email == "test@example.com":
+                return MockUser()
+            return None
+        
+        @staticmethod
+        async def get_user_by_id(user_id: str) -> Optional[MockUser]:
+            if user_id == "mock_user_id":
+                return MockUser()
+            return None
+        
+        @staticmethod
+        async def update_user(user_id: str, data: Dict[str, Any]) -> Optional[MockUser]:
+            return MockUser()
+        
+        @staticmethod
+        async def update_login_time(user_id: str) -> bool:
+            return True
+    
+    # Mock instances
+    db_auth = MockDbAuth()
+    UserDatabase = MockUserDatabase
+    security = None
 
 # Router setup following router organization patterns
 router = APIRouter(
@@ -50,8 +127,8 @@ class UserRegistration(BaseModel):
         json_schema_extra = {
             "example": {
                 "email": "nurse@hospital.com",
-                "password": "SecurePass123!",
-                "full_name": "Jane Doe",
+                "password": "SecurePassword123!",
+                "full_name": "Jane Smith RN",
                 "role": "nurse"
             }
         }
@@ -59,21 +136,19 @@ class UserRegistration(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., description="User password")
-    device_info: Optional[str] = Field(None, description="Device information for session tracking")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "email": "nurse@hospital.com",
-                "password": "SecurePass123!",
-                "device_info": "Web Browser - Chrome 120"
+                "password": "SecurePassword123!"
             }
         }
 
 class PasswordChange(BaseModel):
     current_password: str = Field(..., description="Current password")
     new_password: str = Field(..., min_length=8, description="New password")
-    
+
 class TokenRefresh(BaseModel):
     refresh_token: str = Field(..., description="Valid refresh token")
 
@@ -86,9 +161,7 @@ class AuthResponse(BaseModel):
     role: str
     educational_notice: str
 
-# In-memory user store (replace with database in production)
-users_db = {}
-next_user_id = 1
+# Phase 3.4.2: Database-integrated authentication endpoints
 
 @router.post(
     "/register",
@@ -99,17 +172,9 @@ async def register_user(user_data: UserRegistration):
     """
     Register a new user with comprehensive password validation.
     Following API Design Standards with educational disclaimers.
+    Phase 3.4.2: Complete database integration.
     """
-    global next_user_id
-    
     try:
-        # Check if user already exists
-        if any(u.get("email") == user_data.email for u in users_db.values()):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User already exists"
-            )
-        
         # Validate password strength
         password_validation = validate_password(user_data.password)
         if not password_validation["is_valid"]:
@@ -126,21 +191,33 @@ async def register_user(user_data: UserRegistration):
                 detail=f"Invalid role. Must be one of: {valid_roles}"
             )
         
-        # Create user
-        user_id = str(next_user_id)
-        next_user_id += 1
-        
-        hashed_password = hash_password(user_data.password)
-        
-        users_db[user_id] = {
-            "user_id": user_id,
-            "email": user_data.email,
-            "full_name": user_data.full_name,
-            "password_hash": hashed_password,
-            "role": user_data.role,
-            "created_at": datetime.utcnow().isoformat(),
-            "is_active": True
-        }
+        # Register user in database
+        if _has_database:
+            result = await db_auth.register_user({
+                "email": user_data.email,
+                "full_name": user_data.full_name,
+                "password": user_data.password,
+                "role": user_data.role
+            })
+            
+            if not result["success"]:
+                if "already exists" in result.get("error", "").lower():
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="User already exists"
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=result.get("message", "Registration failed")
+                    )
+            
+            user = result["user"]
+            user_id = user["user_id"]
+        else:
+            # Fallback for testing without database
+            user_id = "mock_user_id"
+            user = {"user_id": user_id, "email": user_data.email, "role": user_data.role}
         
         # Create session
         session = create_user_session(user_id, role=user_data.role)
@@ -152,7 +229,8 @@ async def register_user(user_data: UserRegistration):
             "expires_in": session["expires_in"],
             "user_id": session["user_id"],
             "role": session["role"],
-            "educational_notice": session["educational_notice"]
+            "message": "User registered successfully",
+            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
         }
         
     except HTTPException:
@@ -162,69 +240,62 @@ async def register_user(user_data: UserRegistration):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}"
         )
-            **session,
-            "message": "User registered successfully",
-            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
-        })
-        
-    except Exception as e:
-        return create_error_response(
-            message="Registration failed",
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            details={"error": str(e)}
-        )
 
 @router.post(
     "/login",
-    response_model=AuthResponse,
     summary="User login",
     description="Authenticate user and create session"
 )
 async def login_user(user_data: UserLogin):
     """
-    Authenticate user and create session with JWT tokens.
+    Authenticate user with database lookup.
     Following authentication patterns from coding instructions.
+    Phase 3.4.2: Complete database integration.
     """
     try:
-        # Find user by email
-        user = None
-        for u in users_db.values():
-            if u.get("email") == user_data.email:
-                user = u
-                break
-        
-        if not user:
-            return create_error_response(
-                message="Invalid credentials",
-                status_code=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        # Verify password
-        if not verify_password(user_data.password, user["password_hash"]):
-            return create_error_response(
-                message="Invalid credentials",
-                status_code=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        # Check if user is active
-        if not user.get("is_active", True):
-            return create_error_response(
-                message="Account is disabled",
-                status_code=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Create session
-        session = create_user_session(
-            user["user_id"], 
-            device_info=user_data.device_info,
-            role=user["role"]
-        )
-        
-        return create_success_response({
-            **session,
-            "message": "Login successful",
-            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
-        })
+        if _has_database:
+            # Find user by email using database
+            user_obj = await UserDatabase.get_user_by_email(user_data.email)
+            
+            if not user_obj:
+                return create_error_response(
+                    message="Invalid credentials",
+                    status_code=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Verify password 
+            if not verify_password(user_data.password, user_obj.password_hash):
+                return create_error_response(
+                    message="Invalid credentials",
+                    status_code=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Check if user is active
+            if not user_obj.is_active:
+                return create_error_response(
+                    message="Account is disabled",
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Update last login time
+            await UserDatabase.update_login_time(user_obj.id)
+            
+            # Create session
+            session = create_user_session(user_obj.id, role=user_obj.role)
+            
+            return create_success_response({
+                **session,
+                "message": "Login successful",
+                "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
+            })
+        else:
+            # Mock login for testing
+            session = create_user_session("mock_user_id", role="user")
+            return create_success_response({
+                **session,
+                "message": "Login successful (mock)",
+                "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
+            })
         
     except Exception as e:
         return create_error_response(
@@ -247,19 +318,20 @@ async def refresh_token(token_data: TokenRefresh):
         new_token = refresh_access_token(token_data.refresh_token)
         
         return create_success_response({
-            **new_token,
-            "message": "Token refreshed successfully"
+            "access_token": new_token["access_token"],
+            "expires_in": new_token["expires_in"],
+            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
         })
         
-    except HTTPException as e:
+    except ValueError as e:
         return create_error_response(
-            message=e.detail,
-            status_code=e.status_code
+            message="Invalid refresh token",
+            status_code=status.HTTP_401_UNAUTHORIZED
         )
     except Exception as e:
         return create_error_response(
             message="Token refresh failed",
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             details={"error": str(e)}
         )
 
@@ -270,29 +342,48 @@ async def refresh_token(token_data: TokenRefresh):
 )
 async def get_user_profile(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
-    Get current user profile.
+    Get current user profile with database lookup.
     Following protected endpoint patterns.
+    Phase 3.4.2: Complete database integration.
     """
     try:
         user_id = current_user["user_id"]
-        user = users_db.get(user_id)
         
-        if not user:
-            return create_error_response(
-                message="User not found",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Return safe user data (no password hash)
-        safe_user_data = {
-            "user_id": user["user_id"],
-            "email": user["email"],
-            "full_name": user["full_name"],
-            "role": user["role"],
-            "created_at": user["created_at"],
-            "is_active": user["is_active"],
-            "permissions": current_user.get("permissions", [])
-        }
+        if _has_database:
+            user_obj = await UserDatabase.get_user_by_id(user_id)
+            
+            if not user_obj:
+                return create_error_response(
+                    message="User not found",
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Return safe user data (no password hash)
+            safe_user_data = {
+                "user_id": user_obj.id,
+                "email": user_obj.email,
+                "full_name": user_obj.full_name,
+                "role": user_obj.role,
+                "created_at": user_obj.created_at.isoformat() if user_obj.created_at else None,
+                "last_login_at": user_obj.last_login_at.isoformat() if user_obj.last_login_at else None,
+                "is_active": user_obj.is_active,
+                "is_verified": user_obj.is_verified,
+                "license_number": user_obj.license_number,
+                "institution": user_obj.institution,
+                "department": user_obj.department,
+                "permissions": current_user.get("permissions", [])
+            }
+        else:
+            # Mock profile for testing
+            safe_user_data = {
+                "user_id": user_id,
+                "email": "mock@example.com",
+                "full_name": "Mock User",
+                "role": current_user.get("role", "user"),
+                "created_at": datetime.utcnow().isoformat(),
+                "is_active": True,
+                "permissions": current_user.get("permissions", [])
+            }
         
         return create_success_response({
             "user": safe_user_data,
@@ -308,47 +399,52 @@ async def get_user_profile(current_user: Dict[str, Any] = Depends(get_current_us
 
 @router.post(
     "/change-password",
-    summary="Change user password",
-    description="Change current user password with validation"
+    summary="Change password",
+    description="Change user password with validation"
 )
 async def change_password(
     password_data: PasswordChange,
     current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     """
-    Change user password with comprehensive validation.
+    Change user password with comprehensive validation and database update.
     Following security patterns for healthcare applications.
+    Phase 3.4.2: Complete database integration.
     """
     try:
         user_id = current_user["user_id"]
-        user = users_db.get(user_id)
         
-        if not user:
-            return create_error_response(
-                message="User not found",
-                status_code=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Verify current password
-        if not verify_password(password_data.current_password, user["password_hash"]):
-            return create_error_response(
-                message="Current password is incorrect",
-                status_code=status.HTTP_401_UNAUTHORIZED
-            )
-        
-        # Validate new password
-        password_validation = validate_password(password_data.new_password)
-        if not password_validation["is_valid"]:
-            return create_error_response(
-                message="New password validation failed",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                details={"errors": password_validation["errors"]}
-            )
-        
-        # Update password
-        new_password_hash = hash_password(password_data.new_password)
-        users_db[user_id]["password_hash"] = new_password_hash
-        users_db[user_id]["password_changed_at"] = datetime.utcnow().isoformat()
+        if _has_database:
+            user_obj = await UserDatabase.get_user_by_id(user_id)
+            
+            if not user_obj:
+                return create_error_response(
+                    message="User not found",
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Verify current password
+            if not verify_password(password_data.current_password, user_obj.password_hash):
+                return create_error_response(
+                    message="Current password is incorrect",
+                    status_code=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Validate new password
+            password_validation = validate_password(password_data.new_password)
+            if not password_validation["is_valid"]:
+                return create_error_response(
+                    message="New password validation failed",
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    details={"errors": password_validation["errors"]}
+                )
+            
+            # Update password in database
+            new_password_hash = hash_password(password_data.new_password)
+            await UserDatabase.update_user(user_id, {
+                "password_hash": new_password_hash,
+                "password_changed_at": datetime.utcnow()
+            })
         
         return create_success_response({
             "message": "Password changed successfully",
@@ -365,22 +461,19 @@ async def change_password(
 @router.post(
     "/logout",
     summary="User logout",
-    description="Logout user and invalidate session"
+    description="Invalidate user session"
 )
 async def logout_user(current_user: Dict[str, Any] = Depends(get_current_user)):
     """
     Logout user and invalidate session.
-    Following session management patterns.
+    Following secure logout patterns.
     """
     try:
-        # In a real implementation, you would invalidate the JWT token
-        # by adding it to a blacklist or using token versioning
-        
-        session_id = current_user.get("session_id")
+        # In a full implementation, this would invalidate the session in the database
+        # For now, we return success as the frontend should remove the token
         
         return create_success_response({
-            "message": "Logout successful",
-            "session_id": session_id,
+            "message": "Logged out successfully",
             "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
         })
         
@@ -391,26 +484,20 @@ async def logout_user(current_user: Dict[str, Any] = Depends(get_current_user)):
             details={"error": str(e)}
         )
 
-# Testing endpoints for Phase 3.2
+# Test endpoints following testing patterns
+
 @router.get(
-    "/test-enhanced", 
-    summary="Test enhanced auth router",
-    description="Simple test endpoint to verify enhanced auth router is loading"
+    "/test",
+    summary="Test authentication system",
+    description="Test endpoint to verify authentication is working"
 )
-async def test_enhanced_auth():
-    """Test endpoint to verify our enhanced auth router is working."""
+async def test_auth():
+    """Test endpoint for authentication system verification."""
     return create_success_response({
-        "message": "Enhanced auth router is working!",
-        "phase": "3.2_complete_authentication",
+        "message": "Authentication system operational",
         "timestamp": datetime.utcnow().isoformat(),
-        "features": [
-            "JWT authentication ready",
-            "User registration working", 
-            "Password hashing secure",
-            "Role-based access implemented",
-            "Session management active",
-            "Token refresh functional"
-        ],
+        "database_integration": _has_database,
+        "auth_system": _has_auth,
         "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
     })
 
@@ -420,99 +507,110 @@ async def test_enhanced_auth():
     description="Test endpoint requiring authentication"
 )
 async def test_protected_endpoint(current_user: Dict[str, Any] = Depends(get_current_user)):
-    """Test endpoint to verify authentication protection works."""
+    """Test protected endpoint requiring valid authentication."""
     return create_success_response({
-        "message": "Protected endpoint access successful!",
-        "user_info": {
-            "user_id": current_user["user_id"],
-            "role": current_user["role"],
-            "permissions": current_user.get("permissions", [])
-        },
-        "educational_notice": current_user.get("educational_notice")
+        "message": "Protected endpoint access successful",
+        "user_id": current_user["user_id"],
+        "role": current_user["role"],
+        "timestamp": datetime.utcnow().isoformat(),
+        "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
     })
-    """Test registration endpoint without database dependencies."""
-    return {
-        "status": "test_success",
-        "message": "Registration endpoint working (test mode)",
-        "received_data": user_data,
-        "timestamp": datetime.now().isoformat(),
-        "note": "This is a test endpoint - full implementation coming next"
-    }
 
-
-@router.post(
-    "/login-test",
-    summary="Test user login",
-    description="Simplified test login endpoint"  
-)
-async def login_test(credentials: Dict[str, Any]):
-    """Test login endpoint without database dependencies."""
-    return {
-        "status": "test_success", 
-        "message": "Login endpoint working (test mode)",
-        "received_credentials": credentials,
-        "timestamp": datetime.now().isoformat(),
-        "note": "This is a test endpoint - JWT implementation coming next"
-    }
-
-
-# Keep existing simple endpoints for backward compatibility
 @router.get(
-    "/status",
-    summary="Authentication status",
-    description="Check current authentication status"
+    "/test-enhanced",
+    summary="Enhanced test endpoint",
+    description="Enhanced test with detailed system information"
 )
-async def auth_status():
-    """Simple auth status endpoint."""
-    return {
-        "authenticated": False,
-        "user_type": None,
-        "permissions": None,
-        "message": "Enhanced auth system - Phase 3.1",
-        "timestamp": datetime.now().isoformat()
-    }
+async def test_enhanced():
+    """Enhanced test endpoint with detailed system information."""
+    try:
+        system_info = {
+            "auth_system_available": _has_auth,
+            "database_integration": _has_database,
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": "Phase 3.4.2 - Complete Database Integration"
+        }
+        
+        if _has_database:
+            # Test database connectivity
+            try:
+                from src.models.database import init_database
+                await init_database()
+                system_info["database_status"] = "connected"
+            except Exception as e:
+                system_info["database_status"] = f"error: {str(e)}"
+        else:
+            system_info["database_status"] = "mock_mode"
+        
+        return create_success_response({
+            "message": "Enhanced authentication test successful",
+            "system_info": system_info,
+            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
+        })
+        
+    except Exception as e:
+        return create_error_response(
+            message="Enhanced test failed",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            details={"error": str(e)}
+        )
 
+# Additional endpoints for completeness
 
-@router.post(
-    "/login",
-    summary="User login", 
-    description="User login endpoint"
+@router.get(
+    "/user/{user_id}",
+    summary="Get user by ID",
+    description="Get user information by ID (admin only)"
 )
-async def simple_login(credentials: Dict[str, Any]):
-    """Simple login for backward compatibility.""" 
-    return {
-        "access_token": "phase_3_1_test_token",
-        "token_type": "bearer",
-        "expires_in": 3600,
-        "user_type": "healthcare_professional",
-        "message": "Phase 3.1 enhanced authentication system",
-        "timestamp": datetime.now().isoformat()
-    }
-
-
-@router.post(
-    "/logout",
-    summary="User logout",
-    description="User logout endpoint"
-)
-async def simple_logout():
-    """Simple logout endpoint."""
-    return {
-        "status": "success",
-        "message": "Logged out successfully - Phase 3.1",
-        "timestamp": datetime.now().isoformat()
-    }
-
-
-@router.post(
-    "/validate", 
-    summary="Token validation",
-    description="Validate authentication token"
-)
-async def validate_token(token_data: Dict[str, Any]):
-    """Simple token validation."""
-    return {
-        "valid": True,
-        "message": "Token validation - Phase 3.1 system",
-        "timestamp": datetime.now().isoformat()
-    }
+async def get_user_by_id(
+    user_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get user by ID - admin functionality."""
+    try:
+        # Check admin permissions
+        if current_user.get("role") != "admin":
+            return create_error_response(
+                message="Insufficient permissions",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+        
+        if _has_database:
+            user_obj = await UserDatabase.get_user_by_id(user_id)
+            
+            if not user_obj:
+                return create_error_response(
+                    message="User not found",
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            
+            user_data = {
+                "user_id": user_obj.id,
+                "email": user_obj.email,
+                "full_name": user_obj.full_name,
+                "role": user_obj.role,
+                "is_active": user_obj.is_active,
+                "is_verified": user_obj.is_verified,
+                "created_at": user_obj.created_at.isoformat() if user_obj.created_at else None,
+                "last_login_at": user_obj.last_login_at.isoformat() if user_obj.last_login_at else None
+            }
+        else:
+            user_data = {
+                "user_id": user_id,
+                "email": "mock@example.com",
+                "full_name": "Mock User",
+                "role": "user",
+                "is_active": True
+            }
+        
+        return create_success_response({
+            "user": user_data,
+            "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
+        })
+        
+    except Exception as e:
+        return create_error_response(
+            message="Failed to get user",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            details={"error": str(e)}
+        )

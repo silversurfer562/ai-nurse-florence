@@ -58,6 +58,14 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Healthcare AI assistant ready - Educational use only")
 
+    # Initialize session cleanup service (Phase 3.4.4)
+    try:
+        from src.services.session_cleanup import start_session_cleanup
+        await start_session_cleanup()
+        logger.info("✅ Session cleanup service started")
+    except Exception as e:
+        logger.warning(f"⚠️ Session cleanup service not available: {e}")
+
     # Log effective base URL for observability and populate OpenAPI servers
     effective_base = None
     try:
@@ -87,6 +95,14 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         # Shutdown
+        # Stop session cleanup service (Phase 3.4.4)
+        try:
+            from src.services.session_cleanup import stop_session_cleanup
+            await stop_session_cleanup()
+            logger.info("✅ Session cleanup service stopped")
+        except Exception as e:
+            logger.warning(f"⚠️ Error stopping session cleanup service: {e}")
+        
         logger.info("Application shutdown complete")
 
 

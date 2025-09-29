@@ -53,6 +53,16 @@ def _load_core_routers():
         import traceback
         logger.error(f"Enhanced Auth router traceback: {traceback.format_exc()}")
 
+    # Session monitoring router (Phase 3.4.4)
+    try:
+        from .session_monitoring import router
+        _router_registry['session_monitoring'] = router
+        router_status['session_monitoring'] = True
+        logger.info("✅ Session monitoring router loaded successfully")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Session monitoring router unavailable: {e}")
+        router_status['session_monitoring'] = False
+
 def _load_medical_routers():
     """Load medical information routers following External Service Integration."""
     
