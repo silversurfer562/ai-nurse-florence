@@ -104,8 +104,8 @@ async def liveness_check():
 
 # Production Monitoring Endpoints (Step 2 Implementation)
 @router.get(
-    "/monitoring/status",
-    summary="Production monitoring status",
+    "/monitoring-status",
+    summary="Production monitoring status", 
     description="Get comprehensive monitoring status for production deployment."
 )
 async def monitoring_status():
@@ -133,7 +133,7 @@ async def monitoring_status():
 
 
 @router.get(
-    "/monitoring/performance",
+    "/monitoring-performance",
     summary="Performance metrics",
     description="Get application performance metrics."
 )
@@ -158,7 +158,7 @@ async def monitoring_performance():
 
 
 @router.get(
-    "/monitoring/system",
+    "/monitoring-system",
     summary="System metrics",
     description="Get system resource metrics."
 )
@@ -183,7 +183,7 @@ async def monitoring_system():
 
 
 @router.get(
-    "/monitoring/alerts",
+    "/monitoring-alerts",
     summary="Alert status",
     description="Get current alert status and thresholds."
 )
