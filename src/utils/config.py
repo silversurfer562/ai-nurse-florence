@@ -163,9 +163,21 @@ def get_openai_config() -> dict:
 def get_redis_config() -> dict:
     """Get Redis configuration following Caching Strategy pattern."""
     settings = get_settings()
+    
+    # Return None if Redis URL is not properly configured
+    if not settings.REDIS_URL or not settings.REDIS_URL.strip():
+        return None
+    
+    # Validate Redis URL format
+    redis_url = settings.REDIS_URL.strip()
+    if not (redis_url.startswith('redis://') or redis_url.startswith('rediss://') or redis_url.startswith('unix://')):
+        import logging
+        logging.warning(f"Invalid Redis URL format: {redis_url}. Must start with redis://, rediss://, or unix://")
+        return None
+    
     return {
-        "url": settings.REDIS_URL,
-        "available": settings.has_redis(),
+        "url": redis_url,
+        "available": True,
         "ttl_seconds": settings.CACHE_TTL_SECONDS
     }
 

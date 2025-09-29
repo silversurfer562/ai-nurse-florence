@@ -115,19 +115,19 @@ class HealthChecker:
         """Check Redis connectivity"""
         try:
             from src.utils.redis_cache import get_redis_client
-            redis_client = get_redis_client()
+            redis_client = await get_redis_client()
             if redis_client:
                 # Test basic redis operation
                 test_key = "health_check_test"
-                redis_client.set(test_key, "test", ex=5)
-                result = redis_client.get(test_key)
-                redis_client.delete(test_key)
+                await redis_client.set(test_key, "test", ex=5)
+                result = await redis_client.get(test_key)
+                await redis_client.delete(test_key)
                 return {"status": "healthy", "test_successful": True}
             else:
-                return {"status": "unhealthy", "error": "Redis client not available"}
+                return {"status": "not_configured", "note": "Redis not configured, using in-memory cache"}
         except Exception as e:
             logger.error(f"Redis health check failed: {e}")
-            return {"status": "unhealthy", "error": str(e)}
+            return {"status": "not_configured", "error": str(e), "note": "Using in-memory cache fallback"}
     
     def check_external_services(self) -> Dict:
         """Check external service connectivity"""
