@@ -31,10 +31,13 @@ def _load_core_routers():
         from .monitoring import router
         _router_registry["monitoring"] = router
         router_status["monitoring"] = True
-        logger.info("✅ Monitoring router loaded")
+        logger.info("✅ Monitoring router loaded successfully")
     except (ImportError, AttributeError) as e:
-        logger.warning(f"⚠️ Monitoring router unavailable: {e}")
+        logger.error(f"❌ Monitoring router import failed: {e}")
         router_status["monitoring"] = False
+        # Import traceback for detailed error logging
+        import traceback
+        logger.error(f"Monitoring router traceback: {traceback.format_exc()}")
 
     # Auth router  
     try:
