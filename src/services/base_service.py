@@ -5,10 +5,10 @@ From copilot-instructions.md patterns
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, TypeVar, Generic, Tuple
 from datetime import datetime
+from typing import Any, Dict, Generic, TypeVar
 
-from ..utils.config import get_settings, get_educational_banner
+from ..utils.config import get_educational_banner, get_settings
 from ..utils.exceptions import ExternalServiceException
 
 T = TypeVar("T")

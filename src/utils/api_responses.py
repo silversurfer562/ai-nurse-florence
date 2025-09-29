@@ -3,7 +3,8 @@ API Response Utilities - AI Nurse Florence
 Following API Design Standards from copilot-instructions.md
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from fastapi import status
 
 

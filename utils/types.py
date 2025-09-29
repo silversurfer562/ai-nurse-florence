@@ -5,7 +5,7 @@ This module defines reusable type annotations and protocols
 to ensure consistent typing across the codebase.
 """
 
-from typing import Dict, List, Any, Optional, TypeVar, Protocol, TypedDict
+from typing import Any, Dict, List, Optional, Protocol, TypedDict, TypeVar
 
 # Simple type aliases
 JSON = Dict[str, Any]

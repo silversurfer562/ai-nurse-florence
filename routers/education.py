@@ -1,8 +1,9 @@
 # routers/education.py
 from fastapi import APIRouter
-from models.schemas import PatientEducationRequest, PatientEducation
-from services.openai_client import chat
+
+from models.schemas import PatientEducation, PatientEducationRequest
 from services.model_selector import TaskType
+from services.openai_client import chat
 from utils.guardrails import educational_banner
 
 router = APIRouter(prefix="/v1", tags=["education"])

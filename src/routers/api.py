@@ -19,15 +19,21 @@ except Exception:
 
 try:
     wizards_module: Optional[ModuleType] = importlib.import_module("routers.wizards")
-    treatment_plan = getattr(wizards_module, "treatment_plan", None) if wizards_module else None
-    sbar_report = getattr(wizards_module, "sbar_report", None) if wizards_module else None
+    treatment_plan = (
+        getattr(wizards_module, "treatment_plan", None) if wizards_module else None
+    )
+    sbar_report = (
+        getattr(wizards_module, "sbar_report", None) if wizards_module else None
+    )
 except Exception:
     treatment_plan = None
     sbar_report = None
 
 # Conditional imports for enhanced features
 try:
-    chatgpt_store: Optional[ModuleType] = importlib.import_module("routers.chatgpt_store")
+    chatgpt_store: Optional[ModuleType] = importlib.import_module(
+        "routers.chatgpt_store"
+    )
     _has_gpt_store = True if chatgpt_store is not None else False
 except Exception:
     chatgpt_store = None
@@ -43,7 +49,9 @@ except Exception:
 api_router = APIRouter(prefix="/api/v1")
 
 # Include core clinical routers
-if clinical_decision_support is not None and hasattr(clinical_decision_support, "router"):
+if clinical_decision_support is not None and hasattr(
+    clinical_decision_support, "router"
+):
     api_router.include_router(clinical_decision_support.router)
 
 # Include wizard workflows following wizard pattern implementation

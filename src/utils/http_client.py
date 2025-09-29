@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Optional
-from types import ModuleType
-import importlib
 import asyncio
+import importlib
+from types import ModuleType
+from typing import Any, Optional
 
 httpx: Optional[ModuleType] = None
 requests: Optional[ModuleType] = None

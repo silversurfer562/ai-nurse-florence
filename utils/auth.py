@@ -6,18 +6,19 @@ This module provides the functions and dependencies for handling the OAuth2
 and verification of JSON Web Tokens (JWTs) to secure API endpoints.
 """
 
+from datetime import datetime, timedelta
+
+import httpx
+import jwt
+from crud import user as crud_user
+from database import get_db
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-import httpx
 
-from utils.config import settings
-from database import get_db
 from models import schemas as models_schemas
 from models import user as models_user
-from crud import user as crud_user
+from utils.config import settings
 from utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -69,7 +70,7 @@ async def get_current_user(
         if provider_user_id is None:
             raise credentials_exception
         token_data = models_schemas.TokenData(provider_user_id=provider_user_id)
-    except JWTError:
+    except jwt.PyJWTError:
         raise credentials_exception
 
     user = await crud_user.get_user_by_provider_id(

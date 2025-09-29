@@ -5,20 +5,23 @@ This module provides rate limiting functionality to protect endpoints
 from abuse by limiting the number of requests per client.
 """
 
-import time
-from typing import Dict, List, Tuple, Optional, Set, Callable, Awaitable
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.responses import JSONResponse
 import hashlib
-from utils.logging import get_logger
+import time
+from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
+
+from fastapi import Request, Response
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from utils.config import settings
+from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 # Try to use Redis for distributed rate limiting if available
 try:
     import redis
+
     from utils.redis_cache import get_cache
 
     _redis_available = True

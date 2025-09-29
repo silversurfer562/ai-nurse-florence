@@ -5,14 +5,14 @@ This module provides exception handlers that can be registered with a FastAPI ap
 to handle custom exceptions in a standardized way.
 """
 
-from fastapi import Request, FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from utils.exceptions import (
-    ServiceException,
-    ValidationException,
     ExternalServiceException,
     NotFoundException,
+    ServiceException,
+    ValidationException,
 )
 from utils.logging import get_logger
 

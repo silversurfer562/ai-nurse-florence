@@ -1,0 +1,15 @@
+[Unit]
+Description=AI Nurse Florence Celery Worker
+After=network.target
+
+[Service]
+Type=simple
+User=florence
+Group=florence
+WorkingDirectory=/opt/florence
+EnvironmentFile=/etc/default/florence
+ExecStart=/opt/venv/bin/celery -A celery_worker.celery_app worker --loglevel=info
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -5,10 +5,10 @@ This module provides a standardized way to create loggers and structured logs
 throughout the application.
 """
 
-import logging
 import json
-import sys
+import logging
 import os
+import sys
 from typing import Optional
 
 # Configure default logging
@@ -72,7 +72,7 @@ def log_with_context(
     level: int,
     msg: str,
     request_id: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Log a message with additional context.

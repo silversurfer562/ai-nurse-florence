@@ -3,9 +3,10 @@ Clinical Trials Router - AI Nurse Florence
 Following External Service Integration and API Design Standards from coding instructions
 """
 
-from fastapi import APIRouter, Query, HTTPException, status
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
 
 from ..services.clinical_trials_service import search_clinical_trials
 from ..utils.config import get_educational_banner

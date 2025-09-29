@@ -5,9 +5,10 @@ Following Service Layer Architecture with Conditional Imports Pattern
 """
 
 import logging
-import httpx
-from typing import Dict, Optional, Any, Tuple
 from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
+
+import httpx
 
 # Conditional imports following project patterns
 try:
@@ -64,7 +65,7 @@ except ImportError:
 
 # Add model selector import following Conditional Imports Pattern
 try:
-    from services.model_selector import select_model_for_context, get_enterprise_model
+    from services.model_selector import get_enterprise_model, select_model_for_context
 
     _has_model_selector = True
 except ImportError:
@@ -77,8 +78,8 @@ except ImportError:
         return "gpt-4"
 
 
-from utils.exceptions import ExternalServiceException, ServiceException
 from utils.config import get_settings
+from utils.exceptions import ExternalServiceException, ServiceException
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -358,7 +359,7 @@ class MedicalDataService:
             prompt = f"""
             Provide a concise clinical summary for healthcare professionals about: {term}
             
-            Based on this data: {result.get('data', {})}
+            Based on this data: {result.get("data", {})}
             
             Focus on:
             - Key clinical features

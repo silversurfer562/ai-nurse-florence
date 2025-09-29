@@ -3,11 +3,12 @@ Literature Search Service - AI Nurse Florence
 Following External Service Integration and Conditional Imports Pattern from coding instructions
 """
 
-import logging
-from typing import Dict, Any, Optional, List
-from types import ModuleType
 import importlib
-from ..utils.config import get_settings, get_educational_banner
+import logging
+from types import ModuleType
+from typing import Any, Dict, List, Optional
+
+from ..utils.config import get_educational_banner, get_settings
 from ..utils.redis_cache import cached
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,8 @@ try:
     map_to_mesh = getattr(_mesh_mod, "map_to_mesh")
     _has_mesh = True
 except Exception:
-    from typing import List, Any as _Any
+    from typing import Any as _Any
+    from typing import List
 
     def map_to_mesh(query: str, top_k: int = 5) -> List[Dict[str, _Any]]:
         return []
@@ -183,7 +185,7 @@ async def _search_pubmed_live(query: str, max_results: int) -> Dict[str, Any]:
         articles = [
             {
                 "pmid": pmid,
-                "title": f"Research article {i+1} for '{query}'",
+                "title": f"Research article {i + 1} for '{query}'",
                 "authors": ["Various authors"],
                 "journal": "Medical Journal",
                 "year": "2023",

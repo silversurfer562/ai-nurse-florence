@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from models.schemas import ReadabilityRequest, ReadabilityResponse
 from services.readability_service import analyze_readability
 from utils.guardrails import educational_banner

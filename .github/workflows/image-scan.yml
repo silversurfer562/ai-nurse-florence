@@ -1,0 +1,55 @@
+name: Image security scan
+
+on:
+    pull_request:
+        branches: ["**"]
+    push:
+        branches: ["main", "master"]
+
+jobs:
+    trivy-scan:
+        name: Build image and run Trivy
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v2
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Build image (load into runner)
+              uses: docker/build-push-action@v4
+              with:
+                  context: .
+                  push: false
+                  load: true
+                  tags: localhost/ai-nurse-florence:pr-${{ github.run_id }}
+
+            - name: Install Trivy
+              run: |
+                  set -eux
+                  TRIVY_VERSION=0.43.2
+                  curl -sfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+                    | tar -xz
+                  sudo mv trivy /usr/local/bin/trivy
+
+            - name: Run Trivy image scan
+              run: |
+                  set -eux
+                  IMAGE=localhost/ai-nurse-florence:pr-${{ github.run_id }}
+                  trivy image --no-progress --format json --output trivy-report.json --severity CRITICAL,HIGH,MEDIUM --ignorefile .trivyignore "$IMAGE" || true
+                  # Fail the job if any HIGH or CRITICAL vulnerabilities were found
+                  jq '.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL" or .Severity=="HIGH")' trivy-report.json > /dev/null && (echo "High/Critical vulnerabilities found" && exit 1) || true
+
+            - name: Upload scan results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: trivy-scan-${{ github.run_id }}
+                  path: trivy-report.json

@@ -13,7 +13,7 @@ class TestServiceRegistry:
 
     def test_service_availability(self):
         """Test that services handle graceful degradation."""
-        from src.services import get_service, get_available_services
+        from src.services import get_available_services, get_service
 
         services = get_available_services()
 

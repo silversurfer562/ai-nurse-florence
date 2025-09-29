@@ -6,13 +6,13 @@ Following Service Layer Architecture from coding instructions
 import logging
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import Request, APIRouter
-from fastapi.responses import HTMLResponse
 
 # Configure logging following coding instructions
 logging.basicConfig(

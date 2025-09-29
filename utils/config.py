@@ -3,10 +3,11 @@ Centralized application configuration using Pydantic Settings.
 Updated to handle existing environment variables.
 """
 
-from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import List, Optional
+import os
 from functools import lru_cache
+from typing import List, Optional
+
+from pydantic import BaseSettings, Field
 
 
 class Settings(BaseSettings):
@@ -71,6 +72,13 @@ class Settings(BaseSettings):
     OAUTH_CLIENT_SECRET: Optional[str] = None
     OAUTH_REDIRECT_URI: str = "http://localhost:8000/auth/callback"
 
+    # FastAPI specific settings
+    APP_NAME: str = "AI Nurse Florence"
+    APP_VERSION: str = "2.1.0"  # update default
+    HOST: str = Field(default="localhost")
+    PORT: int = Field(default=8000)
+    FORCE_HTTPS: bool = Field(default=False)
+
     @property
     def CORS_ORIGINS(self) -> List[str]:
         """Parse CORS origins from comma-separated string."""
@@ -92,8 +100,9 @@ Test Framework Configuration - AI Nurse Florence
 Comprehensive test suite for deployment readiness assessment
 Following coding instructions for Configuration Management
 """
-import pytest
 from typing import List, Optional
+
+import pytest
 
 
 # Test configuration following Configuration Management patterns
@@ -338,3 +347,14 @@ __all__ = [
     "TestEnvironmentConfiguration",
     "TestPerformanceReadiness",
 ]
+
+# python
+try:
+    from utils.metrics import record_cache_hit
+
+    _has_metrics = True
+except Exception:
+    _has_metrics = False
+
+    def record_cache_hit(cache_key: str) -> None:
+        pass

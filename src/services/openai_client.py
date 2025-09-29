@@ -4,11 +4,12 @@ Following OpenAI Integration pattern with environment-based API key loading
 """
 
 import logging
-from typing import Optional, Dict, Any, TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 if TYPE_CHECKING:
     import openai
-from src.utils.config import get_settings, get_educational_banner, get_openai_config
+
+from src.utils.config import get_educational_banner, get_openai_config, get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class OpenAIService:
         self.banner = get_educational_banner()
 
         # Try to initialize OpenAI client following lazy client pattern
-        self._client: Optional['openai.OpenAI'] = None
+        self._client: Optional["openai.OpenAI"] = None
         self._initialize_client()
 
     def _initialize_client(self) -> None:
@@ -122,9 +123,15 @@ class OpenAIService:
                 "service_note": "OpenAI service: Live API response",
                 "disclaimer": "AI-generated content for educational purposes only. Clinical decisions require professional judgment.",
                 "usage": {
-                    "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-                    "completion_tokens": response.usage.completion_tokens if response.usage else 0,
-                    "total_tokens": response.usage.total_tokens if response.usage else 0,
+                    "prompt_tokens": (
+                        response.usage.prompt_tokens if response.usage else 0
+                    ),
+                    "completion_tokens": (
+                        response.usage.completion_tokens if response.usage else 0
+                    ),
+                    "total_tokens": (
+                        response.usage.total_tokens if response.usage else 0
+                    ),
                 },
             }
 

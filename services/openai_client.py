@@ -3,8 +3,9 @@
 OpenAI client configuration and management.
 Provides a lazy-loaded OpenAI client that gracefully handles missing configurations.
 """
+
 import logging
-from typing import Optional, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 # Conditional imports - graceful degradation pattern
 try:
@@ -25,6 +26,7 @@ try:
 except ImportError:
     # Fallback for environments where config is not available
     import os
+
     from dotenv import load_dotenv
 
     load_dotenv()

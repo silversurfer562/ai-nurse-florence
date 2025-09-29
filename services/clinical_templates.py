@@ -1,5 +1,6 @@
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel
 
 
@@ -73,12 +74,12 @@ class ClinicalTemplateEngine:
 # Clinical Document
 **Type**: {template_name}
 **Generated**: {datetime.utcnow().isoformat()}
-**Patient**: {context.patient_name or 'N/A'}
+**Patient**: {context.patient_name or "N/A"}
 
 ## Content
-{custom_data.get('situation_description', '')}
-{custom_data.get('assessment_findings', '')}
-{custom_data.get('recommendations', '')}
+{custom_data.get("situation_description", "")}
+{custom_data.get("assessment_findings", "")}
+{custom_data.get("recommendations", "")}
         """
 
         return {

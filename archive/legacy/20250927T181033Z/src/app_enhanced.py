@@ -5,9 +5,10 @@ Following Service Layer Architecture and Conditional Imports Pattern
 
 import sys
 from pathlib import Path
+
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 # Add project root to path following conftest.py pattern
 project_root = Path(__file__).parent.parent
@@ -15,8 +16,8 @@ sys.path.insert(0, str(project_root))
 
 # Conditional imports following coding instructions pattern
 try:
-    from utils.chatgpt_store import ChatGPTStoreAuth
     from routers.chatgpt_store import router as chatgpt_store_router
+    from utils.chatgpt_store import ChatGPTStoreAuth
 
     _has_chatgpt_integration = True
 except ImportError:
@@ -32,13 +33,14 @@ try:
 except ImportError:
     _has_enhanced_ui = False
 
+from routers.api import api_router
+
 # Core imports
 from utils.config import get_settings
-from routers.api import api_router
 from utils.middleware import (
-    SecurityHeadersMiddleware,
-    RequestIdMiddleware,
     LoggingMiddleware,
+    RequestIdMiddleware,
+    SecurityHeadersMiddleware,
 )
 
 settings = get_settings()

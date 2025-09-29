@@ -1,7 +1,8 @@
 import inspect
+
 from pytest import mark
 
-from src.services import disease_service, clinical_trials_service
+from src.services import clinical_trials_service, disease_service
 
 
 @mark.asyncio

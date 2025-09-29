@@ -3,10 +3,11 @@ Test configuration and fixtures following Testing Patterns from coding instructi
 Provides path setup, service layer mocks, and test client for comprehensive testing.
 """
 
-import pytest
 import sys
 from pathlib import Path
 from unittest.mock import AsyncMock
+
+import pytest
 from fastapi.testclient import TestClient
 
 # Add project root to path following conftest.py pattern from coding instructions

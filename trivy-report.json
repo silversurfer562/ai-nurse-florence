@@ -1,0 +1,2239 @@
+{
+  "SchemaVersion": 2,
+  "CreatedAt": "2025-09-29T02:08:29.943511885Z",
+  "ArtifactName": "localhost/ai-nurse-florence:latest",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "Size": 1865423872,
+    "OS": {
+      "Family": "debian",
+      "Name": "13.1"
+    },
+    "ImageID": "sha256:e3e4de141aa405a2f2fd644ead4a6c93bd6d23080b6222d5f937f9b7255d1383",
+    "DiffIDs": [
+      "sha256:14b82c37a96eb1fad5a5d17907a9f06d5d6c99d08f7d8eb7c750e7f32fe1daa3",
+      "sha256:6ef8942dbcecf8a7e17e7d2b6eb1dcaaa47596371ea0aee25edca6c2c6c7ed9f",
+      "sha256:5c3a9d503183b3e869bb1ab427d146212bb40b5c6fa5d39222154c235ab7b298",
+      "sha256:57d4d4281ed9e584415ed3d6aef634a9ccfb76f1f34a778289fb7aa4296a2302",
+      "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8",
+      "sha256:886af01c3ad88b6aab5fcbb13e903a9ec0ef43ef68ca9769e6b98c048b1572b3",
+      "sha256:15084ca93fa451370b5048e0c4107f4dc0a2630a4a8006643329dd041ac37e21",
+      "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4",
+      "sha256:e46a457f8a43c31e4844b611026e7747990e9d606f87344e8933354259ba7eec"
+    ],
+    "RepoTags": [
+      "localhost/ai-nurse-florence:latest"
+    ],
+    "RepoDigests": [
+      "localhost/ai-nurse-florence@sha256:e3e4de141aa405a2f2fd644ead4a6c93bd6d23080b6222d5f937f9b7255d1383"
+    ],
+    "ImageConfig": {
+      "architecture": "arm64",
+      "created": "2025-09-29T01:44:38.79403725Z",
+      "history": [
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "# debian.sh --arch 'arm64' out/ 'trixie' '@1757289600'",
+          "comment": "debuerreotype 0.16"
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "ENV PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "ENV LANG=C.UTF-8",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "RUN /bin/sh -c set -eux; \tapt-get update; \tapt-get install -y --no-install-recommends \t\tca-certificates \t\tnetbase \t\ttzdata \t; \tapt-get dist-clean # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "ENV PYTHON_VERSION=3.11.13",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "ENV PYTHON_SHA256=8fb5f9fbc7609fa822cb31549884575db7fd9657cbffb89510b5d7975963a83a",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "RUN /bin/sh -c set -eux; \t\tsavedAptMark=\"$(apt-mark showmanual)\"; \tapt-get update; \tapt-get install -y --no-install-recommends \t\tdpkg-dev \t\tgcc \t\tgnupg \t\tlibbluetooth-dev \t\tlibbz2-dev \t\tlibc6-dev \t\tlibdb-dev \t\tlibffi-dev \t\tlibgdbm-dev \t\tliblzma-dev \t\tlibncursesw5-dev \t\tlibreadline-dev \t\tlibsqlite3-dev \t\tlibssl-dev \t\tmake \t\ttk-dev \t\tuuid-dev \t\twget \t\txz-utils \t\tzlib1g-dev \t; \t\twget -O python.tar.xz \"https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz\"; \techo \"$PYTHON_SHA256 *python.tar.xz\" | sha256sum -c -; \twget -O python.tar.xz.asc \"https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc\"; \tGNUPGHOME=\"$(mktemp -d)\"; export GNUPGHOME; \tgpg --batch --keyserver hkps://keys.openpgp.org --recv-keys \"$GPG_KEY\"; \tgpg --batch --verify python.tar.xz.asc python.tar.xz; \tgpgconf --kill all; \trm -rf \"$GNUPGHOME\" python.tar.xz.asc; \tmkdir -p /usr/src/python; \ttar --extract --directory /usr/src/python --strip-components=1 --file python.tar.xz; \trm python.tar.xz; \t\tcd /usr/src/python; \tgnuArch=\"$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)\"; \t./configure \t\t--build=\"$gnuArch\" \t\t--enable-loadable-sqlite-extensions \t\t--enable-optimizations \t\t--enable-option-checking=fatal \t\t--enable-shared \t\t$(test \"${gnuArch%%-*}\" != 'riscv64' \u0026\u0026 echo '--with-lto') \t\t--with-ensurepip \t; \tnproc=\"$(nproc)\"; \tEXTRA_CFLAGS=\"$(dpkg-buildflags --get CFLAGS)\"; \tLDFLAGS=\"$(dpkg-buildflags --get LDFLAGS)\"; \tLDFLAGS=\"${LDFLAGS:--Wl},--strip-all\"; \tmake -j \"$nproc\" \t\t\"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}\" \t\t\"LDFLAGS=${LDFLAGS:-}\" \t; \trm python; \tmake -j \"$nproc\" \t\t\"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}\" \t\t\"LDFLAGS=${LDFLAGS:--Wl},-rpath='\\$\\$ORIGIN/../lib'\" \t\tpython \t; \tmake install; \t\tcd /; \trm -rf /usr/src/python; \t\tfind /usr/local -depth \t\t\\( \t\t\t\\( -type d -a \\( -name test -o -name tests -o -name idle_test \\) \\) \t\t\t-o \\( -type f -a \\( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \\) \\) \t\t\\) -exec rm -rf '{}' + \t; \t\tldconfig; \t\tapt-mark auto '.*' \u003e /dev/null; \tapt-mark manual $savedAptMark; \tfind /usr/local -type f -executable -not \\( -name '*tkinter*' \\) -exec ldd '{}' ';' \t\t| awk '/=\u003e/ { so = $(NF-1); if (index(so, \"/usr/local/\") == 1) { next }; gsub(\"^/(usr/)?\", \"\", so); printf \"*%s\\n\", so }' \t\t| sort -u \t\t| xargs -rt dpkg-query --search \t\t| awk 'sub(\":$\", \"\", $1) { print $1 }' \t\t| sort -u \t\t| xargs -r apt-mark manual \t; \tapt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \tapt-get dist-clean; \t\texport PYTHONDONTWRITEBYTECODE=1; \tpython3 --version; \t\tpip3 install \t\t--disable-pip-version-check \t\t--no-cache-dir \t\t--no-compile \t\t'setuptools==65.5.1' \t\t'wheel\u003c0.46' \t; \tpip3 --version # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "RUN /bin/sh -c set -eux; \tfor src in idle3 pip3 pydoc3 python3 python3-config; do \t\tdst=\"$(echo \"$src\" | tr -d 3)\"; \t\t[ -s \"/usr/local/bin/$src\" ]; \t\t[ ! -e \"/usr/local/bin/$dst\" ]; \t\tln -svT \"$src\" \"/usr/local/bin/$dst\"; \tdone # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-08-08T18:20:34Z",
+          "created_by": "CMD [\"python3\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-09-29T01:44:01Z",
+          "created_by": "ENV VENV_PATH=/opt/venv",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-09-29T01:44:01Z",
+          "created_by": "COPY /opt/venv /opt/venv # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-09-29T01:44:01Z",
+          "created_by": "ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-09-29T01:44:01Z",
+          "created_by": "WORKDIR /app",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-09-29T01:44:01Z",
+          "created_by": "RUN /bin/sh -c useradd --create-home --shell /bin/bash --uid 1000 florence || true # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-09-29T01:44:07Z",
+          "created_by": "COPY . /app # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-09-29T01:44:38Z",
+          "created_by": "RUN /bin/sh -c chown -R florence:florence /app # buildkit",
+          "comment": "buildkit.dockerfile.v0"
+        },
+        {
+          "created": "2025-09-29T01:44:38Z",
+          "created_by": "USER florence",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-09-29T01:44:38Z",
+          "created_by": "EXPOSE map[8000/tcp:{}]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        },
+        {
+          "created": "2025-09-29T01:44:38Z",
+          "created_by": "CMD [\"gunicorn\" \"-k\" \"uvicorn.workers.UvicornWorker\" \"--workers\" \"4\" \"--bind\" \"0.0.0.0:${PORT:-8000}\" \"app:app\"]",
+          "comment": "buildkit.dockerfile.v0",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:14b82c37a96eb1fad5a5d17907a9f06d5d6c99d08f7d8eb7c750e7f32fe1daa3",
+          "sha256:6ef8942dbcecf8a7e17e7d2b6eb1dcaaa47596371ea0aee25edca6c2c6c7ed9f",
+          "sha256:5c3a9d503183b3e869bb1ab427d146212bb40b5c6fa5d39222154c235ab7b298",
+          "sha256:57d4d4281ed9e584415ed3d6aef634a9ccfb76f1f34a778289fb7aa4296a2302",
+          "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8",
+          "sha256:886af01c3ad88b6aab5fcbb13e903a9ec0ef43ef68ca9769e6b98c048b1572b3",
+          "sha256:15084ca93fa451370b5048e0c4107f4dc0a2630a4a8006643329dd041ac37e21",
+          "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4",
+          "sha256:e46a457f8a43c31e4844b611026e7747990e9d606f87344e8933354259ba7eec"
+        ]
+      },
+      "config": {
+        "Cmd": [
+          "gunicorn",
+          "-k",
+          "uvicorn.workers.UvicornWorker",
+          "--workers",
+          "4",
+          "--bind",
+          "0.0.0.0:${PORT:-8000}",
+          "app:app"
+        ],
+        "Env": [
+          "PATH=/opt/venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "LANG=C.UTF-8",
+          "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+          "PYTHON_VERSION=3.11.13",
+          "PYTHON_SHA256=8fb5f9fbc7609fa822cb31549884575db7fd9657cbffb89510b5d7975963a83a",
+          "VENV_PATH=/opt/venv"
+        ],
+        "Labels": {
+          "com.docker.compose.project": "ai-nurse-florence",
+          "com.docker.compose.service": "api",
+          "com.docker.compose.version": "2.34.0"
+        },
+        "User": "florence",
+        "WorkingDir": "/app",
+        "ExposedPorts": {
+          "8000/tcp": {}
+        },
+        "ArgsEscaped": true
+      }
+    },
+    "Layers": [
+      {
+        "Size": 103045120,
+        "Digest": "sha256:b2feff975e6dd2ebaf182772fb9ee26274648387b061e821e0bb5026735dd094",
+        "DiffID": "sha256:14b82c37a96eb1fad5a5d17907a9f06d5d6c99d08f7d8eb7c750e7f32fe1daa3"
+      },
+      {
+        "Size": 4172288,
+        "Digest": "sha256:440ff9e33d745ab81aef0b1d7dbb2efaaaf60e167f7d0cd36d26ac0e5154eec3",
+        "DiffID": "sha256:6ef8942dbcecf8a7e17e7d2b6eb1dcaaa47596371ea0aee25edca6c2c6c7ed9f"
+      },
+      {
+        "Size": 47355392,
+        "Digest": "sha256:0dc0d0d23e1f63adec383cc7eeb1fcaa0816e9b5bceb359df4c0257abc446b2a",
+        "DiffID": "sha256:5c3a9d503183b3e869bb1ab427d146212bb40b5c6fa5d39222154c235ab7b298"
+      },
+      {
+        "Size": 5120,
+        "Digest": "sha256:e9246f522e03b2309c041f8eea3e8db7f878724118f01e7ec7c99cf9435f7ddb",
+        "DiffID": "sha256:57d4d4281ed9e584415ed3d6aef634a9ccfb76f1f34a778289fb7aa4296a2302"
+      },
+      {
+        "Size": 144719360,
+        "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+        "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+      },
+      {
+        "Size": 1536,
+        "Digest": "sha256:b7d48b5140fa2dfc16318e8025ca0bd89f14a404d1ea5f7afaf7fd135caf551c",
+        "DiffID": "sha256:886af01c3ad88b6aab5fcbb13e903a9ec0ef43ef68ca9769e6b98c048b1572b3"
+      },
+      {
+        "Size": 21504,
+        "Digest": "sha256:a830a3f73b6f327d9f014daebbe5ccce171b75cdabab6f9e7b13ff02558a3df9",
+        "DiffID": "sha256:15084ca93fa451370b5048e0c4107f4dc0a2630a4a8006643329dd041ac37e21"
+      },
+      {
+        "Size": 783051776,
+        "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+        "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+      },
+      {
+        "Size": 783051776,
+        "Digest": "sha256:5ea90d02eb0a4621078a5e12a696511259351519a467fcd464b32bfa06a96766",
+        "DiffID": "sha256:e46a457f8a43c31e4844b611026e7747990e9d606f87344e8933354259ba7eec"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Target": "localhost/ai-nurse-florence:latest (debian 13.1)",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2025-7709",
+          "PkgID": "libsqlite3-0@3.46.1-7",
+          "PkgName": "libsqlite3-0",
+          "PkgIdentifier": {
+            "PURL": "pkg:deb/debian/libsqlite3-0@3.46.1-7?arch=arm64\u0026distro=debian-13.1",
+            "UID": "55472063a524a4a1"
+          },
+          "InstalledVersion": "3.46.1-7",
+          "Status": "affected",
+          "Layer": {
+            "Digest": "sha256:b2feff975e6dd2ebaf182772fb9ee26274648387b061e821e0bb5026735dd094",
+            "DiffID": "sha256:14b82c37a96eb1fad5a5d17907a9f06d5d6c99d08f7d8eb7c750e7f32fe1daa3"
+          },
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-7709",
+          "DataSource": {
+            "ID": "debian",
+            "Name": "Debian Security Tracker",
+            "URL": "https://salsa.debian.org/security-tracker-team/security-tracker"
+          },
+          "Title": "An integer overflow exists in the  FTS5 https://sqlite.org/fts5.html e ...",
+          "Description": "An integer overflow exists in the  FTS5 https://sqlite.org/fts5.html  extension. It occurs when the size of an array of tombstone pointers is calculated and truncated into a 32-bit integer. A pointer to partially controlled data can then be written out of bounds.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-190"
+          ],
+          "VendorSeverity": {
+            "photon": 3,
+            "ubuntu": 2
+          },
+          "References": [
+            "https://github.com/google/security-research/security/advisories/GHSA-v2c8-vqqp-hv3g",
+            "https://ubuntu.com/security/notices/USN-7751-1",
+            "https://www.cve.org/CVERecord?id=CVE-2025-7709"
+          ],
+          "PublishedDate": "2025-09-08T15:15:38.18Z",
+          "LastModifiedDate": "2025-09-08T16:25:38.81Z"
+        }
+      ]
+    },
+    {
+      "Target": "Python",
+      "Class": "lang-pkgs",
+      "Type": "python-pkg",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2024-52304",
+          "PkgName": "aiohttp",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/aiohttp-3.9.5.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/aiohttp@3.9.5",
+            "UID": "47a17d499609c48a"
+          },
+          "InstalledVersion": "3.9.5",
+          "FixedVersion": "3.10.11",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-52304",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "aiohttp: aiohttp vulnerable to request smuggling due to incorrect parsing of chunk extensions",
+          "Description": "aiohttp is an asynchronous HTTP client/server framework for asyncio and Python. Prior to version 3.10.11, the Python parser parses newlines in chunk extensions incorrectly which can lead to request smuggling vulnerabilities under certain conditions. If a pure Python version of aiohttp is installed (i.e. without the usual C extensions) or `AIOHTTP_NO_EXTENSIONS` is enabled, then an attacker may be able to execute a request smuggling attack to bypass certain firewalls or proxy protections. Version 3.10.11 fixes the issue.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-444"
+          ],
+          "VendorSeverity": {
+            "ghsa": 2,
+            "nvd": 3,
+            "redhat": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
+              "V3Score": 5.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-52304",
+            "https://github.com/aio-libs/aiohttp",
+            "https://github.com/aio-libs/aiohttp/commit/259edc369075de63e6f3a4eaade058c62af0df71",
+            "https://github.com/aio-libs/aiohttp/security/advisories/GHSA-8495-4g3g-x7pr",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-52304",
+            "https://ubuntu.com/security/notices/USN-7642-1",
+            "https://www.cve.org/CVERecord?id=CVE-2024-52304"
+          ],
+          "PublishedDate": "2024-11-18T21:15:06.5Z",
+          "LastModifiedDate": "2025-08-15T17:36:18.507Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-23342",
+          "PkgName": "ecdsa",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/ecdsa-0.19.1.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/ecdsa@0.19.1",
+            "UID": "2dc7c6482de4b935"
+          },
+          "InstalledVersion": "0.19.1",
+          "Status": "affected",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-23342",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-ecdsa: vulnerable to the Minerva attack",
+          "Description": "The `ecdsa` PyPI package is a pure Python implementation of ECC (Elliptic Curve Cryptography) with support for ECDSA (Elliptic Curve Digital Signature Algorithm), EdDSA (Edwards-curve Digital Signature Algorithm) and ECDH (Elliptic Curve Diffie-Hellman). Versions 0.18.0 and prior are vulnerable to the Minerva attack. As of time of publication, no known patched version exists.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-203",
+            "CWE-208",
+            "CWE-385"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 3,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-23342",
+            "https://github.com/tlsfuzzer/python-ecdsa",
+            "https://github.com/tlsfuzzer/python-ecdsa/blob/master/SECURITY.md",
+            "https://github.com/tlsfuzzer/python-ecdsa/security/advisories/GHSA-wj6h-64fc-37mp",
+            "https://minerva.crocs.fi.muni.cz",
+            "https://minerva.crocs.fi.muni.cz/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-23342",
+            "https://securitypitfalls.wordpress.com/2018/08/03/constant-time-compare-in-python",
+            "https://securitypitfalls.wordpress.com/2018/08/03/constant-time-compare-in-python/",
+            "https://www.cve.org/CVERecord?id=CVE-2024-23342"
+          ],
+          "PublishedDate": "2024-01-23T00:15:26.397Z",
+          "LastModifiedDate": "2025-08-26T21:33:47.87Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-23342",
+          "PkgName": "ecdsa",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/ecdsa-0.19.1.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/ecdsa@0.19.1",
+            "UID": "37344e97f70edbc2"
+          },
+          "InstalledVersion": "0.19.1",
+          "Status": "affected",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-23342",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-ecdsa: vulnerable to the Minerva attack",
+          "Description": "The `ecdsa` PyPI package is a pure Python implementation of ECC (Elliptic Curve Cryptography) with support for ECDSA (Elliptic Curve Digital Signature Algorithm), EdDSA (Edwards-curve Digital Signature Algorithm) and ECDH (Elliptic Curve Diffie-Hellman). Versions 0.18.0 and prior are vulnerable to the Minerva attack. As of time of publication, no known patched version exists.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-203",
+            "CWE-208",
+            "CWE-385"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 3,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-23342",
+            "https://github.com/tlsfuzzer/python-ecdsa",
+            "https://github.com/tlsfuzzer/python-ecdsa/blob/master/SECURITY.md",
+            "https://github.com/tlsfuzzer/python-ecdsa/security/advisories/GHSA-wj6h-64fc-37mp",
+            "https://minerva.crocs.fi.muni.cz",
+            "https://minerva.crocs.fi.muni.cz/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-23342",
+            "https://securitypitfalls.wordpress.com/2018/08/03/constant-time-compare-in-python",
+            "https://securitypitfalls.wordpress.com/2018/08/03/constant-time-compare-in-python/",
+            "https://www.cve.org/CVERecord?id=CVE-2024-23342"
+          ],
+          "PublishedDate": "2024-01-23T00:15:26.397Z",
+          "LastModifiedDate": "2025-08-26T21:33:47.87Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-1135",
+          "PkgName": "gunicorn",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/gunicorn-21.2.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/gunicorn@21.2.0",
+            "UID": "16007adf1b5c2bc7"
+          },
+          "InstalledVersion": "21.2.0",
+          "FixedVersion": "22.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-1135",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-gunicorn: HTTP Request Smuggling due to improper validation of Transfer-Encoding headers",
+          "Description": "Gunicorn fails to properly validate Transfer-Encoding headers, leading to HTTP Request Smuggling (HRS) vulnerabilities. By crafting requests with conflicting Transfer-Encoding headers, attackers can bypass security restrictions and access restricted endpoints. This issue is due to Gunicorn's handling of Transfer-Encoding headers, where it incorrectly processes requests with multiple, conflicting Transfer-Encoding headers, treating them as chunked regardless of the final encoding specified. This vulnerability allows for a range of attacks including cache poisoning, session manipulation, and data exposure.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-444"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:N",
+              "V3Score": 8.2
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-1135",
+            "https://github.com/advisories/GHSA-w3h3-4rj7-4ph4",
+            "https://github.com/benoitc/gunicorn",
+            "https://github.com/benoitc/gunicorn/commit/ac29c9b0a758d21f1e0fb3b3457239e523fa9f1d",
+            "https://github.com/benoitc/gunicorn/releases/tag/22.0.0",
+            "https://huntr.com/bounties/22158e34-cfd5-41ad-97e0-a780773d96c1",
+            "https://lists.debian.org/debian-lts-announce/2024/06/msg00027.html",
+            "https://lists.debian.org/debian-lts-announce/2024/12/msg00018.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-1135",
+            "https://www.cve.org/CVERecord?id=CVE-2024-1135"
+          ],
+          "PublishedDate": "2024-04-16T00:15:07.797Z",
+          "LastModifiedDate": "2024-12-20T07:15:12.59Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-1135",
+          "PkgName": "gunicorn",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/gunicorn-21.2.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/gunicorn@21.2.0",
+            "UID": "334d69a46be73f88"
+          },
+          "InstalledVersion": "21.2.0",
+          "FixedVersion": "22.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-1135",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-gunicorn: HTTP Request Smuggling due to improper validation of Transfer-Encoding headers",
+          "Description": "Gunicorn fails to properly validate Transfer-Encoding headers, leading to HTTP Request Smuggling (HRS) vulnerabilities. By crafting requests with conflicting Transfer-Encoding headers, attackers can bypass security restrictions and access restricted endpoints. This issue is due to Gunicorn's handling of Transfer-Encoding headers, where it incorrectly processes requests with multiple, conflicting Transfer-Encoding headers, treating them as chunked regardless of the final encoding specified. This vulnerability allows for a range of attacks including cache poisoning, session manipulation, and data exposure.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-444"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:N",
+              "V3Score": 8.2
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-1135",
+            "https://github.com/advisories/GHSA-w3h3-4rj7-4ph4",
+            "https://github.com/benoitc/gunicorn",
+            "https://github.com/benoitc/gunicorn/commit/ac29c9b0a758d21f1e0fb3b3457239e523fa9f1d",
+            "https://github.com/benoitc/gunicorn/releases/tag/22.0.0",
+            "https://huntr.com/bounties/22158e34-cfd5-41ad-97e0-a780773d96c1",
+            "https://lists.debian.org/debian-lts-announce/2024/06/msg00027.html",
+            "https://lists.debian.org/debian-lts-announce/2024/12/msg00018.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-1135",
+            "https://www.cve.org/CVERecord?id=CVE-2024-1135"
+          ],
+          "PublishedDate": "2024-04-16T00:15:07.797Z",
+          "LastModifiedDate": "2024-12-20T07:15:12.59Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-6827",
+          "PkgName": "gunicorn",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/gunicorn-21.2.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/gunicorn@21.2.0",
+            "UID": "16007adf1b5c2bc7"
+          },
+          "InstalledVersion": "21.2.0",
+          "FixedVersion": "23.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-6827",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "gunicorn: HTTP Request Smuggling in benoitc/gunicorn",
+          "Description": "Gunicorn version 21.2.0 does not properly validate the value of the 'Transfer-Encoding' header as specified in the RFC standards, which leads to the default fallback method of 'Content-Length,' making it vulnerable to TE.CL request smuggling. This vulnerability can lead to cache poisoning, data exposure, session manipulation, SSRF, XSS, DoS, data integrity compromise, security bypass, information leakage, and business logic abuse.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-444"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-6827",
+            "https://github.com/benoitc/gunicorn",
+            "https://github.com/benoitc/gunicorn/issues/3278",
+            "https://huntr.com/bounties/1b4f8f38-39da-44b6-9f98-f618639d0dd7",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-6827",
+            "https://www.cve.org/CVERecord?id=CVE-2024-6827"
+          ],
+          "PublishedDate": "2025-03-20T10:15:33.357Z",
+          "LastModifiedDate": "2025-03-20T10:15:33.357Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-6827",
+          "PkgName": "gunicorn",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/gunicorn-21.2.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/gunicorn@21.2.0",
+            "UID": "334d69a46be73f88"
+          },
+          "InstalledVersion": "21.2.0",
+          "FixedVersion": "23.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-6827",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "gunicorn: HTTP Request Smuggling in benoitc/gunicorn",
+          "Description": "Gunicorn version 21.2.0 does not properly validate the value of the 'Transfer-Encoding' header as specified in the RFC standards, which leads to the default fallback method of 'Content-Length,' making it vulnerable to TE.CL request smuggling. This vulnerability can lead to cache poisoning, data exposure, session manipulation, SSRF, XSS, DoS, data integrity compromise, security bypass, information leakage, and business logic abuse.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-444"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-6827",
+            "https://github.com/benoitc/gunicorn",
+            "https://github.com/benoitc/gunicorn/issues/3278",
+            "https://huntr.com/bounties/1b4f8f38-39da-44b6-9f98-f618639d0dd7",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-6827",
+            "https://www.cve.org/CVERecord?id=CVE-2024-6827"
+          ],
+          "PublishedDate": "2025-03-20T10:15:33.357Z",
+          "LastModifiedDate": "2025-03-20T10:15:33.357Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-8869",
+          "PkgName": "pip",
+          "PkgPath": "usr/local/lib/python3.11/site-packages/pip-24.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/pip@24.0",
+            "UID": "55a4d9bee68c93ea"
+          },
+          "InstalledVersion": "24.0",
+          "FixedVersion": "25.2",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:0dc0d0d23e1f63adec383cc7eeb1fcaa0816e9b5bceb359df4c0257abc446b2a",
+            "DiffID": "sha256:5c3a9d503183b3e869bb1ab427d146212bb40b5c6fa5d39222154c235ab7b298"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-8869",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "pip: pip missing checks on symbolic link extraction",
+          "Description": "When extracting a tar archive pip may not check symbolic links point into the extraction directory if the tarfile module doesn't implement PEP 706.\nNote that upgrading pip to a \"fixed\" version for this vulnerability doesn't fix all known vulnerabilities that are remediated by using a Python version that implements PEP 706.\n\nNote that this is a vulnerability in pip's fallback implementation of tar extraction for Python versions that don't implement PEP 706\nand therefore are not secure to all vulnerabilities in the Python 'tarfile' module. If you're using a Python version that implements PEP 706\nthen pip doesn't use the \"vulnerable\" fallback code.\n\nMitigations include upgrading to a version of pip that includes the fix, upgrading to a Python version that implements PEP 706 (Python \u003e=3.9.17, \u003e=3.10.12, \u003e=3.11.4, or \u003e=3.12),\napplying the linked patch, or inspecting source distributions (sdists) before installation as is already a best-practice.",
+          "Severity": "MEDIUM",
+          "VendorSeverity": {
+            "ghsa": 2,
+            "redhat": 2
+          },
+          "CVSS": {
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:N/I:H/A:N",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2025-8869",
+            "https://github.com/pypa/pip",
+            "https://github.com/pypa/pip/commit/f2b92314da012b9fffa36b3f3e67748a37ef464a",
+            "https://github.com/pypa/pip/pull/13550",
+            "https://mail.python.org/archives/list/security-announce@python.org/thread/IF5A3GCJY3VH7BVHJKOWOJFKTW7VFQEN",
+            "https://mail.python.org/archives/list/security-announce@python.org/thread/IF5A3GCJY3VH7BVHJKOWOJFKTW7VFQEN/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-8869",
+            "https://pip.pypa.io/en/stable/news/#v25-2",
+            "https://www.cve.org/CVERecord?id=CVE-2025-8869"
+          ],
+          "PublishedDate": "2025-09-24T15:15:41.293Z",
+          "LastModifiedDate": "2025-09-24T18:11:24.52Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-33663",
+          "PkgName": "python-jose",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/python_jose-3.3.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-jose@3.3.0",
+            "UID": "7d1719e92856dcb4"
+          },
+          "InstalledVersion": "3.3.0",
+          "FixedVersion": "3.4.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33663",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-jose: algorithm confusion with OpenSSH ECDSA keys and other key formats",
+          "Description": "python-jose through 3.3.0 has algorithm confusion with OpenSSH ECDSA keys and other key formats. This is similar to CVE-2022-29217.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-327"
+          ],
+          "VendorSeverity": {
+            "ghsa": 4,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-33663",
+            "https://github.com/mpdavis/python-jose",
+            "https://github.com/mpdavis/python-jose/issues/346",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/python-jose/PYSEC-2024-232.yaml",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-33663",
+            "https://www.cve.org/CVERecord?id=CVE-2024-33663",
+            "https://www.vicarius.io/vsociety/posts/algorithm-confusion-in-python-jose-cve-2024-33663"
+          ],
+          "PublishedDate": "2024-04-26T00:15:09.01Z",
+          "LastModifiedDate": "2025-09-02T18:37:53.477Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-33663",
+          "PkgName": "python-jose",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/python_jose-3.3.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-jose@3.3.0",
+            "UID": "f4c79bbc16043031"
+          },
+          "InstalledVersion": "3.3.0",
+          "FixedVersion": "3.4.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33663",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-jose: algorithm confusion with OpenSSH ECDSA keys and other key formats",
+          "Description": "python-jose through 3.3.0 has algorithm confusion with OpenSSH ECDSA keys and other key formats. This is similar to CVE-2022-29217.",
+          "Severity": "CRITICAL",
+          "CweIDs": [
+            "CWE-327"
+          ],
+          "VendorSeverity": {
+            "ghsa": 4,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+              "V3Score": 7.4
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-33663",
+            "https://github.com/mpdavis/python-jose",
+            "https://github.com/mpdavis/python-jose/issues/346",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/python-jose/PYSEC-2024-232.yaml",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-33663",
+            "https://www.cve.org/CVERecord?id=CVE-2024-33663",
+            "https://www.vicarius.io/vsociety/posts/algorithm-confusion-in-python-jose-cve-2024-33663"
+          ],
+          "PublishedDate": "2024-04-26T00:15:09.01Z",
+          "LastModifiedDate": "2025-09-02T18:37:53.477Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-33664",
+          "PkgName": "python-jose",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/python_jose-3.3.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-jose@3.3.0",
+            "UID": "7d1719e92856dcb4"
+          },
+          "InstalledVersion": "3.3.0",
+          "FixedVersion": "3.4.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33664",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-jose: allows attackers to cause a denial of service",
+          "Description": "python-jose through 3.3.0 allows attackers to cause a denial of service (resource consumption) during a decode via a crafted JSON Web Encryption (JWE) token with a high compression ratio, aka a \"JWT bomb.\" This is similar to CVE-2024-21319.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-400"
+          ],
+          "VendorSeverity": {
+            "ghsa": 2,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-33664",
+            "https://github.com/mpdavis/python-jose",
+            "https://github.com/mpdavis/python-jose/issues/344",
+            "https://github.com/mpdavis/python-jose/pull/345",
+            "https://github.com/mpdavis/python-jose/releases/tag/3.4.0",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/python-jose/PYSEC-2024-233.yaml",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-33664",
+            "https://www.cve.org/CVERecord?id=CVE-2024-33664",
+            "https://www.vicarius.io/vsociety/posts/jwt-bomb-in-python-jose-cve-2024-33664"
+          ],
+          "PublishedDate": "2024-04-26T00:15:09.06Z",
+          "LastModifiedDate": "2025-09-02T18:36:30.13Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-33664",
+          "PkgName": "python-jose",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/python_jose-3.3.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-jose@3.3.0",
+            "UID": "f4c79bbc16043031"
+          },
+          "InstalledVersion": "3.3.0",
+          "FixedVersion": "3.4.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-33664",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-jose: allows attackers to cause a denial of service",
+          "Description": "python-jose through 3.3.0 allows attackers to cause a denial of service (resource consumption) during a decode via a crafted JSON Web Encryption (JWE) token with a high compression ratio, aka a \"JWT bomb.\" This is similar to CVE-2024-21319.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-400"
+          ],
+          "VendorSeverity": {
+            "ghsa": 2,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-33664",
+            "https://github.com/mpdavis/python-jose",
+            "https://github.com/mpdavis/python-jose/issues/344",
+            "https://github.com/mpdavis/python-jose/pull/345",
+            "https://github.com/mpdavis/python-jose/releases/tag/3.4.0",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/python-jose/PYSEC-2024-233.yaml",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-33664",
+            "https://www.cve.org/CVERecord?id=CVE-2024-33664",
+            "https://www.vicarius.io/vsociety/posts/jwt-bomb-in-python-jose-cve-2024-33664"
+          ],
+          "PublishedDate": "2024-04-26T00:15:09.06Z",
+          "LastModifiedDate": "2025-09-02T18:36:30.13Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-24762",
+          "PkgName": "python-multipart",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/python_multipart-0.0.6.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-multipart@0.0.6",
+            "UID": "f238d5d8ccc1c980"
+          },
+          "InstalledVersion": "0.0.6",
+          "FixedVersion": "0.0.7",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-24762",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "`python-multipart` is a streaming multipart parser for Python. When us ...",
+          "Description": "`python-multipart` is a streaming multipart parser for Python. When using form data, `python-multipart` uses a Regular Expression to parse the HTTP `Content-Type` header, including options. An attacker could send a custom-made `Content-Type` option that is very difficult for the RegEx to process, consuming CPU resources and stalling indefinitely (minutes or more) while holding the main event loop. This means that process can't handle any more requests, leading to regular expression denial of service. This vulnerability has been patched in version 0.0.7.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-400",
+            "CWE-1333"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://github.com/Kludex/python-multipart",
+            "https://github.com/Kludex/python-multipart/commit/20f0ef6b4e4caf7d69a667c54dff57fe467109a4",
+            "https://github.com/Kludex/python-multipart/security/advisories/GHSA-2jv5-9r88-3w3p",
+            "https://github.com/andrew-d/python-multipart/blob/d3d16dae4b061c34fe9d3c9081d9800c49fc1f7a/multipart/multipart.py#L72-L74",
+            "https://github.com/encode/starlette/commit/13e5c26a27f4903924624736abd6131b2da80cc5",
+            "https://github.com/encode/starlette/security/advisories/GHSA-93gm-qmq6-w238",
+            "https://github.com/github/advisory-database/pull/4829",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/fastapi/PYSEC-2024-38.yaml",
+            "https://github.com/tiangolo/fastapi/commit/9d34ad0ee8a0dfbbcce06f76c2d5d851085024fc",
+            "https://github.com/tiangolo/fastapi/releases/tag/0.109.1",
+            "https://github.com/tiangolo/fastapi/security/advisories/GHSA-qf9m-vfgh-m389",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-24762"
+          ],
+          "PublishedDate": "2024-02-05T15:15:09.26Z",
+          "LastModifiedDate": "2025-05-05T14:14:26.363Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-24762",
+          "PkgName": "python-multipart",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/python_multipart-0.0.6.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-multipart@0.0.6",
+            "UID": "35b39c0bc66d5f2b"
+          },
+          "InstalledVersion": "0.0.6",
+          "FixedVersion": "0.0.7",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-24762",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "`python-multipart` is a streaming multipart parser for Python. When us ...",
+          "Description": "`python-multipart` is a streaming multipart parser for Python. When using form data, `python-multipart` uses a Regular Expression to parse the HTTP `Content-Type` header, including options. An attacker could send a custom-made `Content-Type` option that is very difficult for the RegEx to process, consuming CPU resources and stalling indefinitely (minutes or more) while holding the main event loop. This means that process can't handle any more requests, leading to regular expression denial of service. This vulnerability has been patched in version 0.0.7.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-400",
+            "CWE-1333"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "nvd": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://github.com/Kludex/python-multipart",
+            "https://github.com/Kludex/python-multipart/commit/20f0ef6b4e4caf7d69a667c54dff57fe467109a4",
+            "https://github.com/Kludex/python-multipart/security/advisories/GHSA-2jv5-9r88-3w3p",
+            "https://github.com/andrew-d/python-multipart/blob/d3d16dae4b061c34fe9d3c9081d9800c49fc1f7a/multipart/multipart.py#L72-L74",
+            "https://github.com/encode/starlette/commit/13e5c26a27f4903924624736abd6131b2da80cc5",
+            "https://github.com/encode/starlette/security/advisories/GHSA-93gm-qmq6-w238",
+            "https://github.com/github/advisory-database/pull/4829",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/fastapi/PYSEC-2024-38.yaml",
+            "https://github.com/tiangolo/fastapi/commit/9d34ad0ee8a0dfbbcce06f76c2d5d851085024fc",
+            "https://github.com/tiangolo/fastapi/releases/tag/0.109.1",
+            "https://github.com/tiangolo/fastapi/security/advisories/GHSA-qf9m-vfgh-m389",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-24762"
+          ],
+          "PublishedDate": "2024-02-05T15:15:09.26Z",
+          "LastModifiedDate": "2025-05-05T14:14:26.363Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-53981",
+          "PkgName": "python-multipart",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/python_multipart-0.0.6.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-multipart@0.0.6",
+            "UID": "f238d5d8ccc1c980"
+          },
+          "InstalledVersion": "0.0.6",
+          "FixedVersion": "0.0.18",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-53981",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-multipart: python-multipart has a DoS via deformation `multipart/form-data` boundary",
+          "Description": "python-multipart is a streaming multipart parser for Python. When parsing form data, python-multipart skips line breaks (CR \\r or LF \\n) in front of the first boundary and any tailing bytes after the last boundary. This happens one byte at a time and emits a log event each time, which may cause excessive logging for certain inputs. An attacker could abuse this by sending a malicious request with lots of data before the first or after the last boundary, causing high CPU load and stalling the processing thread for a significant amount of time. In case of ASGI application, this could stall the event loop and prevent other requests from being processed, resulting in a denial of service (DoS). This vulnerability is fixed in 0.0.18.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-53981",
+            "https://github.com/Kludex/python-multipart",
+            "https://github.com/Kludex/python-multipart/commit/c4fe4d3cebc08c660e57dd709af1ffa7059b3177",
+            "https://github.com/Kludex/python-multipart/security/advisories/GHSA-59g5-xgcq-4qw3",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-53981",
+            "https://www.cve.org/CVERecord?id=CVE-2024-53981"
+          ],
+          "PublishedDate": "2024-12-02T16:15:14.457Z",
+          "LastModifiedDate": "2024-12-02T16:15:14.457Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-53981",
+          "PkgName": "python-multipart",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/python_multipart-0.0.6.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/python-multipart@0.0.6",
+            "UID": "35b39c0bc66d5f2b"
+          },
+          "InstalledVersion": "0.0.6",
+          "FixedVersion": "0.0.18",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-53981",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "python-multipart: python-multipart has a DoS via deformation `multipart/form-data` boundary",
+          "Description": "python-multipart is a streaming multipart parser for Python. When parsing form data, python-multipart skips line breaks (CR \\r or LF \\n) in front of the first boundary and any tailing bytes after the last boundary. This happens one byte at a time and emits a log event each time, which may cause excessive logging for certain inputs. An attacker could abuse this by sending a malicious request with lots of data before the first or after the last boundary, causing high CPU load and stalling the processing thread for a significant amount of time. In case of ASGI application, this could stall the event loop and prevent other requests from being processed, resulting in a denial of service (DoS). This vulnerability is fixed in 0.0.18.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "ghsa": 3,
+            "redhat": 3
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2024-53981",
+            "https://github.com/Kludex/python-multipart",
+            "https://github.com/Kludex/python-multipart/commit/c4fe4d3cebc08c660e57dd709af1ffa7059b3177",
+            "https://github.com/Kludex/python-multipart/security/advisories/GHSA-59g5-xgcq-4qw3",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-53981",
+            "https://www.cve.org/CVERecord?id=CVE-2024-53981"
+          ],
+          "PublishedDate": "2024-12-02T16:15:14.457Z",
+          "LastModifiedDate": "2024-12-02T16:15:14.457Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-35195",
+          "PkgName": "requests",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/requests@2.31.0",
+            "UID": "abef9eb4a333e8ea"
+          },
+          "InstalledVersion": "2.31.0",
+          "FixedVersion": "2.32.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-35195",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "requests: subsequent requests to the same host ignore cert verification",
+          "Description": "Requests is a HTTP library. Prior to 2.32.0, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. This vulnerability is fixed in 2.32.0.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-670"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "azure": 2,
+            "cbl-mariner": 2,
+            "ghsa": 2,
+            "oracle-oval": 2,
+            "photon": 2,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+              "V3Score": 5.6
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+              "V3Score": 5.6
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2025:7049",
+            "https://access.redhat.com/security/cve/CVE-2024-35195",
+            "https://bugzilla.redhat.com/2282114",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2282114",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-35195",
+            "https://errata.almalinux.org/9/ALSA-2025-7049.html",
+            "https://errata.rockylinux.org/RLSA-2025:0012",
+            "https://github.com/psf/requests",
+            "https://github.com/psf/requests/commit/a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac",
+            "https://github.com/psf/requests/pull/6655",
+            "https://github.com/psf/requests/security/advisories/GHSA-9wx4-h78v-vm56",
+            "https://linux.oracle.com/cve/CVE-2024-35195.html",
+            "https://linux.oracle.com/errata/ELSA-2025-7049.html",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IYLSNK5TL46Q6XPRVMHVWS63MVJQOK4Q",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IYLSNK5TL46Q6XPRVMHVWS63MVJQOK4Q/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/N7WP6EYDSUOCOJYHDK5NX43PYZ4SNHGZ",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/N7WP6EYDSUOCOJYHDK5NX43PYZ4SNHGZ/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-35195",
+            "https://www.cve.org/CVERecord?id=CVE-2024-35195"
+          ],
+          "PublishedDate": "2024-05-20T21:15:09.99Z",
+          "LastModifiedDate": "2024-11-21T09:19:54.51Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-35195",
+          "PkgName": "requests",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/requests-2.31.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/requests@2.31.0",
+            "UID": "78f8d3547e6782e"
+          },
+          "InstalledVersion": "2.31.0",
+          "FixedVersion": "2.32.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-35195",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "requests: subsequent requests to the same host ignore cert verification",
+          "Description": "Requests is a HTTP library. Prior to 2.32.0, when making requests through a Requests `Session`, if the first request is made with `verify=False` to disable cert verification, all subsequent requests to the same host will continue to ignore cert verification regardless of changes to the value of `verify`. This behavior will continue for the lifecycle of the connection in the connection pool. This vulnerability is fixed in 2.32.0.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-670"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "azure": 2,
+            "cbl-mariner": 2,
+            "ghsa": 2,
+            "oracle-oval": 2,
+            "photon": 2,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+              "V3Score": 5.6
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:H/I:H/A:N",
+              "V3Score": 5.6
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2025:7049",
+            "https://access.redhat.com/security/cve/CVE-2024-35195",
+            "https://bugzilla.redhat.com/2282114",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2282114",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-35195",
+            "https://errata.almalinux.org/9/ALSA-2025-7049.html",
+            "https://errata.rockylinux.org/RLSA-2025:0012",
+            "https://github.com/psf/requests",
+            "https://github.com/psf/requests/commit/a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac",
+            "https://github.com/psf/requests/pull/6655",
+            "https://github.com/psf/requests/security/advisories/GHSA-9wx4-h78v-vm56",
+            "https://linux.oracle.com/cve/CVE-2024-35195.html",
+            "https://linux.oracle.com/errata/ELSA-2025-7049.html",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IYLSNK5TL46Q6XPRVMHVWS63MVJQOK4Q",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IYLSNK5TL46Q6XPRVMHVWS63MVJQOK4Q/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/N7WP6EYDSUOCOJYHDK5NX43PYZ4SNHGZ",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/N7WP6EYDSUOCOJYHDK5NX43PYZ4SNHGZ/",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-35195",
+            "https://www.cve.org/CVERecord?id=CVE-2024-35195"
+          ],
+          "PublishedDate": "2024-05-20T21:15:09.99Z",
+          "LastModifiedDate": "2024-11-21T09:19:54.51Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-47081",
+          "PkgName": "requests",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/requests-2.31.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/requests@2.31.0",
+            "UID": "abef9eb4a333e8ea"
+          },
+          "InstalledVersion": "2.31.0",
+          "FixedVersion": "2.32.4",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-47081",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "requests: Requests vulnerable to .netrc credentials leak via malicious URLs",
+          "Description": "Requests is a HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one's Requests Session.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-522"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "azure": 2,
+            "cbl-mariner": 2,
+            "ghsa": 2,
+            "oracle-oval": 2,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+              "V3Score": 5.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "http://seclists.org/fulldisclosure/2025/Jun/2",
+            "http://www.openwall.com/lists/oss-security/2025/06/03/11",
+            "http://www.openwall.com/lists/oss-security/2025/06/03/9",
+            "http://www.openwall.com/lists/oss-security/2025/06/04/1",
+            "http://www.openwall.com/lists/oss-security/2025/06/04/6",
+            "https://access.redhat.com/errata/RHSA-2025:12519",
+            "https://access.redhat.com/security/cve/CVE-2024-47081",
+            "https://bugzilla.redhat.com/2371272",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2371272",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-47081",
+            "https://errata.almalinux.org/9/ALSA-2025-12519.html",
+            "https://errata.rockylinux.org/RLSA-2025:13234",
+            "https://github.com/psf/requests",
+            "https://github.com/psf/requests/commit/96ba401c1296ab1dda74a2365ef36d88f7d144ef",
+            "https://github.com/psf/requests/pull/6965",
+            "https://github.com/psf/requests/security/advisories/GHSA-9hjg-9r4m-mvj7",
+            "https://linux.oracle.com/cve/CVE-2024-47081.html",
+            "https://linux.oracle.com/errata/ELSA-2025-14999.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-47081",
+            "https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env",
+            "https://seclists.org/fulldisclosure/2025/Jun/2",
+            "https://ubuntu.com/security/notices/USN-7568-1",
+            "https://ubuntu.com/security/notices/USN-7762-1",
+            "https://www.cve.org/CVERecord?id=CVE-2024-47081",
+            "https://www.openwall.com/lists/oss-security/2025/06/03/9"
+          ],
+          "PublishedDate": "2025-06-09T18:15:24.983Z",
+          "LastModifiedDate": "2025-06-12T16:06:47.857Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-47081",
+          "PkgName": "requests",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/requests-2.31.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/requests@2.31.0",
+            "UID": "78f8d3547e6782e"
+          },
+          "InstalledVersion": "2.31.0",
+          "FixedVersion": "2.32.4",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-47081",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "requests: Requests vulnerable to .netrc credentials leak via malicious URLs",
+          "Description": "Requests is a HTTP library. Due to a URL parsing issue, Requests releases prior to 2.32.4 may leak .netrc credentials to third parties for specific maliciously-crafted URLs. Users should upgrade to version 2.32.4 to receive a fix. For older versions of Requests, use of the .netrc file can be disabled with `trust_env=False` on one's Requests Session.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-522"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "azure": 2,
+            "cbl-mariner": 2,
+            "ghsa": 2,
+            "oracle-oval": 2,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+              "V3Score": 5.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "http://seclists.org/fulldisclosure/2025/Jun/2",
+            "http://www.openwall.com/lists/oss-security/2025/06/03/11",
+            "http://www.openwall.com/lists/oss-security/2025/06/03/9",
+            "http://www.openwall.com/lists/oss-security/2025/06/04/1",
+            "http://www.openwall.com/lists/oss-security/2025/06/04/6",
+            "https://access.redhat.com/errata/RHSA-2025:12519",
+            "https://access.redhat.com/security/cve/CVE-2024-47081",
+            "https://bugzilla.redhat.com/2371272",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2371272",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-47081",
+            "https://errata.almalinux.org/9/ALSA-2025-12519.html",
+            "https://errata.rockylinux.org/RLSA-2025:13234",
+            "https://github.com/psf/requests",
+            "https://github.com/psf/requests/commit/96ba401c1296ab1dda74a2365ef36d88f7d144ef",
+            "https://github.com/psf/requests/pull/6965",
+            "https://github.com/psf/requests/security/advisories/GHSA-9hjg-9r4m-mvj7",
+            "https://linux.oracle.com/cve/CVE-2024-47081.html",
+            "https://linux.oracle.com/errata/ELSA-2025-14999.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-47081",
+            "https://requests.readthedocs.io/en/latest/api/#requests.Session.trust_env",
+            "https://seclists.org/fulldisclosure/2025/Jun/2",
+            "https://ubuntu.com/security/notices/USN-7568-1",
+            "https://ubuntu.com/security/notices/USN-7762-1",
+            "https://www.cve.org/CVERecord?id=CVE-2024-47081",
+            "https://www.openwall.com/lists/oss-security/2025/06/03/9"
+          ],
+          "PublishedDate": "2025-06-09T18:15:24.983Z",
+          "LastModifiedDate": "2025-06-12T16:06:47.857Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2022-40897",
+          "PkgName": "setuptools",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/setuptools-65.5.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.0",
+            "UID": "1128fa082d82b8b9"
+          },
+          "InstalledVersion": "65.5.0",
+          "FixedVersion": "65.5.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2022-40897",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "pypa-setuptools: Regular Expression Denial of Service (ReDoS) in package_index.py",
+          "Description": "Python Packaging Authority (PyPA) setuptools before 65.5.1 allows remote attackers to cause a denial of service via HTML in a crafted package or custom PackageIndex page. There is a Regular Expression Denial of Service (ReDoS) in package_index.py.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-1333"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "bitnami": 2,
+            "cbl-mariner": 2,
+            "ghsa": 3,
+            "nvd": 2,
+            "oracle-oval": 2,
+            "photon": 2,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "bitnami": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            },
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2023:0952",
+            "https://access.redhat.com/security/cve/CVE-2022-40897",
+            "https://bugzilla.redhat.com/2158559",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2158559",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-40897",
+            "https://errata.almalinux.org/9/ALSA-2023-0952.html",
+            "https://errata.rockylinux.org/RLSA-2023:0952",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/setuptools/PYSEC-2022-43012.yaml",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/blob/fe8a98e696241487ba6ac9f91faa38ade939ec5d/setuptools/package_index.py#L200",
+            "https://github.com/pypa/setuptools/commit/43a9c9bfa6aa626ec2a22540bea28d2ca77964be",
+            "https://github.com/pypa/setuptools/compare/v65.5.0...v65.5.1",
+            "https://github.com/pypa/setuptools/issues/3659",
+            "https://linux.oracle.com/cve/CVE-2022-40897.html",
+            "https://linux.oracle.com/errata/ELSA-2024-2987.html",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R/",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H",
+            "https://nvd.nist.gov/vuln/detail/CVE-2022-40897",
+            "https://pyup.io/posts/pyup-discovers-redos-vulnerabilities-in-top-python-packages",
+            "https://pyup.io/posts/pyup-discovers-redos-vulnerabilities-in-top-python-packages/",
+            "https://pyup.io/vulnerabilities/CVE-2022-40897/52495",
+            "https://pyup.io/vulnerabilities/CVE-2022-40897/52495/",
+            "https://security.netapp.com/advisory/ntap-20230214-0001",
+            "https://security.netapp.com/advisory/ntap-20230214-0001/",
+            "https://security.netapp.com/advisory/ntap-20240621-0006",
+            "https://security.netapp.com/advisory/ntap-20240621-0006/",
+            "https://setuptools.pypa.io/en/latest",
+            "https://ubuntu.com/security/notices/USN-5817-1",
+            "https://www.cve.org/CVERecord?id=CVE-2022-40897"
+          ],
+          "PublishedDate": "2022-12-23T00:15:13.987Z",
+          "LastModifiedDate": "2024-11-21T07:22:13.787Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2022-40897",
+          "PkgName": "setuptools",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/setuptools-65.5.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.0",
+            "UID": "6abfaf254d7bda0a"
+          },
+          "InstalledVersion": "65.5.0",
+          "FixedVersion": "65.5.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2022-40897",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "pypa-setuptools: Regular Expression Denial of Service (ReDoS) in package_index.py",
+          "Description": "Python Packaging Authority (PyPA) setuptools before 65.5.1 allows remote attackers to cause a denial of service via HTML in a crafted package or custom PackageIndex page. There is a Regular Expression Denial of Service (ReDoS) in package_index.py.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-1333"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 2,
+            "bitnami": 2,
+            "cbl-mariner": 2,
+            "ghsa": 3,
+            "nvd": 2,
+            "oracle-oval": 2,
+            "photon": 2,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "bitnami": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            },
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2023:0952",
+            "https://access.redhat.com/security/cve/CVE-2022-40897",
+            "https://bugzilla.redhat.com/2158559",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2158559",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-40897",
+            "https://errata.almalinux.org/9/ALSA-2023-0952.html",
+            "https://errata.rockylinux.org/RLSA-2023:0952",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/setuptools/PYSEC-2022-43012.yaml",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/blob/fe8a98e696241487ba6ac9f91faa38ade939ec5d/setuptools/package_index.py#L200",
+            "https://github.com/pypa/setuptools/commit/43a9c9bfa6aa626ec2a22540bea28d2ca77964be",
+            "https://github.com/pypa/setuptools/compare/v65.5.0...v65.5.1",
+            "https://github.com/pypa/setuptools/issues/3659",
+            "https://linux.oracle.com/cve/CVE-2022-40897.html",
+            "https://linux.oracle.com/errata/ELSA-2024-2987.html",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R/",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H",
+            "https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ADES3NLOE5QJKBLGNZNI2RGVOSQXA37R",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/YNA2BAH2ACBZ4TVJZKFLCR7L23BG5C3H",
+            "https://nvd.nist.gov/vuln/detail/CVE-2022-40897",
+            "https://pyup.io/posts/pyup-discovers-redos-vulnerabilities-in-top-python-packages",
+            "https://pyup.io/posts/pyup-discovers-redos-vulnerabilities-in-top-python-packages/",
+            "https://pyup.io/vulnerabilities/CVE-2022-40897/52495",
+            "https://pyup.io/vulnerabilities/CVE-2022-40897/52495/",
+            "https://security.netapp.com/advisory/ntap-20230214-0001",
+            "https://security.netapp.com/advisory/ntap-20230214-0001/",
+            "https://security.netapp.com/advisory/ntap-20240621-0006",
+            "https://security.netapp.com/advisory/ntap-20240621-0006/",
+            "https://setuptools.pypa.io/en/latest",
+            "https://ubuntu.com/security/notices/USN-5817-1",
+            "https://www.cve.org/CVERecord?id=CVE-2022-40897"
+          ],
+          "PublishedDate": "2022-12-23T00:15:13.987Z",
+          "LastModifiedDate": "2024-11-21T07:22:13.787Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-6345",
+          "PkgName": "setuptools",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/setuptools-65.5.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.0",
+            "UID": "1128fa082d82b8b9"
+          },
+          "InstalledVersion": "65.5.0",
+          "FixedVersion": "70.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-6345",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "pypa/setuptools: Remote code execution via download functions in the package_index module in pypa/setuptools",
+          "Description": "A vulnerability in the package_index module of pypa/setuptools versions up to 69.1.1 allows for remote code execution via its download functions. These functions, which are used to download packages from URLs provided by users or retrieved from package index servers, are susceptible to code injection. If these functions are exposed to user-controlled inputs, such as package URLs, they can execute arbitrary commands on the system. The issue is fixed in version 70.0.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-94"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "azure": 3,
+            "bitnami": 3,
+            "cbl-mariner": 3,
+            "ghsa": 3,
+            "oracle-oval": 3,
+            "photon": 3,
+            "redhat": 3,
+            "rocky": 3,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "bitnami": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2024:6726",
+            "https://access.redhat.com/security/cve/CVE-2024-6345",
+            "https://bugzilla.redhat.com/2297771",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2297771",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-6345",
+            "https://errata.almalinux.org/9/ALSA-2024-6726.html",
+            "https://errata.rockylinux.org/RLSA-2024:6726",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/commit/88807c7062788254f654ea8c03427adc859321f0",
+            "https://github.com/pypa/setuptools/pull/4332",
+            "https://huntr.com/bounties/d6362117-ad57-4e83-951f-b8141c6e7ca5",
+            "https://linux.oracle.com/cve/CVE-2024-6345.html",
+            "https://linux.oracle.com/errata/ELSA-2024-6726.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-6345",
+            "https://ubuntu.com/security/notices/USN-7002-1",
+            "https://www.cve.org/CVERecord?id=CVE-2024-6345"
+          ],
+          "PublishedDate": "2024-07-15T01:15:01.73Z",
+          "LastModifiedDate": "2024-11-21T09:49:28.17Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-6345",
+          "PkgName": "setuptools",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/setuptools-65.5.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.0",
+            "UID": "6abfaf254d7bda0a"
+          },
+          "InstalledVersion": "65.5.0",
+          "FixedVersion": "70.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-6345",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "pypa/setuptools: Remote code execution via download functions in the package_index module in pypa/setuptools",
+          "Description": "A vulnerability in the package_index module of pypa/setuptools versions up to 69.1.1 allows for remote code execution via its download functions. These functions, which are used to download packages from URLs provided by users or retrieved from package index servers, are susceptible to code injection. If these functions are exposed to user-controlled inputs, such as package URLs, they can execute arbitrary commands on the system. The issue is fixed in version 70.0.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-94"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "azure": 3,
+            "bitnami": 3,
+            "cbl-mariner": 3,
+            "ghsa": 3,
+            "oracle-oval": 3,
+            "photon": 3,
+            "redhat": 3,
+            "rocky": 3,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "bitnami": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2024:6726",
+            "https://access.redhat.com/security/cve/CVE-2024-6345",
+            "https://bugzilla.redhat.com/2297771",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2297771",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-6345",
+            "https://errata.almalinux.org/9/ALSA-2024-6726.html",
+            "https://errata.rockylinux.org/RLSA-2024:6726",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/commit/88807c7062788254f654ea8c03427adc859321f0",
+            "https://github.com/pypa/setuptools/pull/4332",
+            "https://huntr.com/bounties/d6362117-ad57-4e83-951f-b8141c6e7ca5",
+            "https://linux.oracle.com/cve/CVE-2024-6345.html",
+            "https://linux.oracle.com/errata/ELSA-2024-6726.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-6345",
+            "https://ubuntu.com/security/notices/USN-7002-1",
+            "https://www.cve.org/CVERecord?id=CVE-2024-6345"
+          ],
+          "PublishedDate": "2024-07-15T01:15:01.73Z",
+          "LastModifiedDate": "2024-11-21T09:49:28.17Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-47273",
+          "PkgName": "setuptools",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/setuptools-65.5.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.0",
+            "UID": "1128fa082d82b8b9"
+          },
+          "InstalledVersion": "65.5.0",
+          "FixedVersion": "78.1.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-47273",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "setuptools: Path Traversal Vulnerability in setuptools PackageIndex",
+          "Description": "setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-22"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 3,
+            "azure": 3,
+            "bitnami": 3,
+            "ghsa": 3,
+            "nvd": 3,
+            "oracle-oval": 2,
+            "photon": 3,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L",
+              "V3Score": 7.1
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2025:13578",
+            "https://access.redhat.com/security/cve/CVE-2025-47273",
+            "https://bugzilla.redhat.com/2366982",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2366982",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-47273",
+            "https://errata.almalinux.org/9/ALSA-2025-13578.html",
+            "https://errata.rockylinux.org/RLSA-2025:11036",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/setuptools/PYSEC-2025-49.yaml",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/blob/6ead555c5fb29bc57fe6105b1bffc163f56fd558/setuptools/package_index.py#L810C1-L825C88",
+            "https://github.com/pypa/setuptools/commit/250a6d17978f9f6ac3ac887091f2d32886fbbb0b",
+            "https://github.com/pypa/setuptools/issues/4946",
+            "https://github.com/pypa/setuptools/security/advisories/GHSA-5rjg-fvgr-3xxf",
+            "https://linux.oracle.com/cve/CVE-2025-47273.html",
+            "https://linux.oracle.com/errata/ELSA-2025-9940.html",
+            "https://lists.debian.org/debian-lts-announce/2025/05/msg00035.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-47273",
+            "https://ubuntu.com/security/notices/USN-7544-1",
+            "https://www.cve.org/CVERecord?id=CVE-2025-47273"
+          ],
+          "PublishedDate": "2025-05-17T16:15:19.11Z",
+          "LastModifiedDate": "2025-06-12T16:29:01.66Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-47273",
+          "PkgName": "setuptools",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/setuptools-65.5.0.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.0",
+            "UID": "6abfaf254d7bda0a"
+          },
+          "InstalledVersion": "65.5.0",
+          "FixedVersion": "78.1.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-47273",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "setuptools: Path Traversal Vulnerability in setuptools PackageIndex",
+          "Description": "setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-22"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 3,
+            "azure": 3,
+            "bitnami": 3,
+            "ghsa": 3,
+            "nvd": 3,
+            "oracle-oval": 2,
+            "photon": 3,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L",
+              "V3Score": 7.1
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2025:13578",
+            "https://access.redhat.com/security/cve/CVE-2025-47273",
+            "https://bugzilla.redhat.com/2366982",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2366982",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-47273",
+            "https://errata.almalinux.org/9/ALSA-2025-13578.html",
+            "https://errata.rockylinux.org/RLSA-2025:11036",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/setuptools/PYSEC-2025-49.yaml",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/blob/6ead555c5fb29bc57fe6105b1bffc163f56fd558/setuptools/package_index.py#L810C1-L825C88",
+            "https://github.com/pypa/setuptools/commit/250a6d17978f9f6ac3ac887091f2d32886fbbb0b",
+            "https://github.com/pypa/setuptools/issues/4946",
+            "https://github.com/pypa/setuptools/security/advisories/GHSA-5rjg-fvgr-3xxf",
+            "https://linux.oracle.com/cve/CVE-2025-47273.html",
+            "https://linux.oracle.com/errata/ELSA-2025-9940.html",
+            "https://lists.debian.org/debian-lts-announce/2025/05/msg00035.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-47273",
+            "https://ubuntu.com/security/notices/USN-7544-1",
+            "https://www.cve.org/CVERecord?id=CVE-2025-47273"
+          ],
+          "PublishedDate": "2025-05-17T16:15:19.11Z",
+          "LastModifiedDate": "2025-06-12T16:29:01.66Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2024-6345",
+          "PkgName": "setuptools",
+          "PkgPath": "usr/local/lib/python3.11/site-packages/setuptools-65.5.1.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.1",
+            "UID": "d283ebd8a092b80b"
+          },
+          "InstalledVersion": "65.5.1",
+          "FixedVersion": "70.0.0",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:0dc0d0d23e1f63adec383cc7eeb1fcaa0816e9b5bceb359df4c0257abc446b2a",
+            "DiffID": "sha256:5c3a9d503183b3e869bb1ab427d146212bb40b5c6fa5d39222154c235ab7b298"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-6345",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "pypa/setuptools: Remote code execution via download functions in the package_index module in pypa/setuptools",
+          "Description": "A vulnerability in the package_index module of pypa/setuptools versions up to 69.1.1 allows for remote code execution via its download functions. These functions, which are used to download packages from URLs provided by users or retrieved from package index servers, are susceptible to code injection. If these functions are exposed to user-controlled inputs, such as package URLs, they can execute arbitrary commands on the system. The issue is fixed in version 70.0.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-94"
+          ],
+          "VendorSeverity": {
+            "alma": 3,
+            "amazon": 3,
+            "azure": 3,
+            "bitnami": 3,
+            "cbl-mariner": 3,
+            "ghsa": 3,
+            "oracle-oval": 3,
+            "photon": 3,
+            "redhat": 3,
+            "rocky": 3,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "bitnami": {
+              "V3Vector": "CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2024:6726",
+            "https://access.redhat.com/security/cve/CVE-2024-6345",
+            "https://bugzilla.redhat.com/2297771",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2297771",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-6345",
+            "https://errata.almalinux.org/9/ALSA-2024-6726.html",
+            "https://errata.rockylinux.org/RLSA-2024:6726",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/commit/88807c7062788254f654ea8c03427adc859321f0",
+            "https://github.com/pypa/setuptools/pull/4332",
+            "https://huntr.com/bounties/d6362117-ad57-4e83-951f-b8141c6e7ca5",
+            "https://linux.oracle.com/cve/CVE-2024-6345.html",
+            "https://linux.oracle.com/errata/ELSA-2024-6726.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-6345",
+            "https://ubuntu.com/security/notices/USN-7002-1",
+            "https://www.cve.org/CVERecord?id=CVE-2024-6345"
+          ],
+          "PublishedDate": "2024-07-15T01:15:01.73Z",
+          "LastModifiedDate": "2024-11-21T09:49:28.17Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-47273",
+          "PkgName": "setuptools",
+          "PkgPath": "usr/local/lib/python3.11/site-packages/setuptools-65.5.1.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/setuptools@65.5.1",
+            "UID": "d283ebd8a092b80b"
+          },
+          "InstalledVersion": "65.5.1",
+          "FixedVersion": "78.1.1",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:0dc0d0d23e1f63adec383cc7eeb1fcaa0816e9b5bceb359df4c0257abc446b2a",
+            "DiffID": "sha256:5c3a9d503183b3e869bb1ab427d146212bb40b5c6fa5d39222154c235ab7b298"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-47273",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "setuptools: Path Traversal Vulnerability in setuptools PackageIndex",
+          "Description": "setuptools is a package that allows users to download, build, install, upgrade, and uninstall Python packages. A path traversal vulnerability in `PackageIndex` is present in setuptools prior to version 78.1.1. An attacker would be allowed to write files to arbitrary locations on the filesystem with the permissions of the process running the Python code, which could escalate to remote code execution depending on the context. Version 78.1.1 fixes the issue.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-22"
+          ],
+          "VendorSeverity": {
+            "alma": 2,
+            "amazon": 3,
+            "azure": 3,
+            "bitnami": 3,
+            "ghsa": 3,
+            "nvd": 3,
+            "oracle-oval": 2,
+            "photon": 3,
+            "redhat": 2,
+            "rocky": 2,
+            "ubuntu": 2
+          },
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+              "V3Score": 8.8
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:L",
+              "V3Score": 7.1
+            }
+          },
+          "References": [
+            "https://access.redhat.com/errata/RHSA-2025:13578",
+            "https://access.redhat.com/security/cve/CVE-2025-47273",
+            "https://bugzilla.redhat.com/2366982",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2366982",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-47273",
+            "https://errata.almalinux.org/9/ALSA-2025-13578.html",
+            "https://errata.rockylinux.org/RLSA-2025:11036",
+            "https://github.com/pypa/advisory-database/tree/main/vulns/setuptools/PYSEC-2025-49.yaml",
+            "https://github.com/pypa/setuptools",
+            "https://github.com/pypa/setuptools/blob/6ead555c5fb29bc57fe6105b1bffc163f56fd558/setuptools/package_index.py#L810C1-L825C88",
+            "https://github.com/pypa/setuptools/commit/250a6d17978f9f6ac3ac887091f2d32886fbbb0b",
+            "https://github.com/pypa/setuptools/issues/4946",
+            "https://github.com/pypa/setuptools/security/advisories/GHSA-5rjg-fvgr-3xxf",
+            "https://linux.oracle.com/cve/CVE-2025-47273.html",
+            "https://linux.oracle.com/errata/ELSA-2025-9940.html",
+            "https://lists.debian.org/debian-lts-announce/2025/05/msg00035.html",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-47273",
+            "https://ubuntu.com/security/notices/USN-7544-1",
+            "https://www.cve.org/CVERecord?id=CVE-2025-47273"
+          ],
+          "PublishedDate": "2025-05-17T16:15:19.11Z",
+          "LastModifiedDate": "2025-06-12T16:29:01.66Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-54121",
+          "PkgName": "starlette",
+          "PkgPath": "app/.venv/lib/python3.10/site-packages/starlette-0.46.2.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/starlette@0.46.2",
+            "UID": "d7584bc1729ba6ca"
+          },
+          "InstalledVersion": "0.46.2",
+          "FixedVersion": "0.47.2",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:6b31f819b888626f6b2aba8cab661b1b554497f825a5f857f9493de157437c0c",
+            "DiffID": "sha256:623b778911c2661af1ed355a5a2143e5a3ae00e1ad0a53f1dd2c4295501ce7f4"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-54121",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "starlette: Starlette denial-of-service",
+          "Description": "Starlette is a lightweight ASGI (Asynchronous Server Gateway Interface) framework/toolkit, designed for building async web services in Python. In versions 0.47.1 and below, when parsing a multi-part form with large files (greater than the default max spool size) starlette will block the main thread to roll the file over to disk. This blocks the event thread which means the application can't accept new connections. The UploadFile code has a minor bug where instead of just checking for self._in_memory, the logic should also check if the additional bytes will cause a rollover. The vulnerability is fixed in version 0.47.2.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "ghsa": 2,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2025-54121",
+            "https://github.com/encode/starlette",
+            "https://github.com/encode/starlette/blob/fa5355442753f794965ae1af0f87f9fec1b9a3de/starlette/datastructures.py#L436C5-L447C14",
+            "https://github.com/encode/starlette/commit/9f7ec2eb512fcc3fe90b43cb9dd9e1d08696bec1",
+            "https://github.com/encode/starlette/discussions/2927#discussioncomment-13721403",
+            "https://github.com/encode/starlette/security/advisories/GHSA-2c2j-9gv5-cj73",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-54121",
+            "https://www.cve.org/CVERecord?id=CVE-2025-54121"
+          ],
+          "PublishedDate": "2025-07-21T20:15:41.827Z",
+          "LastModifiedDate": "2025-07-22T13:05:40.573Z"
+        },
+        {
+          "VulnerabilityID": "CVE-2025-54121",
+          "PkgName": "starlette",
+          "PkgPath": "opt/venv/lib/python3.11/site-packages/starlette-0.46.2.dist-info/METADATA",
+          "PkgIdentifier": {
+            "PURL": "pkg:pypi/starlette@0.46.2",
+            "UID": "ab3cc5605d5201a"
+          },
+          "InstalledVersion": "0.46.2",
+          "FixedVersion": "0.47.2",
+          "Status": "fixed",
+          "Layer": {
+            "Digest": "sha256:5e4f6a8b2fd43c4cbcf9094bc3b2a6986b188ab6ddd5b55357e0012fa05b2c14",
+            "DiffID": "sha256:e6b88e52521ae329fc7849d419a6966d3bf01ec13f42ce637660d3d37dd3bdc8"
+          },
+          "SeveritySource": "ghsa",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-54121",
+          "DataSource": {
+            "ID": "ghsa",
+            "Name": "GitHub Security Advisory pip",
+            "URL": "https://github.com/advisories?query=type%3Areviewed+ecosystem%3Apip"
+          },
+          "Title": "starlette: Starlette denial-of-service",
+          "Description": "Starlette is a lightweight ASGI (Asynchronous Server Gateway Interface) framework/toolkit, designed for building async web services in Python. In versions 0.47.1 and below, when parsing a multi-part form with large files (greater than the default max spool size) starlette will block the main thread to roll the file over to disk. This blocks the event thread which means the application can't accept new connections. The UploadFile code has a minor bug where instead of just checking for self._in_memory, the logic should also check if the additional bytes will cause a rollover. The vulnerability is fixed in version 0.47.2.",
+          "Severity": "MEDIUM",
+          "CweIDs": [
+            "CWE-770"
+          ],
+          "VendorSeverity": {
+            "ghsa": 2,
+            "redhat": 2
+          },
+          "CVSS": {
+            "ghsa": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+              "V3Score": 5.3
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2025-54121",
+            "https://github.com/encode/starlette",
+            "https://github.com/encode/starlette/blob/fa5355442753f794965ae1af0f87f9fec1b9a3de/starlette/datastructures.py#L436C5-L447C14",
+            "https://github.com/encode/starlette/commit/9f7ec2eb512fcc3fe90b43cb9dd9e1d08696bec1",
+            "https://github.com/encode/starlette/discussions/2927#discussioncomment-13721403",
+            "https://github.com/encode/starlette/security/advisories/GHSA-2c2j-9gv5-cj73",
+            "https://nvd.nist.gov/vuln/detail/CVE-2025-54121",
+            "https://www.cve.org/CVERecord?id=CVE-2025-54121"
+          ],
+          "PublishedDate": "2025-07-21T20:15:41.827Z",
+          "LastModifiedDate": "2025-07-22T13:05:40.573Z"
+        }
+      ]
+    }
+  ]
+}

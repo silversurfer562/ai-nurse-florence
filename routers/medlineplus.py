@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Query
+
 from models.schemas import MedlinePlusSummary
 from services.medlineplus_service import get_medlineplus_summary
 from utils.guardrails import educational_banner
@@ -8,7 +9,7 @@ router = APIRouter(prefix="/v1", tags=["medlineplus"])
 
 @router.get("/medlineplus/summary", response_model=MedlinePlusSummary)
 def medlineplus_summary(
-    topic: str = Query(..., description="Topic term")
+    topic: str = Query(..., description="Topic term"),
 ) -> MedlinePlusSummary:
     """
     Retrieve a summary from MedlinePlus for a given health topic.

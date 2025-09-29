@@ -5,13 +5,14 @@ This multi-step wizard guides users through building a detailed, context-aware
 report on a specific medical condition, acting as an "Advanced Search" feature.
 """
 
+import json
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, List
-import json
 
-from utils.api_responses import create_success_response, create_error_response
 from services.openai_client import get_client
+from utils.api_responses import create_error_response, create_success_response
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/disease-search", tags=["wizards"])
@@ -203,9 +204,9 @@ async def generate_report(step_input: GenerateReportInput):
         Each item in the list should be an object with three keys: "title" (a short, user-facing button label), "prompt" (a full prompt for another AI query), and "type" (e.g., "patient_education", "literature_search", "comparison").
 
         Report Context:
-        - Age Group: {step_input.age_group or 'Not specified'}
-        - Comorbidities: {', '.join(step_input.comorbidities) if step_input.comorbidities else 'None'}
-        - Sections Covered: {', '.join(step_input.selected_sections)}
+        - Age Group: {step_input.age_group or "Not specified"}
+        - Comorbidities: {", ".join(step_input.comorbidities) if step_input.comorbidities else "None"}
+        - Sections Covered: {", ".join(step_input.selected_sections)}
         
         Example response format:
         {{

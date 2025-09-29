@@ -3,28 +3,28 @@ Redis caching with in-memory fallback
 Following AI Nurse Florence Conditional Imports Pattern
 """
 
-import json
 import asyncio
+import importlib.util
+import json
 import logging
-from typing import Any, Optional, Dict, Callable
-from functools import wraps
 import threading
 from datetime import datetime, timedelta
-
+from functools import wraps
 from types import ModuleType
-import importlib
+from typing import Any, Callable, Dict, Optional
 
 # Conditional Redis import - graceful degradation (use importlib for typing clarity)
 redis: Optional[ModuleType] = None
 _redis_available = False
-try:
-    _redis_mod = importlib.import_module("redis.asyncio")
-    redis = _redis_mod
+import importlib.util
+
+if importlib.util.find_spec("redis") is not None:
     _redis_available = True
-except Exception:
+else:
     _redis_available = False
 
 import os
+
 from src.utils.config import get_redis_config
 
 # Optional metrics - record cache hits/misses when available
@@ -293,7 +293,9 @@ def cache_delete_sync(key: str) -> bool:
         return False
 
 
-def cached(ttl_seconds: int = 3600, key_prefix: str = "ai_nurse") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def cached(
+    ttl_seconds: int = 3600, key_prefix: str = "ai_nurse"
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator for caching function results
     Supports async and sync functions. Uses Redis with in-memory fallback.

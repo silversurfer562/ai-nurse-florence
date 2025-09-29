@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
 import uuid
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 EDU_BANNER = "Draft for clinician review — not medical advice. No PHI stored."
 
@@ -126,7 +127,10 @@ class User(BaseModel):
 # but the canonical implementations live under `src.models.schemas` for the richer clinical schemas.
 try:
     # prefer the full definitions from `src.models.schemas`
-    from src.models.schemas import ClinicalDecisionRequest, ClinicalDecisionResponse  # type: ignore
+    from src.models.schemas import (
+        ClinicalDecisionRequest,  # type: ignore
+        ClinicalDecisionResponse,
+    )
 except Exception:
     # Fallback minimal stubs so imports don't fail in constrained environments
     class ClinicalDecisionRequest(BaseModel):

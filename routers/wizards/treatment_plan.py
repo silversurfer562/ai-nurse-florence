@@ -5,12 +5,13 @@ This multi-step wizard guides users through creating structured treatment plans
 that include assessment, goals, interventions, monitoring, and evaluation components.
 """
 
-from fastapi import APIRouter, status
-from pydantic import BaseModel, Field
 from typing import Dict, Optional
 
-from utils.api_responses import create_success_response, create_error_response
+from fastapi import APIRouter, status
+from pydantic import BaseModel, Field
+
 from services import openai_client
+from utils.api_responses import create_error_response, create_success_response
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/treatment-plan", tags=["wizards"])

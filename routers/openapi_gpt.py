@@ -1,6 +1,6 @@
+import yaml
 from fastapi import APIRouter
 from fastapi.responses import Response
-import yaml
 
 router = APIRouter()
 

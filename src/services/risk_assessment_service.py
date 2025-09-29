@@ -3,10 +3,10 @@ Risk Assessment Service - Clinical risk scoring
 Following caching strategy patterns
 """
 
-from typing import Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
-    from typing import Callable, Awaitable
+    pass
 from utils.redis_cache import cached
 
 

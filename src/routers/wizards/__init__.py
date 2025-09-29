@@ -3,7 +3,8 @@ Clinical Wizards Router Registry
 Following Router Organization pattern from copilot-instructions.md
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from fastapi import APIRouter
 
 # Wizard router imports following Conditional Imports Pattern

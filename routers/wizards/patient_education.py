@@ -5,12 +5,13 @@ This module provides a multi-step guided workflow (wizard) to help users
 create customized patient education handouts.
 """
 
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, List
 
-from utils.api_responses import create_success_response, create_error_response
 from services.openai_client import get_client
+from utils.api_responses import create_error_response, create_success_response
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/patient-education", tags=["wizards"])
@@ -188,11 +189,11 @@ async def _generate_handout_content(wizard_id: str, task_id: str):
 
     prompt = f"""
     Generate a patient education handout about "{topic}".
-    The handout should be written at a {session_data['reading_level']} reading level
-    for a {session_data['target_audience']}.
+    The handout should be written at a {session_data["reading_level"]} reading level
+    for a {session_data["target_audience"]}.
     
     Include the following sections, clearly marked with headings:
-    - {', '.join(sections)}
+    - {", ".join(sections)}
     
     For each section, provide clear, concise, and easy-to-understand information.
     Start with a brief, one-paragraph overview of the topic.

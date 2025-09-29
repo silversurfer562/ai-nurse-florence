@@ -1,14 +1,14 @@
-from utils.types import DiseaseResult
-from utils.logging import get_logger
-from utils.cache import cached
 from services.prompt_enhancement import enhance_prompt
+from utils.cache import cached
 from utils.config import settings
+from utils.logging import get_logger
+from utils.types import DiseaseResult
 
 logger = get_logger(__name__)
 
 # Conditional import for metrics
 try:
-    from src.utils.metrics import record_external_request, record_external_error
+    from src.utils.metrics import record_external_error, record_external_request
 
     _has_metrics = True
 except ImportError:

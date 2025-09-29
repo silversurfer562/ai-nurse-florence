@@ -3,7 +3,8 @@ Document Authoring Service - SBAR reports and clinical documentation
 Following Service Layer Architecture pattern
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from utils.redis_cache import cached
 
 # Conditional imports following coding instructions

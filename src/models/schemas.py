@@ -3,10 +3,11 @@ Pydantic schemas for AI Nurse Florence
 Input/output validation with clinical context
 """
 
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional, List, Dict, Any, Union
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class SeverityLevel(str, Enum):

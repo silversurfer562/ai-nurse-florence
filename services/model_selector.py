@@ -7,8 +7,8 @@ Following Service Layer Architecture with Conditional Imports Pattern
 
 import logging
 import os
-from typing import Dict, Optional, Union
 from enum import Enum
+from typing import Dict, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -494,7 +494,7 @@ def get_chatgpt_store_capabilities() -> Dict[str, Union[list, dict, bool, str]]:
 
 
 def format_for_chatgpt_store(
-    response: Dict[str, Union[str, dict, list]]
+    response: Dict[str, Union[str, dict, list]],
 ) -> Dict[str, Union[str, dict, list, bool]]:
     """Format response for optimal ChatGPT Store display"""
     return {

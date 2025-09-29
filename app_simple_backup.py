@@ -1,10 +1,11 @@
+import logging
+import time
+
+import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-import httpx
-import time
-import logging
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -83,7 +84,7 @@ async def api_health():
 
 @app.get("/api/v1/disease/lookup")
 async def disease_lookup(
-    q: str = Query(..., description="Disease or condition to search for")
+    q: str = Query(..., description="Disease or condition to search for"),
 ):
     """Look up disease information using MyDisease.info API"""
     try:
@@ -126,7 +127,7 @@ async def disease_lookup(
 
 @app.get("/api/v1/literature/search")
 async def literature_search(
-    q: str = Query(..., description="Medical literature search query")
+    q: str = Query(..., description="Medical literature search query"),
 ):
     """Search medical literature using PubMed API"""
     try:
@@ -194,8 +195,9 @@ async def literature_search(
 
 
 if __name__ == "__main__":
-    import uvicorn
     import os
+
+    import uvicorn
 
     port = int(os.environ.get("PORT", 8000))
     logger.info(f"Starting AI Nurse Florence on port {port}")

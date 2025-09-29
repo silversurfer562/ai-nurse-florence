@@ -4,8 +4,8 @@ This is a convenience script for development only. Official MeSH is distributed 
 and may require parsing RDF/XML — this script demonstrates a minimal approach.
 """
 
-import sys
 import json
+import sys
 
 try:
     import xmltodict

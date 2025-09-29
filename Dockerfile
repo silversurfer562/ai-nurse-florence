@@ -1,5 +1,5 @@
 ### Builder stage: create a virtualenv and install dependencies
-FROM python:3.11-slim AS builder
+FROM python:3.11.13-slim AS builder
 WORKDIR /install
 
 # Install build dependencies
@@ -19,7 +19,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 ### Final image: copy virtualenv and application, run as non-root user
-FROM python:3.11-slim
+FROM python:3.11.13-slim
 ENV VENV_PATH=/opt/venv
 COPY --from=builder $VENV_PATH $VENV_PATH
 ENV PATH="$VENV_PATH/bin:$PATH"

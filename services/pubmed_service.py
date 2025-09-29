@@ -1,9 +1,9 @@
 from typing import Dict, List, Optional
 
-from utils.types import PubMedResult
-from utils.logging import get_logger
 from utils.cache import cached
 from utils.config import settings
+from utils.logging import get_logger
+from utils.types import PubMedResult
 
 logger = get_logger(__name__)
 
@@ -94,8 +94,8 @@ def search_pubmed(query: str, page: int = 1, size: int = 10) -> PubMedResult:
 
     mock_results = [
         {
-            "pmid": f"STUB_{i+1}",
-            "title": f"Stub article #{i+1} for '{query}'",
+            "pmid": f"STUB_{i + 1}",
+            "title": f"Stub article #{i + 1} for '{query}'",
             "abstract": "No live pubmed module found.",
             "url": None,
         }

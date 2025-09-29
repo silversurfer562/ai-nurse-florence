@@ -3,16 +3,16 @@ Rate limiting middleware for AI Nurse Florence
 IP-based rate limiting with Redis backend
 """
 
-import time
+import importlib
 import logging
-from typing import Callable, Dict, Optional, List, Any, Tuple, Awaitable, cast
+import threading
+import time
+from types import ModuleType
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+
 from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-import threading
-
-from types import ModuleType
-import importlib
 
 # Conditional Redis import - graceful degradation (use importlib for typing clarity)
 redis: Optional[ModuleType] = None
@@ -215,7 +215,9 @@ class RateLimiter(BaseHTTPMiddleware):
                 self.window_seconds,
             )
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Determine if rate limiting is enabled. Honor settings, but also
         # enable the middleware when it's explicitly configured via the
         # middleware args (requests_per_minute > 0). This makes tests that

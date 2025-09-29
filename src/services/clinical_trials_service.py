@@ -3,17 +3,18 @@ Clinical Trials Service - AI Nurse Florence
 Following Service Layer Architecture with ClinicalTrials.gov integration
 """
 
-import logging
 import asyncio
-from typing import Optional, Dict, Any
-from src.utils.config import get_settings, get_educational_banner
+import logging
+from typing import Any, Dict, Optional
+
+from src.utils.config import get_educational_banner, get_settings
 from src.utils.redis_cache import cached
 
 logger = logging.getLogger(__name__)
 
 # Conditional imports following Conditional Imports Pattern
 from types import ModuleType
-from typing import Optional, Callable
+from typing import Callable
 
 # Ensure module-level aliases exist for optional dependencies
 _requests: Optional[ModuleType] = None
@@ -21,21 +22,28 @@ _httpx: Optional[ModuleType] = None
 
 try:
     enhance_prompt: Optional[Callable[[str, str], tuple[str, bool, Optional[str]]]] = (
-        getattr(__import__("src.services.prompt_enhancement", fromlist=["enhance_prompt"]), "enhance_prompt")
+        getattr(
+            __import__("src.services.prompt_enhancement", fromlist=["enhance_prompt"]),
+            "enhance_prompt",
+        )
     )
     _has_prompt_enhancement = True
 except Exception:
     enhance_prompt = None
     _has_prompt_enhancement = False
 
-    def enhance_prompt_stub(prompt: str, purpose: str) -> tuple[str, bool, Optional[str]]:
+    def enhance_prompt_stub(
+        prompt: str, purpose: str
+    ) -> tuple[str, bool, Optional[str]]:
         return prompt, False, None
+
     if enhance_prompt is None:
         enhance_prompt = enhance_prompt_stub
 
 
 try:
     import requests as _requests
+
     _has_requests = True
 except Exception:
     _requests = None
@@ -44,6 +52,7 @@ except Exception:
 # Backwards compatibility: prefer httpx when available for async calls
 try:
     import httpx as _httpx
+
     _has_httpx = True
 except Exception:
     _httpx = None
@@ -281,7 +290,11 @@ async def search_clinical_trials(
 
     try:
         # Enhance prompt for better search results
-        enhancer = enhance_prompt if enhance_prompt is not None else (lambda p, _: (p, False, None))
+        enhancer = (
+            enhance_prompt
+            if enhance_prompt is not None
+            else (lambda p, _: (p, False, None))
+        )
         effective_condition, needs_clarification, clarification_question = enhancer(
             condition, "clinical_trials"
         )
@@ -337,7 +350,9 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
 
         assert _httpx is not None
         _httpx_client = _typing.cast(_typing.Any, _httpx)
-        async with _httpx_client.AsyncClient(timeout=_httpx_client.Timeout(15.0)) as client:
+        async with _httpx_client.AsyncClient(
+            timeout=_httpx_client.Timeout(15.0)
+        ) as client:
             _httpx_response = await client.get(base_url, params=params)
             _httpx_response.raise_for_status()
             data = _httpx_response.json()
@@ -353,7 +368,9 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
 
         assert _requests is not None
         _req = _typing.cast(_typing.Any, _requests)
-        _requests_response: Any = await asyncio.to_thread(lambda: _req.get(base_url, params=params, timeout=15))
+        _requests_response: Any = await asyncio.to_thread(
+            lambda: _req.get(base_url, params=params, timeout=15)
+        )
         # If the requests stub raises, it will surface here
         _requests_response.raise_for_status()
         data = _requests_response.json()

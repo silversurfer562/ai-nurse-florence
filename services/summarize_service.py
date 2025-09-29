@@ -1,7 +1,7 @@
 # services/summarize_service.py
-from typing import Any, Optional, Callable, Dict
 import json
 import re
+from typing import Any, Callable, Dict, Optional
 
 from services import openai_client
 from services.prompt_enhancement import enhance_prompt

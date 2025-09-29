@@ -7,9 +7,10 @@ cross-cutting concerns.
 
 import time
 import uuid
+from typing import Awaitable, Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Callable, Awaitable
 
 from utils.logging import get_logger
 

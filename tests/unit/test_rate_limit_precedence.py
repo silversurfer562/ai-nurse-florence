@@ -5,8 +5,8 @@ Tests that middleware-configured rate limiting takes precedence over global sett
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.utils.rate_limit import RateLimiter
 from src.utils.config import get_settings
+from src.utils.rate_limit import RateLimiter
 
 
 def test_middleware_config_overrides_global_flag():

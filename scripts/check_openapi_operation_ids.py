@@ -4,9 +4,8 @@ It expects the FastAPI app to be importable as `app` from `app` module and will
 write the OpenAPI schema to a temporary file and scan for duplicate operationId values.
 """
 
-from collections import Counter
-import json
 import sys
+from collections import Counter
 
 try:
     from app import app  # app: FastAPI

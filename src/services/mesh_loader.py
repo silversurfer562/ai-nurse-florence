@@ -6,7 +6,7 @@ This keeps external dependencies optional and testable.
 
 import json
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 _MESH_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
 

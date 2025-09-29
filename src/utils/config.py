@@ -4,9 +4,10 @@ Following coding instructions centralized configuration with Pydantic Settings
 """
 
 import os
-from typing import List, Optional, Union, Any
-from pydantic_settings import BaseSettings
+from typing import List, Optional, Union
+
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

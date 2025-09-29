@@ -4,12 +4,13 @@ Integrates with external medical databases
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from ..models.schemas import (
+    EvidenceLevel,
+    LiteratureItem,
     LiteratureSearchRequest,
     LiteratureSearchResponse,
-    LiteratureItem,
-    EvidenceLevel,
 )
 from ..utils.redis_cache import cached
 
@@ -69,7 +70,6 @@ class EvidenceService:
                     for keyword in article.get("keywords", [])
                 )
             ):
-
                 # Apply year filter if specified
                 if request.filter_years and article["year"] < request.filter_years:
                     continue

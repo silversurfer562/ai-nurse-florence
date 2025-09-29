@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Query
 from typing import Optional
-from models.schemas import ClinicalTrialsResponse, ClinicalTrial
+
+from fastapi import APIRouter, Query
+
+from models.schemas import ClinicalTrial, ClinicalTrialsResponse
 from services.trials_service import search_trials
 from utils.guardrails import educational_banner
 

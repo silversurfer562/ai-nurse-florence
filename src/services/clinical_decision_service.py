@@ -4,10 +4,10 @@ Following Service Layer Architecture from coding instructions
 """
 
 import logging
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from ..utils.config import get_settings, get_educational_banner
+from ..utils.config import get_educational_banner, get_settings
 from .openai_client import clinical_decision_support, is_openai_available
 
 logger = logging.getLogger(__name__)

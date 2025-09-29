@@ -5,7 +5,8 @@ This module provides functions to analyze and enhance user prompts,
 or generate clarification questions when prompts are unclear.
 """
 
-from typing import Tuple, Optional
+from typing import Optional, Tuple
+
 from utils.logging import get_logger
 
 logger = get_logger(__name__)

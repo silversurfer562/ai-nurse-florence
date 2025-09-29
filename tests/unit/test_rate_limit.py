@@ -2,13 +2,10 @@
 Tests for rate limiting middleware
 """
 
-import pytest
-import time
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.utils.rate_limit import RateLimiter
-from src.utils.config import get_settings
 
 
 # Create a test app

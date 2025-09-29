@@ -2,10 +2,10 @@
 
 This is a best-effort tool — run in a branch and review changes.
 """
+
 import re
 import sys
 from pathlib import Path
-
 
 SINGLE_ARG_RE = re.compile(r"Field\(\s*([^)\n]+?)\s*\)")
 TWO_ARG_RE = re.compile(r"Field\(\s*([^,\n]+)\s*,\s*('(?:[^']*)'|\"(?:[^\"]*)\")\s*\)")

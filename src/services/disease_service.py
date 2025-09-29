@@ -3,17 +3,16 @@ Disease information service following External Service Integration
 MyDisease.info API integration from copilot-instructions.md
 """
 
-from typing import Dict, Any, List, Optional, Tuple, cast
-
-import logging
 import asyncio
-from types import ModuleType
 import importlib
+import logging
+from types import ModuleType
+from typing import Any, Dict, List, Optional, Tuple, cast
 
-from .base_service import BaseService
-from ..utils.redis_cache import cached
-from ..utils.config import get_settings, get_educational_banner
+from ..utils.config import get_educational_banner, get_settings
 from ..utils.exceptions import ExternalServiceException
+from ..utils.redis_cache import cached
+from .base_service import BaseService
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +48,7 @@ try:
     map_to_mesh = getattr(_mesh_mod, "map_to_mesh")
     _has_mesh = True
 except Exception:
+
     def map_to_mesh(query: str, top_k: int = 5) -> List[Any]:
         return []
 

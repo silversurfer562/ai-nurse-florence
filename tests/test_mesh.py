@@ -1,7 +1,7 @@
 import json
 
-from src.utils.mesh_loader import MeshIndex
 from src.services.mesh_service import get_mesh_index, map_to_mesh
+from src.utils.mesh_loader import MeshIndex
 
 
 def test_mesh_index_basic_mapping(tmp_path):

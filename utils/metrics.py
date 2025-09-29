@@ -4,13 +4,14 @@ Prometheus metrics for monitoring the application.
 This module provides metrics collection and export functionality using Prometheus.
 """
 
+import time
+from typing import Awaitable, Callable
+
+import prometheus_client
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
+from prometheus_client import Counter, Gauge, Histogram
 from starlette.middleware.base import BaseHTTPMiddleware
-import time
-from typing import Callable, Awaitable
-import prometheus_client
-from prometheus_client import Counter, Histogram, Gauge
 
 # Define metrics
 REQUEST_COUNT = Counter(

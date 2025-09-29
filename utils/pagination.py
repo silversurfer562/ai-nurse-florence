@@ -2,9 +2,10 @@
 Pagination utility for API endpoints.
 """
 
+from typing import Any, Dict, List, Optional
+
 from fastapi import Query
 from pydantic import BaseModel
-from typing import List, Any, Optional, Dict
 
 
 class Page(BaseModel):

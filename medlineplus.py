@@ -2,8 +2,9 @@
 MedlinePlus connector for health information lookup.
 """
 
+from typing import Any, Dict, List, Tuple
+
 import requests
-from typing import Dict, Any, List, Tuple
 
 # MedlinePlus Connect API base URL
 BASE_URL = "https://connect.medlineplus.gov/service"

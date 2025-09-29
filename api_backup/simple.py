@@ -1,7 +1,8 @@
-from fastapi import FastAPI
-from http.server import BaseHTTPRequestHandler
 import json
 import urllib.parse
+from http.server import BaseHTTPRequestHandler
+
+from fastapi import FastAPI
 
 # Create FastAPI app
 app = FastAPI(title="AI Nurse Florence", version="1.0.0")

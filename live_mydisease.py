@@ -2,8 +2,9 @@
 MyDisease.info API connector for disease information lookup.
 """
 
+from typing import Any, Dict, List
+
 import requests
-from typing import Dict, Any, List
 
 # MyDisease.info API base URL
 BASE_URL = "https://mydisease.info/v1"

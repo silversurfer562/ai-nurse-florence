@@ -5,10 +5,11 @@ This module defines the SQLAlchemy ORM models, which represent the tables
 in our database (e.g., the 'users' table).
 """
 
-from sqlalchemy import Column, String, DateTime, func
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
+
 from database import Base
+from sqlalchemy import Column, DateTime, String, func
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class User(Base):

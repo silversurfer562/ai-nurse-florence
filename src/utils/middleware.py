@@ -3,10 +3,11 @@ Middleware components for AI Nurse Florence
 Following middleware stack order from coding instructions
 """
 
-import uuid
-import time
 import logging
-from typing import Callable, Awaitable, cast
+import time
+import uuid
+from typing import Awaitable, Callable
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -20,7 +21,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     First in middleware stack - CSP, HSTS headers.
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         response = await call_next(request)
 
         # Security headers for healthcare applications
@@ -58,7 +61,9 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     Second in middleware stack - UUID generation for tracing.
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Generate UUID for request tracing
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
@@ -76,7 +81,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     Third in middleware stack - request/response logging.
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
 
         # Get request ID from previous middleware

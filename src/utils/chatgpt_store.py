@@ -3,8 +3,10 @@ ChatGPT Store authentication and authorization
 Following OAuth2 + JWT authentication patterns
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from fastapi import HTTPException, status
+
 from src.utils.config import get_settings
 
 settings = get_settings()

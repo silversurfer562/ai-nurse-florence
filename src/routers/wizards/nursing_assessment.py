@@ -3,11 +3,12 @@ Nursing Assessment Wizard - AI Nurse Florence
 Following Wizard Pattern Implementation from coding instructions
 """
 
+from datetime import datetime
+from typing import Any, Dict, Optional
+from uuid import uuid4
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional
-from uuid import uuid4
-from datetime import datetime
 
 from src.utils.config import get_educational_banner
 
@@ -95,7 +96,9 @@ async def start_nursing_assessment() -> WizardResponse:
 
 
 @router.post("/{wizard_id}/step", response_model=WizardResponse)
-async def submit_assessment_step(wizard_id: str, step_data: NursingAssessmentStep) -> WizardResponse:
+async def submit_assessment_step(
+    wizard_id: str, step_data: NursingAssessmentStep
+) -> WizardResponse:
     """
     Submit nursing assessment step following Wizard Pattern Implementation.
     Validates step data and advances wizard state.

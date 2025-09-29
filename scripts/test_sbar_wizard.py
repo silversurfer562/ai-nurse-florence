@@ -5,8 +5,8 @@ Following copilot-instructions.md testing patterns
 """
 
 import asyncio
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add project root to path (following conftest.py pattern from copilot-instructions.md)
 project_root = Path(__file__).parent.parent
@@ -49,8 +49,8 @@ def test_sbar_wizard():
 
             # Test wizard session creation (simulate)
             print("\n🎯 WIZARD SESSION TEST:")
-            from uuid import uuid4
             from datetime import datetime
+            from uuid import uuid4
 
             wizard_id = str(uuid4())
             session_data = {

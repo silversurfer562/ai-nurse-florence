@@ -1,15 +1,17 @@
-from fastapi import FastAPI, APIRouter
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from dotenv import load_dotenv
 import os
 import sys
 
-# Core imports
-from utils.middleware import RequestIdMiddleware, LoggingMiddleware
-from utils.logging import get_logger
+from dotenv import load_dotenv
+from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
 from utils.config import settings
+from utils.logging import get_logger
+
+# Core imports
+from utils.middleware import LoggingMiddleware, RequestIdMiddleware
 from utils.security import SecurityHeadersMiddleware
 
 # Load environment variables

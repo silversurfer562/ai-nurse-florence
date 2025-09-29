@@ -3,9 +3,10 @@
 Monitor Railway deployment progress
 """
 
-import requests
 import time
 from datetime import datetime
+
+import requests
 
 
 def check_deployment():

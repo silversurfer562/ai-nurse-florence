@@ -5,8 +5,8 @@ metrics store. Exposes compatibility functions used throughout the codebase.
 """
 
 import logging
-from typing import Any, Dict, Optional, Type, TYPE_CHECKING, cast, Callable, Union
 import threading
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ _PROM_AVAILABLE = False
 # Type for static analysis
 if TYPE_CHECKING:
     from prometheus_client import Counter
+
     CounterType = Type[Counter]
 else:
     CounterType = Any
@@ -76,7 +77,11 @@ def record_cache_hit(cache_key: str, cache_type: str = "redis") -> None:
         if _PROM_AVAILABLE and PromCounter is not None:
             global _CACHE_HITS
             if _CACHE_HITS is None:
-                _CACHE_HITS = PromCounter("ai_nurse_cache_hits_total", "Cache hit count", ["cache_type", "key_prefix"])
+                _CACHE_HITS = PromCounter(
+                    "ai_nurse_cache_hits_total",
+                    "Cache hit count",
+                    ["cache_type", "key_prefix"],
+                )
             # Safe access pattern with explicit check before attribute access
             if _CACHE_HITS is not None:
                 _CACHE_HITS.labels(cache_type=cache_type, key_prefix=key_prefix).inc()
@@ -97,7 +102,11 @@ def record_cache_miss(cache_key: str, cache_type: str = "redis") -> None:
         if _PROM_AVAILABLE and PromCounter is not None:
             global _CACHE_MISSES
             if _CACHE_MISSES is None:
-                _CACHE_MISSES = PromCounter("ai_nurse_cache_misses_total", "Cache miss count", ["cache_type", "key_prefix"])
+                _CACHE_MISSES = PromCounter(
+                    "ai_nurse_cache_misses_total",
+                    "Cache miss count",
+                    ["cache_type", "key_prefix"],
+                )
             # Safe access pattern with explicit check before attribute access
             if _CACHE_MISSES is not None:
                 _CACHE_MISSES.labels(cache_type=cache_type, key_prefix=key_prefix).inc()
@@ -117,7 +126,11 @@ def record_external_request(service: str, operation: Optional[str] = None) -> No
         if _PROM_AVAILABLE and PromCounter is not None:
             global _EXT_REQUESTS
             if _EXT_REQUESTS is None:
-                _EXT_REQUESTS = PromCounter("ai_nurse_external_requests_total", "External API request count", ["service"])
+                _EXT_REQUESTS = PromCounter(
+                    "ai_nurse_external_requests_total",
+                    "External API request count",
+                    ["service"],
+                )
             # Safe access pattern with explicit check before attribute access
             if _EXT_REQUESTS is not None:
                 _EXT_REQUESTS.labels(service=service).inc()
@@ -139,7 +152,11 @@ def record_external_error(
         if _PROM_AVAILABLE and PromCounter is not None:
             global _EXT_ERRORS
             if _EXT_ERRORS is None:
-                _EXT_ERRORS = PromCounter("ai_nurse_external_errors_total", "External API error count", ["service", "error_type"])
+                _EXT_ERRORS = PromCounter(
+                    "ai_nurse_external_errors_total",
+                    "External API error count",
+                    ["service", "error_type"],
+                )
             # Safe access pattern with explicit check before attribute access
             if _EXT_ERRORS is not None:
                 _EXT_ERRORS.labels(service=service, error_type=error_type).inc()
@@ -192,7 +209,11 @@ def record_gpt_usage(*args: Any, **kwargs: Any) -> None:
         if _PROM_AVAILABLE and PromCounter is not None:
             global _OPENAI_TOKENS
             if _OPENAI_TOKENS is None:
-                _OPENAI_TOKENS = PromCounter("ai_nurse_openai_tokens_total", "OpenAI tokens used", ["model", "type"])
+                _OPENAI_TOKENS = PromCounter(
+                    "ai_nurse_openai_tokens_total",
+                    "OpenAI tokens used",
+                    ["model", "type"],
+                )
             # Safe access pattern with explicit check before attribute access
             if _OPENAI_TOKENS is not None:
                 _OPENAI_TOKENS.labels(model=model, type=token_type).inc(tokens)
@@ -206,10 +227,12 @@ def record_gpt_usage(*args: Any, **kwargs: Any) -> None:
         logger.debug("record_gpt_usage failed: %s", e)
 
 
-def timing_metric(name: str, labels_func: Optional[Callable[..., Optional[Dict[str, Any]]]] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def timing_metric(
+    name: str, labels_func: Optional[Callable[..., Optional[Dict[str, Any]]]] = None
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    import inspect
     import time
     from functools import wraps
-    import inspect
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         if inspect.iscoroutinefunction(func):

@@ -8,12 +8,14 @@ Usage:
 
 Note: run in a branch and review diffs before committing.
 """
+
 from __future__ import annotations
+
 import sys
 from pathlib import Path
+
 import libcst as cst
 import libcst.matchers as m
-from typing import Optional
 
 
 class FieldTransformer(cst.CSTTransformer):
@@ -33,7 +35,9 @@ class FieldTransformer(cst.CSTTransformer):
             if len(args) == 1:
                 arg0 = args[0].value
                 if m.matches(arg0, m.SimpleString()):
-                    keywords.append(cst.Arg(keyword=cst.Name("description"), value=arg0))
+                    keywords.append(
+                        cst.Arg(keyword=cst.Name("description"), value=arg0)
+                    )
                 else:
                     # Generic default value
                     keywords.append(cst.Arg(keyword=cst.Name("default"), value=arg0))
@@ -42,9 +46,13 @@ class FieldTransformer(cst.CSTTransformer):
                 first, second, *rest = args
                 keywords.append(cst.Arg(keyword=cst.Name("default"), value=first.value))
                 if m.matches(second.value, m.SimpleString()):
-                    keywords.append(cst.Arg(keyword=cst.Name("description"), value=second.value))
+                    keywords.append(
+                        cst.Arg(keyword=cst.Name("description"), value=second.value)
+                    )
                 else:
-                    keywords.append(cst.Arg(keyword=cst.Name("default"), value=second.value))
+                    keywords.append(
+                        cst.Arg(keyword=cst.Name("default"), value=second.value)
+                    )
                 # preserve extra args as positional 'default' is ambiguous; append as-is
                 for extra in rest:
                     keywords.append(extra)

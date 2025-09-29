@@ -1,11 +1,12 @@
+import logging
+import os
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import os
-import logging
-from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

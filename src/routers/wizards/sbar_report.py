@@ -3,11 +3,12 @@ SBAR Report Wizard - AI Nurse Florence
 Following Wizard Pattern Implementation for clinical documentation
 """
 
+from datetime import datetime
+from typing import Any, Dict, Optional
+from uuid import uuid4
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional
-from uuid import uuid4
-from datetime import datetime
 
 from src.utils.config import get_educational_banner
 

@@ -5,10 +5,11 @@ This module provides a simple in-memory caching system with TTL support.
 For production use, consider using Redis or another distributed cache.
 """
 
-import time
 import functools
-from typing import Any, Dict, Optional, TypeVar, Callable, Tuple
 import threading
+import time
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
+
 from utils.logging import get_logger
 
 # Conditional import for metrics

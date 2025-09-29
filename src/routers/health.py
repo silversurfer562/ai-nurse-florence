@@ -3,14 +3,14 @@ Health Check Router - AI Nurse Florence
 Following Router Organization pattern for unprotected health endpoints
 """
 
-from fastapi import APIRouter
-from datetime import datetime
-from typing import Dict, Any
 import os
+from datetime import datetime
+from typing import Any, Dict
 
-from src.utils.config import get_settings
-from src.utils.config import get_base_url
+from fastapi import APIRouter
+
 from src.services import get_available_services
+from src.utils.config import get_base_url, get_settings
 
 router = APIRouter(
     prefix="/health",

@@ -3,12 +3,13 @@ AI Nurse Florence - Document Drafting System
 Provides editable document generation with version control and approval workflow
 """
 
-from enum import Enum
-from typing import Dict, List, Optional, Any, Literal
-from pydantic import BaseModel, Field
-from datetime import datetime
-import uuid
 import json
+import uuid
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, Field
 
 
 class DocumentStatus(str, Enum):
@@ -319,10 +320,10 @@ class DocumentDraftingSystem:
             html_content = content.replace("\n", "<br>\n")
             html_content = f"""
             <html>
-            <head><title>{draft_data['title']}</title></head>
+            <head><title>{draft_data["title"]}</title></head>
             <body>
-            <h1>{draft_data['title']}</h1>
-            <p><em>Generated: {draft_data['created_at']}</em></p>
+            <h1>{draft_data["title"]}</h1>
+            <p><em>Generated: {draft_data["created_at"]}</em></p>
             <div>{html_content}</div>
             </body>
             </html>

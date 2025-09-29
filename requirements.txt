@@ -49,8 +49,9 @@ celery[redis]==5.3.1
 
 # Authentication Dependencies (enabled for production)
 
-# Authentication
-python-jose[cryptography]>=3.4.0
+# Use PyJWT instead of python-jose to avoid ecdsa transitive dependency
+# PyJWT supports HS256 and RSA-based tokens; add cryptography only if needed
+PyJWT>=2.8.0
 passlib[bcrypt]==1.7.4
 
 # Monitoring Dependencies (enabled for production)

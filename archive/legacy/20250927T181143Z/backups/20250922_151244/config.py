@@ -2,10 +2,11 @@
 Centralized application configuration using Pydantic.
 """
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
-from typing import List, Optional
 from functools import lru_cache
+from typing import List, Optional
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):

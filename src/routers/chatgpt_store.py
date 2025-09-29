@@ -3,14 +3,16 @@ ChatGPT Store Router - Enterprise healthcare endpoints
 Following OAuth2 + JWT authentication patterns
 """
 
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from typing import Dict, Any
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from src.services.chatgpt_store_service import (
-    get_chatgpt_store_service,
     ChatGPTStoreService,
+    get_chatgpt_store_service,
 )
-from src.utils.api_responses import create_success_response, create_error_response
+from src.utils.api_responses import create_error_response, create_success_response
 
 # OAuth2 + JWT authentication following coding instructions
 security = HTTPBearer()
@@ -59,7 +61,9 @@ async def verify_healthcare_professional(
     # TODO: License database integration
     # TODO: Institution validation
 
-    professional_data = await gpt_service.verify_healthcare_professional(token.credentials)
+    professional_data = await gpt_service.verify_healthcare_professional(
+        token.credentials
+    )
 
     if not professional_data:
         return create_error_response(

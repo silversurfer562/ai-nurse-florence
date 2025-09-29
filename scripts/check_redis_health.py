@@ -6,9 +6,9 @@ hang or return an active client. Exit code is non-zero on failure so
 CI will fail loudly when a change makes Redis required.
 """
 
+import asyncio
 import os
 import sys
-import asyncio
 
 # Force the tests/CI path to disable Redis for the check
 os.environ.setdefault("AI_NURSE_DISABLE_REDIS", "1")

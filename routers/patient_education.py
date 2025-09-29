@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from models.schemas import PatientEducationRequest, PatientEducation
+
+from models.schemas import PatientEducation, PatientEducationRequest
 from services.education_service import make_patient_education
 from utils.guardrails import educational_banner
 

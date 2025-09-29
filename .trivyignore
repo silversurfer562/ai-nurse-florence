@@ -1,0 +1,2 @@
+# Example allowlist for Trivy vulnerabilities we accept for operational reasons.
+# Add one CVE id per line, e.g. CVE-2024-12345

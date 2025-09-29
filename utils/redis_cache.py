@@ -6,14 +6,17 @@ that can be used in production environments. It implements the same
 interface as the in-memory cache for easy switching.
 """
 
+import asyncio
 import json
-from typing import Any, Optional, TypeVar, Callable, Tuple, Union
-import redis
-from utils.logging import get_logger
-from utils.config import settings
+import logging
 import os
-import signal
 import subprocess
+from typing import Any, Callable, Optional, Tuple, TypeVar, Union
+
+import redis
+
+from utils.config import settings
+from utils.logging import get_logger
 
 # Conditional import for metrics
 try:
@@ -149,7 +152,7 @@ class RedisCache:
 
 
 # Cache factory function
-def get_cache() -> Union[RedisCache, "CacheService"]:
+def get_cache() -> Union[RedisCache, Any]:
     """
     Get the appropriate cache implementation based on configuration.
 
@@ -275,8 +278,6 @@ def sync_wrapper(func: Callable[..., T]) -> Callable[..., T]:
 
     return wrapper
 
-
-import os, subprocess
 
 env = os.environ.copy()
 env.update(

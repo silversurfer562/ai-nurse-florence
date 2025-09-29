@@ -3,17 +3,18 @@ SBAR Wizard Router - AI Nurse Florence
 Following Wizard Pattern Implementation from copilot-instructions.md
 """
 
-from fastapi import APIRouter, HTTPException, status
-from typing import Dict, Any, Optional
-from uuid import uuid4
 from datetime import datetime
+from typing import Any, Dict, Optional
+from uuid import uuid4
 
-from src.services import get_service
-from src.utils.redis_cache import get_redis_client
+from fastapi import APIRouter, HTTPException, status
+
 from src.models.schemas import SBARWizardRequest, SBARWizardResponse
+from src.services import get_service
 from src.utils.api_responses import create_success_response
-from src.utils.exceptions import ServiceException
 from src.utils.config import get_settings
+from src.utils.exceptions import ServiceException
+from src.utils.redis_cache import get_redis_client
 
 # Educational banner following coding instructions
 settings = get_settings()
@@ -92,7 +93,9 @@ async def start_sbar_wizard() -> Dict[str, Any]:
     summary="Submit SBAR wizard step",
     description="Submit data for current step and advance to next step in SBAR workflow.",
 )
-async def submit_wizard_step(wizard_id: str, step_data: SBARWizardRequest) -> Dict[str, Any]:
+async def submit_wizard_step(
+    wizard_id: str, step_data: SBARWizardRequest
+) -> Dict[str, Any]:
     """Submit wizard step following Wizard Pattern Implementation."""
     try:
         # Get session
@@ -248,7 +251,9 @@ async def _complete_sbar_wizard(
         # Use proper ErrorType via ServiceException signature
         from src.utils.exceptions import ErrorType
 
-        raise ServiceException("Failed to complete SBAR wizard", ErrorType.SERVICE_ERROR)
+        raise ServiceException(
+            "Failed to complete SBAR wizard", ErrorType.SERVICE_ERROR
+        )
 
 
 def _get_step_data(step_number: int) -> Dict[str, Any]:

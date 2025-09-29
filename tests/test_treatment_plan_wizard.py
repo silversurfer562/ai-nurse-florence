@@ -5,9 +5,10 @@ This test suite validates the complete workflow of creating treatment plans
 through the multi-step wizard interface.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
 from app import app
 

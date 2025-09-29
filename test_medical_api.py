@@ -40,7 +40,7 @@ def test_service_layer_architecture():
         # Test service registry following Conditional Imports Pattern
         print("\n📋 Service Registry (Conditional Imports Pattern):")
         try:
-            from src.services import get_service, get_available_services
+            from src.services import get_available_services, get_service
 
             services = get_available_services()
             print(f"✅ Service registry initialized: {services}")
@@ -193,7 +193,7 @@ def test_api_design_standards():
         # Test Pydantic schemas following models pattern
         print("\n📝 Pydantic Schemas Test:")
         try:
-            from src.models.schemas import DiseaseResponse, EDU_BANNER
+            from src.models.schemas import EDU_BANNER, DiseaseResponse
 
             print("✅ All medical response schemas imported successfully")
             print(f"✅ Educational banner constant: {EDU_BANNER[:30]}...")
@@ -203,7 +203,7 @@ def test_api_design_standards():
             print("✅ Healthcare compliance: Educational disclaimers in all schemas")
 
             # Test schema validation
-            test_disease = DiseaseResponse(
+            _test_disease = DiseaseResponse(
                 query="test diabetes",
                 disease_name="Diabetes Mellitus",
                 description="Educational test case",
@@ -216,7 +216,6 @@ def test_api_design_standards():
         # Test middleware stack following middleware stack order
         print("\n🛡️  Middleware Stack Test:")
         try:
-
             print("✅ Middleware classes imported successfully")
             print("✅ Following coding instructions middleware order:")
             print("   1. SecurityHeadersMiddleware - CSP, HSTS headers")

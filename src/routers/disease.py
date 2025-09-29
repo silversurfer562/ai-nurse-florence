@@ -3,9 +3,10 @@ Disease Information Router - AI Nurse Florence
 Following External Service Integration and API Design Standards from coding instructions
 """
 
-from fastapi import APIRouter, Query, HTTPException, status
+from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
-from typing import Optional, List
 
 from ..services.disease_service import lookup_disease_info
 from ..utils.config import get_educational_banner
@@ -37,7 +38,7 @@ async def lookup_disease(
         ...,
         description="Disease name or condition to look up",
         examples=["hypertension", "diabetes mellitus", "pneumonia"],
-    )
+    ),
 ) -> DiseaseResponse:
     """
     Look up disease information following External Service Integration pattern.

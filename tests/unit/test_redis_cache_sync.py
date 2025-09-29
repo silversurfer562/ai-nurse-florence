@@ -1,10 +1,9 @@
 import time
-import pytest
 
 from src.utils.redis_cache import (
-    cache_set_sync,
-    cache_get_sync,
     cache_delete_sync,
+    cache_get_sync,
+    cache_set_sync,
     cached,
 )
 

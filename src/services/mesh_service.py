@@ -1,9 +1,8 @@
-from typing import List, Dict, Optional, Any
 import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from src.utils.mesh_loader import MeshIndex
-
 
 _mesh_index: Optional[MeshIndex] = None
 

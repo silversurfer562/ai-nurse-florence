@@ -6,15 +6,16 @@ OAuth2 "Authorization Code" flow. When a user authorizes the GPT, OpenAI
 sends a code to this endpoint, which we exchange for an access token.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Form
-from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import timedelta
 
-from database import get_db
-from utils import auth as auth_utils
 from crud import user as crud_user
-from utils.config import settings
+from database import get_db
+from fastapi import APIRouter, Depends, Form, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from models import schemas as models_schemas
+from utils import auth as auth_utils
+from utils.config import settings
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/auth", tags=["authentication"])

@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query, status
+
 from models.schemas import DiseaseSummary
 from services.disease_service import lookup_disease
+from utils.api_responses import create_error_response, create_success_response
 from utils.guardrails import educational_banner
-from utils.api_responses import create_success_response, create_error_response
 
 router = APIRouter(prefix="/disease", tags=["disease"])
 example = {
@@ -49,7 +50,7 @@ def disease_lookup(
             },
             "copd": {"summary": "Search for information about COPD"},
         },
-    )
+    ),
 ):
     """
     Lookup information about a disease or medical condition.

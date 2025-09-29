@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import types
 import pytest
-from src.utils.http_client import safe_get_json_sync, safe_get_json
+
+from src.utils.http_client import safe_get_json, safe_get_json_sync
 
 
 class DummyResponse:
@@ -39,7 +39,9 @@ async def test_safe_get_json_async_fallback(monkeypatch):
     monkeypatch.setattr("src.utils.http_client._has_httpx", False, raising=False)
     monkeypatch.setattr(
         "src.utils.http_client.requests",
-        type("R", (), {"get": staticmethod(lambda *a, **k: DummyResponse({"ok": True}))}),
+        type(
+            "R", (), {"get": staticmethod(lambda *a, **k: DummyResponse({"ok": True}))}
+        ),
         raising=False,
     )
     monkeypatch.setattr("src.utils.http_client._has_requests", True, raising=False)

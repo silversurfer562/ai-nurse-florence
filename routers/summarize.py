@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Request, status
 from typing import Any, Dict
+from uuid import uuid4
+
+from fastapi import APIRouter, Request, status
 
 from services import summarize_service
-from uuid import uuid4
 
 # Background task factory (Celery) — graceful fallback when Celery is not installed/configured.
 try:
@@ -24,9 +25,10 @@ except Exception:
 
     summarize_text_task = _DummyTaskFactory()
 from celery.result import AsyncResult
+
+from utils.api_responses import create_error_response, create_success_response
 from utils.exceptions import ExternalServiceException
 from utils.logging import get_logger
-from utils.api_responses import create_success_response, create_error_response
 
 router = APIRouter(prefix="/summarize", tags=["summarize"])
 logger = get_logger(__name__)

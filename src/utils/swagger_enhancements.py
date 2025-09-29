@@ -3,10 +3,12 @@ Enhanced Swagger UI configuration for clinical decision support
 Following Service Layer Architecture and Conditional Imports Pattern
 """
 
+from typing import Any, Dict, cast
+
+from fastapi import Request
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from fastapi import Request
-from typing import Dict, Any, cast
+
 from utils.config import get_settings
 
 # Conditional ChatGPT Store integration following coding instructions pattern

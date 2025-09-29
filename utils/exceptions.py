@@ -5,7 +5,7 @@ This module defines a hierarchy of exceptions that can be raised by services
 and handled consistently throughout the application.
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 
 class ServiceException(Exception):

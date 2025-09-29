@@ -5,12 +5,13 @@ This multi-step wizard guides users through creating a structured SBAR report,
 which is a standard communication tool in healthcare settings.
 """
 
-from fastapi import APIRouter, status
-from pydantic import BaseModel, Field
 from typing import Dict
 
-from utils.api_responses import create_success_response, create_error_response
+from fastapi import APIRouter, status
+from pydantic import BaseModel, Field
+
 from services.openai_client import get_client
+from utils.api_responses import create_error_response, create_success_response
 from utils.logging import get_logger
 
 router = APIRouter(prefix="/wizards/sbar-report", tags=["wizards"])
@@ -157,10 +158,10 @@ async def generate_sbar_report(step_input: GenerateSbarInput):
     Use clear headings for each section (Situation, Background, Assessment, Recommendation).
     Ensure the language is professional and suitable for a clinical handoff.
 
-    Situation: {session_data['situation']}
-    Background: {session_data['background']}
-    Assessment: {session_data['assessment']}
-    Recommendation: {session_data['recommendation']}
+    Situation: {session_data["situation"]}
+    Background: {session_data["background"]}
+    Assessment: {session_data["assessment"]}
+    Recommendation: {session_data["recommendation"]}
     """
 
     try:

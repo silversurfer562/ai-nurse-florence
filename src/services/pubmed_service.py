@@ -3,9 +3,9 @@ PubMed literature search service following External Service Integration
 PubMed API integration from copilot-instructions.md
 """
 
-from typing import Dict, Any, List, Optional, TYPE_CHECKING, cast
-from types import ModuleType
 import importlib
+from types import ModuleType
+from typing import Any, Dict, List, Optional, cast
 
 # Conditional imports following copilot-instructions.md
 # Use importlib to import optional modules and keep typed variables
@@ -39,13 +39,13 @@ except Exception:
     _has_xml = False
 
 
-from .base_service import BaseService
-from ..utils.redis_cache import cached
+import asyncio
+import logging
+
 from ..utils.config import get_settings
 from ..utils.exceptions import ExternalServiceException
-
-import logging
-import asyncio
+from ..utils.redis_cache import cached
+from .base_service import BaseService
 
 logger = logging.getLogger(__name__)
 
@@ -310,16 +310,16 @@ class PubMedService(BaseService[Dict[str, Any]]):
 
         for i in range(min(max_results, 3)):  # Create 3 stub articles
             stub_article = {
-                "pmid": f"stub_{i+1}",
-                "title": f"Educational Article {i+1}: {query} - Literature Review",
+                "pmid": f"stub_{i + 1}",
+                "title": f"Educational Article {i + 1}: {query} - Literature Review",
                 "authors": ["Smith, J.", "Johnson, M.", "Wilson, K."],
                 "journal": "Journal of Medical Education",
                 "publication_date": "2024-01",
                 "abstract": f"This is educational content about {query}. "
                 + f"{self.educational_banner} "
                 + "This stub represents the type of medical literature available through PubMed searches.",
-                "doi": f"10.1000/stub{i+1}",
-                "url": f"https://pubmed.ncbi.nlm.nih.gov/stub_{i+1}/",
+                "doi": f"10.1000/stub{i + 1}",
+                "url": f"https://pubmed.ncbi.nlm.nih.gov/stub_{i + 1}/",
             }
             stub_articles.append(stub_article)
 
