@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Clinical App Base Styles */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
+
+  /* Healthcare-specific focus styles for accessibility */
+  *:focus-visible {
+    @apply ring-2 ring-clinical-500 ring-offset-2 outline-none;
+  }
+}
+
+@layer components {
+  /* Clinical Button Styles */
+  .btn-clinical {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all;
+    @apply focus:outline-none focus:ring-2 focus:ring-clinical-500 focus:ring-offset-2;
+  }
+
+  .btn-clinical-primary {
+    @apply btn-clinical bg-clinical-600 text-white hover:bg-clinical-700 active:bg-clinical-800;
+  }
+
+  .btn-clinical-secondary {
+    @apply btn-clinical bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300;
+  }
+
+  .btn-clinical-danger {
+    @apply btn-clinical bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  /* Clinical Form Styles */
+  .form-input-clinical {
+    @apply block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm;
+    @apply placeholder:text-gray-400 focus:border-clinical-500 focus:ring-1 focus:ring-clinical-500;
+  }
+
+  .form-label-clinical {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  /* Clinical Card Styles */
+  .card-clinical {
+    @apply bg-white rounded-xl shadow-clinical border border-gray-200;
+  }
+
+  /* Loading States */
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-gray-200 border-t-clinical-600;
+  }
+}
+
+/* Healthcare Professional Theme Variables */
+:root {
+  --clinical-primary: theme('colors.clinical.600');
+  --clinical-secondary: theme('colors.gray.600');
+  --medical-normal: theme('colors.medical.normal');
+  --medical-warning: theme('colors.medical.warning');
+  --medical-caution: theme('colors.medical.caution');
+}

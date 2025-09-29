@@ -1,0 +1,32 @@
+{
+  "name": "ai-nurse-florence-frontend",
+  "version": "2.1.0",
+  "description": "Healthcare AI Assistant Frontend Components",
+  "scripts": {
+    "dev": "vite serve frontend --port 3000",
+    "build": "vite build frontend",
+    "preview": "vite preview frontend",
+    "lint": "eslint frontend/src --ext .js,.jsx,.ts,.tsx",
+    "format": "prettier --write frontend/src",
+    "test": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "dependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "alpinejs": "^3.13.3",
+    "htmx.org": "^1.9.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "postcss": "^8.4.31",
+    "prettier": "^3.0.3",
+    "tailwindcss": "^3.3.5",
+    "vite": "^4.4.11",
+    "vitest": "^0.34.6"
+  },
+  "type": "module"
+}
