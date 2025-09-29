@@ -52,8 +52,8 @@ class Settings(BaseSettings):
     )
 
     # External Services Configuration following External Service Integration
-    USE_LIVE: bool = Field(default=False, description="Use live external APIs vs stubs")
-    USE_LIVE_SERVICES: bool = Field(default=False, description="Alias for USE_LIVE")
+    USE_LIVE: bool = Field(default=True, description="Use live external APIs vs stubs")
+    USE_LIVE_SERVICES: bool = Field(default=True, description="Alias for USE_LIVE")
     USE_MYDISEASE: bool = Field(
         default=True, description="Enable MyDisease.info service"
     )

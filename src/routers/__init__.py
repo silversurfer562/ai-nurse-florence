@@ -110,6 +110,7 @@ def _load_wizard_routers() -> None:
         "medication_reconciliation": "src.routers.wizards.medication_reconciliation",
         "care_plan": "src.routers.wizards.care_plan",
         "discharge_planning": "src.routers.wizards.discharge_planning",
+        "condition_wizards": "src.routers.condition_wizards",
     }
 
     for wizard_name, module_path in wizard_routers.items():
@@ -169,6 +170,7 @@ def _load_routers() -> None:
                     "medication_reconciliation": False,
                     "care_plan": False,
                     "discharge_planning": False,
+                    "condition_wizards": False,
                 }
             )
 
@@ -230,6 +232,7 @@ except Exception as e:
         "medication_reconciliation": False,
         "care_plan": False,
         "discharge_planning": False,
+        "condition_wizards": False,
     }
 
 # Export a canonical mapping at import time, but prefer callers to call get_available_routers()

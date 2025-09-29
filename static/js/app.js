@@ -66,13 +66,17 @@ class AINurseFlorence {
     }
 
     updateSystemStatus() {
+        // Update header indicator
+        this.updateLiveDataIndicator();
+
         const statusElement = document.getElementById('system-status');
         if (!statusElement || !this.systemStatus) return;
 
-        const { status, service, version, services } = this.systemStatus;
+        const { status, service, version, services, configuration } = this.systemStatus;
         const available = services?.available || 0;
         const total = services?.total || 0;
         const details = services?.details || {};
+        const liveServicesEnabled = configuration?.live_services || false;
 
         const statusHtml = `
             <h3>System Status</h3>
@@ -89,6 +93,20 @@ class AINurseFlorence {
                     <span class="status-label">Services:</span>
                     <span class="status-value">${available}/${total} Ready</span>
                 </div>
+                <div class="status-item">
+                    <span class="status-label">Data Mode:</span>
+                    <span class="status-value ${liveServicesEnabled ? 'live' : 'demo'}">
+                        ${liveServicesEnabled ? '🔴 LIVE DATA' : '🟡 DEMO DATA'}
+                    </span>
+                    <button
+                        onclick="app.toggleLiveData()"
+                        class="btn btn-sm ${liveServicesEnabled ? 'btn-warning' : 'btn-success'}"
+                        id="liveDataToggle"
+                        style="margin-left: 10px; padding: 4px 8px; font-size: 12px;"
+                    >
+                        ${liveServicesEnabled ? 'Switch to Demo' : 'Enable Live Data'}
+                    </button>
+                </div>
                 <div class="service-details">
                     <h4>Service Details:</h4>
                     ${Object.entries(details).map(([name, active]) => `
@@ -100,10 +118,143 @@ class AINurseFlorence {
                         </div>
                     `).join('')}
                 </div>
+                ${liveServicesEnabled ? `
+                    <div class="live-data-warning" style="margin-top: 15px; padding: 10px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px;">
+                        <strong>⚠️ Live Data Mode:</strong> Using real external medical APIs. Data may be current but response times may vary.
+                    </div>
+                ` : `
+                    <div class="demo-data-info" style="margin-top: 15px; padding: 10px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                        <strong>ℹ️ Demo Mode:</strong> Using cached/sample data for fast, consistent responses. Perfect for demonstrations and testing.
+                    </div>
+                `}
             </div>
         `;
 
         statusElement.innerHTML = statusHtml;
+    }
+
+    // Live Data Toggle Management
+    async toggleLiveData() {
+        try {
+            // Get current status first
+            const statusResponse = await fetch(`${this.apiBase}/admin/live-data-status`);
+            if (!statusResponse.ok) {
+                throw new Error('Failed to get current live data status');
+            }
+            const currentStatus = await statusResponse.json();
+
+            // Toggle the state
+            const newState = !currentStatus.live_data_enabled;
+
+            // Show loading state
+            const toggleButton = document.getElementById('liveDataToggle');
+            if (toggleButton) {
+                toggleButton.disabled = true;
+                toggleButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Switching...';
+            }
+
+            // Make the toggle request
+            const response = await fetch(`${this.apiBase}/admin/toggle-live-data`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ enabled: newState })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to toggle live data');
+            }
+
+            const result = await response.json();
+
+            // Reload system status to get updated information
+            await this.loadSystemStatus();
+
+            // Show success message
+            this.showNotification(
+                `Live Data ${newState ? 'Enabled' : 'Disabled'}`,
+                result.message,
+                newState ? 'warning' : 'info'
+            );
+
+            console.log('✅ Live data toggle successful:', result);
+
+        } catch (error) {
+            console.error('❌ Failed to toggle live data:', error);
+
+            // Reset button state
+            const toggleButton = document.getElementById('liveDataToggle');
+            if (toggleButton) {
+                toggleButton.disabled = false;
+            }
+
+            // Reload status to get correct state
+            await this.loadSystemStatus();
+
+            this.showNotification(
+                'Toggle Failed',
+                'Failed to change data mode. Please try again.',
+                'error'
+            );
+        }
+    }
+
+    // Show notification message
+    showNotification(title, message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <strong>${title}</strong>
+                <p>${message}</p>
+                <button onclick="this.parentElement.parentElement.remove()" class="notification-close">×</button>
+            </div>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
+    // Update the header live data indicator
+    updateLiveDataIndicator() {
+        const indicator = document.getElementById('liveDataIndicator');
+        if (!indicator || !this.systemStatus) return;
+
+        const liveServicesEnabled = this.systemStatus.configuration?.live_services || false;
+        const dot = indicator.querySelector('.pulse-dot');
+        const text = indicator.querySelector('span');
+
+        if (liveServicesEnabled) {
+            // Live data mode
+            indicator.className = 'hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer bg-red-50 border border-red-200';
+            if (dot) {
+                dot.className = 'w-3 h-3 bg-red-500 rounded-full pulse-dot';
+            }
+            if (text) {
+                text.className = 'text-sm font-medium text-red-700';
+                text.textContent = 'Live Data';
+            }
+            indicator.title = 'Live data mode active - Click to switch to demo data';
+        } else {
+            // Demo data mode
+            indicator.className = 'hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer bg-yellow-50 border border-yellow-200';
+            if (dot) {
+                dot.className = 'w-3 h-3 bg-yellow-500 rounded-full pulse-dot';
+            }
+            if (text) {
+                text.className = 'text-sm font-medium text-yellow-700';
+                text.textContent = 'Demo Data';
+            }
+            indicator.title = 'Demo data mode active - Click to enable live data';
+        }
     }
 
     // Wizard Management Following Wizard Pattern Implementation
@@ -119,7 +270,7 @@ class AINurseFlorence {
     async startWizard(wizardType) {
         try {
             this.showLoading('Starting Clinical Wizard', 'Initializing workflow...');
-            
+
             const response = await fetch(`${this.apiBase}/wizard/${wizardType}/start`, {
                 method: 'POST',
                 headers: {
@@ -134,10 +285,10 @@ class AINurseFlorence {
             const data = await response.json();
             this.currentWizardId = data.wizard_id;
             this.showWizardModal(data);
-            
+
             // Analytics
             this.trackEvent('wizard_started', { wizard_type: wizardType });
-            
+
         } catch (error) {
             console.error('Error starting wizard:', error);
             this.showError('Failed to start wizard. Please check the API documentation for details.');
@@ -147,10 +298,10 @@ class AINurseFlorence {
     showWizardModal(wizardData) {
         const modal = document.getElementById('wizard-modal');
         const content = document.getElementById('wizard-content');
-        
+
         const progressPercent = (wizardData.current_step / wizardData.total_steps) * 100;
         const wizardTitle = wizardData.wizard_type.replace(/-/g, ' ').toUpperCase();
-        
+
         content.innerHTML = `
             <div class="wizard-header">
                 <h2>🧙‍♀️ ${wizardData.step_title}</h2>
@@ -165,32 +316,32 @@ class AINurseFlorence {
                     <div class="progress-text">${progressPercent.toFixed(0)}% Complete</div>
                 </div>
             </div>
-            
+
             <div class="wizard-body">
                 <div class="educational-banner">
                     ⚠️ ${wizardData.educational_note || wizardData.banner || 'Educational use only - not medical advice. No PHI stored.'}
                 </div>
-                
+
                 <div class="wizard-info">
                     <div class="info-section">
                         <h4>Wizard Information</h4>
                         <div class="info-grid">
                             <div class="info-item">
-                                <strong>Wizard ID:</strong> 
+                                <strong>Wizard ID:</strong>
                                 <code class="wizard-id">${wizardData.wizard_id}</code>
                                 <button onclick="app.copyToClipboard('${wizardData.wizard_id}')" class="copy-btn" title="Copy ID">📋</button>
                             </div>
                             <div class="info-item">
-                                <strong>Workflow Type:</strong> 
+                                <strong>Workflow Type:</strong>
                                 <span class="workflow-type">${wizardTitle}</span>
                             </div>
                             <div class="info-item">
-                                <strong>Current Step:</strong> 
+                                <strong>Current Step:</strong>
                                 <span class="current-step">${wizardData.step_title}</span>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="next-steps-section">
                         <h4>📋 Next Steps:</h4>
                         <ol class="next-steps-list">
@@ -201,7 +352,7 @@ class AINurseFlorence {
                         </ol>
                     </div>
                 </div>
-                
+
                 <div class="wizard-actions">
                     <button class="btn btn-primary" onclick="app.getWizardStatus()">
                         📊 Check Status
@@ -218,9 +369,9 @@ class AINurseFlorence {
                 </div>
             </div>
         `;
-        
+
         modal.classList.remove('hidden');
-        
+
         // Focus management for accessibility
         const firstButton = content.querySelector('.btn');
         if (firstButton) firstButton.focus();
@@ -231,7 +382,7 @@ class AINurseFlorence {
             this.showError('No active wizard session');
             return;
         }
-        
+
         try {
             // Try different endpoints based on wizard type
             let statusResponse = null;
@@ -242,7 +393,7 @@ class AINurseFlorence {
                 `/wizard/care-plan/${this.currentWizardId}/status`,
                 `/wizard/discharge-planning/${this.currentWizardId}/status`
             ];
-            
+
             for (const endpoint of endpoints) {
                 try {
                     const response = await fetch(`${this.apiBase}${endpoint}`);
@@ -254,7 +405,7 @@ class AINurseFlorence {
                     continue;
                 }
             }
-            
+
             if (statusResponse) {
                 const progress = statusResponse.progress || 0;
                 const status = statusResponse.status || 'in_progress';
@@ -262,7 +413,7 @@ class AINurseFlorence {
             } else {
                 this.showError('Could not retrieve wizard status. Use the API documentation to check status manually.');
             }
-            
+
         } catch (error) {
             console.error('Error getting wizard status:', error);
             this.showError('Could not retrieve wizard status. Check console for details.');
@@ -274,13 +425,13 @@ class AINurseFlorence {
         // Disease search
         const diseaseBtn = document.getElementById('search-btn');
         const diseaseInput = document.getElementById('disease-search');
-        
+
         if (diseaseBtn && diseaseInput) {
             diseaseBtn.addEventListener('click', () => {
                 const query = diseaseInput.value.trim();
                 if (query) this.searchDisease(query);
             });
-            
+
             diseaseInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     const query = e.target.value.trim();
@@ -292,13 +443,13 @@ class AINurseFlorence {
         // PubMed search
         const pubmedBtn = document.getElementById('pubmed-btn');
         const pubmedInput = document.getElementById('pubmed-search');
-        
+
         if (pubmedBtn && pubmedInput) {
             pubmedBtn.addEventListener('click', () => {
                 const query = pubmedInput.value.trim();
                 if (query) this.searchPubMed(query);
             });
-            
+
             pubmedInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     const query = e.target.value.trim();
@@ -314,13 +465,13 @@ class AINurseFlorence {
 
         try {
             const response = await fetch(`${this.apiBase}/disease/lookup?q=${encodeURIComponent(query)}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Search failed with status: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             resultsPanel.innerHTML = `
                 <div class="search-result">
                     <h3>🔬 Disease Information Results</h3>
@@ -336,9 +487,9 @@ class AINurseFlorence {
                     </div>
                 </div>
             `;
-            
+
             this.trackEvent('search_disease', { query });
-            
+
         } catch (error) {
             console.error('Disease search error:', error);
             resultsPanel.innerHTML = `
@@ -356,13 +507,13 @@ class AINurseFlorence {
 
         try {
             const response = await fetch(`${this.apiBase}/literature/search?q=${encodeURIComponent(query)}`);
-            
+
             if (!response.ok) {
                 throw new Error(`Literature search failed with status: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             resultsPanel.innerHTML = `
                 <div class="search-result">
                     <h3>📚 Literature Search Results</h3>
@@ -379,9 +530,9 @@ class AINurseFlorence {
                     </div>
                 </div>
             `;
-            
+
             this.trackEvent('search_literature', { query });
-            
+
         } catch (error) {
             console.error('PubMed search error:', error);
             resultsPanel.innerHTML = `
@@ -397,16 +548,16 @@ class AINurseFlorence {
     initModal() {
         const modal = document.getElementById('wizard-modal');
         const closeBtn = document.querySelector('.close');
-        
+
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.closeModal());
         }
-        
+
         // Close on outside click
         window.addEventListener('click', (e) => {
             if (e.target === modal) this.closeModal();
         });
-        
+
         // Close on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
@@ -418,7 +569,7 @@ class AINurseFlorence {
     showLoading(title = 'Loading', message = 'Please wait...') {
         const modal = document.getElementById('wizard-modal');
         const content = document.getElementById('wizard-content');
-        
+
         content.innerHTML = `
             <div class="loading-content">
                 <h2>🔄 ${title}</h2>
@@ -426,7 +577,7 @@ class AINurseFlorence {
                 <p>${message}</p>
             </div>
         `;
-        
+
         modal.classList.remove('hidden');
     }
 
@@ -461,12 +612,12 @@ class AINurseFlorence {
 
     copyWizardInfo() {
         if (!this.currentWizardId) return;
-        
+
         const info = `AI Nurse Florence - Wizard Session
 Wizard ID: ${this.currentWizardId}
 API Base: ${window.location.origin}${this.apiBase}
 Documentation: ${window.location.origin}/docs`;
-        
+
         this.copyToClipboard(info);
     }
 
@@ -489,10 +640,10 @@ Documentation: ${window.location.origin}/docs`;
                 <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
-        
+
         // Add to page
         document.body.appendChild(notification);
-        
+
         // Auto-remove after 5 seconds
         setTimeout(() => {
             if (notification.parentElement) {
@@ -522,7 +673,7 @@ const additionalCSS = `
         padding-bottom: 25px;
         border-bottom: 2px solid var(--border-color);
     }
-    
+
     .wizard-meta {
         display: flex;
         justify-content: center;
@@ -531,7 +682,7 @@ const additionalCSS = `
         margin: 15px 0;
         flex-wrap: wrap;
     }
-    
+
     .wizard-type-badge {
         background: var(--primary-color);
         color: white;
@@ -542,16 +693,16 @@ const additionalCSS = `
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    
+
     .step-indicator {
         color: var(--text-muted);
         font-weight: 500;
     }
-    
+
     .progress-container {
         margin: 20px 0;
     }
-    
+
     .progress-bar {
         background: #e2e8f0;
         height: 12px;
@@ -559,21 +710,21 @@ const additionalCSS = `
         overflow: hidden;
         margin-bottom: 8px;
     }
-    
+
     .progress-fill {
         background: linear-gradient(90deg, var(--success-color), var(--primary-color));
         height: 100%;
         transition: width 0.5s ease;
         border-radius: 6px;
     }
-    
+
     .progress-text {
         text-align: center;
         color: var(--success-color);
         font-weight: bold;
         font-size: 0.9rem;
     }
-    
+
     .educational-banner {
         background: #fef2f2;
         border-left: 4px solid var(--secondary-color);
@@ -584,24 +735,24 @@ const additionalCSS = `
         font-weight: 500;
         line-height: 1.5;
     }
-    
+
     .wizard-info {
         background: var(--bg-color);
         padding: 25px;
         border-radius: var(--border-radius-lg);
         margin: 25px 0;
     }
-    
+
     .info-section {
         margin-bottom: 25px;
     }
-    
+
     .info-grid {
         display: grid;
         gap: 15px;
         margin-top: 15px;
     }
-    
+
     .info-item {
         display: flex;
         justify-content: space-between;
@@ -609,11 +760,11 @@ const additionalCSS = `
         padding: 12px 0;
         border-bottom: 1px solid var(--border-color);
     }
-    
+
     .info-item:last-child {
         border-bottom: none;
     }
-    
+
     .wizard-id {
         background: #f1f5f9;
         padding: 4px 8px;
@@ -622,7 +773,7 @@ const additionalCSS = `
         font-size: 0.85rem;
         margin-right: 8px;
     }
-    
+
     .copy-btn {
         background: none;
         border: none;
@@ -631,11 +782,11 @@ const additionalCSS = `
         border-radius: 4px;
         transition: background 0.2s;
     }
-    
+
     .copy-btn:hover {
         background: var(--border-color);
     }
-    
+
     .workflow-type {
         background: var(--info-color);
         color: white;
@@ -644,34 +795,34 @@ const additionalCSS = `
         font-size: 0.8rem;
         font-weight: bold;
     }
-    
+
     .current-step {
         color: var(--primary-color);
         font-weight: 600;
     }
-    
+
     .next-steps-section {
         background: #f0f9ff;
         border-left: 4px solid var(--primary-color);
         padding: 20px;
         border-radius: 6px;
     }
-    
+
     .next-steps-section h4 {
         color: var(--primary-color);
         margin-bottom: 15px;
         font-size: 1.1rem;
     }
-    
+
     .next-steps-list {
         margin-left: 20px;
     }
-    
+
     .next-steps-list li {
         margin-bottom: 10px;
         line-height: 1.6;
     }
-    
+
     .wizard-actions {
         margin-top: 30px;
         display: flex;
@@ -679,7 +830,7 @@ const additionalCSS = `
         flex-wrap: wrap;
         justify-content: center;
     }
-    
+
     .btn {
         padding: 12px 24px;
         border: none;
@@ -695,53 +846,53 @@ const additionalCSS = `
         min-width: 120px;
         justify-content: center;
     }
-    
+
     .btn-primary {
         background: var(--primary-color);
         color: white;
     }
-    
+
     .btn-primary:hover {
         background: #1d4ed8;
         transform: translateY(-1px);
     }
-    
+
     .btn-info {
         background: var(--info-color);
         color: white;
     }
-    
+
     .btn-info:hover {
         background: #0e7490;
         transform: translateY(-1px);
     }
-    
+
     .btn-success {
         background: var(--success-color);
         color: white;
     }
-    
+
     .btn-success:hover {
         background: #15803d;
         transform: translateY(-1px);
     }
-    
+
     .btn-secondary {
         background: #6b7280;
         color: white;
     }
-    
+
     .btn-secondary:hover {
         background: #4b5563;
         transform: translateY(-1px);
     }
-    
+
     /* System Status Styles */
     .status-grid {
         display: grid;
         gap: 15px;
     }
-    
+
     .status-item {
         display: flex;
         justify-content: space-between;
@@ -749,36 +900,36 @@ const additionalCSS = `
         padding: 10px 0;
         border-bottom: 1px solid var(--border-color);
     }
-    
+
     .status-label {
         font-weight: 600;
         color: var(--text-muted);
     }
-    
+
     .status-value {
         font-weight: 600;
     }
-    
+
     .status-healthy {
         color: var(--success-color);
     }
-    
+
     .status-unknown {
         color: var(--warning-color);
     }
-    
+
     .service-details {
         margin-top: 20px;
         padding-top: 15px;
         border-top: 2px solid var(--border-color);
     }
-    
+
     .service-details h4 {
         color: var(--primary-color);
         margin-bottom: 12px;
         font-size: 1rem;
     }
-    
+
     .service-item {
         display: flex;
         justify-content: space-between;
@@ -786,31 +937,31 @@ const additionalCSS = `
         padding: 8px 0;
         font-size: 0.9rem;
     }
-    
+
     .service-name {
         font-weight: 500;
         text-transform: capitalize;
     }
-    
+
     .service-status.active {
         color: var(--success-color);
     }
-    
+
     .service-status.inactive {
         color: var(--warning-color);
     }
-    
+
     /* Search Results */
     .search-result {
         padding: 25px;
     }
-    
+
     .search-result h3 {
         color: var(--primary-color);
         margin-bottom: 20px;
         font-size: 1.4rem;
     }
-    
+
     .result-header {
         background: var(--bg-color);
         padding: 15px;
@@ -818,13 +969,13 @@ const additionalCSS = `
         margin: 20px 0;
         font-weight: 500;
     }
-    
+
     .result-content {
         line-height: 1.7;
         margin: 20px 0;
         font-size: 1rem;
     }
-    
+
     .result-footer {
         margin-top: 25px;
         padding-top: 20px;
@@ -832,17 +983,17 @@ const additionalCSS = `
         color: var(--text-muted);
         font-size: 0.9rem;
     }
-    
+
     .result-footer a {
         color: var(--primary-color);
         text-decoration: none;
         font-weight: 500;
     }
-    
+
     .result-footer a:hover {
         text-decoration: underline;
     }
-    
+
     /* Notification System */
     .notification {
         position: fixed;
@@ -854,46 +1005,91 @@ const additionalCSS = `
         box-shadow: var(--shadow-hover);
         animation: slideInRight 0.3s ease;
     }
-    
-    .notification-success {
+
+    .notification-success, .notification-info {
         background: #f0fdf4;
         border-left: 4px solid var(--success-color);
         color: var(--success-color);
     }
-    
+
+    .notification-warning {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        color: #d97706;
+    }
+
     .notification-error {
         background: #fef2f2;
         border-left: 4px solid var(--secondary-color);
         color: var(--secondary-color);
     }
-    
+
     .notification-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         padding: 15px 20px;
+        position: relative;
     }
-    
-    .notification-message {
-        flex: 1;
-        font-weight: 500;
-        white-space: pre-line;
+
+    .notification-content strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 1rem;
     }
-    
+
+    .notification-content p {
+        margin: 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
     .notification-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
         background: none;
         border: none;
         font-size: 18px;
         cursor: pointer;
-        margin-left: 15px;
         opacity: 0.7;
-        transition: opacity 0.2s;
+        font-weight: bold;
+        line-height: 1;
+        padding: 0;
+        width: 20px;
+        height: 20px;
     }
-    
+
     .notification-close:hover {
         opacity: 1;
     }
-    
+
+    /* Live Data Toggle Styles */
+    .status-value.live {
+        color: #dc2626;
+        font-weight: bold;
+        animation: pulse 2s infinite;
+    }
+
+    .status-value.demo {
+        color: #f59e0b;
+        font-weight: bold;
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+        min-width: auto;
+    }
+
+    .btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: #d97706;
+        transform: translateY(-1px);
+    }
+
+    /* Animation Keyframes */
     @keyframes slideInRight {
         from {
             transform: translateX(100%);
@@ -904,52 +1100,81 @@ const additionalCSS = `
             opacity: 1;
         }
     }
-    
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.6;
+        }
+    }
+        cursor: pointer;
+        margin-left: 15px;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .notification-close:hover {
+        opacity: 1;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
     /* Loading States */
     .loading-content {
         text-align: center;
         padding: 60px 40px;
     }
-    
+
     .loading-content h2 {
         color: var(--primary-color);
         margin-bottom: 20px;
     }
-    
+
     .loading-content p {
         color: var(--text-muted);
         margin-top: 20px;
         font-style: italic;
     }
-    
+
     /* Mobile Responsive Enhancements */
     @media (max-width: 768px) {
         .wizard-actions {
             flex-direction: column;
             align-items: stretch;
         }
-        
+
         .btn {
             width: 100%;
         }
-        
+
         .wizard-meta {
             flex-direction: column;
             gap: 10px;
         }
-        
+
         .notification {
             right: 10px;
             left: 10px;
             max-width: none;
         }
-        
+
         .info-item {
             flex-direction: column;
             align-items: flex-start;
             gap: 5px;
         }
-        
+
         .status-item, .service-item {
             flex-direction: column;
             align-items: flex-start;

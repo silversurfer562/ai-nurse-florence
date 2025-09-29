@@ -27,7 +27,7 @@ except Exception:
     _has_httpx = False
 
 # Backwards-compatibility: expose legacy names for tests that monkeypatch
-_has_requests = False
+_has_requests = _has_httpx  # Use httpx availability for requests compatibility
 requests = None
 
 
@@ -312,10 +312,14 @@ async def lookup_disease_info(query: str) -> Dict[str, Any]:
         else:
             effective_query = query
 
+        # Extract medical terms from natural language queries
+        medical_query = _extract_medical_terms(effective_query)
+        logger.info(f"Query transformation: '{effective_query}' -> '{medical_query}'")
+
         # Use live MyDisease.info API if available and enabled
-        if settings.effective_use_live_services and _has_requests:
+        if settings.effective_use_live_services and _has_httpx:
             try:
-                result = await _lookup_disease_live(effective_query)
+                result = await _lookup_disease_live(medical_query)
                 result["banner"] = banner
                 result["query"] = query
                 return result
@@ -329,6 +333,249 @@ async def lookup_disease_info(query: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Disease lookup failed: {e}")
         return _create_disease_stub_response(query, banner)
+
+
+async def search_disease_conditions(query: str, limit: int = 10) -> Dict[str, Any]:
+    """
+    Search for disease conditions with autocomplete functionality.
+    Returns MONDO disease ontology terms for guided form input.
+    """
+    settings = get_settings()
+
+    try:
+        if settings.effective_use_live_services and _has_httpx:
+            results = await _search_conditions_live(query, limit)
+            return {
+                "suggestions": results,
+                "total_results": len(results)
+            }
+        else:
+            # Fallback to predefined common conditions
+            return _get_common_conditions_stub(query, limit)
+
+    except Exception as e:
+        logger.warning(f"Condition search failed: {e}")
+        return _get_common_conditions_stub(query, limit)
+
+
+async def _search_conditions_live(query: str, limit: int) -> List[Dict[str, Any]]:
+    """Search live MyDisease.info API for condition suggestions."""
+    base_url = "https://mydisease.info/v1/query"
+
+    # Build search query for better autocomplete results
+    search_query = f"{query}*"  # Wildcard search for prefix matching
+
+    params = {
+        "q": search_query,
+        "fields": "mondo.label,mondo.mondo,mondo.definition,mondo.synonym",
+        "size": limit * 2,  # Get more results to filter and rank
+        "from": 0
+    }
+
+    if not _has_httpx:
+        raise ExternalServiceException("httpx not available", "disease_service")
+
+    AsyncClient = getattr(httpx, "AsyncClient")
+    Timeout = getattr(httpx, "Timeout")
+
+    async with AsyncClient(timeout=Timeout(10.0)) as client:
+        response = await client.get(base_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+    hits = data.get("hits", [])
+    suggestions = []
+
+    for hit in hits[:limit]:
+        mondo_data = hit.get("mondo", {})
+        if not mondo_data:
+            continue
+
+        name = mondo_data.get("label", "")
+        mondo_id = mondo_data.get("mondo", "")
+        definition = mondo_data.get("definition", "")
+
+        # Extract synonyms
+        synonyms = []
+        synonym_data = mondo_data.get("synonym", {})
+        if isinstance(synonym_data, dict):
+            exact_synonyms = synonym_data.get("exact", [])
+            synonyms.extend(exact_synonyms[:3])  # Limit synonyms
+        elif isinstance(synonym_data, list):
+            synonyms.extend(synonym_data[:3])
+
+        if name and mondo_id:
+            suggestions.append({
+                "name": name,
+                "mondo_id": mondo_id,
+                "description": definition[:200] + "..." if len(definition) > 200 else definition,
+                "synonyms": synonyms
+            })
+
+    return suggestions
+
+
+def _get_common_conditions_stub(query: str, limit: int) -> Dict[str, Any]:
+    """Fallback stub with common medical conditions for autocomplete."""
+
+    common_conditions = [
+        {
+            "name": "diabetes mellitus",
+            "mondo_id": "MONDO:0005015",
+            "description": "A metabolic disorder characterized by high blood glucose levels.",
+            "synonyms": ["diabetes", "DM"]
+        },
+        {
+            "name": "hypertension",
+            "mondo_id": "MONDO:0005044",
+            "description": "Persistent high arterial blood pressure.",
+            "synonyms": ["high blood pressure", "HTN"]
+        },
+        {
+            "name": "pneumonia",
+            "mondo_id": "MONDO:0005249",
+            "description": "Infection that inflames air sacs in lungs.",
+            "synonyms": ["lung infection"]
+        },
+        {
+            "name": "breast cancer",
+            "mondo_id": "MONDO:0007254",
+            "description": "Cancer that forms in tissues of the breast.",
+            "synonyms": ["breast carcinoma", "mammary cancer"]
+        },
+        {
+            "name": "heart failure",
+            "mondo_id": "MONDO:0005252",
+            "description": "Condition where heart cannot pump blood effectively.",
+            "synonyms": ["cardiac failure", "CHF"]
+        },
+        {
+            "name": "asthma",
+            "mondo_id": "MONDO:0004979",
+            "description": "Respiratory condition with inflamed airways.",
+            "synonyms": ["bronchial asthma"]
+        },
+        {
+            "name": "stroke",
+            "mondo_id": "MONDO:0005098",
+            "description": "Interruption of blood supply to brain.",
+            "synonyms": ["cerebrovascular accident", "CVA"]
+        },
+        {
+            "name": "depression",
+            "mondo_id": "MONDO:0002050",
+            "description": "Mental health disorder causing persistent sadness.",
+            "synonyms": ["major depressive disorder", "MDD"]
+        }
+    ]
+
+    # Filter conditions based on query
+    query_lower = query.lower()
+    filtered_conditions = []
+
+    for condition in common_conditions:
+        # Check if query matches name or synonyms
+        condition_name = str(condition["name"])
+        condition_synonyms = condition.get("synonyms", [])
+
+        name_match = query_lower in condition_name.lower()
+        synonym_match = any(query_lower in str(syn).lower() for syn in condition_synonyms)
+
+        if name_match or synonym_match:
+            filtered_conditions.append(condition)
+
+    # Return up to limit results
+    results = filtered_conditions[:limit]
+
+    return {
+        "suggestions": results,
+        "total_results": len(filtered_conditions)
+    }
+
+
+def _extract_medical_terms(query: str) -> str:
+    """
+    Extract medical terms from natural language queries.
+    Converts questions like "tell me about breast cancer symptoms" to "breast cancer"
+    """
+    import re
+
+    # Convert to lowercase for processing
+    lower_query = query.lower().strip()
+
+    # Remove common question words and phrases
+    question_patterns = [
+        r'^(what is|what are|tell me about|information about|describe|explain)\s+',
+        r'\s+(symptoms?|treatment|causes?|diagnosis|prognosis|management)$',
+        r'^(how to|can you|please)\s+',
+        r'\s+(please|thank you)$'
+    ]
+
+    medical_terms = lower_query
+    for pattern in question_patterns:
+        medical_terms = re.sub(pattern, '', medical_terms).strip()
+
+    # Handle specific medical term extractions
+    medical_conditions = [
+        r'(diabetes mellitus|diabetes)',
+        r'(breast cancer|mammary carcinoma)',
+        r'(lung cancer|pulmonary carcinoma)',
+        r'(hypertension|high blood pressure)',
+        r'(heart failure|cardiac failure)',
+        r'(pneumonia)',
+        r'(asthma|bronchial asthma)',
+        r'(depression|major depressive disorder)',
+        r'(anxiety|anxiety disorder)',
+        r'(alzheimer|dementia)',
+        r'(stroke|cerebrovascular accident)',
+        r'(kidney disease|renal disease)',
+        r'(arthritis|osteoarthritis|rheumatoid arthritis)',
+    ]
+
+    # Check for known medical conditions
+    for condition_pattern in medical_conditions:
+        match = re.search(condition_pattern, medical_terms)
+        if match:
+            # Return the most specific term (usually the first in the group)
+            return match.group(1)
+
+    # If no specific condition found, look for any medical terms
+    # Extract potential disease names (usually nouns that could be conditions)
+    medical_keywords = [
+        'cancer', 'carcinoma', 'tumor', 'malignancy', 'neoplasm',
+        'diabetes', 'hypertension', 'hypotension', 'tachycardia', 'bradycardia',
+        'pneumonia', 'bronchitis', 'asthma', 'copd',
+        'arthritis', 'osteoporosis', 'fracture',
+        'infection', 'sepsis', 'fever',
+        'cardiac', 'pulmonary', 'renal', 'hepatic', 'neurologic',
+        'syndrome', 'disease', 'disorder', 'condition',
+        'failure', 'insufficiency', 'dysfunction'
+    ]
+
+    # Look for medical keywords in the query
+    words = medical_terms.split()
+    medical_terms_found = []
+
+    for word in words:
+        # Check if word contains or is a medical keyword
+        for keyword in medical_keywords:
+            if keyword in word.lower() or word.lower() in keyword:
+                medical_terms_found.append(word)
+                break
+
+    # If we found medical terms, use those
+    if medical_terms_found:
+        return ' '.join(medical_terms_found)
+
+    # Remove articles and common words as fallback
+    stop_words = ['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'treatment', 'symptoms', 'causes', 'diagnosis']
+    words = medical_terms.split()
+    filtered_words = [word for word in words if word.lower() not in stop_words and len(word) > 2]
+
+    # If we have filtered words, return them joined
+    if filtered_words:
+        return ' '.join(filtered_words)    # Fallback to original query if nothing else works
+    return query.strip()
 
 
 async def _lookup_disease_live(query: str) -> Dict[str, Any]:
@@ -366,14 +613,7 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
     hits = data.get("hits", [])
     if hits:
         disease_data = hits[0]
-        summary = disease_data.get("summary") or "No summary available"
-
-        return {
-            "summary": summary,
-            "description": f"Medical information for {query}",
-            "symptoms": ["Consult medical literature for symptoms"],
-            "sources": ["MyDisease.info"],
-        }
+        return _format_comprehensive_disease_response(disease_data, query)
     else:
         return {
             "summary": f"No specific information found for '{query}'. Consult medical literature.",
@@ -381,6 +621,281 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
             "symptoms": [],
             "sources": ["MyDisease.info"],
         }
+
+
+def _format_comprehensive_disease_response(disease_data: Dict[str, Any], query: str) -> Dict[str, Any]:
+    """
+    Format comprehensive disease response with structured medical information,
+    citations, and links using template-guided construction.
+    """
+    mondo_data = disease_data.get("mondo", {})
+
+    # Primary disease information
+    primary_name = mondo_data.get("label", query)
+    mondo_id = mondo_data.get("mondo", "")
+    definition = mondo_data.get("definition", "")
+
+    # Extract synonyms and alternative names
+    synonyms = _extract_synonyms(mondo_data)
+
+    # Extract related MONDO terms (ancestors, children, descendants)
+    related_mondos = _extract_related_mondos(mondo_data)
+
+    # Extract and format citations
+    citations = _extract_citations(definition)
+
+    # Extract external resources and links
+    external_links = _extract_external_links(mondo_data)
+
+    # Build structured summary using template
+    summary = _build_disease_summary_template(
+        primary_name=primary_name,
+        mondo_id=mondo_id,
+        definition=definition,
+        synonyms=synonyms,
+        related_mondos=related_mondos,
+        citations=citations,
+        external_links=external_links
+    )
+
+    # Build clinical sources list
+    sources = _build_sources_list(citations, external_links)
+
+    # Enhanced symptoms/clinical guidance
+    clinical_guidance = _build_clinical_guidance(primary_name, mondo_id)
+
+    return {
+        "summary": summary,
+        "description": definition,
+        "symptoms": clinical_guidance,
+        "sources": sources,
+    }
+
+
+def _extract_synonyms(mondo_data: Dict[str, Any]) -> List[str]:
+    """Extract synonyms and alternative names from MONDO data."""
+    synonyms = []
+    if "synonym" in mondo_data:
+        synonym_data = mondo_data["synonym"]
+        if isinstance(synonym_data, dict):
+            # Extract exact synonyms
+            exact_synonyms = synonym_data.get("exact", [])
+            synonyms.extend(exact_synonyms)
+            # Also get related synonyms if available
+            related_synonyms = synonym_data.get("related", [])
+            synonyms.extend(related_synonyms[:3])  # Limit related synonyms
+        elif isinstance(synonym_data, list):
+            synonyms.extend(synonym_data)
+
+    # Remove duplicates and limit to 7 total
+    return list(dict.fromkeys(synonyms))[:7]
+
+
+def _extract_related_mondos(mondo_data: Dict[str, Any]) -> Dict[str, List[str]]:
+    """Extract related MONDO terms with their relationships."""
+    related = {
+        "parents": mondo_data.get("parents", [])[:3],
+        "children": mondo_data.get("children", [])[:5],
+        "ancestors": mondo_data.get("ancestors", [])[:3]
+    }
+
+    # Filter out empty lists
+    return {k: v for k, v in related.items() if v}
+
+
+def _extract_citations(definition: str) -> List[Dict[str, str]]:
+    """Extract citations from definition text."""
+    import re
+
+    citations = []
+
+    # Extract PMID citations
+    pmid_matches = re.findall(r'PMID:(\d+)', definition)
+    for pmid in pmid_matches:
+        citations.append({
+            "type": "PubMed",
+            "id": pmid,
+            "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+            "display": f"PMID:{pmid}"
+        })
+
+    # Extract DOI citations
+    doi_matches = re.findall(r'https://doi\.org/([\w\.\-/]+)', definition)
+    for doi in doi_matches:
+        citations.append({
+            "type": "DOI",
+            "id": doi,
+            "url": f"https://doi.org/{doi}",
+            "display": f"DOI:{doi}"
+        })
+
+    # Extract other URLs
+    url_matches = re.findall(r'https?://[^\s\]]+', definition)
+    for url in url_matches:
+        if 'doi.org' not in url and 'pubmed' not in url:
+            citations.append({
+                "type": "URL",
+                "id": url,
+                "url": url,
+                "display": url
+            })
+
+    return citations
+
+
+def _extract_external_links(mondo_data: Dict[str, Any]) -> List[Dict[str, str]]:
+    """Extract external resource links from MONDO data."""
+    links = []
+
+    # Curated content resources
+    curated_resources = mondo_data.get("curated_content_resource", {})
+    if "https" in curated_resources:
+        for url in curated_resources["https"]:
+            links.append({
+                "type": "Clinical Resource",
+                "url": url,
+                "display": "ClinicalGenome Knowledge Base" if "clinicalgenome" in url else "Medical Resource"
+            })
+
+    # Cross-references
+    xrefs = mondo_data.get("xrefs", {})
+    for db_name, ids in xrefs.items():
+        if db_name == "orphanet":
+            for orphanet_id in ids[:2]:  # Limit to 2
+                links.append({
+                    "type": "Orphanet",
+                    "url": f"https://www.orpha.net/consor/cgi-bin/Disease_Search.php?lng=EN&data_id={orphanet_id}",
+                    "display": f"Orphanet:{orphanet_id}"
+                })
+        elif db_name == "ncit":
+            for ncit_id in ids[:1]:  # Limit to 1
+                links.append({
+                    "type": "NCI Thesaurus",
+                    "url": f"https://ncithesaurus.nci.nih.gov/ncitbrowser/ConceptReport.jsp?dictionary=NCI_Thesaurus&code={ncit_id}",
+                    "display": f"NCIT:{ncit_id}"
+                })
+
+    return links
+
+
+def _build_disease_summary_template(
+    primary_name: str,
+    mondo_id: str,
+    definition: str,
+    synonyms: List[str],
+    related_mondos: Dict[str, List[str]],
+    citations: List[Dict[str, str]],
+    external_links: List[Dict[str, str]]
+) -> str:
+    """Build comprehensive disease summary using structured template."""
+
+    template_parts = []
+
+    # Header with primary disease name and classification
+    template_parts.append(f"# {primary_name}")
+    if mondo_id:
+        template_parts.append(f"**Medical Classification:** {mondo_id}")
+
+    # Clinical definition
+    if definition:
+        # Clean up definition (remove citation markers for cleaner display)
+        clean_definition = definition
+        import re
+        clean_definition = re.sub(r'\s*\[https?://[^\]]+\]', '', clean_definition)
+        clean_definition = re.sub(r'\s*PMID:\d+', '', clean_definition)
+        template_parts.append(f"\n**Clinical Definition:**\n{clean_definition}")
+
+    # Synonyms and alternative terms
+    if synonyms:
+        synonym_text = ", ".join(synonyms[:5])
+        template_parts.append(f"\n**Also Known As:** {synonym_text}")
+
+    # Related conditions (disease hierarchy)
+    if related_mondos:
+        template_parts.append("\n**Related Conditions:**")
+        if "parents" in related_mondos:
+            template_parts.append(f"• *Broader categories:* {', '.join(related_mondos['parents'])}")
+        if "children" in related_mondos:
+            template_parts.append(f"• *Subtypes:* {', '.join(related_mondos['children'][:3])}")
+
+    # Citations and evidence
+    if citations:
+        template_parts.append("\n**Evidence & Citations:**")
+        for citation in citations[:3]:  # Limit to 3 most relevant
+            if citation["type"] == "PubMed":
+                template_parts.append(f"• [{citation['display']}]({citation['url']}) *(opens in new tab)*")
+            elif citation["type"] == "DOI":
+                template_parts.append(f"• [Research Article: {citation['display']}]({citation['url']}) *(opens in new tab)*")
+            else:
+                template_parts.append(f"• [Reference]({citation['url']}) *(opens in new tab)*")
+
+    # External medical resources
+    if external_links:
+        template_parts.append("\n**Additional Resources:**")
+        for link in external_links[:3]:  # Limit to 3 most relevant
+            template_parts.append(f"• [{link['display']}]({link['url']}) *(opens in new tab)*")
+
+    return "\n".join(template_parts)
+
+
+def _build_sources_list(citations: List[Dict[str, str]], external_links: List[Dict[str, str]]) -> List[str]:
+    """Build comprehensive sources list for API response."""
+    sources = ["MyDisease.info API", "MONDO Disease Ontology"]
+
+    # Add citation sources
+    for citation in citations:
+        if citation["type"] == "PubMed":
+            sources.append("PubMed Literature Database")
+        elif citation["type"] == "DOI":
+            sources.append("Peer-Reviewed Medical Literature")
+
+    # Add external resource sources
+    for link in external_links:
+        if link["type"] not in [s.replace(" Database", "").replace(" Knowledge Base", "") for s in sources]:
+            sources.append(f"{link['type']} Database")
+
+    # Remove duplicates while preserving order
+    return list(dict.fromkeys(sources))
+
+
+def _build_clinical_guidance(primary_name: str, mondo_id: str) -> List[str]:
+    """Build clinical guidance based on disease type and classification."""
+    guidance = [
+        f"Review clinical guidelines for {primary_name.lower()} diagnosis and management",
+        "Consult evidence-based protocols for patient assessment",
+        "Follow institutional policies for condition-specific care"
+    ]
+
+    # Add specific guidance based on disease characteristics
+    if any(keyword in primary_name.lower() for keyword in ['diabetes', 'glucose', 'insulin']):
+        guidance.extend([
+            "Monitor blood glucose levels per protocol",
+            "Assess for diabetic complications (neuropathy, nephropathy, retinopathy)",
+            "Review medication adherence and dietary compliance"
+        ])
+    elif any(keyword in primary_name.lower() for keyword in ['hypertension', 'blood pressure']):
+        guidance.extend([
+            "Monitor blood pressure trends and medication effectiveness",
+            "Assess for target organ damage",
+            "Evaluate cardiovascular risk factors"
+        ])
+    elif any(keyword in primary_name.lower() for keyword in ['cardiac', 'heart', 'cardiovascular']):
+        guidance.extend([
+            "Monitor cardiac rhythm and hemodynamic status",
+            "Assess functional capacity and exercise tolerance",
+            "Review cardiac medications and contraindications"
+        ])
+    else:
+        guidance.extend([
+            "Conduct systematic symptom assessment",
+            "Document functional impact and quality of life measures",
+            "Coordinate with interdisciplinary healthcare team"
+        ])
+
+    if mondo_id:
+        guidance.append(f"Reference MONDO classification {mondo_id} for additional clinical details")
+
+    return guidance
 
 
 def _create_disease_stub_response(query: str, banner: str) -> Dict[str, Any]:

@@ -142,6 +142,17 @@ except ImportError:
 
 # Load and register routers following Router Organization pattern
 ROUTERS_LOADED = {}
+
+# Add admin router first (from local routers directory)
+try:
+    from routers.admin import router as admin_router
+    api_router.include_router(admin_router)
+    ROUTERS_LOADED["admin"] = True
+    logger.info("Admin router registered successfully")
+except Exception as e:
+    logger.warning(f"Failed to register admin router: {e}")
+    ROUTERS_LOADED["admin"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 
@@ -186,10 +197,22 @@ except Exception as e:
     ROUTERS_LOADED = {}
 
 
-# Root endpoint
-@app.get("/")
-async def root():
-    """Root endpoint with application information."""
+# Serve main healthcare interface at root
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_main_interface(request: Request):
+    """Serve the main AI Nurse Florence healthcare interface from static files."""
+    try:
+        with open("static/index.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        # Fallback to template if static file doesn't exist
+        return templates.TemplateResponse("index.html", {"request": request})
+
+# API status endpoint
+@app.get("/status")
+async def api_status():
+    """API status endpoint with application information."""
     return {
         "service": "ai-nurse-florence",
         "version": getattr(settings, "APP_VERSION", "2.1.0"),
@@ -271,15 +294,97 @@ os.makedirs("templates", exist_ok=True)
 
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 templates = Jinja2Templates(directory="templates")
 
 
-# Serve main healthcare interface
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def serve_frontend(request: Request):
-    """Serve the main AI Nurse Florence healthcare interface."""
-    return templates.TemplateResponse("index.html", {"request": request})
+# Wizard-specific routes
+@app.get("/wizards", response_class=HTMLResponse, include_in_schema=False)
+async def serve_wizard_hub():
+    """Serve the wizard hub interface."""
+    try:
+        with open("frontend/src/pages/wizard-hub.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html><head><title>Clinical Wizards</title></head>
+        <body>
+            <h1>Clinical Wizards</h1>
+            <ul>
+                <li><a href="/wizards/sbar">SBAR Report Generator</a></li>
+                <li><a href="/wizards/treatment-plan">Treatment Plan Wizard</a></li>
+                <li><a href="/wizards/patient-education">Patient Education</a></li>
+            </ul>
+        </body></html>
+        """, status_code=200)
 
+@app.get("/wizards/{wizard_name}", response_class=HTMLResponse, include_in_schema=False)
+async def serve_wizard_interface(wizard_name: str):
+    """Serve individual wizard interfaces."""
+    wizard_map = {
+        "sbar": "sbar-wizard.html",
+        "treatment-plan": "treatment-plan-wizard.html",
+        "patient-education": "patient-education-wizard.html"
+    }
+
+    if wizard_name in wizard_map:
+        try:
+            with open(f"frontend/src/pages/{wizard_map[wizard_name]}", "r", encoding="utf-8") as f:
+                html_content = f.read()
+            return HTMLResponse(content=html_content)
+        except FileNotFoundError:
+            # Fallback to generic wizard template
+            return HTMLResponse(content=f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>{wizard_name.title()} Wizard</title>
+                <link rel="stylesheet" href="/frontend/src/styles/wizard.css">
+            </head>
+            <body>
+                <div id="wizard-app"></div>
+                <script type="module">
+                    import SbarWizard from '/frontend/src/components/wizards/SbarWizard.js';
+                    new SbarWizard('wizard-app');
+                </script>
+            </body>
+            </html>
+            """)
+
+    return HTMLResponse(content="<h1>Wizard not found</h1>", status_code=404)
+
+# Additional static HTML routes
+@app.get("/chat", response_class=HTMLResponse, include_in_schema=False)
+async def serve_chat():
+    """Serve the chat interface."""
+    try:
+        with open("static/chat.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Chat interface not found</h1>", status_code=404)
+
+@app.get("/clinical-workspace", response_class=HTMLResponse, include_in_schema=False)
+async def serve_clinical_workspace():
+    """Serve the clinical workspace interface."""
+    try:
+        with open("static/clinical-workspace.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Clinical workspace not found</h1>", status_code=404)
+
+@app.get("/clinical-assessment", response_class=HTMLResponse, include_in_schema=False)
+async def serve_clinical_assessment():
+    """Serve the clinical assessment optimizer."""
+    try:
+        with open("static/clinical-assessment-optimizer.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Clinical assessment not found</h1>", status_code=404)
 
 # Health dashboard redirect
 @app.get("/dashboard", include_in_schema=False)

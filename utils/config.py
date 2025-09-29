@@ -7,7 +7,8 @@ import os
 from functools import lru_cache
 from typing import List, Optional
 
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -84,6 +85,19 @@ class Settings(BaseSettings):
         """Parse CORS origins from comma-separated string."""
         origins = [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",")]
         return [origin for origin in origins if origin]
+
+    def has_openai(self) -> bool:
+        """Check if OpenAI API key is configured."""
+        return bool(self.OPENAI_API_KEY)
+
+    def has_redis(self) -> bool:
+        """Check if Redis URL is configured."""
+        return bool(self.REDIS_URL)
+
+    @property
+    def EDUCATIONAL_BANNER(self) -> str:
+        """Educational disclaimer banner."""
+        return "Educational use only - not medical advice. No PHI stored."
 
 
 @lru_cache()

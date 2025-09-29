@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>AI Nurse Florence - Clinical Decision Support</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Florence">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -32,17 +41,28 @@
                         <p class="text-sm text-blue-600 font-medium">Clinical Decision Support System</p>
                     </div>
                 </div>
-                
+
                 <!-- Header Controls -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <!-- Mobile Menu Button -->
+                    <button id="mobileMenuToggle" class="md:hidden p-2 text-gray-600 hover:text-blue-600 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+
+                    <!-- Live Data Status Indicator -->
+                    <div id="liveDataIndicator" class="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer" onclick="window.app && window.app.toggleLiveData()" title="Click to toggle data mode">
+                        <div class="w-3 h-3 rounded-full pulse-dot"></div>
+                        <span class="text-sm font-medium">Loading...</span>
+                    </div>
+
                     <!-- Connection Status -->
-                    <div id="connectionStatus" class="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
+                    <div id="connectionStatus" class="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
                         <div class="w-3 h-3 bg-gray-400 rounded-full pulse-dot"></div>
                         <span class="text-sm text-gray-600 font-medium">Connecting...</span>
                     </div>
-                    
+
                     <!-- Language Selector -->
-                    <div class="flex items-center space-x-2">
+                    <div class="hidden sm:flex items-center space-x-2">
                         <i class="fas fa-globe text-gray-500"></i>
                         <select id="languageSelector" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
                             <option value="en">English</option>
@@ -53,6 +73,11 @@
                             <option value="pt">Português</option>
                         </select>
                     </div>
+
+                    <!-- Mobile Language Icon -->
+                    <button class="sm:hidden p-2 text-gray-600 hover:text-blue-600 focus:outline-none">
+                        <i class="fas fa-globe text-lg"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -60,14 +85,14 @@
 
     <!-- Main Container -->
     <div class="max-w-6xl mx-auto px-4 py-6">
-        
+
         <!-- Welcome Banner (shown initially) -->
         <div id="welcomeBanner" class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg text-white p-8 mb-6">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
                     <h2 class="text-2xl font-bold mb-2">Welcome to Your Clinical Assistant</h2>
                     <p class="text-blue-100 mb-4">Get evidence-based support for patient care, medication guidance, and clinical protocols</p>
-                    
+
                     <!-- Compliance Notice -->
                     <div class="bg-blue-500/30 border border-blue-400/30 rounded-lg p-4 mb-4">
                         <div class="flex items-start space-x-3">
@@ -78,13 +103,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <button onclick="startClinicalChat()" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center space-x-2">
                         <i class="fas fa-comments"></i>
                         <span>Start Clinical Chat</span>
                     </button>
                 </div>
-                
+
                 <div class="hidden lg:block">
                     <div class="text-right">
                         <div class="bg-white/10 rounded-lg p-4 backdrop-blur">
@@ -143,6 +168,372 @@
             </div>
         </div>
 
+        <!-- Guided Lookup Button -->
+        <div class="text-center mb-8">
+            <button
+                onclick="showGuidedLookup()"
+                class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            >
+                <i class="fas fa-search-plus mr-3"></i>
+                Guided Medical Condition Lookup
+                <p class="text-sm text-purple-100 mt-1">Structured search with validated medical terms</p>
+            </button>
+        </div>
+
+        <!-- Guided Medical Lookup Form (hidden initially) -->
+        <div id="guidedLookupForm" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-purple-600 p-3 rounded-lg">
+                        <i class="fas fa-search-plus text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Guided Medical Condition Lookup</h3>
+                        <p class="text-sm text-gray-600">Structured search with validated medical terms</p>
+                    </div>
+                </div>
+                <button onclick="showDashboard()" class="text-gray-600 hover:text-purple-600 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Close
+                </button>
+            </div>
+
+            <!-- Search Form -->
+            <div class="space-y-6">
+                <!-- Condition Search with Autocomplete -->
+                <div class="relative">
+                    <label for="conditionSearch" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Medical Condition <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="conditionSearch"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Start typing a medical condition (e.g., diabetes, hypertension, pneumonia)..."
+                            autocomplete="off"
+                            onkeyup="handleConditionSearch(this.value)"
+                            onkeydown="handleSearchKeyDown(event)"
+                        />
+                        <div class="absolute right-3 top-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Autocomplete Dropdown -->
+                    <div id="autocompleteDropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        <!-- Suggestions will be populated here -->
+                    </div>
+
+                    <!-- Validation Message -->
+                    <div id="conditionValidation" class="hidden mt-2">
+                        <p class="text-sm text-red-600">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            Please select a valid medical condition from the suggestions
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Selected Condition Display -->
+                <div id="selectedConditionDisplay" class="hidden">
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-purple-800 mb-1" id="selectedConditionName"></h4>
+                                <p class="text-sm text-purple-600 mb-2" id="selectedConditionId"></p>
+                                <p class="text-sm text-gray-700" id="selectedConditionDescription"></p>
+                                <div id="selectedConditionSynonyms" class="mt-2 hidden">
+                                    <p class="text-xs font-medium text-purple-700 mb-1">Also known as:</p>
+                                    <div class="flex flex-wrap gap-1" id="synonymsList"></div>
+                                </div>
+                            </div>
+                            <button onclick="clearSelectedCondition()" class="text-purple-600 hover:text-purple-800 ml-4">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Information Type Selection -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        What information do you need? <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <label class="relative">
+                            <input type="checkbox" name="infoType" value="general" class="sr-only peer" checked>
+                            <div class="p-3 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-colors">
+                                <i class="fas fa-info-circle text-purple-600 mb-2"></i>
+                                <p class="font-medium text-sm">General Information</p>
+                                <p class="text-xs text-gray-600">Basic definition and overview</p>
+                            </div>
+                        </label>
+                        <label class="relative">
+                            <input type="checkbox" name="infoType" value="symptoms" class="sr-only peer">
+                            <div class="p-3 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-colors">
+                                <i class="fas fa-stethoscope text-purple-600 mb-2"></i>
+                                <p class="font-medium text-sm">Clinical Symptoms</p>
+                                <p class="text-xs text-gray-600">Signs and diagnostic criteria</p>
+                            </div>
+                        </label>
+                        <label class="relative">
+                            <input type="checkbox" name="infoType" value="nursing" class="sr-only peer">
+                            <div class="p-3 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-colors">
+                                <i class="fas fa-user-nurse text-purple-600 mb-2"></i>
+                                <p class="font-medium text-sm">Nursing Care</p>
+                                <p class="text-xs text-gray-600">Interventions and monitoring</p>
+                            </div>
+                        </label>
+                        <label class="relative">
+                            <input type="checkbox" name="infoType" value="medications" class="sr-only peer">
+                            <div class="p-3 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-colors">
+                                <i class="fas fa-pills text-purple-600 mb-2"></i>
+                                <p class="font-medium text-sm">Medications</p>
+                                <p class="text-xs text-gray-600">Treatment options and protocols</p>
+                            </div>
+                        </label>
+                        <label class="relative">
+                            <input type="checkbox" name="infoType" value="research" class="sr-only peer">
+                            <div class="p-3 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-colors">
+                                <i class="fas fa-microscope text-purple-600 mb-2"></i>
+                                <p class="font-medium text-sm">Research & Evidence</p>
+                                <p class="text-xs text-gray-600">Latest studies and guidelines</p>
+                            </div>
+                        </label>
+                        <label class="relative">
+                            <input type="checkbox" name="infoType" value="genetics" class="sr-only peer">
+                            <div class="p-3 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-colors">
+                                <i class="fas fa-dna text-purple-600 mb-2"></i>
+                                <p class="font-medium text-sm">Genetic Information</p>
+                                <p class="text-xs text-gray-600">Hereditary factors and genes</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600">
+                        <i class="fas fa-shield-alt text-green-600 mr-1"></i>
+                        All information is educational and evidence-based
+                    </p>
+                    <div class="flex space-x-3">
+                        <button
+                            id="submitGuidedLookup"
+                            onclick="submitGuidedLookup()"
+                            disabled
+                            class="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors"
+                        >
+                            <i class="fas fa-search mr-2"></i>Get Medical Information
+                        </button>
+                        <button
+                            id="createWizardButton"
+                            onclick="showWizardOptions()"
+                            disabled
+                            class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors"
+                        >
+                            <i class="fas fa-magic mr-2"></i>Create Nursing Workflow
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizard Options Interface (hidden initially) -->
+        <div id="wizardOptionsInterface" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-indigo-600 p-3 rounded-lg">
+                        <i class="fas fa-magic text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">Nursing Documentation Wizards</h3>
+                        <p class="text-sm text-gray-600">Guided workflows for condition-specific nursing documentation</p>
+                    </div>
+                </div>
+                <button onclick="showGuidedLookup()" class="text-gray-600 hover:text-indigo-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Search
+                </button>
+            </div>
+
+            <!-- Selected Condition Summary -->
+            <div id="wizardConditionSummary" class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start space-x-3">
+                    <div class="bg-indigo-600 p-2 rounded-lg">
+                        <i class="fas fa-heartbeat text-white"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-semibold text-indigo-800 mb-1" id="wizardConditionName"></h4>
+                        <p class="text-sm text-indigo-600" id="wizardConditionId"></p>
+                        <p class="text-sm text-gray-700 mt-2" id="wizardConditionDescription"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wizard Type Selection -->
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <!-- SBAR Report Wizard -->
+                <div class="wizard-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors" onclick="createWizard('sbar')">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-red-100 p-3 rounded-lg">
+                            <i class="fas fa-comments text-red-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 mb-1">SBAR Report</h4>
+                            <p class="text-sm text-gray-600 mb-2">Structured communication for providers</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="far fa-clock mr-1"></i>
+                                <span>5-10 minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Care Plan Wizard -->
+                <div class="wizard-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors" onclick="createWizard('care_plan')">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <i class="fas fa-clipboard-list text-green-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 mb-1">Nursing Care Plan</h4>
+                            <p class="text-sm text-gray-600 mb-2">Comprehensive care planning with goals</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="far fa-clock mr-1"></i>
+                                <span>15-20 minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Focused Assessment Wizard -->
+                <div class="wizard-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors" onclick="createWizard('nursing_assessment')">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <i class="fas fa-stethoscope text-blue-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 mb-1">Focused Assessment</h4>
+                            <p class="text-sm text-gray-600 mb-2">Condition-specific assessment guide</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="far fa-clock mr-1"></i>
+                                <span>10-15 minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Handoff Communication Wizard -->
+                <div class="wizard-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors" onclick="createWizard('handoff')">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <i class="fas fa-exchange-alt text-purple-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 mb-1">Handoff Communication</h4>
+                            <p class="text-sm text-gray-600 mb-2">Shift-to-shift structured report</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="far fa-clock mr-1"></i>
+                                <span>3-5 minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medication Reconciliation Wizard -->
+                <div class="wizard-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors" onclick="createWizard('medication_reconciliation')">
+                    <div class="flex items-start space-x-3">
+                        <div class="bg-orange-100 p-3 rounded-lg">
+                            <i class="fas fa-pills text-orange-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800 mb-1">Medication Reconciliation</h4>
+                            <p class="text-sm text-gray-600 mb-2">Systematic medication review</p>
+                            <div class="flex items-center text-xs text-gray-500">
+                                <i class="far fa-clock mr-1"></i>
+                                <span>8-12 minutes</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Benefits Section -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h5 class="font-semibold text-gray-800 mb-2">
+                    <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                    Wizard Benefits
+                </h5>
+                <div class="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
+                    <div class="flex items-start space-x-2">
+                        <i class="fas fa-check text-green-600 mt-1"></i>
+                        <span>Pre-loaded with condition-specific nursing interventions</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <i class="fas fa-check text-green-600 mt-1"></i>
+                        <span>Evidence-based templates and guidance</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <i class="fas fa-check text-green-600 mt-1"></i>
+                        <span>Step-by-step documentation support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizard Progress Interface (hidden initially) -->
+        <div id="wizardProgressInterface" class="hidden bg-white rounded-xl shadow-lg mb-8">
+            <!-- Wizard Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-white/20 p-3 rounded-lg">
+                            <i id="wizardTypeIcon" class="fas fa-magic"></i>
+                        </div>
+                        <div>
+                            <h3 id="wizardTypeName" class="text-xl font-bold">Nursing Wizard</h3>
+                            <p id="wizardConditionInfo" class="text-indigo-100 text-sm">Condition-based workflow</p>
+                        </div>
+                    </div>
+                    <button onclick="showWizardOptions()" class="text-white/80 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mt-4">
+                    <div class="flex items-center justify-between text-sm mb-2">
+                        <span>Progress</span>
+                        <span id="wizardProgressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-white/20 rounded-full h-2">
+                        <div id="wizardProgressBar" class="bg-white h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wizard Content Area -->
+            <div class="p-6">
+                <div id="wizardStepContent">
+                    <!-- Dynamic step content will be loaded here -->
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <button id="wizardPrevBtn" onclick="previousWizardStep()" disabled class="px-4 py-2 text-gray-600 disabled:text-gray-400 hover:text-indigo-600 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Previous Step
+                    </button>
+                    <div class="flex space-x-3">
+                        <button id="wizardNextBtn" onclick="nextWizardStep()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                            Next Step<i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                        <button id="wizardCompleteBtn" onclick="completeWizard()" class="hidden bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-check mr-2"></i>Complete Wizard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Chat Interface (hidden initially) -->
         <div id="chatInterface" class="hidden">
             <!-- Chat Header -->
@@ -173,7 +564,7 @@
                 <div id="chatMessages" class="h-96 overflow-y-auto p-6 space-y-4">
                     <!-- Messages will be inserted here -->
                 </div>
-                
+
                 <!-- Typing Indicator -->
                 <div id="typingIndicator" class="hidden px-6 py-2 border-t border-gray-100">
                     <div class="flex items-center space-x-2 text-gray-500">
@@ -186,27 +577,27 @@
                     </div>
                 </div>
             </div>
-                
+
             <!-- Input Area -->
             <div class="bg-white rounded-b-xl shadow-lg p-6 border-t border-gray-200">
                 <div class="flex space-x-4">
-                    <input 
-                        type="text" 
-                        id="messageInput" 
+                    <input
+                        type="text"
+                        id="messageInput"
                         placeholder="Ask about patient assessment, medications, procedures, or clinical protocols..."
                         class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                         onkeypress="handleKeyPress(event)"
                     >
-                    <button 
+                    <button
                         id="sendButton"
-                        onclick="sendMessage()" 
+                        onclick="sendMessage()"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 font-medium"
                     >
                         <i class="fas fa-paper-plane"></i>
                         <span>Send</span>
                     </button>
                 </div>
-                
+
                 <!-- Clinical Quick Actions -->
                 <div class="mt-4">
                     <p class="text-xs text-gray-500 mb-2 font-medium">QUICK CLINICAL ACTIONS:</p>
@@ -263,6 +654,34 @@
             setupEventListeners();
         });
 
+        // Test API connections
+        async function testAPIConnection() {
+            console.log('Testing API connections...');
+
+            // Test health endpoint
+            try {
+                const healthResponse = await fetch(`${API_BASE_URL}/health`);
+                const healthData = await healthResponse.json();
+                console.log('✅ Health API:', healthData);
+
+                // Test admin endpoint
+                const adminResponse = await fetch(`${API_BASE_URL}/admin/live-data-status`);
+                const adminData = await adminResponse.json();
+                console.log('✅ Admin API:', adminData);
+
+                // Test disease endpoint with sample query
+                const diseaseResponse = await fetch(`${API_BASE_URL}/disease/lookup?q=diabetes`);
+                const diseaseData = await diseaseResponse.json();
+                console.log('✅ Disease API:', diseaseData);
+
+                alert('API test completed - check browser console for detailed results');
+
+            } catch (error) {
+                console.error('❌ API test failed:', error);
+                alert(`API test failed: ${error.message}`);
+            }
+        }
+
         // Setup event listeners
         function setupEventListeners() {
             document.getElementById('languageSelector').addEventListener('change', function(e) {
@@ -276,15 +695,26 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/health`);
                 const data = await response.json();
-                
-                if (data.status === 'operational') {
+
+                console.log('Health check response:', data); // Debug log
+
+                if (data.status === 'healthy' || data.status === 'operational') {
                     updateConnectionStatus('connected', 'System Online');
+
+                    // Check if live services are enabled
+                    const liveServices = data.configuration?.live_services || false;
+                    if (liveServices) {
+                        addSystemMessage('🔴 Live data mode enabled - connecting to real medical APIs');
+                    } else {
+                        addSystemMessage('🟡 Demo mode - using sample data for fast responses');
+                    }
                 } else {
-                    throw new Error('API not operational');
+                    throw new Error(`API status: ${data.status}`);
                 }
             } catch (error) {
                 console.error('API connection failed:', error);
-                updateConnectionStatus('error', 'System Offline');
+                updateConnectionStatus('error', `System Offline: ${error.message}`);
+                addSystemMessage('⚠️ Unable to connect to backend services. Please check server status.');
             }
         }
 
@@ -293,10 +723,10 @@
             const statusEl = document.getElementById('connectionStatus');
             const dot = statusEl.querySelector('.pulse-dot');
             const span = statusEl.querySelector('span');
-            
+
             dot.className = 'w-3 h-3 rounded-full pulse-dot';
             statusEl.className = 'flex items-center space-x-2 px-3 py-2 rounded-lg';
-            
+
             switch (status) {
                 case 'connected':
                     dot.classList.add('bg-green-500');
@@ -323,10 +753,10 @@
             document.getElementById('welcomeBanner').classList.add('hidden');
             document.getElementById('quickAccessSection').classList.add('hidden');
             document.getElementById('chatInterface').classList.remove('hidden');
-            
+
             // Add clinical welcome message
             addAssistantMessage("Hello! I'm AI Nurse Florence, your clinical decision support assistant. I'm here to help with evidence-based nursing guidance, patient assessment protocols, medication safety, and clinical decision-making.\n\nI can assist with:\n• Patient assessment and monitoring\n• Medication calculations and safety\n• Clinical protocols and procedures\n• Documentation and communication\n• Emergency response protocols\n\nWhat clinical question can I help you with today?");
-            
+
             // Focus the input
             document.getElementById('messageInput').focus();
         }
@@ -336,6 +766,9 @@
             document.getElementById('welcomeBanner').classList.remove('hidden');
             document.getElementById('quickAccessSection').classList.remove('hidden');
             document.getElementById('chatInterface').classList.add('hidden');
+            document.getElementById('guidedLookupForm').classList.add('hidden');
+            document.getElementById('wizardOptionsInterface').classList.add('hidden');
+            document.getElementById('wizardProgressInterface').classList.add('hidden');
             clearChatMessages();
         }
 
@@ -350,12 +783,45 @@
             document.getElementById('chatMessages').innerHTML = '';
         }
 
+        // Convert markdown to HTML for medical content
+        function convertMarkdownToHtml(markdown) {
+            let html = markdown;
+
+            // Convert headers (# ## ###)
+            html = html.replace(/^# (.+)/gm, '<h3 class="text-lg font-bold text-blue-800 mb-2">$1</h3>');
+            html = html.replace(/^## (.+)/gm, '<h4 class="text-md font-semibold text-blue-700 mb-2">$1</h4>');
+            html = html.replace(/^### (.+)/gm, '<h5 class="text-sm font-semibold text-blue-600 mb-1">$1</h5>');
+
+            // Convert bold text
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-gray-800">$1</strong>');
+
+            // Convert italic text
+            html = html.replace(/\*([^*]+)\*/g, '<em class="italic text-gray-700">$1</em>');
+
+            // Convert links with target="_blank" for external resources
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline font-medium">$1 <i class="fas fa-external-link-alt text-xs ml-1"></i></a>');
+
+            // Convert bullet points
+            html = html.replace(/^• (.+)/gm, '<div class="flex items-start mb-1"><span class="text-blue-600 mr-2">•</span><span>$1</span></div>');
+
+            // Convert line breaks
+            html = html.replace(/\n/g, '<br>');
+
+            return html;
+        }
+
         // Add assistant message
         function addAssistantMessage(content) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message flex justify-start mb-6';
-            
+
+            // Check if content looks like markdown (contains # or **) for enhanced formatting
+            const isMarkdown = content.includes('#') || content.includes('**') || content.includes('[') && content.includes('](');
+            const formattedContent = isMarkdown ? convertMarkdownToHtml(content) : content;
+            const contentClass = isMarkdown ? 'text-sm text-gray-800' : 'text-sm text-gray-800 whitespace-pre-line';
+
             messageDiv.innerHTML = `
                 <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 max-w-4xl">
                     <div class="flex items-center mb-2">
@@ -365,10 +831,10 @@
                         <span class="text-xs text-blue-700 font-medium">AI Nurse Florence</span>
                         <span class="text-xs text-gray-500 ml-2">Clinical Assistant</span>
                     </div>
-                    <div class="text-sm text-gray-800 whitespace-pre-line">${content}</div>
+                    <div class="${contentClass}">${formattedContent}</div>
                 </div>
             `;
-            
+
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -378,7 +844,7 @@
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message flex justify-end mb-6';
-            
+
             messageDiv.innerHTML = `
                 <div class="bg-blue-600 text-white rounded-lg px-4 py-3 max-w-md">
                     <div class="flex items-center justify-end mb-2">
@@ -390,7 +856,7 @@
                     <p class="text-sm">${content}</p>
                 </div>
             `;
-            
+
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -398,15 +864,20 @@
         // Add system message
         function addSystemMessage(content) {
             const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) {
+                console.log('System message (chat not open):', content);
+                return; // Chat interface not open yet
+            }
+
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message flex justify-center mb-4';
-            
+
             messageDiv.innerHTML = `
                 <div class="bg-gray-100 text-gray-700 rounded-full px-4 py-2 text-xs">
                     <i class="fas fa-info-circle mr-1"></i>${content}
                 </div>
             `;
-            
+
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -438,44 +909,33 @@
             const input = document.getElementById('messageInput');
             const sendButton = document.getElementById('sendButton');
             const message = input.value.trim();
-            
+
             if (!message) return;
-            
+
             // Add user message
             addUserMessage(message);
-            
+
             // Clear input and disable send button
             input.value = '';
             sendButton.disabled = true;
             sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Analyzing...</span>';
-            
+
             // Show typing indicator
             document.getElementById('typingIndicator').classList.remove('hidden');
-            
-            try {
-                // Try to make real API call first
-                const response = await fetch(`${API_BASE_URL}/chat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        language: currentLanguage
-                    })
-                });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    addAssistantMessage(data.response || data.message || 'Response received');
+            try {
+                // Determine the best API endpoint based on the message content
+                let apiResponse = await getClinicalResponse(message);
+
+                if (apiResponse.success) {
+                    addAssistantMessage(apiResponse.content);
                 } else {
-                    throw new Error('API call failed');
+                    throw new Error(apiResponse.error || 'API call failed');
                 }
-                
+
             } catch (error) {
-                console.warn('API call failed, using simulated response:', error);
-                // Fall back to simulated response for testing
-                await simulateClinicalApiCall(message);
+                console.error('Clinical API call failed:', error);
+                addAssistantMessage(`I'm experiencing connection issues right now. Please check that the backend services are running and try again.\n\nError: ${error.message}`);
             } finally {
                 // Re-enable send button and hide typing indicator
                 sendButton.disabled = false;
@@ -485,33 +945,504 @@
             }
         }
 
-        // Simulate clinical API call with nursing-specific responses (for testing when API is not ready)
-        async function simulateClinicalApiCall(message) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    let response = generateClinicalResponse(message);
-                    addAssistantMessage(response);
-                    resolve();
-                }, 1500);
-            });
-        }
-
-        // Generate clinical response for testing
-        function generateClinicalResponse(message) {
+        // Get clinical response from appropriate API endpoints
+        async function getClinicalResponse(message) {
             const lowerMessage = message.toLowerCase();
-            
-            if (lowerMessage.includes('sepsis')) {
-                return "**Sepsis Recognition & Response Protocol:**\n\n**qSOFA Screening (≥2 points suggests sepsis):**\n• Altered mental status (GCS <15)\n• Systolic BP ≤100 mmHg\n• Respiratory rate ≥22/min\n\n**SIRS Criteria (≥2 suggests infection):**\n• Temperature >38°C or <36°C\n• Heart rate >90 bpm\n• Respiratory rate >20/min\n• WBC >12,000 or <4,000\n\n**Immediate Nursing Actions:**\n1. Obtain blood cultures before antibiotics\n2. Start broad-spectrum antibiotics within 1 hour\n3. Administer 30ml/kg crystalloid if hypotensive\n4. Monitor lactate levels\n5. Ensure adequate oxygenation\n6. Frequent vital signs and neurological checks\n\n**Critical Alert:** Activate sepsis protocol and notify physician immediately for any positive screening.";
-                        
-            } else if (lowerMessage.includes('medication') || lowerMessage.includes('dosage')) {
-                return "**Medication Safety & Calculation Protocol:**\n\n**Five Rights of Medication Administration:**\n• Right Patient (2 identifiers)\n• Right Drug (generic & brand names)\n• Right Dose (calculate and verify)\n• Right Route (PO, IV, IM, SQ, etc.)\n• Right Time (scheduled vs PRN)\n\n**Dosage Calculation Formula:**\n**Dose = (Desired dose × Volume) ÷ Stock strength**\n\nExample: Order 400mg, Stock 200mg/5ml\n= (400 × 5) ÷ 200 = 10ml\n\n**Critical Safety Checks:**\n1. Verify allergies and contraindications\n2. Check drug interactions\n3. Assess patient's current condition\n4. Double-check high-risk medications\n5. Monitor for adverse effects\n6. Document immediately after administration\n\n**High-Alert Medications:** Always use independent double-checks for insulin, heparin, chemotherapy, and vasoactive drugs.";
-                        
-            } else {
-                return `I understand you're asking about "${message}". As your AI healthcare assistant, I'd be happy to provide evidence-based information. Could you provide more specific details about what aspect you'd like me to focus on? This helps me give you the most relevant and useful information for your nursing practice.\n\n**Note:** This is a testing prototype. The API will provide more comprehensive responses when fully connected.`;
+
+            try {
+                // Route to appropriate API based on message content
+                if (lowerMessage.includes('disease') || lowerMessage.includes('condition') ||
+                    lowerMessage.includes('diagnosis') || lowerMessage.includes('symptom')) {
+                    return await queryDiseaseAPI(message);
+
+                } else if (lowerMessage.includes('research') || lowerMessage.includes('study') ||
+                          lowerMessage.includes('evidence') || lowerMessage.includes('literature')) {
+                    return await queryPubMedAPI(message);
+
+                } else if (lowerMessage.includes('trial') || lowerMessage.includes('clinical trial')) {
+                    return await queryClinicalTrialsAPI(message);
+
+                } else if (lowerMessage.includes('intervention') || lowerMessage.includes('treatment') ||
+                          lowerMessage.includes('care plan') || lowerMessage.includes('nursing')) {
+                    return await queryInterventionsAPI(message);
+
+                } else {
+                    // General clinical decision support
+                    return await queryGeneralClinicalAPI(message);
+                }
+
+            } catch (error) {
+                console.error('API routing error:', error);
+                return {
+                    success: false,
+                    error: error.message
+                };
             }
         }
 
-        // Get language name
+        // Disease information lookup
+        async function queryDiseaseAPI(query) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/disease/lookup?q=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Disease API response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Disease API error response:', errorText);
+                    throw new Error(`Disease API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                console.log('Disease API response data:', data);
+
+                // Handle the actual response structure from your API
+                if (data) {
+                    let content = `**Disease Information: ${query}**\n\n`;
+
+                    if (data.banner) {
+                        content = data.banner + '\n\n' + content;
+                    }
+
+                    if (data.query) {
+                        content += `**Search Query:** ${data.query}\n\n`;
+                    }
+
+                    if (data.data) {
+                        content += `**Information:** ${data.data}\n\n`;
+                    } else if (data.summary) {
+                        content += `**Summary:** ${data.summary}\n\n`;
+                    } else if (typeof data === 'string') {
+                        content += data + '\n\n';
+                    }
+
+                    if (data.references && data.references.length > 0) {
+                        content += `**References:**\n`;
+                        data.references.forEach(ref => {
+                            content += `• ${ref.title || ref.source || ref}\n`;
+                        });
+                        content += '\n';
+                    }
+
+                    content += `\n⚠️ Educational information only - always consult healthcare providers for clinical decisions`;
+
+                    return { success: true, content };
+                } else {
+                    throw new Error('No data received from disease API');
+                }
+
+            } catch (error) {
+                console.error('Disease API error:', error);
+                return {
+                    success: false,
+                    error: `Disease lookup failed: ${error.message}. Check that live data services are properly configured.`
+                };
+            }
+        }
+
+        // PubMed literature search
+        async function queryPubMedAPI(query) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/literature/search?q=${encodeURIComponent(query)}&max_results=5`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Literature API response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Literature API error response:', errorText);
+                    throw new Error(`Literature API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Literature API response data:', data);
+
+                if (data) {
+                    let content = `**Recent Literature: ${query}**\n\n`;
+
+                    if (data.banner) {
+                        content = data.banner + '\n\n' + content;
+                    }
+
+                    if (data.articles && data.articles.length > 0) {
+                        data.articles.slice(0, 3).forEach((article, index) => {
+                            content += `**${index + 1}. ${article.title || 'Untitled'}**\n`;
+                            if (article.authors) content += `*Authors:* ${article.authors}\n`;
+                            if (article.journal) content += `*Journal:* ${article.journal}\n`;
+                            if (article.abstract) content += `*Abstract:* ${article.abstract.substring(0, 200)}...\n`;
+                            if (article.pmid) content += `*PubMed ID:* ${article.pmid}\n`;
+                            content += '\n';
+                        });
+                    } else if (data.data) {
+                        content += `**Literature Results:** ${data.data}\n\n`;
+                    } else if (typeof data === 'string') {
+                        content += data + '\n\n';
+                    }
+
+                    if (data.references && data.references.length > 0) {
+                        content += `**Additional References:**\n`;
+                        data.references.forEach(ref => {
+                            content += `• ${ref.title || ref.source || ref}\n`;
+                        });
+                        content += '\n';
+                    }
+
+                    content += `\n⚠️ For educational purposes - verify current clinical guidelines`;
+
+                    return { success: true, content };
+                } else {
+                    throw new Error('No literature data received');
+                }
+
+            } catch (error) {
+                console.error('Literature API error:', error);
+                return {
+                    success: false,
+                    error: `Literature search failed: ${error.message}. Check PubMed API configuration.`
+                };
+            }
+        }
+
+        // Clinical trials search
+        async function queryClinicalTrialsAPI(query) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/clinical-trials/search?condition=${encodeURIComponent(query)}&max_studies=3`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Clinical trials API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.studies) {
+                    let content = `**Clinical Trials: ${data.data.condition}**\n\n`;
+
+                    data.data.studies.forEach((study, index) => {
+                        content += `**${index + 1}. ${study.title}**\n`;
+                        if (study.status) content += `*Status:* ${study.status}\n`;
+                        if (study.phase) content += `*Phase:* ${study.phase}\n`;
+                        if (study.sponsor) content += `*Sponsor:* ${study.sponsor}\n`;
+                        if (study.summary) content += `*Summary:* ${study.summary}\n`;
+                        if (study.url) content += `[View Details](${study.url})\n\n`;
+                    });
+
+                    content += `\n${data.data.banner || "⚠️ Clinical trial information for reference only"}`;
+
+                    return { success: true, content };
+                } else {
+                    throw new Error('No clinical trials found');
+                }
+
+            } catch (error) {
+                console.error('Clinical trials API error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Nursing interventions
+        async function queryInterventionsAPI(query) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/clinical-decision-support/interventions?patient_condition=${encodeURIComponent(query)}&severity=moderate&care_setting=med-surg`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Interventions API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const result = data.data;
+                    let content = `**Clinical Interventions: ${result.condition || query}**\n\n`;
+
+                    if (result.interventions && result.interventions.length > 0) {
+                        content += `**Recommended Interventions:**\n`;
+                        result.interventions.forEach(intervention => {
+                            content += `• **${intervention.category || 'Clinical'}:** ${intervention.description || intervention.intervention}\n`;
+                            if (intervention.rationale) {
+                                content += `  *Rationale:* ${intervention.rationale}\n`;
+                            }
+                        });
+                        content += '\n';
+                    }
+
+                    if (result.assessments && result.assessments.length > 0) {
+                        content += `**Assessment Guidelines:**\n`;
+                        result.assessments.forEach(assessment => {
+                            content += `• ${assessment}\n`;
+                        });
+                        content += '\n';
+                    }
+
+                    content += `\n${result.banner || "⚠️ Evidence-based nursing guidelines - adapt to patient needs"}`;
+
+                    return { success: true, content };
+                } else {
+                    throw new Error('No interventions found');
+                }
+
+            } catch (error) {
+                console.error('Interventions API error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // General clinical decision support
+        async function queryGeneralClinicalAPI(query) {
+            try {
+                // First try the backend API
+                const response = await fetch(`${API_BASE_URL}/clinical-decision-support/interventions?patient_condition=${encodeURIComponent(query)}&severity=moderate&care_setting=med-surg`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.patient_condition && data.nursing_interventions && data.nursing_interventions.length > 0) {
+                        // Format the backend response properly
+                        let content = `**Clinical Decision Support: ${data.patient_condition}**\n\n`;
+
+                        if (data.nursing_interventions) {
+                            content += `**Priority Nursing Interventions:**\n`;
+                            data.nursing_interventions.forEach(intervention => {
+                                content += `• ${intervention}\n`;
+                            });
+                            content += '\n';
+                        }
+
+                        if (data.monitoring_parameters) {
+                            content += `**Monitoring Parameters:**\n`;
+                            data.monitoring_parameters.forEach(param => {
+                                content += `• ${param}\n`;
+                            });
+                            content += '\n';
+                        }
+
+                        if (data.care_priority) {
+                            content += `**Care Priority:** ${data.care_priority}\n\n`;
+                        }
+
+                        content += `${data.banner || "⚠️ Clinical decision support - use professional judgment"}`;
+                        return { success: true, content };
+                    }
+                }
+
+                // If backend returns generic response, provide enhanced clinical content
+                throw new Error('Using enhanced clinical guidance');
+
+            } catch (error) {
+                console.log('Using enhanced clinical guidance for:', query);
+
+                // Provide comprehensive clinical guidance based on query content
+                const lowerQuery = query.toLowerCase();
+                let content = '';
+
+                if (lowerQuery.includes('sepsis') || lowerQuery.includes('infection') || lowerQuery.includes('fever')) {
+                    content = `**Sepsis Recognition & Management**
+
+**qSOFA Criteria (≥2 suggests organ dysfunction):**
+• Altered mental status (GCS <15)
+• Systolic BP ≤100 mmHg
+• Respiratory rate ≥22/min
+
+**SIRS Criteria (≥2 suggests systemic inflammatory response):**
+• Temperature >38°C or <36°C
+• Heart rate >90 bpm
+• Respiratory rate >20/min or PaCO2 <32 mmHg
+• WBC >12,000 or <4,000 cells/mm³
+
+**Immediate Nursing Actions:**
+• Obtain blood cultures before antibiotics (within 45 minutes)
+• Administer broad-spectrum antibiotics within 1 hour
+• Initiate 30ml/kg crystalloid fluid resuscitation if hypotensive
+• Monitor lactate levels (goal <2 mmol/L)
+• Continuous monitoring: BP, HR, RR, SpO2, temperature
+• Assess mental status and urine output hourly
+• Notify physician immediately for positive screening
+
+**Critical Monitoring:**
+• Blood pressure and mean arterial pressure
+• Central venous pressure if indicated
+• Serum lactate levels
+• Complete blood count and comprehensive metabolic panel
+• Procalcitonin and C-reactive protein`;
+
+                } else if (lowerQuery.includes('medication') || lowerQuery.includes('drug') || lowerQuery.includes('dosage') || lowerQuery.includes('calculation')) {
+                    content = `**Medication Safety & Dosage Calculations**
+
+**Five Rights of Medication Administration:**
+• **Right Patient** - Verify two patient identifiers
+• **Right Drug** - Check generic and brand names
+• **Right Dose** - Calculate and double-check dosages
+• **Right Route** - Confirm administration method (PO, IV, IM, SQ, topical)
+• **Right Time** - Follow prescribed schedule and timing
+
+**Essential Dosage Calculations:**
+• **Basic Formula:** (Desired dose × Vehicle) ÷ Dose on hand = Amount to give
+• **Body weight:** mg/kg × patient weight in kg = total dose
+• **IV flow rate:** (Volume × Drop factor) ÷ Time in minutes = gtts/min
+• **Units per hour:** Total units ÷ Total hours = units/hr
+
+**High-Alert Medications - Independent Double-Check Required:**
+• Insulin and diabetic medications
+• Anticoagulants (heparin, warfarin)
+• Chemotherapy agents
+• Opioids and controlled substances
+• Vasoactive drips (dopamine, epinephrine)
+
+**Safety Checks:**
+• Verify allergies and contraindications
+• Check for drug-drug interactions
+• Assess patient's current condition and vital signs
+• Monitor for adverse reactions post-administration
+• Document immediately after giving medication`;
+
+                } else if (lowerQuery.includes('pain') || lowerQuery.includes('assessment')) {
+                    content = `**Comprehensive Pain Assessment & Management**
+
+**Pain Assessment Tools:**
+• **Numeric Rating Scale (0-10)** - For alert, oriented adults
+• **Wong-Baker FACES** - Pediatric patients and cognitive impairment
+• **FLACC Scale** - Non-verbal patients (Face, Legs, Activity, Cry, Consolability)
+• **Critical-Care Pain Observation Tool (CPOT)** - ICU sedated patients
+
+**Comprehensive Pain Assessment (PQRST Method):**
+• **P**rovocation/Palliation - What makes it better/worse?
+• **Q**uality - Sharp, dull, burning, cramping, throbbing?
+• **R**egion/Radiation - Location and spread pattern
+• **S**everity - Rate 0-10, functional impact
+• **T**iming - Onset, duration, frequency, pattern
+
+**Non-Pharmacological Interventions:**
+• Positioning and proper body alignment
+• Heat and cold therapy (per protocol)
+• Relaxation techniques and deep breathing
+• Distraction methods (music, TV, conversation)
+• Massage and gentle mobilization
+• Environmental modifications (lighting, noise)
+
+**Pharmacological Considerations:**
+• Multimodal approach combining different drug classes
+• Around-the-clock dosing for chronic pain
+• Breakthrough medication for incident pain
+• Monitor for side effects and effectiveness
+• Assess for tolerance, dependence, and diversion risk`;
+
+                } else if (lowerQuery.includes('wound') || lowerQuery.includes('dressing')) {
+                    content = `**Wound Assessment & Dressing Selection**
+
+**Comprehensive Wound Assessment:**
+• **Location and size** - Measure length, width, depth
+• **Tissue type** - Granulation, slough, eschar, necrotic
+• **Exudate** - Amount, color, consistency, odor
+• **Wound edges** - Approximated, undermining, rolled
+• **Periwound skin** - Erythema, maceration, induration
+• **Signs of infection** - Increased pain, purulent drainage, fever
+
+**Dressing Selection Principles:**
+• **Dry wounds** - Hydrogels, hydrocolloids to add moisture
+• **Heavily exudating** - Foams, alginates, hydrofibers to absorb
+• **Infected wounds** - Silver-impregnated or antimicrobial dressings
+• **Shallow wounds** - Hydrocolloids, transparent films
+• **Deep wounds** - Cavity fillers, foams, negative pressure therapy
+
+**Wound Care Protocol:**
+• Use sterile technique for acute/surgical wounds
+• Cleanse with normal saline or appropriate wound cleanser
+• Remove devitalized tissue if within scope of practice
+• Apply appropriate dressing based on wound characteristics
+• Secure dressing without compromising circulation
+• Document wound measurements and characteristics
+• Monitor for signs of healing or deterioration`;
+
+                } else if (lowerQuery.includes('fall') || lowerQuery.includes('safety')) {
+                    content = `**Fall Risk Assessment & Prevention**
+
+**Fall Risk Factors:**
+• **Intrinsic** - Age >65, cognitive impairment, weakness, vision/hearing deficits
+• **Medications** - Sedatives, hypnotics, antihypertensives, diuretics
+• **Medical conditions** - Orthostatic hypotension, diabetes, neurological disorders
+• **Environmental** - Poor lighting, wet floors, obstacles, inappropriate footwear
+
+**Morse Fall Scale Assessment:**
+• History of falling (25 points)
+• Secondary diagnosis (15 points)
+• Ambulatory aid usage (15-30 points)
+• IV/Heparin lock (20 points)
+• Gait/transferring ability (10-20 points)
+• Mental status (15 points)
+**Total >45 = High risk**
+
+**Prevention Interventions:**
+• Bed in lowest position with brakes locked
+• Call light within reach, educate on use
+• Non-slip socks or appropriate footwear
+• Clear pathways, adequate lighting
+• Toileting schedule every 2 hours while awake
+• Encourage family involvement in monitoring
+• Consider bed/chair alarms for high-risk patients
+• Physical therapy consultation for strength/balance
+• Medication review for fall-risk drugs`;
+
+                } else {
+                    // Generic clinical guidance
+                    content = `**Clinical Decision Support Framework**
+
+**Systematic Clinical Assessment:**
+• **A**irway - Patent, protected, adequate ventilation
+• **B**reathing - Rate, effort, oxygen saturation, breath sounds
+• **C**irculation - Pulse, blood pressure, perfusion, bleeding
+• **D**isability - Neurological function, GCS, pupil response
+• **E**xposure - Temperature, skin condition, additional injuries
+
+**Nursing Process Application:**
+• **Assessment** - Collect comprehensive subjective and objective data
+• **Diagnosis** - Identify actual and potential nursing problems
+• **Planning** - Set measurable, achievable goals with timeline
+• **Implementation** - Execute interventions based on evidence and protocols
+• **Evaluation** - Monitor outcomes and modify plan as needed
+
+**Critical Thinking Guidelines:**
+• Use clinical judgment based on education and experience
+• Follow evidence-based practice guidelines
+• Consider patient preferences and cultural factors
+• Collaborate with interdisciplinary healthcare team
+• Document thoroughly and communicate changes promptly
+• Recognize limits and escalate when appropriate
+
+**When to Escalate Care:**
+• Significant change in vital signs or mental status
+• New or worsening symptoms beyond normal parameters
+• Patient/family concerns about condition changes
+• Inability to manage symptoms with current interventions`;
+                }
+
+                content += `\n\n⚠️ **Clinical Decision Support** - Educational guidance for healthcare professionals. Always follow facility protocols and use professional judgment.`;
+
+                return { success: true, content };
+            }
+        }        // Get language name
         function getLanguageName(code) {
             const languages = {
                 'en': 'English',
@@ -522,6 +1453,800 @@
                 'pt': 'Portuguese'
             };
             return languages[code] || 'English';
+        }
+
+        // =====================================
+        // GUIDED MEDICAL LOOKUP FUNCTIONALITY
+        // =====================================
+
+        let selectedCondition = null;
+        let autocompleteTimeout = null;
+        let currentSuggestions = [];
+        let selectedSuggestionIndex = -1;
+
+        // Show guided lookup form
+        function showGuidedLookup() {
+            document.getElementById('welcomeBanner').classList.add('hidden');
+            document.getElementById('quickAccessSection').classList.add('hidden');
+            document.getElementById('chatInterface').classList.add('hidden');
+            document.getElementById('guidedLookupForm').classList.remove('hidden');
+
+            // Focus on the search input
+            setTimeout(() => {
+                document.getElementById('conditionSearch').focus();
+            }, 100);
+        }
+
+        // Handle condition search with debouncing
+        function handleConditionSearch(value) {
+            const trimmedValue = value.trim();
+
+            // Clear previous timeout
+            if (autocompleteTimeout) {
+                clearTimeout(autocompleteTimeout);
+            }
+
+            // Hide dropdown if input is too short
+            if (trimmedValue.length < 2) {
+                hideAutocompleteDropdown();
+                return;
+            }
+
+            // Debounce the search
+            autocompleteTimeout = setTimeout(() => {
+                searchConditions(trimmedValue);
+            }, 300);
+        }
+
+        // Search for medical conditions
+        async function searchConditions(query) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/disease/search?q=${encodeURIComponent(query)}&limit=10`);
+
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentSuggestions = data.suggestions;
+                selectedSuggestionIndex = -1;
+                showAutocompleteSuggestions(data.suggestions);
+
+            } catch (error) {
+                console.error('Condition search failed:', error);
+                hideAutocompleteDropdown();
+            }
+        }
+
+        // Show autocomplete suggestions
+        function showAutocompleteSuggestions(suggestions) {
+            const dropdown = document.getElementById('autocompleteDropdown');
+
+            if (suggestions.length === 0) {
+                hideAutocompleteDropdown();
+                return;
+            }
+
+            const suggestionsHTML = suggestions.map((suggestion, index) => {
+                const synonymsText = suggestion.synonyms && suggestion.synonyms.length > 0
+                    ? ` (${suggestion.synonyms.slice(0, 2).join(', ')})`
+                    : '';
+
+                return `
+                    <div class="suggestion-item p-3 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                         data-index="${index}"
+                         onclick="selectCondition(${index})">
+                        <div class="font-medium text-gray-800">${suggestion.name}</div>
+                        <div class="text-xs text-purple-600 mt-1">${suggestion.mondo_id}</div>
+                        ${suggestion.description ? `<div class="text-sm text-gray-600 mt-1">${suggestion.description}</div>` : ''}
+                        ${synonymsText ? `<div class="text-xs text-gray-500 mt-1">${synonymsText}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            dropdown.innerHTML = suggestionsHTML;
+            dropdown.classList.remove('hidden');
+        }
+
+        // Hide autocomplete dropdown
+        function hideAutocompleteDropdown() {
+            document.getElementById('autocompleteDropdown').classList.add('hidden');
+            currentSuggestions = [];
+            selectedSuggestionIndex = -1;
+        }
+
+        // Handle keyboard navigation in search
+        function handleSearchKeyDown(event) {
+            const dropdown = document.getElementById('autocompleteDropdown');
+
+            if (dropdown.classList.contains('hidden')) {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
+                    updateSelectedSuggestion();
+                    break;
+
+                case 'ArrowUp':
+                    event.preventDefault();
+                    selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                    updateSelectedSuggestion();
+                    break;
+
+                case 'Enter':
+                    event.preventDefault();
+                    if (selectedSuggestionIndex >= 0) {
+                        selectCondition(selectedSuggestionIndex);
+                    }
+                    break;
+
+                case 'Escape':
+                    hideAutocompleteDropdown();
+                    break;
+            }
+        }
+
+        // Update visual selection in dropdown
+        function updateSelectedSuggestion() {
+            const items = document.querySelectorAll('.suggestion-item');
+            items.forEach((item, index) => {
+                if (index === selectedSuggestionIndex) {
+                    item.classList.add('bg-purple-100');
+                } else {
+                    item.classList.remove('bg-purple-100');
+                }
+            });
+        }
+
+        // Select a condition from suggestions
+        function selectCondition(index) {
+            if (index < 0 || index >= currentSuggestions.length) {
+                return;
+            }
+
+            selectedCondition = currentSuggestions[index];
+
+            // Update the input
+            document.getElementById('conditionSearch').value = selectedCondition.name;
+
+            // Show selected condition display
+            displaySelectedCondition(selectedCondition);
+
+            // Hide dropdown and validation message
+            hideAutocompleteDropdown();
+            document.getElementById('conditionValidation').classList.add('hidden');
+
+            // Enable submit buttons
+            document.getElementById('submitGuidedLookup').disabled = false;
+            document.getElementById('createWizardButton').disabled = false;
+        }
+
+        // Display selected condition
+        function displaySelectedCondition(condition) {
+            document.getElementById('selectedConditionName').textContent = condition.name;
+            document.getElementById('selectedConditionId').textContent = condition.mondo_id;
+            document.getElementById('selectedConditionDescription').textContent =
+                condition.description || 'Medical condition from MONDO disease ontology';
+
+            // Handle synonyms
+            const synonymsContainer = document.getElementById('selectedConditionSynonyms');
+            const synonymsList = document.getElementById('synonymsList');
+
+            if (condition.synonyms && condition.synonyms.length > 0) {
+                synonymsList.innerHTML = condition.synonyms.map(synonym =>
+                    `<span class="bg-purple-200 text-purple-800 px-2 py-1 rounded-full text-xs">${synonym}</span>`
+                ).join('');
+                synonymsContainer.classList.remove('hidden');
+            } else {
+                synonymsContainer.classList.add('hidden');
+            }
+
+            document.getElementById('selectedConditionDisplay').classList.remove('hidden');
+        }
+
+        // Clear selected condition
+        function clearSelectedCondition() {
+            selectedCondition = null;
+            document.getElementById('conditionSearch').value = '';
+            document.getElementById('selectedConditionDisplay').classList.add('hidden');
+            document.getElementById('submitGuidedLookup').disabled = true;
+            document.getElementById('createWizardButton').disabled = true;
+            document.getElementById('conditionSearch').focus();
+        }
+
+        // Submit guided lookup
+        async function submitGuidedLookup() {
+            if (!selectedCondition) {
+                document.getElementById('conditionValidation').classList.remove('hidden');
+                return;
+            }
+
+            // Get selected information types
+            const checkedBoxes = document.querySelectorAll('input[name="infoType"]:checked');
+            const selectedTypes = Array.from(checkedBoxes).map(box => box.value);
+
+            if (selectedTypes.length === 0) {
+                alert('Please select at least one type of information you need.');
+                return;
+            }
+
+            // Build query based on selections
+            let query = selectedCondition.name;
+
+            // Add context based on selected information types
+            const typeContexts = {
+                'general': 'general information and overview',
+                'symptoms': 'clinical symptoms and diagnostic criteria',
+                'nursing': 'nursing care interventions and monitoring',
+                'medications': 'treatment medications and protocols',
+                'research': 'latest research and evidence-based guidelines',
+                'genetics': 'genetic information and hereditary factors'
+            };
+
+            const contexts = selectedTypes.map(type => typeContexts[type]).join(', ');
+            query += ` - please provide ${contexts}`;
+
+            // Switch to chat interface and send the structured query
+            showChatInterface();
+
+            // Add the query to chat
+            document.getElementById('messageInput').value = query;
+            await sendMessage();
+        }
+
+        // Show chat interface (modified version)
+        function showChatInterface() {
+            document.getElementById('welcomeBanner').classList.add('hidden');
+            document.getElementById('quickAccessSection').classList.add('hidden');
+            document.getElementById('guidedLookupForm').classList.add('hidden');
+            document.getElementById('wizardOptionsInterface').classList.add('hidden');
+            document.getElementById('wizardProgressInterface').classList.add('hidden');
+            document.getElementById('chatInterface').classList.remove('hidden');
+
+            // Add system message about structured lookup
+            if (selectedCondition) {
+                addSystemMessage(`Structured lookup for: ${selectedCondition.name} (${selectedCondition.mondo_id})`);
+            }
+        }
+
+        // NURSING WIZARD FUNCTIONALITY
+        // ============================
+
+        let currentWizard = null;
+        let wizardSteps = [];
+        let currentStepIndex = 0;
+        let wizardData = {};
+
+        // Show wizard options
+        function showWizardOptions() {
+            if (!selectedCondition) {
+                alert('Please select a medical condition first');
+                return;
+            }
+
+            // Hide other interfaces
+            document.getElementById('welcomeBanner').classList.add('hidden');
+            document.getElementById('quickAccessSection').classList.add('hidden');
+            document.getElementById('guidedLookupForm').classList.add('hidden');
+            document.getElementById('chatInterface').classList.add('hidden');
+            document.getElementById('wizardProgressInterface').classList.add('hidden');
+            document.getElementById('wizardOptionsInterface').classList.remove('hidden');
+
+            // Update condition summary
+            document.getElementById('wizardConditionName').textContent = selectedCondition.name;
+            document.getElementById('wizardConditionId').textContent = selectedCondition.mondo_id;
+            document.getElementById('wizardConditionDescription').textContent =
+                selectedCondition.description || 'Medical condition from MONDO disease ontology';
+        }
+
+        // Create a wizard
+        async function createWizard(wizardType) {
+            if (!selectedCondition) {
+                alert('No condition selected');
+                return;
+            }
+
+            try {
+                // Show loading state
+                const wizardOptions = document.querySelectorAll('.wizard-option');
+                wizardOptions.forEach(option => {
+                    option.style.pointerEvents = 'none';
+                    option.style.opacity = '0.6';
+                });
+
+                // Create wizard via API
+                const response = await fetch(`${API_BASE_URL}/wizards/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        condition_name: selectedCondition.name,
+                        condition_id: selectedCondition.mondo_id,
+                        wizard_type: wizardType,
+                        user_context: {
+                            selected_info_types: getSelectedInfoTypes(),
+                            interface_source: 'guided_lookup'
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to create wizard: ${response.status}`);
+                }
+
+                const wizardResponse = await response.json();
+                currentWizard = wizardResponse;
+
+                // Get wizard steps from the response
+                wizardSteps = wizardResponse.data.next_steps || [];
+                currentStepIndex = 0;
+                wizardData = {};
+
+                // Show wizard progress interface
+                showWizardProgress();
+
+            } catch (error) {
+                console.error('Failed to create wizard:', error);
+                alert(`Failed to create wizard: ${error.message}`);
+
+                // Reset loading state
+                const wizardOptions = document.querySelectorAll('.wizard-option');
+                wizardOptions.forEach(option => {
+                    option.style.pointerEvents = 'auto';
+                    option.style.opacity = '1';
+                });
+            }
+        }
+
+        // Show wizard progress interface
+        function showWizardProgress() {
+            if (!currentWizard) return;
+
+            // Hide other interfaces
+            document.getElementById('welcomeBanner').classList.add('hidden');
+            document.getElementById('quickAccessSection').classList.add('hidden');
+            document.getElementById('guidedLookupForm').classList.add('hidden');
+            document.getElementById('chatInterface').classList.add('hidden');
+            document.getElementById('wizardOptionsInterface').classList.add('hidden');
+            document.getElementById('wizardProgressInterface').classList.remove('hidden');
+
+            // Update wizard header
+            const wizardTypeNames = {
+                'sbar': 'SBAR Report',
+                'care_plan': 'Nursing Care Plan',
+                'nursing_assessment': 'Focused Assessment',
+                'handoff': 'Handoff Communication',
+                'medication_reconciliation': 'Medication Reconciliation'
+            };
+
+            const wizardTypeIcons = {
+                'sbar': 'fas fa-comments',
+                'care_plan': 'fas fa-clipboard-list',
+                'nursing_assessment': 'fas fa-stethoscope',
+                'handoff': 'fas fa-exchange-alt',
+                'medication_reconciliation': 'fas fa-pills'
+            };
+
+            document.getElementById('wizardTypeName').textContent = wizardTypeNames[currentWizard.wizard_type] || 'Nursing Wizard';
+            document.getElementById('wizardTypeIcon').className = wizardTypeIcons[currentWizard.wizard_type] || 'fas fa-magic';
+            document.getElementById('wizardConditionInfo').textContent = `${selectedCondition.name} (${selectedCondition.mondo_id})`;
+
+            // Load first step
+            loadWizardStep(0);
+        }
+
+        // Load a specific wizard step
+        async function loadWizardStep(stepIndex) {
+            if (stepIndex < 0 || stepIndex >= wizardSteps.length) {
+                return;
+            }
+
+            currentStepIndex = stepIndex;
+            const step = wizardSteps[stepIndex];
+
+            try {
+                // Get step template and guidance
+                const response = await fetch(`${API_BASE_URL}/wizards/${currentWizard.wizard_id}/template?step=${step.title.toLowerCase()}`);
+
+                let stepContent = '';
+
+                if (response.ok) {
+                    const templateData = await response.json();
+                    stepContent = generateStepContent(step, templateData.data);
+                } else {
+                    // Fallback content if template API fails
+                    stepContent = generateFallbackStepContent(step);
+                }
+
+                // Update step content
+                document.getElementById('wizardStepContent').innerHTML = stepContent;
+
+                // Update progress
+                updateWizardProgress();
+
+                // Update navigation buttons
+                updateNavigationButtons();
+
+            } catch (error) {
+                console.error('Failed to load wizard step:', error);
+                // Show fallback content
+                document.getElementById('wizardStepContent').innerHTML = generateFallbackStepContent(step);
+                updateWizardProgress();
+                updateNavigationButtons();
+            }
+        }
+
+        // Generate step content with template data
+        function generateStepContent(step, templateData) {
+            const stepTitle = step.title;
+            const stepDescription = step.description;
+
+            let content = `
+                <div class="mb-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                            ${currentStepIndex + 1}
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-800">${stepTitle}</h4>
+                            <p class="text-sm text-gray-600">${stepDescription}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add step-specific content based on wizard type and step
+            if (templateData && templateData.step_guidance) {
+                const guidance = templateData.step_guidance;
+
+                // Add prompts
+                if (guidance.prompts && guidance.prompts.length > 0) {
+                    content += `
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <h5 class="font-semibold text-blue-800 mb-2">
+                                <i class="fas fa-question-circle mr-2"></i>Key Questions
+                            </h5>
+                            <ul class="space-y-1 text-sm text-blue-700">
+                                ${guidance.prompts.map(prompt => `<li><i class="fas fa-chevron-right mr-2 text-blue-500"></i>${prompt}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                // Add tips
+                if (guidance.tips && guidance.tips.length > 0) {
+                    content += `
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                            <h5 class="font-semibold text-green-800 mb-2">
+                                <i class="fas fa-lightbulb mr-2"></i>Best Practice Tips
+                            </h5>
+                            <ul class="space-y-1 text-sm text-green-700">
+                                ${guidance.tips.map(tip => `<li><i class="fas fa-check mr-2 text-green-500"></i>${tip}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                // Add condition-specific guidance
+                if (guidance.condition_specific) {
+                    const conditionGuidance = guidance.condition_specific;
+
+                    if (conditionGuidance.assessment_priorities) {
+                        content += `
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                                <h5 class="font-semibold text-yellow-800 mb-3">
+                                    <i class="fas fa-star mr-2"></i>Condition-Specific Priorities for ${selectedCondition.name}
+                                </h5>
+                                <div class="space-y-2">
+                                    ${conditionGuidance.assessment_priorities.map(priority => `
+                                        <div class="text-sm">
+                                            <div class="font-medium text-yellow-800">${priority.system} System</div>
+                                            <div class="text-yellow-700">Focus: ${priority.focus}</div>
+                                            <div class="text-yellow-600 text-xs">Frequency: ${priority.frequency}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // Add text input area for step data
+            content += `
+                <div class="mb-4">
+                    <label for="stepInput_${currentStepIndex}" class="block text-sm font-medium text-gray-700 mb-2">
+                        ${stepTitle} Content <span class="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        id="stepInput_${currentStepIndex}"
+                        rows="6"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-vertical"
+                        placeholder="Enter your ${stepTitle.toLowerCase()} information here..."
+                    ></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Use the guidance above to structure your response</p>
+                </div>
+            `;
+
+            return content;
+        }
+
+        // Generate fallback step content
+        function generateFallbackStepContent(step) {
+            return `
+                <div class="mb-6">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                            ${currentStepIndex + 1}
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-800">${step.title}</h4>
+                            <p class="text-sm text-gray-600">${step.description}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="stepInput_${currentStepIndex}" class="block text-sm font-medium text-gray-700 mb-2">
+                        ${step.title} Content <span class="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        id="stepInput_${currentStepIndex}"
+                        rows="6"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-vertical"
+                        placeholder="Enter your ${step.title.toLowerCase()} information here..."
+                    ></textarea>
+                </div>
+            `;
+        }
+
+        // Update wizard progress
+        function updateWizardProgress() {
+            const progress = ((currentStepIndex) / wizardSteps.length) * 100;
+            document.getElementById('wizardProgressPercent').textContent = `${Math.round(progress)}%`;
+            document.getElementById('wizardProgressBar').style.width = `${progress}%`;
+        }
+
+        // Update navigation buttons
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('wizardPrevBtn');
+            const nextBtn = document.getElementById('wizardNextBtn');
+            const completeBtn = document.getElementById('wizardCompleteBtn');
+
+            // Previous button
+            prevBtn.disabled = currentStepIndex === 0;
+
+            // Next/Complete buttons
+            if (currentStepIndex === wizardSteps.length - 1) {
+                nextBtn.classList.add('hidden');
+                completeBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                completeBtn.classList.add('hidden');
+            }
+        }
+
+        // Navigate to previous step
+        function previousWizardStep() {
+            if (currentStepIndex > 0) {
+                loadWizardStep(currentStepIndex - 1);
+            }
+        }
+
+        // Navigate to next step
+        async function nextWizardStep() {
+            // Save current step data
+            const stepInput = document.getElementById(`stepInput_${currentStepIndex}`);
+            if (!stepInput || !stepInput.value.trim()) {
+                alert('Please complete the current step before proceeding');
+                return;
+            }
+
+            // Save step data
+            const stepData = {
+                step_title: wizardSteps[currentStepIndex].title,
+                content: stepInput.value.trim(),
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                // Send step progress to API
+                const response = await fetch(`${API_BASE_URL}/wizards/${currentWizard.wizard_id}/progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        step_completed: wizardSteps[currentStepIndex].title.toLowerCase(),
+                        step_data: stepData
+                    })
+                });
+
+                if (!response.ok) {
+                    console.warn('Failed to save step progress:', response.status);
+                    // Continue anyway - we can still complete locally
+                }
+
+                // Store locally
+                wizardData[`step_${currentStepIndex}`] = stepData;
+
+                // Move to next step
+                if (currentStepIndex < wizardSteps.length - 1) {
+                    loadWizardStep(currentStepIndex + 1);
+                }
+
+            } catch (error) {
+                console.error('Failed to save step progress:', error);
+                // Store locally and continue
+                wizardData[`step_${currentStepIndex}`] = stepData;
+
+                if (currentStepIndex < wizardSteps.length - 1) {
+                    loadWizardStep(currentStepIndex + 1);
+                }
+            }
+        }
+
+        // Complete wizard
+        async function completeWizard() {
+            // Save final step data
+            const stepInput = document.getElementById(`stepInput_${currentStepIndex}`);
+            if (!stepInput || !stepInput.value.trim()) {
+                alert('Please complete the final step before finishing');
+                return;
+            }
+
+            const finalStepData = {
+                step_title: wizardSteps[currentStepIndex].title,
+                content: stepInput.value.trim(),
+                timestamp: new Date().toISOString()
+            };
+
+            wizardData[`step_${currentStepIndex}`] = finalStepData;
+
+            try {
+                // Complete wizard via API
+                const response = await fetch(`${API_BASE_URL}/wizards/${currentWizard.wizard_id}/complete`, {
+                    method: 'POST'
+                });
+
+                let completionData = null;
+                if (response.ok) {
+                    completionData = await response.json();
+                }
+
+                // Show completion interface
+                showWizardCompletion(completionData);
+
+            } catch (error) {
+                console.error('Failed to complete wizard:', error);
+                // Show local completion
+                showWizardCompletion(null);
+            }
+        }
+
+        // Show wizard completion
+        function showWizardCompletion(completionData) {
+            // Generate final document
+            let finalDocument = '';
+
+            if (completionData && completionData.final_document) {
+                finalDocument = generateFinalDocument(completionData.final_document);
+            } else {
+                finalDocument = generateLocalFinalDocument();
+            }
+
+            // Switch to chat interface and show the completed document
+            showChatInterface();
+
+            // Add completion message
+            addSystemMessage(`Completed ${currentWizard.wizard_type.replace('_', ' ')} wizard for ${selectedCondition.name}`);
+            addAssistantMessage(finalDocument);
+        }
+
+        // Generate final document from API response
+        function generateFinalDocument(documentData) {
+            const wizardTypeNames = {
+                'sbar': 'SBAR Report',
+                'care_plan': 'Nursing Care Plan',
+                'nursing_assessment': 'Focused Assessment',
+                'handoff': 'Handoff Communication',
+                'medication_reconciliation': 'Medication Reconciliation'
+            };
+
+            let content = `## ${documentData.document_type || wizardTypeNames[currentWizard.wizard_type]}\n\n`;
+            content += `**Condition:** ${documentData.condition}\n\n`;
+
+            if (documentData.template) {
+                content += `### Generated Document\n\n`;
+                content += documentData.template + '\n\n';
+            }
+
+            if (documentData.nursing_interventions && documentData.nursing_interventions.length > 0) {
+                content += `### Nursing Interventions\n\n`;
+                documentData.nursing_interventions.forEach(intervention => {
+                    content += `- **${intervention.intervention}** (${intervention.priority} priority)\n`;
+                    content += `  - Frequency: ${intervention.frequency}\n`;
+                    content += `  - Rationale: ${intervention.rationale}\n\n`;
+                });
+            }
+
+            if (documentData.banner) {
+                content += `\n---\n*${documentData.banner}*`;
+            }
+
+            return content;
+        }
+
+        // Generate local final document
+        function generateLocalFinalDocument() {
+            const wizardTypeNames = {
+                'sbar': 'SBAR Report',
+                'care_plan': 'Nursing Care Plan',
+                'nursing_assessment': 'Focused Assessment',
+                'handoff': 'Handoff Communication',
+                'medication_reconciliation': 'Medication Reconciliation'
+            };
+
+            let content = `## ${wizardTypeNames[currentWizard.wizard_type]}\n\n`;
+            content += `**Condition:** ${selectedCondition.name} (${selectedCondition.mondo_id})\n\n`;
+
+            // Add each completed step
+            wizardSteps.forEach((step, index) => {
+                const stepData = wizardData[`step_${index}`];
+                if (stepData) {
+                    content += `### ${step.title}\n\n`;
+                    content += stepData.content + '\n\n';
+                }
+            });
+
+            content += '\n---\n*Educational and reference purposes only. Always follow your institution\'s protocols and verify all clinical decisions with appropriate healthcare professionals. No PHI is stored or processed.*';
+
+            return content;
+        }
+
+        // Get selected information types from guided lookup
+        function getSelectedInfoTypes() {
+            const checkedBoxes = document.querySelectorAll('input[name="infoType"]:checked');
+            return Array.from(checkedBoxes).map(box => box.value);
+        }
+
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchContainer = document.getElementById('conditionSearch')?.parentElement;
+            if (searchContainer && !searchContainer.contains(event.target)) {
+                hideAutocompleteDropdown();
+            }
+        });
+    </script>
+
+    <!-- AI Nurse Florence App -->
+    <script src="/static/js/app.js"></script>
+
+    <!-- Mobile Touch Enhancement Script -->
+    <script src="/static/js/mobile-touch-enhancer.js"></script>
+
+    <!-- Initialize App -->
+    <script>
+        // Initialize the main app
+        window.app = new AINurseFlorence();
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
         }
     </script>
 </body>

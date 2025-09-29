@@ -414,59 +414,159 @@ body {
     background: var(--bg-color);
 }
 
-/* Responsive Design */
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 1024px) {
+    .wizard-grid, .api-links {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
+        padding: 10px;
     }
-    
+
     .header {
-        padding: 20px;
+        padding: 15px;
+        margin-bottom: 20px;
     }
-    
+
     .header h1 {
-        font-size: 2.2rem;
+        font-size: 2rem;
     }
-    
+
     .tab-content {
-        padding: 25px;
+        padding: 20px;
+        min-height: auto;
     }
-    
+
     .wizard-grid, .api-links {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
-    
+
+    .wizard-card {
+        padding: 20px;
+    }
+
     .nav-tabs {
         flex-direction: column;
         align-items: stretch;
+        gap: 4px;
     }
-    
+
     .tab-btn {
         text-align: center;
+        padding: 12px 20px;
+        font-size: 0.9rem;
     }
-    
+
     .search-panel {
         flex-direction: column;
         align-items: stretch;
+        gap: 8px;
     }
-    
+
+    .search-panel input {
+        padding: 14px 16px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .search-button {
+        padding: 14px 24px;
+    }
+
     .modal-content {
-        padding: 25px;
-        margin: 10px;
+        padding: 20px;
+        margin: 5px;
+        max-height: 95vh;
+    }
+
+    /* Touch-friendly improvements */
+    .wizard-card {
+        min-height: 44px; /* Apple's recommended minimum touch target */
+    }
+
+    .start-wizard, .search-button, .tab-btn {
+        min-height: 44px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    /* Improved spacing for thumbs */
+    .nav-tabs {
+        padding-bottom: 20px;
     }
 }
 
 @media (max-width: 480px) {
+    .container {
+        padding: 8px;
+    }
+
+    .header {
+        padding: 12px;
+    }
+
     .header h1 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
+        line-height: 1.2;
     }
-    
+
     .wizard-card {
-        padding: 20px;
+        padding: 16px;
     }
-    
+
+    .wizard-icon {
+        font-size: 2.5rem;
+    }
+
     .tab-content {
-        padding: 20px;
+        padding: 16px;
+    }
+
+    .modal-content {
+        padding: 16px;
+    }
+
+    /* Very small screens - optimize for one-handed use */
+    .search-panel input {
+        padding: 16px 12px;
+        border-radius: 8px;
+    }
+
+    .tab-btn {
+        padding: 16px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header {
+        padding: 8px 15px;
+    }
+
+    .header h1 {
+        font-size: 1.4rem;
+    }
+
+    .tab-content {
+        padding: 15px;
+        min-height: 200px;
+    }
+
+    .modal-content {
+        max-height: 85vh;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .wizard-icon, .api-icon {
+        /* Sharper icons on retina displays */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 }
 

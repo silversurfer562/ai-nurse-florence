@@ -68,10 +68,10 @@ async def health_check() -> Dict[str, Any]:
         "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "development",
         "services": services,
         "configuration": {
-            "live_services": settings.USE_LIVE_SERVICES,
-            "openai_available": settings.has_openai(),
-            "redis_available": settings.has_redis(),
-            "rate_limiting": settings.RATE_LIMIT_ENABLED,
+            "live_services": getattr(settings, 'USE_LIVE_SERVICES', None) or getattr(settings, 'USE_LIVE', False),
+            "openai_available": settings.has_openai() if hasattr(settings, 'has_openai') else bool(getattr(settings, 'OPENAI_API_KEY', None)),
+            "redis_available": settings.has_redis() if hasattr(settings, 'has_redis') else bool(getattr(settings, 'REDIS_URL', None)),
+            "rate_limiting": getattr(settings, 'RATE_LIMIT_ENABLED', True),
         },
         "routes": route_count,
         "external_apis": {

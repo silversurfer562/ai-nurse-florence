@@ -55,7 +55,83 @@
   margin-right: 0.5rem;
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .swagger-ui .topbar {
+    padding: 10px;
+  }
+
+  .swagger-ui .info {
+    padding: 20px 10px;
+  }
+
+  .swagger-ui .scheme-container {
+    padding: 10px;
+    margin: 10px 0;
+  }
+
+  .swagger-ui .opblock {
+    margin: 10px 0;
+  }
+
+  .swagger-ui .opblock-summary {
+    padding: 10px 15px;
+  }
+
+  .swagger-ui .parameters-col_description {
+    width: 100%;
+  }
+
+  .swagger-ui table {
+    font-size: 12px;
+  }
+
+  .swagger-ui .model-box {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .swagger-ui .topbar-wrapper {
+    padding: 5px;
+  }
+
+  .swagger-ui .info .title {
+    font-size: 24px;
+  }
+
+  .swagger-ui .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .swagger-ui .opblock-summary-path {
+    word-break: break-all;
+  }
+
+  .swagger-ui .response-col_status {
+    width: 60px;
+  }
+}
+
+/* Print Styles for Clinical Documentation */
+@media print {
+  .swagger-ui .topbar,
+  .swagger-ui .scheme-container,
+  .swagger-ui .global-server-container {
+    display: none;
+  }
+
+  .swagger-ui .opblock {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .swagger-ui .info {
+    border-bottom: 2px solid #000;
+    padding-bottom: 20px;
+  }
+}
+
 /* TODO: Add comprehensive React component styles */
-/* TODO: Mobile responsiveness */
-/* TODO: Print styles for clinical documentation */
 /* TODO: Dark mode support */

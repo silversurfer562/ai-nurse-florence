@@ -1,0 +1,57 @@
+{
+  "name": "AI Nurse Florence",
+  "short_name": "Florence",
+  "description": "Clinical Decision Support System for Healthcare Professionals",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/static/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["medical", "health", "productivity"],
+  "screenshots": [
+    {
+      "src": "/static/screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "AI Nurse Florence Dashboard"
+    },
+    {
+      "src": "/static/screenshots/mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile Clinical Interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Assessment",
+      "short_name": "Assessment",
+      "description": "Start a clinical assessment",
+      "url": "/clinical-workspace.html#assessment",
+      "icons": [{ "src": "/static/icons/assessment-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "SBAR Report",
+      "short_name": "SBAR",
+      "description": "Create SBAR documentation",
+      "url": "/sbar-wizard.html",
+      "icons": [{ "src": "/static/icons/sbar-icon.png", "sizes": "96x96" }]
+    }
+  ]
+}

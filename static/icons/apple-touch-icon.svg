@@ -1,0 +1,34 @@
+<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="maskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- iOS mask shape -->
+  <path d="M45 0 L135 0 Q180 0 180 45 L180 135 Q180 180 135 180 L45 180 Q0 180 0 135 L0 45 Q0 0 45 0 Z" fill="url(#maskGrad)"/>
+
+  <!-- Medical Cross -->
+  <g fill="white" opacity="0.9">
+    <rect x="79" y="45" width="22" height="90" rx="4"/>
+    <rect x="45" y="79" width="90" height="22" rx="4"/>
+  </g>
+
+  <!-- Stethoscope -->
+  <g stroke="white" stroke-width="3" fill="none" opacity="0.8">
+    <path d="M56 56 Q90 42 124 56"/>
+    <circle cx="56" cy="56" r="7" stroke-width="2"/>
+    <circle cx="124" cy="56" r="7" stroke-width="2"/>
+    <path d="M90 42 L90 70"/>
+    <circle cx="90" cy="75" r="5" fill="white"/>
+  </g>
+
+  <!-- Florence Nightingale Lamp -->
+  <g fill="white" opacity="0.7">
+    <ellipse cx="90" cy="132" rx="14" ry="7"/>
+    <rect x="82" y="118" width="16" height="18" rx="2"/>
+    <polygon points="84,113 96,113 94,118 86,118"/>
+    <ellipse cx="90" cy="111" rx="7" ry="3" fill="#ffd700"/>
+  </g>
+</svg>

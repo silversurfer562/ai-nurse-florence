@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBAR Report Wizard - AI Nurse Florence</title>
+
+    <!-- Clinical Styling -->
+    <link rel="stylesheet" href="/frontend/src/styles/wizard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .app-title {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+
+        .clinical-disclaimer {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .disclaimer-text {
+            color: #92400e;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <h1 class="app-title">
+            <i class="fas fa-user-nurse"></i>
+            AI Nurse Florence - SBAR Report Generator
+        </h1>
+    </div>
+
+    <div class="clinical-disclaimer">
+        <p class="disclaimer-text">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Clinical Tool:</strong> For healthcare professionals only.
+            Always follow facility protocols and consult with providers as needed.
+        </p>
+    </div>
+
+    <div id="wizard-app">
+        <!-- Wizard will be rendered here -->
+        <div style="text-align: center; padding: 2rem;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6;"></i>
+            <p style="margin-top: 1rem; color: #6b7280;">Loading SBAR Wizard...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import SbarWizard from '/frontend/src/components/wizards/SbarWizard.js';
+
+        // Initialize the wizard when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                new SbarWizard('wizard-app');
+            } catch (error) {
+                console.error('Failed to initialize SBAR wizard:', error);
+                document.getElementById('wizard-app').innerHTML = `
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Failed to load wizard. Please refresh the page or contact support.
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
