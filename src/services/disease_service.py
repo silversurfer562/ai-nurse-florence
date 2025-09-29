@@ -3,7 +3,7 @@ Disease information service following External Service Integration
 MyDisease.info API integration from copilot-instructions.md
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple, cast
 
 import logging
 import asyncio
@@ -32,7 +32,7 @@ _has_requests = False
 requests = None
 
 
-def _requests_get(*args, **kwargs):
+def _requests_get(*args: Any, **kwargs: Any) -> Any:
     """Legacy compatibility helper retained for tests; prefers httpx when available."""
     if _has_httpx and httpx is not None:
         # Use httpx synchronously only if necessary; prefer async paths.
@@ -49,7 +49,7 @@ try:
     map_to_mesh = getattr(_mesh_mod, "map_to_mesh")
     _has_mesh = True
 except Exception:
-    def map_to_mesh(query: str, top_k: int = 5):
+    def map_to_mesh(query: str, top_k: int = 5) -> List[Any]:
         return []
 
     _has_mesh = False
@@ -64,7 +64,7 @@ try:
 except Exception:
     _has_prompt_enhancement = False
 
-    def enhance_prompt(prompt: str, purpose: str):
+    def enhance_prompt(prompt: str, purpose: str) -> Tuple[str, bool, None]:
         return prompt, False, None
 
 
@@ -74,7 +74,7 @@ class DiseaseService(BaseService[Dict[str, Any]]):
     Following External Service Integration from copilot-instructions.md
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("disease")
         self.base_url = "https://mydisease.info/v1"
         self.settings = get_settings()
@@ -263,9 +263,10 @@ class DiseaseService(BaseService[Dict[str, Any]]):
             ],
         }
 
-    async def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
+    async def _process_request(self, query: str, **kwargs: Any) -> Dict[str, Any]:
         """Implementation of abstract method from BaseService (async)"""
-        return await self.lookup_disease(query, **kwargs)
+        result = await self.lookup_disease(query, **kwargs)
+        return cast(Dict[str, Any], result)
 
 
 # Service factory function following Conditional Imports Pattern

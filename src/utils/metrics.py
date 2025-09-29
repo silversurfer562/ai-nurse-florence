@@ -5,7 +5,7 @@ metrics store. Exposes compatibility functions used throughout the codebase.
 """
 
 import logging
-from typing import Any, Dict, Optional, Type, TYPE_CHECKING, cast
+from typing import Any, Dict, Optional, Type, TYPE_CHECKING, cast, Callable, Union
 import threading
 
 logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ def record_service_call(service_name: str, success: bool = True) -> None:
         logger.debug("record_service_call failed: %s", e)
 
 
-def record_gpt_usage(*args, **kwargs) -> None:
+def record_gpt_usage(*args: Any, **kwargs: Any) -> None:
     if not _METRICS_ENABLED:
         return
     try:
@@ -206,15 +206,15 @@ def record_gpt_usage(*args, **kwargs) -> None:
         logger.debug("record_gpt_usage failed: %s", e)
 
 
-def timing_metric(name: str, labels_func=None):
+def timing_metric(name: str, labels_func: Optional[Callable[..., Optional[Dict[str, Any]]]] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     import time
     from functools import wraps
     import inspect
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         if inspect.iscoroutinefunction(func):
 
-            async def async_wrapper(*args, **kwargs):
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
                 if not _METRICS_ENABLED:
                     return await func(*args, **kwargs)
                 labels = {} if not labels_func else (labels_func(*args, **kwargs) or {})
@@ -232,7 +232,7 @@ def timing_metric(name: str, labels_func=None):
             return wraps(func)(async_wrapper)
         else:
 
-            def sync_wrapper(*args, **kwargs):
+            def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
                 if not _METRICS_ENABLED:
                     return func(*args, **kwargs)
                 labels = {} if not labels_func else (labels_func(*args, **kwargs) or {})
@@ -271,7 +271,7 @@ def get_metrics_summary() -> Dict[str, Any]:
         }
 
 
-def setup_metrics(app, metrics_route: str = "/metrics") -> None:
+def setup_metrics(app: Any, metrics_route: str = "/metrics") -> None:
     if not _METRICS_ENABLED:
         logger.debug("Metrics disabled; setup_metrics no-op")
         return
