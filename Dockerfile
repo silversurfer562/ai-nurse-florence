@@ -17,6 +17,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash florence
+
 # Copy application files
 COPY . /app
 RUN chown -R florence:florence /app
