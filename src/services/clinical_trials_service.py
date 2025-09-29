@@ -31,11 +31,11 @@ except Exception:
     def enhance_prompt_stub(prompt: str, purpose: str) -> tuple[str, bool, Optional[str]]:
         return prompt, False, None
     if enhance_prompt is None:
-        enhance_prompt = enhance_prompt_stub  # type: ignore[assignment]
+        enhance_prompt = enhance_prompt_stub
 
 
 try:
-    import requests as _requests  # type: ignore
+    import requests as _requests
     _has_requests = True
 except Exception:
     _requests = None
@@ -43,7 +43,7 @@ except Exception:
 
 # Backwards compatibility: prefer httpx when available for async calls
 try:
-    import httpx as _httpx  # type: ignore
+    import httpx as _httpx
     _has_httpx = True
 except Exception:
     _httpx = None
@@ -56,7 +56,7 @@ class ClinicalTrialsService:
     Implements Conditional Imports Pattern for graceful degradation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.settings = get_settings()
         self.use_live = self.settings.effective_use_live_services
         self.banner = get_educational_banner()
@@ -338,7 +338,7 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
         assert _httpx is not None
         _httpx_client = _typing.cast(_typing.Any, _httpx)
         async with _httpx_client.AsyncClient(timeout=_httpx_client.Timeout(15.0)) as client:
-            _httpx_response = await client.get(base_url, params=params)  # type: ignore[arg-type]
+            _httpx_response = await client.get(base_url, params=params)
             _httpx_response.raise_for_status()
             data = _httpx_response.json()
     else:

@@ -6,7 +6,7 @@ Following Router Organization pattern for unprotected auth endpoints
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from src.utils.config import get_settings
@@ -41,7 +41,7 @@ class AuthStatus(BaseModel):
 )
 async def auth_status(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-):
+) -> AuthStatus:
     """
     Authentication status endpoint following Authentication & Authorization pattern.
     Returns current authentication state without requiring valid credentials.
@@ -67,7 +67,7 @@ async def auth_status(
     summary="User login (educational)",
     description="Educational login endpoint. In production would handle OAuth2 flow.",
 )
-async def login(credentials: dict):
+async def login(credentials: Dict[str, Any]) -> Dict[str, Any]:
     """
     Educational login endpoint following Authentication & Authorization pattern.
     In production, would implement OAuth2 + JWT flow from coding instructions.
@@ -87,7 +87,7 @@ async def login(credentials: dict):
 @router.post(
     "/logout", summary="User logout", description="Logout endpoint for session cleanup."
 )
-async def logout():
+async def logout() -> Dict[str, str]:
     """Logout endpoint following Authentication & Authorization pattern."""
     return {"message": "Logout successful", "timestamp": datetime.now().isoformat()}
 
@@ -99,7 +99,7 @@ async def logout():
 )
 async def validate_token(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-):
+) -> Dict[str, Any]:
     """
     Token validation endpoint following Authentication & Authorization pattern.
     Used by protected endpoints for JWT validation.

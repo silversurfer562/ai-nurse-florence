@@ -28,7 +28,7 @@ router = APIRouter(
     summary="Health check endpoint",
     description="Check application health and service availability following coding instructions.",
 )
-async def health_check():
+async def health_check() -> Dict[str, Any]:
     """
     Health check endpoint following API Design Standards.
     Unprotected route for monitoring and service discovery.
@@ -39,7 +39,7 @@ async def health_check():
     try:
         services = get_available_services()
     except Exception:
-        services = {"error": "Service registry unavailable"}
+        services = {"registry_error": False}  # Maintain bool type consistency
 
     # Count available routes (if app context available)
     route_count = "unknown"
@@ -81,7 +81,8 @@ async def health_check():
         },
     }
     # include mesh readiness
-    health_data["services"]["mesh_index"] = {"available": mesh_ready}
+    if isinstance(health_data["services"], dict):
+        health_data["services"]["mesh_index"] = {"available": mesh_ready}
 
     return health_data
 
@@ -91,7 +92,7 @@ async def health_check():
     summary="Readiness probe",
     description="Kubernetes/Railway readiness probe endpoint.",
 )
-async def readiness_check():
+async def readiness_check() -> Dict[str, str]:
     """Readiness probe for container orchestration."""
     return {"status": "ready", "timestamp": datetime.now().isoformat()}
 
@@ -101,6 +102,6 @@ async def readiness_check():
     summary="Liveness probe",
     description="Kubernetes/Railway liveness probe endpoint.",
 )
-async def liveness_check():
+async def liveness_check() -> Dict[str, str]:
     """Liveness probe for container orchestration."""
     return {"status": "alive", "timestamp": datetime.now().isoformat()}

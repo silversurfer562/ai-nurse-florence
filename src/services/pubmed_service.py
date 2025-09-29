@@ -3,7 +3,7 @@ PubMed literature search service following External Service Integration
 PubMed API integration from copilot-instructions.md
 """
 
-from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from typing import Dict, Any, List, Optional, TYPE_CHECKING, cast
 from types import ModuleType
 import importlib
 
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 # tests written against the previous implementation still function.
 
 
-def _requests_get(*args, **kwargs):
+def _requests_get(*args: Any, **kwargs: Any) -> Any:
     """Legacy helper kept for tests; raises if requests not available."""
     if _has_requests and requests is not None:
         return requests.get(*args, **kwargs)
@@ -68,7 +68,7 @@ class PubMedService(BaseService[Dict[str, Any]]):
     Following External Service Integration from copilot-instructions.md
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("pubmed")
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
         self.settings = get_settings()
@@ -353,9 +353,10 @@ class PubMedService(BaseService[Dict[str, Any]]):
             ],
         }
 
-    async def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
+    async def _process_request(self, query: str, **kwargs: Any) -> Dict[str, Any]:
         """Implementation of abstract method from BaseService (async)."""
-        return await self.search_literature(query, **kwargs)
+        result = await self.search_literature(query, **kwargs)
+        return cast(Dict[str, Any], result)
 
     # Minimal logging helpers in case BaseService doesn't provide them at runtime
     def _log_request(self, *args: Any, **kwargs: Any) -> None:
