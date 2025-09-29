@@ -3,10 +3,11 @@ Enhanced API Router - Main API endpoints
 Following Router Organization patterns
 """
 
-from fastapi import APIRouter
 import importlib
 from types import ModuleType
 from typing import Optional
+
+from fastapi import APIRouter
 
 # Load routers using importlib to make optional modules explicit to static checkers
 try:
@@ -32,6 +33,12 @@ except Exception:
     chatgpt_store = None
     _has_gpt_store = False
 
+# Lightweight clinical router used by frontend optimizer
+try:
+    clinical: Optional[ModuleType] = importlib.import_module("routers.clinical")
+except Exception:
+    clinical = None
+
 # Create main API router following router organization pattern
 api_router = APIRouter(prefix="/api/v1")
 
@@ -49,6 +56,10 @@ if sbar_report is not None and hasattr(sbar_report, "router"):
 # Conditional ChatGPT Store integration
 if _has_gpt_store and chatgpt_store is not None and hasattr(chatgpt_store, "router"):
     api_router.include_router(chatgpt_store.router)
+
+# Include lightweight clinical router used by the frontend optimizer
+if clinical is not None and hasattr(clinical, "router"):
+    api_router.include_router(clinical.router)
 
 # TODO: Add additional router inclusions
 # TODO: Implement rate limiting configuration

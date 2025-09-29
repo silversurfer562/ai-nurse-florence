@@ -170,7 +170,7 @@ def get_educational_banner() -> str:
     return settings.EDUCATIONAL_BANNER
 
 
-def get_openai_config() -> dict:
+def get_openai_config() -> dict[str, str | bool]:
     """Get OpenAI configuration following OpenAI Integration pattern."""
     settings = get_settings()
     return {
@@ -180,7 +180,7 @@ def get_openai_config() -> dict:
     }
 
 
-def get_redis_config() -> dict:
+def get_redis_config() -> dict[str, str | bool | int]:
     """Get Redis configuration following Caching Strategy pattern."""
     settings = get_settings()
     return {
@@ -190,7 +190,7 @@ def get_redis_config() -> dict:
     }
 
 
-def get_cache_config() -> dict:
+def get_cache_config() -> dict[str, str | bool | int]:
     """Get cache configuration following Caching Strategy pattern."""
     settings = get_settings()
     return {

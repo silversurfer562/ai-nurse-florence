@@ -5,6 +5,7 @@ Following Router Organization and Conditional Imports Pattern from coding instru
 
 import logging
 from typing import Dict
+
 from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,7 @@ _router_registry: Dict[str, APIRouter] = {}
 router_status: Dict[str, bool] = {}
 
 
-def _load_core_routers():
+def _load_core_routers() -> None:
     """Load core routers following Conditional Imports Pattern."""
 
     # Health router
@@ -40,7 +41,7 @@ def _load_core_routers():
         router_status["auth"] = False
 
 
-def _load_medical_routers():
+def _load_medical_routers() -> None:
     """Load medical information routers following External Service Integration."""
 
     # Disease router
@@ -87,8 +88,19 @@ def _load_medical_routers():
         logger.warning(f"⚠️ Clinical Decision Support router unavailable: {e}")
         router_status["clinical_decision_support"] = False
 
+    # Lightweight clinical router for frontend optimizer (optimize/generate stubs)
+    try:
+        from .clinical import router
 
-def _load_wizard_routers():
+        _router_registry["clinical"] = router
+        router_status["clinical"] = True
+        logger.info("✅ Clinical helper router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Clinical helper router unavailable: {e}")
+        router_status["clinical"] = False
+
+
+def _load_wizard_routers() -> None:
     """Load wizard routers following Wizard Pattern Implementation with Conditional Imports."""
 
     wizard_routers = {
@@ -121,7 +133,7 @@ def _load_wizard_routers():
             router_status[wizard_name] = False
 
 
-def _load_routers():
+def _load_routers() -> None:
     """
     Load all routers with graceful degradation following Conditional Imports Pattern.
     Critical pattern: Services fail gracefully when optional dependencies missing.
@@ -192,7 +204,7 @@ def get_router_status() -> Dict[str, bool]:
     return router_status.copy()
 
 
-def reload_routers():
+def reload_routers() -> None:
     """Reload all routers (useful for testing) following Service Layer Architecture."""
     global _router_registry, router_status
     _router_registry.clear()
