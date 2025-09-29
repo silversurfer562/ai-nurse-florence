@@ -2,6 +2,7 @@
 module.exports = {
   content: [
     "./frontend/src/**/*.{html,js,jsx,ts,tsx}",
+    "./frontend-react/src/**/*.{html,js,jsx,ts,tsx}",
     "./static/**/*.{html,js}",
     "./templates/**/*.html"
   ],
