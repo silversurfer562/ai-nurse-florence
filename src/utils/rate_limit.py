@@ -5,7 +5,7 @@ IP-based rate limiting with Redis backend
 
 import time
 import logging
-from typing import Callable, Dict, Optional, List, Any, Tuple
+from typing import Callable, Dict, Optional, List, Any, Tuple, Awaitable, cast
 from fastapi import Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -215,7 +215,7 @@ class RateLimiter(BaseHTTPMiddleware):
                 self.window_seconds,
             )
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         # Determine if rate limiting is enabled. Honor settings, but also
         # enable the middleware when it's explicitly configured via the
         # middleware args (requests_per_minute > 0). This makes tests that

@@ -6,7 +6,7 @@ Following Service Layer Architecture and Conditional Imports Pattern
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi import Request
-from typing import Dict, Any
+from typing import Dict, Any, cast
 from utils.config import get_settings
 
 # Conditional ChatGPT Store integration following coding instructions pattern
@@ -23,14 +23,14 @@ except Exception:
 settings = get_settings()
 
 
-def get_enhanced_openapi_schema(app) -> Dict[str, Any]:
+def get_enhanced_openapi_schema(app: Any) -> Dict[str, Any]:
     """
     Enhanced OpenAPI schema for healthcare professional documentation
     Following Service Layer Architecture pattern from coding instructions
     """
 
     if app.openapi_schema:
-        return app.openapi_schema
+        return cast(Dict[str, Any], app.openapi_schema)
 
     openapi_schema = get_openapi(
         title="AI Nurse Florence - Clinical Decision Support System",
@@ -64,10 +64,10 @@ def get_enhanced_openapi_schema(app) -> Dict[str, Any]:
     # TODO: Professional authentication schemas
 
     app.openapi_schema = openapi_schema
-    return app.openapi_schema
+    return cast(Dict[str, Any], app.openapi_schema)
 
 
-def get_enhanced_swagger_ui_html(request: Request):
+def get_enhanced_swagger_ui_html(request: Request) -> Any:
     """
     Enhanced Swagger UI with clinical workflow optimizations
     Following conditional loading pattern from coding instructions

@@ -9,7 +9,7 @@ from utils.config import get_settings
 # Conditional imports for ChatGPT Store features
 try:
     from utils.auth import verify_gpt_token  # type: ignore
-    from src.utils.metrics import record_gpt_usage  # type: ignore
+    from src.utils.metrics import record_gpt_usage
 
     _has_gpt_integration = True
 except ImportError:
@@ -32,9 +32,9 @@ class ChatGPTStoreService:
     Following authentication & authorization patterns from coding instructions
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.gpt_integration_available = (
-            _has_gpt_integration and settings.CHATGPT_STORE_ENABLED
+            _has_gpt_integration and getattr(settings, 'CHATGPT_STORE_ENABLED', False)
         )
 
     async def verify_healthcare_professional(

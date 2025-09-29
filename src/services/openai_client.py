@@ -4,7 +4,7 @@ Following OpenAI Integration pattern with environment-based API key loading
 """
 
 import logging
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import Optional, Dict, Any, TYPE_CHECKING, List, cast
 
 if TYPE_CHECKING:
     import openai
@@ -88,23 +88,14 @@ class OpenAIService:
         """Generate live OpenAI response using actual API."""
         try:
             # Construct messages following OpenAI best practices
-            messages = []
+            messages: List[Dict[str, str]] = []
 
             if context:
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": f"You are a healthcare AI assistant. Context: {context}. Always include educational disclaimers that this is for educational purposes only and not medical advice.",
-                    }
-                )
+                system_content = f"You are a healthcare AI assistant. Context: {context}. Always include educational disclaimers that this is for educational purposes only and not medical advice."
             else:
-                messages.append(
-                    {
-                        "role": "system",
-                        "content": "You are a healthcare AI assistant providing educational information only. Always include disclaimers that this is not medical advice.",
-                    }
-                )
+                system_content = "You are a healthcare AI assistant providing educational information only. Always include disclaimers that this is not medical advice."
 
+            messages.append({"role": "system", "content": system_content})
             messages.append({"role": "user", "content": prompt})
 
             # Make API call (client is guaranteed to be available here)
@@ -115,7 +106,7 @@ class OpenAIService:
                 raise ValueError("Model must be a string")
             response = self._client.chat.completions.create(
                 model=model,
-                messages=messages,
+                messages=cast(Any, messages),  # OpenAI client typing varies by version
                 max_tokens=1000,
                 temperature=0.7,
             )
@@ -131,9 +122,9 @@ class OpenAIService:
                 "service_note": "OpenAI service: Live API response",
                 "disclaimer": "AI-generated content for educational purposes only. Clinical decisions require professional judgment.",
                 "usage": {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
-                    "total_tokens": response.usage.total_tokens,
+                    "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+                    "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                    "total_tokens": response.usage.total_tokens if response.usage else 0,
                 },
             }
 
