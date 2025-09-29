@@ -179,6 +179,16 @@ except Exception as e:
     logger.warning(f"Failed to register cache monitoring router: {e}")
     ROUTERS_LOADED["cache_monitoring"] = False
 
+# Add enhanced literature router (Phase 4.2 - Additional Medical Services)
+try:
+    from src.routers.enhanced_literature import router as enhanced_literature_router
+    api_router.include_router(enhanced_literature_router)
+    ROUTERS_LOADED["enhanced_literature"] = True
+    logger.info("Enhanced literature router registered successfully - Phase 4.2 Additional Medical Services")
+except Exception as e:
+    logger.warning(f"Failed to register enhanced literature router: {e}")
+    ROUTERS_LOADED["enhanced_literature"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 
