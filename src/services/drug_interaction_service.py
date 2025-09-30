@@ -411,7 +411,7 @@ Do NOT include a summary field - all important information should be in the inte
                 "interactions": ai_response.get("interactions", []),
                 "clinical_alerts": ai_response.get("clinical_alerts", []),
                 "patient_context": patient_context,
-                "data_source": "OpenAI (Medical AI)",
+                "data_source": "OpenAI (Medical AI) + FDA Data",
                 "service_note": "AI-generated analysis based on medical literature. Verify with authoritative sources.",
                 "timestamp": datetime.now().isoformat()
             }
