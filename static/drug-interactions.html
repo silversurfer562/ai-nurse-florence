@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Drug Interaction Checker - AI Nurse Florence</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -603,8 +606,10 @@
 
                 // Build comprehensive verbose output
                 let output = '';
+                console.log('Starting to build output...');
 
                 // 1. Overall Summary Section
+                console.log('Checking summary:', analysisData.summary ? 'EXISTS' : 'MISSING');
                 if (analysisData.summary) {
                     output += `
                         <div class="drug-card rounded-lg p-6 mb-6">
@@ -623,7 +628,9 @@
                 }
 
                 // 2. Drug Information Section (Verbose)
+                console.log('Checking drug_information:', analysisData.drug_information ? `LENGTH: ${analysisData.drug_information.length}` : 'MISSING');
                 if (analysisData.drug_information && analysisData.drug_information.length > 0) {
+                    console.log('Building drug information section for', analysisData.drug_information.length, 'drugs');
                     output += `
                         <div class="drug-card rounded-lg p-6 mb-6">
                             <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
@@ -791,9 +798,12 @@
                 }
 
                 // Display everything
+                console.log('Final output length:', output.length);
+                console.log('Output preview:', output.substring(0, 200));
                 detailsContainer.innerHTML = output;
                 summaryContainer.innerHTML = ''; // Clear summary cards for verbose mode
                 resultsSection.classList.remove('hidden');
+                console.log('Display complete!');
             }
 
             displayInteractions(interactions) {
