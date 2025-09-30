@@ -463,6 +463,91 @@ async def _fetch_medlineplus_symptoms(disease_name: str, snomed_code: str = None
 
     return symptoms
 
+async def _lookup_from_medlineplus(query: str) -> Optional[Dict[str, Any]]:
+    """
+    Lookup disease information from MedlinePlus when MyDisease.info returns no results.
+    Returns formatted disease info compatible with the main lookup response.
+    """
+    if not _has_httpx:
+        return None
+
+    try:
+        import xml.etree.ElementTree as ET
+        import re
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0), follow_redirects=True) as client:
+            # Query MedlinePlus health topics
+            medlineplus_url = "https://wsearch.nlm.nih.gov/ws/query"
+            params = {
+                "db": "healthTopics",
+                "term": query,
+                "retmax": 1
+            }
+            response = await client.get(medlineplus_url, params=params)
+            response.raise_for_status()
+
+            # Parse XML response
+            root = ET.fromstring(response.text)
+            documents = root.findall('.//document')
+
+            if not documents:
+                logger.info(f"⚠️ MedlinePlus returned no results for: {query}")
+                return None
+
+            # Get first matching document
+            document = documents[0]
+
+            # Extract title (disease name)
+            title_elem = document.find('.//content[@name="title"]')
+            disease_name = query  # fallback
+            if title_elem is not None and title_elem.text:
+                disease_name = re.sub(r'<[^>]+>', '', title_elem.text)
+
+            # Extract full summary (description)
+            summary_elem = document.find('.//content[@name="FullSummary"]')
+            description = f"Consumer health information about {disease_name}."
+            if summary_elem is not None and summary_elem.text:
+                # Clean HTML and limit to reasonable length
+                clean_summary = re.sub(r'<[^>]+>', '', summary_elem.text)
+                description = clean_summary[:500] + "..." if len(clean_summary) > 500 else clean_summary
+
+            # Try to extract URL for more information
+            url_elem = document.find('.//content[@name="url"]')
+            medlineplus_url_ref = None
+            if url_elem is not None and url_elem.text:
+                medlineplus_url_ref = url_elem.text
+
+            # Fetch symptoms from MedlinePlus
+            symptoms = await _fetch_medlineplus_symptoms(disease_name)
+
+            # Build summary
+            summary = f"{disease_name} is a medical condition. {description[:200]}"
+
+            # Fetch related PubMed articles
+            related_articles = await _fetch_related_pubmed_articles(disease_name)
+
+            logger.info(f"✅ Successfully fetched disease info from MedlinePlus: {disease_name}")
+
+            return {
+                "summary": summary,
+                "description": description,
+                "symptoms": symptoms if symptoms else [
+                    "Detailed symptom information is not available",
+                    "Consult healthcare provider for clinical assessment",
+                    "Review medical literature for comprehensive information"
+                ],
+                "disease_name": disease_name,
+                "synonyms": [],
+                "mondo_id": "",
+                "sources": ["MedlinePlus", "NIH"],
+                "related_articles": related_articles,
+                "medlineplus_url": medlineplus_url_ref
+            }
+
+    except Exception as e:
+        logger.warning(f"MedlinePlus lookup failed for '{query}': {e}")
+        return None
+
 async def _fetch_related_pubmed_articles(disease_name: str) -> List[Dict[str, Any]]:
     """Fetch top 3 most cited PubMed articles with abstracts (max 125 words)."""
     articles = []
@@ -595,6 +680,13 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
     logger.info(f"📊 API response: {data.get('total', 0)} results found")
 
     hits = data.get("hits", [])
+
+    # If MyDisease.info returns no results, try MedlinePlus for consumer-friendly disease names
+    if not hits:
+        logger.info(f"⚠️ MyDisease.info returned no results, trying MedlinePlus for: {query}")
+        medlineplus_result = await _lookup_from_medlineplus(query)
+        if medlineplus_result:
+            return medlineplus_result
     if hits:
         disease_data = hits[0]
 

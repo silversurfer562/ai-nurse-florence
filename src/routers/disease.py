@@ -106,95 +106,47 @@ async def get_disease_names(
         from src.utils.smart_cache import SmartCacheManager
         cache_manager = SmartCacheManager()
 
-        # Create cache key based on query
+        # Only use cache for full disease list, not for autocomplete queries
+        # This ensures live API data for user searches
         cache_key = f"disease_names_{query or 'all'}_{limit}"
+        use_cache = not query  # Only cache when no query (full list)
 
-        # Try to get from cache first
-        cached_data = await cache_manager.get(cache_key)
-        if cached_data:
-            return JSONResponse(
-                content={
-                    "success": True,
-                    "message": f"Retrieved {len(cached_data)} disease names (cached)",
-                    "status_code": 200,
-                    "data": {
-                        "diseases": cached_data,
-                        "count": len(cached_data),
-                        "cache_hit": True
+        if use_cache:
+            cached_data = await cache_manager.get(cache_key)
+            if cached_data:
+                return JSONResponse(
+                    content={
+                        "success": True,
+                        "message": f"Retrieved {len(cached_data)} disease names (cached)",
+                        "status_code": 200,
+                        "data": {
+                            "diseases": cached_data,
+                            "count": len(cached_data),
+                            "cache_hit": True
+                        }
                     }
-                }
-            )
+                )
 
         # Fetch from BOTH MyDisease.info and MedlinePlus for comprehensive coverage
         # MyDisease.info: technical terms and synonyms
         # MedlinePlus: consumer-friendly disease names
 
-        animal_keywords = [", chicken", ", dog", ", horse", ", pig", ", cat", ", mouse",
-                         ", rat", ", cattle", ", sheep", ", goat", ", rabbit", ", koala"]
+        animal_keywords = ["chicken", "dog", "horse", "pig", "cat", "mouse",
+                         "rat", "cattle", "sheep", "goat", "rabbit", "koala",
+                         "quail", "guinea pig", "chinchilla", "non-human animal"]
 
-        disease_names = set()
+        # Track diseases with their source for better ranking
+        disease_results = {}  # {name: source} where source is "medlineplus" or "mydisease"
 
         async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
-            # 1. Fetch from MyDisease.info
+            # Use ONLY MedlinePlus for consumer-friendly disease names
             try:
-                mydisease_url = "https://mydisease.info/v1/query"
-                params = {
-                    "q": query if query else "*",
-                    "size": limit // 2,  # Split limit between two sources
-                    "fields": "mondo.label,mondo.synonym"
-                }
-                response = await client.get(mydisease_url, params=params)
-                response.raise_for_status()
-                data = response.json()
-
-                for hit in data.get("hits", []):
-                    mondo = hit.get("mondo", {})
-
-                    # Add primary label
-                    label = mondo.get("label")
-                    if label and not any(keyword in label.lower() for keyword in animal_keywords):
-                        disease_names.add(label)
-
-                    # Add all synonyms (they're nested in exact and related fields)
-                    synonyms_obj = mondo.get("synonym", {})
-                    all_synonyms = []
-
-                    if isinstance(synonyms_obj, dict):
-                        exact = synonyms_obj.get("exact", [])
-                        if isinstance(exact, list):
-                            all_synonyms.extend(exact)
-                        related = synonyms_obj.get("related", [])
-                        if isinstance(related, list):
-                            all_synonyms.extend(related)
-                    elif isinstance(synonyms_obj, list):
-                        all_synonyms = synonyms_obj
-                    elif isinstance(synonyms_obj, str):
-                        all_synonyms = [synonyms_obj]
-
-                    for synonym in all_synonyms:
-                        if synonym and not any(keyword in synonym.lower() for keyword in animal_keywords):
-                            # Filter out technical identifiers
-                            synonym_upper = synonym.upper()
-                            is_gene_variant = (
-                                bool(re.search(r'(IDDM|NIDDM|MODY|T\dDM)\d+$', synonym_upper)) or
-                                bool(re.search(r'^[A-Z]+\d+[A-Z]*\d*$', synonym)) or
-                                synonym.startswith('rs') or
-                                'susceptibility' in synonym.lower() or
-                                'protection against' in synonym.lower()
-                            )
-                            if not is_gene_variant:
-                                disease_names.add(synonym)
-            except Exception as e:
-                logger.warning(f"MyDisease.info fetch failed: {e}")
-
-            # 2. Fetch from MedlinePlus for consumer-friendly names
-            try:
-                if query and len(query) >= 2:
+                if query and len(query) >= 3:
                     medlineplus_url = "https://wsearch.nlm.nih.gov/ws/query"
                     params = {
                         "db": "healthTopics",
                         "term": query,
-                        "retmax": limit // 2
+                        "retmax": limit  # Get all results from MedlinePlus only
                     }
                     response = await client.get(medlineplus_url, params=params)
                     response.raise_for_status()
@@ -210,22 +162,126 @@ async def get_disease_names(
                             # Remove HTML tags like <span class="qt0">
                             title = re.sub(r'<[^>]+>', '', title_elem.text)
                             if title and not any(keyword in title.lower() for keyword in animal_keywords):
-                                disease_names.add(title)
+                                disease_results[title] = "medlineplus"
 
                         # Get alternative titles
                         for alt_title in document.findall('.//content[@name="altTitle"]'):
                             if alt_title.text:
                                 alt = re.sub(r'<[^>]+>', '', alt_title.text)
                                 if alt and not any(keyword in alt.lower() for keyword in animal_keywords):
-                                    disease_names.add(alt)
+                                    disease_results[alt] = "medlineplus"
             except Exception as e:
                 logger.warning(f"MedlinePlus fetch failed: {e}")
 
-            # Remove duplicates, sort, and limit
-            disease_names = sorted(list(disease_names))[:limit]
+            # Filter out non-disease terms (treatments, tests, procedures, body parts, procedures)
+            non_disease_terms = [
+                "insulin", "a1c", "hba1c", "hemoglobin a1c", "glycohemoglobin",
+                "blood glucose", "blood sugar", "glucose", "test", "tests",
+                "medicines", "drugs", "medication", "treatment", "therapy",
+                "surgery", "rehabilitation", "care", "screening", "prevention",
+                "eye care", "eye health", "eye safety", "nutrition", "diet",
+                "exercise", "lifestyle", "management", "monitoring",
+                "diaper rash", "dialysis", "dual diagnosis"  # Non-disease conditions/procedures
+            ]
 
-            # Cache for 24 hours (disease names don't change often)
-            await cache_manager.set(cache_key, disease_names, ttl_seconds=86400)
+            filtered_results = {}
+            for name, source in disease_results.items():
+                name_lower = name.lower()
+                # Exclude if it's a non-disease term
+                if not any(term in name_lower for term in non_disease_terms):
+                    filtered_results[name] = source
+
+            # If no results from MedlinePlus, fallback to database
+            if len(filtered_results) == 0 and query:
+                try:
+                    from src.services.disease_cache_updater import get_disease_cache_updater
+                    disease_updater = get_disease_cache_updater()
+                    db_diseases = await disease_updater.get_disease_list_from_db()
+
+                    if db_diseases:
+                        # Filter database results - only match diseases that START with query
+                        # This prevents false matches like "cardiac" when searching "dia"
+                        for disease in db_diseases:
+                            disease_lower = disease.lower()
+                            query_lower = query.lower()
+                            # Match if disease starts with query OR any word in disease starts with query
+                            words = disease_lower.split()
+                            if disease_lower.startswith(query_lower) or any(word.startswith(query_lower) for word in words):
+                                # Filter out non-disease terms from database too
+                                if not any(term in disease_lower for term in non_disease_terms):
+                                    filtered_results[disease] = "database"
+                                    if len(filtered_results) >= limit:
+                                        break
+                except Exception as db_error:
+                    logger.warning(f"Database fallback failed: {db_error}")
+
+            # Remove duplicates with reversed word order (e.g., "Type 1 Diabetes" vs "Diabetes Type 1")
+            # and number variations (e.g., "Type 2" vs "Type II")
+            # Always prefer MedlinePlus names over database names
+            def normalize_for_dedup(name):
+                """Normalize disease name for duplicate detection by sorting words and normalizing numbers"""
+                # Convert to lowercase and split into words
+                words = name.lower().split()
+
+                # Normalize roman numerals and numbers to a standard form
+                number_map = {
+                    'i': '1', 'ii': '2', 'iii': '3', 'iv': '4', 'v': '5',
+                    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5'
+                }
+
+                normalized_words = []
+                for word in words:
+                    # Check if word is a roman numeral or number word
+                    if word in number_map:
+                        normalized_words.append(number_map[word])
+                    else:
+                        normalized_words.append(word)
+
+                # Sort words to detect reversed duplicates
+                return " ".join(sorted(normalized_words))
+
+            deduped_results = {}
+            seen_normalized = {}
+
+            for name, source in filtered_results.items():
+                normalized = normalize_for_dedup(name)
+
+                if normalized not in seen_normalized:
+                    # First occurrence - keep it
+                    seen_normalized[normalized] = name
+                    deduped_results[name] = source
+                else:
+                    # Duplicate detected - prefer MedlinePlus name over database name
+                    existing_name = seen_normalized[normalized]
+                    existing_source = deduped_results[existing_name]
+
+                    # If new entry is from MedlinePlus and existing is not, replace
+                    if source == "medlineplus" and existing_source != "medlineplus":
+                        del deduped_results[existing_name]
+                        deduped_results[name] = source
+                        seen_normalized[normalized] = name
+                    # If both are from same source, keep shorter name
+                    elif source == existing_source and len(name) < len(existing_name):
+                        del deduped_results[existing_name]
+                        deduped_results[name] = source
+                        seen_normalized[normalized] = name
+
+            # Sort results with smart ranking:
+            # 1. MedlinePlus results first (consumer-friendly)
+            # 2. Database results second
+            # 3. Shorter names (simpler, more likely to be main diseases)
+            # 4. Alphabetically within each group
+            def rank_disease(name):
+                source = deduped_results.get(name, "database")
+                source_priority = 0 if source == "medlineplus" else (1 if source == "database" else 2)
+                length_score = len(name)  # Shorter is better
+                return (source_priority, length_score, name.lower())
+
+            disease_names = sorted(deduped_results.keys(), key=rank_disease)[:limit]
+
+            # Only cache full disease list, not autocomplete queries
+            if use_cache:
+                await cache_manager.set(cache_key, disease_names, ttl_seconds=86400)
 
             return JSONResponse(
                 content={
