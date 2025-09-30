@@ -639,9 +639,10 @@
                     `;
                 }
 
-                // 2. Interactions Section (MOST CRITICAL - Show First)
+                // TEMP PLACEHOLDER - will move drug info later
+                let drugInfoHtml = '';
                 if (analysisData.drug_information && analysisData.drug_information.length > 0) {
-                    output += `
+                    drugInfoHtml = `
                         <div class="drug-card rounded-lg p-6 mb-6">
                             <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
                                 <i class="fas fa-pills mr-2 text-green-600"></i>
@@ -651,7 +652,7 @@
                     `;
 
                     analysisData.drug_information.forEach(drug => {
-                        output += `
+                        drugInfoHtml += `
                             <div class="border-l-4 border-blue-500 pl-4 py-2">
                                 <h4 class="text-lg font-semibold text-gray-900 mb-2">
                                     ${drug.name.charAt(0).toUpperCase() + drug.name.slice(1)}
@@ -710,15 +711,17 @@
                         `;
                     });
 
-                    output += `
+                    drugInfoHtml += `
                             </div>
                         </div>
                     `;
                 }
+                // Don't add drugInfoHtml to output yet - will add after interactions and alerts
 
-                // 3. Clinical Alerts Section
+                // Store clinical alerts to add after interactions
+                let clinicalAlertsHtml = '';
                 if (analysisData.clinical_alerts && analysisData.clinical_alerts.length > 0) {
-                    output += `
+                    clinicalAlertsHtml = `
                         <div class="moderate-interaction rounded-lg p-6 mb-6">
                             <h3 class="text-xl font-bold text-orange-900 mb-3 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-2"></i>
@@ -871,6 +874,11 @@
                         </div>
                     `;
                 }
+
+                // Now add sections in priority order: Interactions > Alerts > Drug Info
+                // (Interactions already added to output in section 4)
+                output += clinicalAlertsHtml;  // Add clinical alerts
+                output += drugInfoHtml;         // Add drug information last
 
                 // Display everything
                 detailsContainer.innerHTML = output;
