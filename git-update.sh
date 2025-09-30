@@ -63,7 +63,7 @@ create_backup() {
     local backup_branch="${BACKUP_BRANCH_PREFIX}-$(date +%Y%m%d-%H%M%S)-${current_branch}"
     
     log_info "Creating backup branch: $backup_branch"
-    if git branch "$backup_branch"; then
+    if git branch "$backup_branch" > /dev/null 2>&1; then
         log_success "Backup branch created successfully"
         echo "$backup_branch"
     else
@@ -75,9 +75,9 @@ create_backup() {
 # Generate meaningful commit message
 generate_commit_message() {
     local files_changed=$(git diff --cached --name-only | wc -l)
-    local files_added=$(git diff --cached --name-status | grep -c "^A" || echo 0)
-    local files_modified=$(git diff --cached --name-status | grep -c "^M" || echo 0)
-    local files_deleted=$(git diff --cached --name-status | grep -c "^D" || echo 0)
+    local files_added=$(git diff --cached --name-status | grep -c "^A" 2>/dev/null || echo 0)
+    local files_modified=$(git diff --cached --name-status | grep -c "^M" 2>/dev/null || echo 0)
+    local files_deleted=$(git diff --cached --name-status | grep -c "^D" 2>/dev/null || echo 0)
     
     local message="${COMMIT_MESSAGE_PREFIX}: "
     
@@ -189,15 +189,26 @@ perform_git_update() {
     
     # Push to remote
     log_info "Pushing changes to remote..."
-    if ! git push origin "$target_branch"; then
+    local push_branch="$current_branch"
+    if [ "$current_branch" = "$target_branch" ]; then
+        push_branch="$target_branch"
+    fi
+    
+    if ! git push origin "$push_branch"; then
         log_error "Failed to push to remote"
         log_warning "You can restore from backup branch: $backup_branch"
+        log_info "Note: You were trying to push to branch '$push_branch'"
         return 1
     fi
     
-    log_success "Successfully pushed changes to remote"
+    log_success "Successfully pushed changes to remote branch '$push_branch'"
     log_success "Git update completed successfully!"
     log_info "Backup branch available: $backup_branch"
+    
+    if [ "$current_branch" != "$target_branch" ]; then
+        log_info "Note: Changes were committed and pushed to your current branch ($current_branch)"
+        log_info "To update $target_branch, checkout $target_branch and run the script again"
+    fi
     
     return 0
 }
