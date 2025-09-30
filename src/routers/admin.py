@@ -695,3 +695,24 @@ async def seed_medications_endpoint():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to seed medications: {str(e)}"
         )
+
+@router.get("/medication-count")
+async def get_medication_count():
+    """Debug endpoint to check medication list count."""
+    try:
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        from scripts.seed_medications_autocomplete import COMMON_MEDICATIONS
+
+        return create_success_response({
+            "medication_count": len(COMMON_MEDICATIONS),
+            "first_10": COMMON_MEDICATIONS[:10],
+            "has_duplicates": len(COMMON_MEDICATIONS) != len(set([m.lower() for m in COMMON_MEDICATIONS])),
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get medication count: {str(e)}"
+        )
