@@ -285,11 +285,8 @@ async def seed_medications():
             existing = result.scalars().all()
 
             if len(existing) > 0:
-                logger.info(f"⚠️ Database already contains {len(existing)} medications. Skipping seed.")
-                user_input = input("Do you want to clear and re-seed? (yes/no): ")
-                if user_input.lower() != "yes":
-                    logger.info("Seeding cancelled.")
-                    return
+                logger.info(f"⚠️ Database already contains {len(existing)} medications.")
+                logger.info("Clearing and re-seeding...")
 
                 # Clear existing
                 from sqlalchemy import delete
