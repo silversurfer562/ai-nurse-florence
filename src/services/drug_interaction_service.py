@@ -425,49 +425,6 @@ If there are no significant interactions, return an empty interactions array but
             logger.error(f"OpenAI API call failed: {e}")
             raise
 
-    async def _get_drug_info_from_database(self, drug_names: List[str]) -> List[Dict[str, Any]]:
-        """Retrieve detailed drug information from database."""
-        try:
-            from src.models.database import get_db_session, Medication
-            from sqlalchemy import select
-            import json as json_module
-
-            drug_info_list = []
-
-            async for session in get_db_session():
-                for drug_name in drug_names:
-                    # Search for medication (case-insensitive)
-                    query = select(Medication).where(
-                        Medication.name.ilike(drug_name)
-                    ).where(Medication.is_active == True)
-
-                    result = await session.execute(query)
-                    medication = result.scalar_one_or_none()
-
-                    if medication and medication.brand_names:
-                        # Parse JSON fields
-                        brand_names = json_module.loads(medication.brand_names) if medication.brand_names else []
-                        nursing_considerations = json_module.loads(medication.nursing_considerations) if medication.nursing_considerations else []
-                        common_side_effects = json_module.loads(medication.common_side_effects) if medication.common_side_effects else []
-                        warnings = json_module.loads(medication.warnings) if medication.warnings else []
-
-                        drug_info_list.append({
-                            "name": medication.name,
-                            "brand_names": brand_names,
-                            "drug_class": medication.drug_class or "N/A",
-                            "indication": medication.indication or "N/A",
-                            "nursing_considerations": nursing_considerations,
-                            "common_side_effects": common_side_effects,
-                            "warnings": warnings
-                        })
-                        logger.info(f"Found detailed info for {medication.name} in database")
-
-            return drug_info_list
-
-        except Exception as e:
-            logger.warning(f"Failed to get drug info from database: {e}")
-            return []
-
     async def check_drug_interactions(
         self,
         drugs: List[str],
