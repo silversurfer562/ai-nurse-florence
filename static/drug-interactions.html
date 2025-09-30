@@ -774,17 +774,24 @@
 
                     // Add each interaction
                     analysisData.interactions.forEach(interaction => {
+                        const severityLabel = interaction.severity?.toUpperCase() || 'UNKNOWN';
+                        const severityColor =
+                            interaction.severity?.toLowerCase() === 'major' || interaction.severity?.toLowerCase() === 'contraindicated' ? 'red' :
+                            interaction.severity?.toLowerCase() === 'moderate' ? 'orange' :
+                            'yellow';
+                        const severityBg = severityColor === 'red' ? 'bg-red-600' : severityColor === 'orange' ? 'bg-orange-500' : 'bg-yellow-500';
+
                         output += `
-                            <div class="border-l-4 border-red-500 pl-4 py-3 bg-red-50">
-                                <h4 class="font-semibold text-red-900 mb-2">
-                                    ${interaction.drug1} + ${interaction.drug2}
-                                    <span class="ml-2 text-xs px-2 py-1 rounded ${
-                                        interaction.severity === 'major' ? 'bg-red-600 text-white' :
-                                        interaction.severity === 'moderate' ? 'bg-orange-500 text-white' :
-                                        'bg-yellow-500 text-white'
-                                    }">${interaction.severity?.toUpperCase()}</span>
-                                </h4>
-                                ${interaction.description ? `<p class="text-gray-700 mb-2">${interaction.description}</p>` : ''}
+                            <div class="border-l-4 ${severityColor === 'red' ? 'border-red-600' : severityColor === 'orange' ? 'border-orange-500' : 'border-yellow-500'} pl-4 py-3 ${severityColor === 'red' ? 'bg-red-50' : severityColor === 'orange' ? 'bg-orange-50' : 'bg-yellow-50'}">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <h4 class="font-semibold text-gray-900 text-lg">
+                                        ${interaction.drug1} + ${interaction.drug2}
+                                    </h4>
+                                    <span class="px-3 py-1 text-sm font-bold rounded ${severityBg} text-white">
+                                        ${severityLabel} INTERACTION
+                                    </span>
+                                </div>
+                                ${interaction.description ? `<p class="text-gray-700 mb-2"><strong class="text-${severityColor}-700">⚠️ ${severityLabel} Risk:</strong> ${interaction.description}</p>` : ''}
                                 ${interaction.clinical_significance ? `
                                     <div class="mb-2">
                                         <span class="font-medium text-gray-800">Clinical Significance:</span>
