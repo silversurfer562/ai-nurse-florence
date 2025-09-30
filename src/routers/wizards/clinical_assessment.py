@@ -1,7 +1,7 @@
 """
 Clinical Assessment Wizard - AI Nurse Florence
 Following Wizard Pattern Implementation from coding instructions
-Comprehensive patient assessment workflows
+Comprehensive patient assessment workflows with AI-powered clinical analysis
 """
 
 from fastapi import APIRouter, HTTPException
@@ -9,8 +9,12 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
 from datetime import datetime
+import logging
 
 from ...utils.config import get_educational_banner
+from ...services.openai_client import create_openai_service, clinical_decision_support
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/wizard/clinical-assessment",
@@ -127,6 +131,9 @@ async def submit_clinical_assessment_step(
     if step_number not in session["completed_steps"]:
         session["completed_steps"].append(step_number)
 
+    # Generate AI analysis for the submitted step
+    ai_analysis = await _generate_ai_analysis(step_number, step_data.step_data, session["data"])
+
     # Move to next step
     if step_number < session["total_steps"]:
         session["current_step"] = step_number + 1
@@ -142,6 +149,7 @@ async def submit_clinical_assessment_step(
         "total_steps": session["total_steps"],
         "progress": len(session["completed_steps"]) / session["total_steps"] * 100,
         "status": "completed" if len(session["completed_steps"]) == session["total_steps"] else "in_progress",
+        "ai_analysis": ai_analysis,
         "next_step": next_step_info
     }
 
@@ -273,3 +281,153 @@ def _get_step_info(step_number: int) -> Dict[str, Any]:
     }
 
     return steps.get(step_number, {})
+
+async def _generate_ai_analysis(step_number: int, step_data: Dict[str, Any], all_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate AI-powered clinical analysis for assessment step.
+    Uses OpenAI to provide evidence-based clinical insights and recommendations.
+    """
+
+    step_names = {
+        1: "Vital Signs",
+        2: "Physical Assessment",
+        3: "Systems Review",
+        4: "Pain Assessment",
+        5: "Functional Assessment"
+    }
+
+    step_name = step_names.get(step_number, "Unknown Step")
+
+    try:
+        # Create clinical analysis prompt based on step
+        if step_number == 1:
+            # Vital signs analysis
+            clinical_question = f"""Analyze the following vital signs and provide clinical assessment:
+
+Vital Signs:
+- Temperature: {step_data.get('temperature', 'N/A')}°F
+- Pulse: {step_data.get('pulse', 'N/A')} bpm
+- Respirations: {step_data.get('respirations', 'N/A')}/min
+- Blood Pressure: {step_data.get('blood_pressure_systolic', 'N/A')}/{step_data.get('blood_pressure_diastolic', 'N/A')} mmHg
+- Oxygen Saturation: {step_data.get('oxygen_saturation', 'N/A')}%
+- Pain Scale: {step_data.get('pain_scale', 'N/A')}/10
+
+Please provide:
+1. Assessment of each vital sign (normal/abnormal)
+2. Clinical significance of any abnormalities
+3. Recommended follow-up assessments
+4. Potential urgent concerns requiring escalation
+"""
+
+        elif step_number == 2:
+            # Physical assessment analysis
+            clinical_question = f"""Analyze the following physical assessment findings:
+
+{step_data}
+
+Provide:
+1. Key positive and negative findings
+2. Clinical patterns or concerns identified
+3. Differential considerations based on findings
+4. Recommended focused assessments
+"""
+
+        elif step_number == 3:
+            # Systems review analysis
+            clinical_question = f"""Analyze the following systems review:
+
+{step_data}
+
+Provide:
+1. Systems with concerning findings
+2. Inter-system correlations or patterns
+3. Priority systems requiring further evaluation
+4. Clinical decision support recommendations
+"""
+
+        elif step_number == 4:
+            # Pain assessment analysis
+            clinical_question = f"""Analyze the following pain assessment:
+
+Location: {step_data.get('pain_location', 'N/A')}
+Intensity: {step_data.get('pain_intensity', 'N/A')}/10
+Character: {step_data.get('pain_character', 'N/A')}
+Onset: {step_data.get('pain_onset', 'N/A')}
+Duration: {step_data.get('pain_duration', 'N/A')}
+Aggravating Factors: {step_data.get('aggravating_factors', 'N/A')}
+Relieving Factors: {step_data.get('relieving_factors', 'N/A')}
+Impact: {step_data.get('pain_impact', 'N/A')}
+
+Provide:
+1. Pain pattern analysis and likely etiology
+2. Evidence-based pain management recommendations
+3. Red flags requiring immediate attention
+4. Non-pharmacological interventions to consider
+"""
+
+        elif step_number == 5:
+            # Functional assessment analysis - final comprehensive summary
+            clinical_question = f"""Provide comprehensive clinical summary based on complete assessment:
+
+Vital Signs: {all_data.get('vital_signs', {})}
+Physical Assessment: {all_data.get('physical_assessment', {})}
+Systems Review: {all_data.get('systems_review', {})}
+Pain Assessment: {all_data.get('pain_assessment', {})}
+Functional Status: {step_data}
+
+Provide:
+1. Comprehensive clinical summary
+2. Priority nursing diagnoses
+3. Key safety concerns and interventions
+4. Care planning recommendations
+5. Discharge planning considerations
+"""
+
+        else:
+            clinical_question = f"Analyze assessment data for {step_name}: {step_data}"
+
+        # Call AI clinical decision support
+        ai_response = await clinical_decision_support(
+            patient_data=step_data,
+            clinical_question=clinical_question,
+            context="clinical_assessment"
+        )
+
+        return {
+            "step_name": step_name,
+            "analysis_available": True,
+            "clinical_insights": ai_response.get("response", "AI analysis temporarily unavailable"),
+            "recommendations": _extract_recommendations(ai_response),
+            "disclaimer": "AI-generated clinical insights for educational support. All clinical decisions require professional nursing judgment.",
+            "ai_model": ai_response.get("model", "gpt-4"),
+            "service_status": ai_response.get("service_status", "available")
+        }
+
+    except Exception as e:
+        logger.error(f"AI analysis failed for step {step_number}: {e}")
+        return {
+            "step_name": step_name,
+            "analysis_available": False,
+            "message": "AI analysis temporarily unavailable",
+            "fallback_note": "Continue with clinical assessment using professional judgment and clinical protocols",
+            "error": str(e)
+        }
+
+def _extract_recommendations(ai_response: Dict[str, Any]) -> List[str]:
+    """Extract actionable recommendations from AI response."""
+    response_text = ai_response.get("response", "")
+
+    # Simple extraction - look for numbered or bulleted lists
+    recommendations = []
+    lines = response_text.split('\n')
+
+    for line in lines:
+        line = line.strip()
+        # Match numbered lists (1., 2., etc.) or bullet points (-, *, •)
+        if line and (line[0].isdigit() or line.startswith(('-', '*', '•'))):
+            # Clean up the line
+            cleaned = line.lstrip('0123456789.-*• ')
+            if cleaned and len(cleaned) > 10:  # Only include substantial recommendations
+                recommendations.append(cleaned)
+
+    return recommendations[:5] if recommendations else ["Continue systematic clinical assessment"]

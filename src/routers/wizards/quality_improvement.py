@@ -1,7 +1,7 @@
 """
 Quality Improvement Wizard - AI Nurse Florence
 Following Wizard Pattern Implementation from coding instructions
-Quality metrics tracking and improvement initiative workflows
+Quality metrics tracking and improvement initiative workflows with AI-powered pattern analysis
 """
 
 from fastapi import APIRouter, HTTPException
@@ -9,8 +9,12 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
 from datetime import datetime
+import logging
 
 from ...utils.config import get_educational_banner
+from ...services.openai_client import create_openai_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/wizard/quality-improvement",
@@ -138,6 +142,9 @@ async def submit_quality_improvement_step(
     if step_number not in session["completed_steps"]:
         session["completed_steps"].append(step_number)
 
+    # Generate AI analysis based on step
+    ai_analysis = await _generate_qi_analysis(step_number, step_data.step_data, session["data"])
+
     # Move to next step
     if step_number < session["total_steps"]:
         session["current_step"] = step_number + 1
@@ -153,6 +160,7 @@ async def submit_quality_improvement_step(
         "total_steps": session["total_steps"],
         "progress": len(session["completed_steps"]) / session["total_steps"] * 100,
         "status": "completed" if len(session["completed_steps"]) == session["total_steps"] else "in_progress",
+        "ai_analysis": ai_analysis,
         "next_step": next_step_info
     }
 
@@ -382,5 +390,162 @@ async def get_quality_improvement_templates():
                     "White board communication"
                 ]
             }
+        ]
+    }
+
+async def _generate_qi_analysis(step_number: int, step_data: Dict[str, Any], all_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate AI-powered quality improvement analysis for each step.
+    Provides pattern analysis, root cause identification, evidence-based interventions, and outcome predictions.
+    """
+
+    step_names = {
+        1: "Problem Identification",
+        2: "Baseline Metrics",
+        3: "Improvement Plan",
+        4: "Implementation",
+        5: "Evaluation & Sustainability"
+    }
+
+    step_name = step_names.get(step_number, "Unknown Step")
+
+    try:
+        service = create_openai_service()
+
+        if not service:
+            return _fallback_qi_analysis(step_name)
+
+        # Create analysis prompt based on step
+        if step_number == 1:
+            # Root cause analysis and pattern identification
+            prompt = f"""Analyze this quality improvement problem and provide professional nursing insights:
+
+Problem Statement: {step_data.get('problem_statement', 'N/A')}
+Affected Population: {step_data.get('affected_population', 'N/A')}
+Scope: {step_data.get('scope', 'N/A')}
+Current Impact: {step_data.get('current_impact', 'N/A')}
+Suspected Root Causes: {step_data.get('root_causes', 'N/A')}
+Stakeholders: {step_data.get('stakeholders', 'N/A')}
+
+Provide:
+1. Root cause analysis using systems thinking
+2. Contributing factors across people, process, environment, and equipment
+3. Similar quality issues in nursing literature
+4. Priority areas for data collection and baseline measurement
+5. Stakeholder engagement strategies"""
+
+        elif step_number == 2:
+            # Metrics analysis and benchmarking
+            prompt = f"""Analyze these baseline quality metrics and provide evidence-based insights:
+
+Primary Metric: {step_data.get('primary_metric', 'N/A')}
+Current Value: {step_data.get('primary_metric_value', 'N/A')}
+Target Value: {step_data.get('target_value', 'N/A')}
+Secondary Metrics: {step_data.get('secondary_metrics', 'N/A')}
+Data Source: {step_data.get('data_source', 'N/A')}
+Measurement Frequency: {step_data.get('measurement_frequency', 'N/A')}
+Target Timeline: {step_data.get('target_timeline', 'N/A')}
+
+Provide:
+1. Assessment of current performance vs. national benchmarks
+2. Statistical significance of improvement needed
+3. Run chart and control chart recommendations
+4. Balance measures to monitor for unintended consequences
+5. Data collection and validation strategies"""
+
+        elif step_number == 3:
+            # Evidence-based intervention recommendations
+            prompt = f"""Analyze this quality improvement plan and provide evidence-based recommendations:
+
+Aim Statement: {step_data.get('aim_statement', 'N/A')}
+Planned Interventions: {step_data.get('interventions', 'N/A')}
+Evidence Base: {step_data.get('evidence_base', 'N/A')}
+Resources Needed: {step_data.get('resources_needed', 'N/A')}
+Team Members: {step_data.get('team_members', 'N/A')}
+Timeline: {step_data.get('timeline', 'N/A')}
+Anticipated Barriers: {step_data.get('barriers_anticipated', 'N/A')}
+
+Provide:
+1. Strength of evidence for proposed interventions (cite nursing research)
+2. Additional evidence-based interventions to consider
+3. PDSA cycle recommendations for testing changes
+4. Change management strategies for adoption
+5. Risk mitigation for identified barriers"""
+
+        elif step_number == 4:
+            # Implementation progress analysis
+            prompt = f"""Analyze quality improvement implementation progress:
+
+Start Date: {step_data.get('start_date', 'N/A')}
+Interventions Completed: {step_data.get('interventions_completed', 'N/A')}
+Process Changes: {step_data.get('process_changes_made', 'N/A')}
+Challenges Encountered: {step_data.get('challenges_encountered', 'N/A')}
+Adjustments Made: {step_data.get('adjustments_made', 'N/A')}
+Current Adoption Rate: {step_data.get('current_adoption_rate', 'N/A')}%
+
+Baseline Data: {all_data.get('baseline_metrics', {})}
+
+Provide:
+1. Assessment of implementation fidelity
+2. Adoption rate analysis and strategies to improve
+3. Recommended PDSA adjustments based on challenges
+4. Early indicator analysis (are we on track?)
+5. Staff engagement and sustainability recommendations"""
+
+        elif step_number == 5:
+            # Comprehensive outcome analysis
+            prompt = f"""Analyze quality improvement initiative outcomes and sustainability:
+
+Initiative: {all_data.get('problem_identification', {}).get('problem_statement', 'N/A')}
+Baseline Value: {all_data.get('baseline_metrics', {}).get('primary_metric_value', 'N/A')}
+Final Value: {step_data.get('final_metric_value', 'N/A')}
+Target Achieved: {step_data.get('target_achieved', 'N/A')}
+Outcome Summary: {step_data.get('outcome_summary', 'N/A')}
+Lessons Learned: {step_data.get('lessons_learned', 'N/A')}
+Sustainability Plan: {step_data.get('sustainability_plan', 'N/A')}
+Spread Potential: {step_data.get('spread_potential', 'N/A')}
+
+Provide:
+1. Statistical and clinical significance of results
+2. Success factors and key lessons learned
+3. Sustainability recommendations and monitoring plan
+4. Spread strategy for other units/facilities
+5. Publication/presentation opportunities (professional development)"""
+
+        else:
+            prompt = f"Analyze quality improvement data for {step_name}: {step_data}"
+
+        # Generate AI analysis
+        ai_response = await service.generate_response(
+            prompt=prompt,
+            context="quality_improvement_analysis"
+        )
+
+        return {
+            "step_name": step_name,
+            "analysis_available": True,
+            "qi_insights": ai_response.get("response", "AI analysis temporarily unavailable"),
+            "evidence_level": "AI-generated recommendations based on nursing literature and best practices",
+            "disclaimer": "AI-generated quality improvement insights for professional use. Validate recommendations with organizational policies and evidence-based guidelines.",
+            "ai_model": ai_response.get("model", "gpt-4"),
+            "service_status": ai_response.get("service_status", "available")
+        }
+
+    except Exception as e:
+        logger.error(f"QI AI analysis failed for step {step_number}: {e}")
+        return _fallback_qi_analysis(step_name)
+
+def _fallback_qi_analysis(step_name: str) -> Dict[str, Any]:
+    """Fallback QI analysis when AI is unavailable."""
+    return {
+        "step_name": step_name,
+        "analysis_available": False,
+        "message": "AI quality improvement analysis temporarily unavailable",
+        "fallback_note": "Proceed with quality improvement using standard QI methodologies (PDSA, Lean, Six Sigma) and organizational QI resources",
+        "recommended_resources": [
+            "Institute for Healthcare Improvement (IHI) resources",
+            "Agency for Healthcare Research and Quality (AHRQ) toolkit",
+            "Organizational quality improvement department",
+            "Professional QI literature and evidence-based guidelines"
         ]
     }

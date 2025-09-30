@@ -1,7 +1,7 @@
 """
 Patient Education Wizard - AI Nurse Florence
 Following Wizard Pattern Implementation from coding instructions
-Educational content delivery system with learning pathways
+Educational content delivery system with AI-powered content generation and reading level adjustment
 """
 
 from fastapi import APIRouter, HTTPException
@@ -9,8 +9,12 @@ from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
 from datetime import datetime
+import logging
 
 from ...utils.config import get_educational_banner
+from ...services.openai_client import create_openai_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/wizard/patient-education",
@@ -144,6 +148,25 @@ async def submit_patient_education_step(
     if step_number not in session["completed_steps"]:
         session["completed_steps"].append(step_number)
 
+    # Generate AI-powered educational content after step 1 (learning assessment)
+    ai_content = None
+    if step_number == 1:
+        ai_content = await _generate_personalized_content(
+            topic=session["data"]["topic"],
+            literacy_level=session["data"]["literacy_level"],
+            learning_style=step_data.step_data.get("preferred_learning_style", "Mixed"),
+            current_knowledge=step_data.step_data.get("current_knowledge_level", "No knowledge")
+        )
+
+    # Generate comprehension quiz after step 2 (content delivery)
+    ai_quiz = None
+    if step_number == 2:
+        ai_quiz = await _generate_comprehension_quiz(
+            topic=session["data"]["topic"],
+            literacy_level=session["data"]["literacy_level"],
+            content_covered=step_data.step_data.get("key_concepts_covered", "")
+        )
+
     # Move to next step
     if step_number < session["total_steps"]:
         session["current_step"] = step_number + 1
@@ -151,7 +174,7 @@ async def submit_patient_education_step(
     else:
         next_step_info = None
 
-    return {
+    response = {
         "banner": get_educational_banner(),
         "wizard_id": wizard_id,
         "step_completed": step_number,
@@ -161,6 +184,14 @@ async def submit_patient_education_step(
         "status": "completed" if len(session["completed_steps"]) == session["total_steps"] else "in_progress",
         "next_step": next_step_info
     }
+
+    # Add AI-generated content to response if available
+    if ai_content:
+        response["ai_generated_content"] = ai_content
+    if ai_quiz:
+        response["ai_generated_quiz"] = ai_quiz
+
+    return response
 
 @router.get("/{wizard_id}/step/{step_number}")
 async def get_patient_education_step(wizard_id: str, step_number: int):
@@ -352,3 +383,166 @@ def _generate_educational_materials(topic: str, learning_style: str) -> List[Dic
     })
 
     return materials
+
+async def _generate_personalized_content(
+    topic: str,
+    literacy_level: str,
+    learning_style: str,
+    current_knowledge: str
+) -> Dict[str, Any]:
+    """
+    Generate AI-powered personalized educational content with reading level adjustment.
+
+    This is the key feature for patient education - AI generates content at the appropriate
+    reading level (5th grade, 8th grade, high school, college) based on patient literacy.
+    """
+
+    # Map literacy levels to reading grades
+    literacy_map = {
+        "low": "5th grade",
+        "standard": "8th grade",
+        "high": "high school",
+        "advanced": "college"
+    }
+
+    reading_level = literacy_map.get(literacy_level, "8th grade")
+
+    try:
+        service = create_openai_service()
+
+        if not service:
+            return _fallback_educational_content(topic, reading_level)
+
+        # Create personalized educational content prompt with reading level specification
+        prompt = f"""Generate patient education content about {topic} with the following requirements:
+
+CRITICAL: Write at a {reading_level} reading level. Use simple words, short sentences, and clear explanations appropriate for {reading_level} literacy.
+
+Patient Profile:
+- Current Knowledge: {current_knowledge}
+- Learning Style: {learning_style}
+- Reading Level: {reading_level}
+
+Please provide:
+1. Introduction (2-3 simple sentences explaining what {topic} is)
+2. Key Facts (5-7 important points at {reading_level} level)
+3. What to Expect (daily life impacts, explained simply)
+4. Warning Signs (when to call the doctor, in clear language)
+5. Self-Care Tips (practical actions the patient can take)
+
+Remember:
+- Use {reading_level} vocabulary and sentence structure
+- Avoid medical jargon or explain it in simple terms
+- Use active voice and direct language
+- Break complex ideas into simple steps
+- Include encouraging, supportive tone
+
+Format with clear headings and short paragraphs for easy reading."""
+
+        ai_response = await service.generate_response(
+            prompt=prompt,
+            context=f"Patient education at {reading_level} reading level for {learning_style} learner"
+        )
+
+        return {
+            "content_available": True,
+            "reading_level": reading_level,
+            "educational_content": ai_response.get("response", ""),
+            "learning_style_adapted": learning_style,
+            "disclaimer": "AI-generated educational content for patient use. Review with healthcare provider for personalized medical advice.",
+            "ai_model": ai_response.get("model", "gpt-4"),
+            "service_status": ai_response.get("service_status", "available"),
+            "customization_note": f"Content adapted to {reading_level} reading level and {learning_style} learning style"
+        }
+
+    except Exception as e:
+        logger.error(f"AI content generation failed: {e}")
+        return _fallback_educational_content(topic, reading_level)
+
+async def _generate_comprehension_quiz(
+    topic: str,
+    literacy_level: str,
+    content_covered: str
+) -> Dict[str, Any]:
+    """
+    Generate AI-powered comprehension quiz questions based on content delivered.
+    Questions are adjusted to patient's literacy level for accurate assessment.
+    """
+
+    literacy_map = {
+        "low": "5th grade",
+        "standard": "8th grade",
+        "high": "high school",
+        "advanced": "college"
+    }
+
+    reading_level = literacy_map.get(literacy_level, "8th grade")
+
+    try:
+        service = create_openai_service()
+
+        if not service:
+            return _fallback_quiz(topic, reading_level)
+
+        prompt = f"""Create a comprehension quiz about {topic} to verify patient understanding.
+
+Content that was taught:
+{content_covered}
+
+Requirements:
+- Write questions at {reading_level} reading level
+- Use simple, clear language
+- Create 5 multiple-choice questions
+- Include 1 scenario-based question asking "What would you do if..."
+- Provide correct answers with brief explanations
+
+Format as:
+Question 1: [question text]
+A) [option]
+B) [option]
+C) [option]
+D) [option]
+Correct Answer: [letter] - [brief explanation]
+
+Make questions practical and relevant to daily life."""
+
+        ai_response = await service.generate_response(
+            prompt=prompt,
+            context=f"Comprehension quiz at {reading_level} level"
+        )
+
+        return {
+            "quiz_available": True,
+            "reading_level": reading_level,
+            "quiz_questions": ai_response.get("response", ""),
+            "question_count": 5,
+            "disclaimer": "Use teach-back method in addition to quiz for comprehensive assessment",
+            "ai_model": ai_response.get("model", "gpt-4")
+        }
+
+    except Exception as e:
+        logger.error(f"AI quiz generation failed: {e}")
+        return _fallback_quiz(topic, reading_level)
+
+def _fallback_educational_content(topic: str, reading_level: str) -> Dict[str, Any]:
+    """Fallback educational content when AI is unavailable."""
+    return {
+        "content_available": False,
+        "reading_level": reading_level,
+        "message": "AI content generation temporarily unavailable",
+        "fallback_note": f"Use standard {topic} patient education materials at {reading_level} level from approved resources",
+        "recommended_resources": [
+            "MedlinePlus patient education materials (medlineplus.gov)",
+            "CDC patient fact sheets (cdc.gov)",
+            "Hospital-approved patient education library"
+        ]
+    }
+
+def _fallback_quiz(topic: str, reading_level: str) -> Dict[str, Any]:
+    """Fallback quiz when AI is unavailable."""
+    return {
+        "quiz_available": False,
+        "reading_level": reading_level,
+        "message": "AI quiz generation temporarily unavailable",
+        "fallback_note": "Use teach-back method to assess comprehension: 'Can you tell me in your own words what we discussed about {topic}?'"
+    }
