@@ -628,3 +628,64 @@ async def test_admin_system(
         "auth_system": _has_auth,
         "educational_notice": "For educational purposes only - not medical advice. No PHI stored."
     })
+
+@router.post("/seed-medications")
+async def seed_medications_endpoint():
+    """
+    Seed the medications database with common drugs.
+    ONE-TIME USE endpoint for production database initialization.
+    """
+    try:
+        from src.models.database import get_db_session, Medication
+        from sqlalchemy import select, delete
+        from uuid import uuid4
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        # Import medication data from seed script
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        from scripts.seed_medications import MEDICATIONS_DATA
+
+        async for session in get_db_session():
+            try:
+                # Clear existing
+                await session.execute(delete(Medication))
+                await session.commit()
+
+                # Insert medications
+                medications_created = 0
+                for med_data in MEDICATIONS_DATA:
+                    medication = Medication(
+                        id=str(uuid4()),
+                        name=med_data["name"],
+                        generic_name=med_data["generic"],
+                        is_brand=med_data["is_brand"],
+                        category=med_data["category"],
+                        drug_class=med_data["drug_class"],
+                        source="curated",
+                        is_active=True
+                    )
+                    session.add(medication)
+                    medications_created += 1
+
+                await session.commit()
+
+                return create_success_response({
+                    "message": f"Successfully seeded {medications_created} medications",
+                    "count": medications_created,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
+
+            except Exception as db_error:
+                await session.rollback()
+                raise db_error
+
+    except Exception as e:
+        logger.error(f"Medication seeding failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to seed medications: {str(e)}"
+        )
