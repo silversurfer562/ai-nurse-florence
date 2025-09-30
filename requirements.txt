@@ -52,6 +52,9 @@ passlib[bcrypt]==1.7.4
 # Monitoring Dependencies (enabled for production)
 prometheus-client==0.19.0
 python-json-logger>=2.0.7,<2.1.0
+
+# AI/ML Dependencies
+openai>=1.0.0,<2.0.0
 # Force rebuild Mon Sep 22 05:38:32 EDT 2025
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
