@@ -176,7 +176,7 @@
                 searchInput.addEventListener('input', (e) => {
                     clearTimeout(this.debounceTimer);
                     this.debounceTimer = setTimeout(() => {
-                        if (e.target.value.length >= 2) {
+                        if (e.target.value.length >= 3) {
                             this.showAutocomplete(e.target.value);
                         } else {
                             this.hideAutocomplete();
@@ -294,7 +294,7 @@
                 } catch (error) {
                     console.error('Autocomplete error:', error);
                     // Show fallback suggestions for common diseases
-                    if (query.length >= 2) {
+                    if (query.length >= 3) {
                         const fallbackSuggestions = this.getFallbackSuggestions(query);
                         if (fallbackSuggestions.length > 0) {
                             const resultsDiv = document.getElementById('autocompleteResults');

@@ -11,6 +11,7 @@ import logging
 import httpx
 import uuid
 import re
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import List, Optional
 from src.utils.redis_cache import cache_set, cache_get
@@ -135,41 +136,43 @@ class DiseaseCacheUpdaterService:
 
     async def fetch_mondo_disease_list(self) -> List[str]:
         """
-        Fetch comprehensive disease list with synonyms from MyDisease.info API.
+        Fetch comprehensive disease list from BOTH MyDisease.info and MedlinePlus.
+
+        Dual-source strategy:
+        1. MyDisease.info: Technical terms and MONDO synonyms
+        2. MedlinePlus: Consumer-friendly disease names
 
         Fallback strategy:
-        1. Try MyDisease.info API (primary source - includes synonyms)
-        2. If API fails, use last successful data from database
+        1. Try both APIs (primary sources)
+        2. If APIs fail, use last successful data from database
         3. If no database backup, use comprehensive hardcoded list
 
         Database backup is ONLY updated on successful API fetch,
         preserving the last known good data during network issues.
 
         Returns:
-            List of disease names and synonyms from MyDisease.info
+            List of disease names and synonyms from both sources
         """
         try:
-            # Use MyDisease.info for comprehensive disease data with synonyms
-            mydisease_url = "https://mydisease.info/v1/query"
+            # Updated animal keywords to catch more variations
+            animal_keywords = ["chicken", "dog", "horse", "pig", "cat", "mouse",
+                             "rat", "cattle", "sheep", "goat", "rabbit", "koala",
+                             "quail", "guinea pig", "chinchilla", "non-human animal"]
 
-            # Fetch a comprehensive list of common diseases
-            params = {
-                "q": "disease",
-                "size": 1000,  # Fetch large sample for comprehensive list
-                "fields": "mondo.label,mondo.synonym"
-            }
+            disease_names = set()
 
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                # SOURCE 1: MyDisease.info for comprehensive disease data with synonyms
+                mydisease_url = "https://mydisease.info/v1/query"
+                params = {
+                    "q": "disease",
+                    "size": 1000,  # Fetch large sample for comprehensive list
+                    "fields": "mondo.label,mondo.synonym"
+                }
+
                 response = await client.get(mydisease_url, params=params)
                 response.raise_for_status()
                 data = response.json()
-
-                # Extract disease names and synonyms from response
-                # Filter out animal-specific diseases to focus on human conditions
-                animal_keywords = [", chicken", ", dog", ", horse", ", pig", ", cat", ", mouse",
-                                 ", rat", ", cattle", ", sheep", ", goat", ", rabbit", ", koala"]
-
-                disease_names = set()
                 for hit in data.get("hits", []):
                     mondo = hit.get("mondo", {})
 
@@ -212,13 +215,58 @@ class DiseaseCacheUpdaterService:
                             if not is_gene_variant:
                                 disease_names.add(synonym)
 
+                logger.info(f"✅ Fetched {len(disease_names)} diseases from MyDisease.info")
+
+                # SOURCE 2: MedlinePlus for consumer-friendly disease names
+                # Fetch common disease categories
+                common_searches = [
+                    "diabetes", "cancer", "heart", "asthma", "arthritis", "hypertension",
+                    "infection", "mental", "kidney", "liver", "lung", "brain", "blood",
+                    "skin", "eye", "bone", "pregnancy", "child", "elderly"
+                ]
+
+                for search_term in common_searches:
+                    try:
+                        medlineplus_url = "https://wsearch.nlm.nih.gov/ws/query"
+                        params = {
+                            "db": "healthTopics",
+                            "term": search_term,
+                            "retmax": 50  # Get top 50 results per category
+                        }
+                        response = await client.get(medlineplus_url, params=params)
+                        response.raise_for_status()
+
+                        # Parse XML response
+                        root = ET.fromstring(response.text)
+
+                        # Extract disease names from title and altTitle fields
+                        for document in root.findall('.//document'):
+                            # Get main title
+                            title_elem = document.find('.//content[@name="title"]')
+                            if title_elem is not None and title_elem.text:
+                                title = re.sub(r'<[^>]+>', '', title_elem.text)
+                                if title and not any(keyword in title.lower() for keyword in animal_keywords):
+                                    disease_names.add(title)
+
+                            # Get alternative titles
+                            for alt_title in document.findall('.//content[@name="altTitle"]'):
+                                if alt_title.text:
+                                    alt = re.sub(r'<[^>]+>', '', alt_title.text)
+                                    if alt and not any(keyword in alt.lower() for keyword in animal_keywords):
+                                        disease_names.add(alt)
+
+                    except Exception as e:
+                        logger.debug(f"MedlinePlus fetch for '{search_term}' failed: {e}")
+                        continue
+
+                logger.info(f"✅ Fetched total {len(disease_names)} diseases from both sources")
+
                 # Remove duplicates and sort
                 disease_names_list = sorted(list(disease_names))
-                logger.info(f"✅ Fetched {len(disease_names_list)} disease names and synonyms from MyDisease.info API")
 
                 # ONLY save to database on successful fetch
                 # This preserves the last known good data during API failures
-                await self.save_disease_list_to_db(disease_names_list, source="mydisease_api")
+                await self.save_disease_list_to_db(disease_names_list, source="dual_source_api")
                 self.last_fetch_source = "api"
 
                 return disease_names_list
