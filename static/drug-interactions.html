@@ -6,6 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <!-- Version: 2.0.0 - Database + OpenAI Integration - 2025-09-30 -->
     <title>Drug Interaction Checker - AI Nurse Florence</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -109,6 +110,17 @@
                 <div>
                     <h3 class="text-sm font-medium text-red-800">Critical Safety Notice</h3>
                     <p class="text-sm text-red-700">Educational use only — not medical advice. Always verify drug interactions with clinical pharmacist or current drug references before medication administration.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI-Powered Feature Notice -->
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-robot text-blue-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-blue-800">AI-Powered Analysis</h3>
+                    <p class="text-sm text-blue-700">This feature uses OpenAI GPT-4 to analyze complex drug interactions. Drug information is stored in our database, while interaction analysis uses advanced medical AI.</p>
                 </div>
             </div>
         </div>
@@ -579,9 +591,16 @@
                     const data = await response.json();
 
                     if (data.success && data.data) {
-                        // Display full analysis results
-                        this.displayFullAnalysis(data.data);
-                        this.updateStatus('Analysis complete');
+                        // Check if OpenAI is unavailable
+                        if (data.data.error && data.data.error.includes('OpenAI')) {
+                            // Still display drug info if available, but show OpenAI requirement
+                            this.displayFullAnalysis(data.data);
+                            this.showError('⚠️ ' + data.data.service_note);
+                        } else {
+                            // Display full analysis results
+                            this.displayFullAnalysis(data.data);
+                            this.updateStatus('Analysis complete');
+                        }
                     } else {
                         console.error('Invalid response format:', data);
                         this.showError('Failed to check interactions: ' + (data.message || 'Invalid response'));

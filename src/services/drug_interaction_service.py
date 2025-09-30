@@ -551,13 +551,28 @@ If there are no significant interactions, return an empty interactions array but
 
         except Exception as e:
             logger.error(f"Error checking drug interactions with OpenAI: {e}")
-            return {
-                "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
-                "error": "Failed to check drug interactions",
-                "error_details": str(e),
-                "drugs_checked": drugs,
-                "timestamp": datetime.now().isoformat()
-            }
+
+            # If we have database info, still return it with clear error about OpenAI requirement
+            if drug_info_from_db:
+                return {
+                    "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
+                    "error": "Drug interaction analysis requires OpenAI API",
+                    "error_details": "OpenAI API is required for analyzing drug interactions. Drug information is available from database, but interaction analysis failed.",
+                    "drug_information": drug_info_from_db,
+                    "drugs_checked": drugs,
+                    "data_source": "Database only (OpenAI unavailable)",
+                    "service_note": "⚠️ Drug Interaction Checker requires OpenAI API for interaction analysis. Please ensure OpenAI API key is configured.",
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                return {
+                    "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
+                    "error": "Drug interaction analysis requires OpenAI API",
+                    "error_details": str(e),
+                    "drugs_checked": drugs,
+                    "service_note": "⚠️ Drug Interaction Checker requires OpenAI API. This is an AI-powered feature that analyzes complex drug interactions using medical AI.",
+                    "timestamp": datetime.now().isoformat()
+                }
     
     def _check_drug_pair_interaction(self, drug1: Drug, drug2: Drug) -> Optional[DrugInteraction]:
         """Check for interaction between two drugs."""

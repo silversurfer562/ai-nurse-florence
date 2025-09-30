@@ -24,7 +24,13 @@ AI Nurse Florence is a **production-ready** FastAPI-based healthcare information
 - **Patient Education**: Readability-optimized health information materials via MedlinePlus
 - **Clinical Documentation**: SBAR report generation and summarization tools
 - **Prompt Enhancement**: Intelligent query clarification and improvement with context-aware suggestions
+- **Drug Interaction Checker**: 🤖 **AI-Powered** - Analyzes complex drug interactions using OpenAI GPT-4 with database-stored medication details (31 common drugs with brand names, nursing considerations, side effects, warnings)
 - **Live Medical Data**: Real-time access to authoritative medical databases and literature
+
+### 🔑 API Requirements
+
+- **Required**: OpenAI API key (for Drug Interaction Checker and AI-powered features)
+- **Optional**: NCBI API key (for PubMed rate limit increases)
 
 ## 🚀 Quick Start
 
