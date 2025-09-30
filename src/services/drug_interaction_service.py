@@ -496,10 +496,6 @@ If there are no significant interactions, return an empty interactions array but
                 "timestamp": datetime.now().isoformat()
             }
 
-        # First, try to get detailed drug information from database
-        drug_info_from_db = await self._get_drug_info_from_database(drugs)
-        logger.info(f"Retrieved {len(drug_info_from_db)} drugs from database out of {len(drugs)} requested")
-
         # Check cache first
         cache_key = self._create_cache_key(drugs)
         cached_result = None
@@ -520,17 +516,9 @@ If there are no significant interactions, return an empty interactions array but
             cached_result["response_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
             return cached_result
 
-        # Use OpenAI to check interactions (if database had all drugs, just get interaction analysis)
+        # Use OpenAI to check interactions and get comprehensive drug information
         try:
             response = await self._check_interactions_with_openai(drugs, patient_context)
-
-            # Merge database drug information with OpenAI response
-            if drug_info_from_db:
-                logger.info(f"Merging {len(drug_info_from_db)} database results with OpenAI response")
-                # Replace OpenAI's drug_information with database version (more detailed)
-                response["drug_information"] = drug_info_from_db
-                response["data_source"] = "Database + OpenAI GPT-4 (Interactions)"
-
             response["cache_hit"] = False
             response["response_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
 
@@ -551,28 +539,14 @@ If there are no significant interactions, return an empty interactions array but
 
         except Exception as e:
             logger.error(f"Error checking drug interactions with OpenAI: {e}")
-
-            # If we have database info, still return it with clear error about OpenAI requirement
-            if drug_info_from_db:
-                return {
-                    "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
-                    "error": "Drug interaction analysis requires OpenAI API",
-                    "error_details": "OpenAI API is required for analyzing drug interactions. Drug information is available from database, but interaction analysis failed.",
-                    "drug_information": drug_info_from_db,
-                    "drugs_checked": drugs,
-                    "data_source": "Database only (OpenAI unavailable)",
-                    "service_note": "⚠️ Drug Interaction Checker requires OpenAI API for interaction analysis. Please ensure OpenAI API key is configured.",
-                    "timestamp": datetime.now().isoformat()
-                }
-            else:
-                return {
-                    "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
-                    "error": "Drug interaction analysis requires OpenAI API",
-                    "error_details": str(e),
-                    "drugs_checked": drugs,
-                    "service_note": "⚠️ Drug Interaction Checker requires OpenAI API. This is an AI-powered feature that analyzes complex drug interactions using medical AI.",
-                    "timestamp": datetime.now().isoformat()
-                }
+            return {
+                "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
+                "error": "Drug interaction analysis requires OpenAI API",
+                "error_details": str(e),
+                "drugs_checked": drugs,
+                "service_note": "⚠️ Drug Interaction Checker requires OpenAI API. This is an AI-powered feature that provides comprehensive drug information and interaction analysis using medical AI.",
+                "timestamp": datetime.now().isoformat()
+            }
     
     def _check_drug_pair_interaction(self, drug1: Drug, drug2: Drug) -> Optional[DrugInteraction]:
         """Check for interaction between two drugs."""
