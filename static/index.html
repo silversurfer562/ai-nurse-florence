@@ -96,219 +96,177 @@
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="bg-white rounded-lg shadow-md mb-6">
-            <div class="border-b border-gray-200">
-                <nav class="flex space-x-8 px-6" aria-label="Tabs">
-                    <button onclick="switchTab('chat')" id="chatTabBtn" class="tab-button active py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
-                        <i class="fas fa-comments mr-2"></i>
-                        Clinical Chat
+        <!-- Clinical Dashboard - Dedicated Feature Access -->
+        <div class="space-y-8">
+            
+            <!-- Clinical Tools Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-stethoscope text-blue-600 mr-3"></i>
+                    Clinical Decision Support Tools
+                </h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Chat Interface -->
+                    <button onclick="startClinicalChat()" class="clinical-feature-btn bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-comments text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Clinical Chat</h3>
+                            <p class="text-sm opacity-90">AI-powered clinical decision support</p>
+                        </div>
                     </button>
-                    <button onclick="openDedicatedInterface('disease-lookup.html')" id="diseaseTabBtn" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-search-plus mr-2"></i>
-                        Disease Lookup
-                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
-                    </button>
-                    <button onclick="openDedicatedInterface('drug-interactions.html')" id="drugTabBtn" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-pills mr-2"></i>
-                        Drug Interactions
-                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
-                    </button>
-                    <button onclick="openDedicatedInterface('clinical-workspace.html')" id="workspaceTabBtn" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-stethoscope mr-2"></i>
-                        Clinical Workspace
-                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
-                    </button>
-                    <button onclick="openDedicatedInterface('clinical-assessment-optimizer.html')" id="optimizerTabBtn" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-brain mr-2"></i>
-                        Assessment Optimizer
-                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
-                    </button>
-                    <button onclick="openDedicatedInterface('sbar-wizard.html')" id="sbarWizardTabBtn" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-comments-medical mr-2"></i>
-                        SBAR Wizard
-                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
-                    </button>
-                    <button onclick="openDedicatedInterface('care-plan-wizard.html')" id="carePlanWizardTabBtn" class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                        <i class="fas fa-clipboard-check mr-2"></i>
-                        Care Plan Wizard
-                        <i class="fas fa-external-link-alt ml-2 text-xs"></i>
-                    </button>
-                </nav>
-            </div>
-        </div>
 
-        <!-- Chat Tab Content (default) -->
-        <div id="chatTab" class="tab-content">
-        <!-- Welcome Banner (shown initially) -->
-        <div id="welcomeBanner" class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg text-white p-8 mb-6">
-            <div class="flex items-center justify-between">
-                <div class="flex-1">
-                    <h2 class="text-2xl font-bold mb-2">Welcome to Your Clinical Assistant</h2>
-                    <p class="text-blue-100 mb-4">Get evidence-based support for patient care, medication guidance, and clinical protocols</p>
-                    
-                    <!-- Compliance Notice -->
-                    <div class="bg-blue-500/30 border border-blue-400/30 rounded-lg p-4 mb-4">
-                        <div class="flex items-start space-x-3">
-                            <i class="fas fa-shield-alt text-blue-200 mt-1"></i>
-                            <div class="text-sm">
-                                <p class="font-semibold text-blue-100 mb-1">Clinical Decision Support Tool</p>
-                                <p class="text-blue-200">Educational and reference purposes only. Always follow your institution's protocols and verify all clinical decisions with appropriate healthcare professionals. No PHI is stored or processed.</p>
-                            </div>
+                    <!-- Disease Lookup -->
+                    <button onclick="openDedicatedInterface('disease-lookup.html')" class="clinical-feature-btn bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-search-plus text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Disease Lookup</h3>
+                            <p class="text-sm opacity-90">Search disease information & symptoms</p>
                         </div>
-                    </div>
-                    
-                    <button onclick="startClinicalChat()" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center space-x-2">
-                        <i class="fas fa-comments"></i>
-                        <span>Start Clinical Chat</span>
                     </button>
-                </div>
-                
-                <div class="hidden lg:block">
-                    <div class="text-right">
-                        <div class="bg-white/10 rounded-lg p-4 backdrop-blur">
-                            <div class="text-3xl font-bold">v2.0.1</div>
-                            <div class="text-blue-200 text-sm">Evidence-Based</div>
+
+                    <!-- Drug Interactions -->
+                    <button onclick="openDedicatedInterface('drug-interactions.html')" class="clinical-feature-btn bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-pills text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Drug Interactions</h3>
+                            <p class="text-sm opacity-90">Check medication interactions</p>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="quickAccessSection" class="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <!-- Emergency Assessment -->
-            <div class="clinical-card bg-red-50 border-2 border-red-200 rounded-xl p-6 cursor-pointer hover:border-red-400" onclick="quickClinicalQuery('Emergency assessment protocols for sepsis recognition')">
-                <div class="text-center">
-                    <div class="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Emergency Assessment</h3>
-                    <p class="text-sm text-gray-600">Rapid assessment protocols, warning signs, critical interventions</p>
+                    </button>
+
+                    <!-- Clinical Workspace -->
+                    <button onclick="openDedicatedInterface('clinical-workspace.html')" class="clinical-feature-btn bg-gradient-to-r from-teal-500 to-teal-600 text-white p-6 rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-laptop-medical text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Clinical Workspace</h3>
+                            <p class="text-sm opacity-90">Integrated clinical tools dashboard</p>
+                        </div>
+                    </button>
+
+                    <!-- Assessment Optimizer -->
+                    <button onclick="openDedicatedInterface('clinical-assessment-optimizer.html')" class="clinical-feature-btn bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-6 rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-brain text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Assessment Optimizer</h3>
+                            <p class="text-sm opacity-90">Enhanced clinical assessment tools</p>
+                        </div>
+                    </button>
                 </div>
             </div>
 
-            <!-- Medication Management -->
-            <div class="clinical-card bg-blue-50 border-2 border-blue-200 rounded-xl p-6 cursor-pointer hover:border-blue-400" onclick="quickClinicalQuery('Safe medication administration and dosage calculations')">
-                <div class="text-center">
-                    <div class="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <i class="fas fa-pills text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Medication Safety</h3>
-                    <p class="text-sm text-gray-600">Administration protocols, dosage calculations, drug interactions</p>
+            <!-- Clinical Wizards Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-magic text-purple-600 mr-3"></i>
+                    Clinical Wizards & Workflows
+                </h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- SBAR Wizard -->
+                    <button onclick="openDedicatedInterface('sbar-wizard.html')" class="clinical-feature-btn bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-comments-medical text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">SBAR Wizard</h3>
+                            <p class="text-sm opacity-90">Structured clinical communication</p>
+                        </div>
+                    </button>
+
+                    <!-- Care Plan Wizard -->
+                    <button onclick="openDedicatedInterface('care-plan-wizard.html')" class="clinical-feature-btn bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6 rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-clipboard-check text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Care Plan Wizard</h3>
+                            <p class="text-sm opacity-90">Evidence-based care planning</p>
+                        </div>
+                    </button>
+
+                    <!-- Clinical Assessment Wizard -->
+                    <button onclick="openWizardInterface('clinical_assessment')" class="clinical-feature-btn bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-user-check text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Clinical Assessment</h3>
+                            <p class="text-sm opacity-90">Comprehensive patient assessment</p>
+                        </div>
+                    </button>
+
+                    <!-- Medication Reconciliation Wizard -->
+                    <button onclick="openWizardInterface('medication_reconciliation')" class="clinical-feature-btn bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-prescription-bottle-alt text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Medication Reconciliation</h3>
+                            <p class="text-sm opacity-90">Safe medication management</p>
+                        </div>
+                    </button>
+
+                    <!-- Patient Education Wizard -->
+                    <button onclick="openWizardInterface('patient_education')" class="clinical-feature-btn bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-xl hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-graduation-cap text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Patient Education</h3>
+                            <p class="text-sm opacity-90">Structured patient teaching</p>
+                        </div>
+                    </button>
+
+                    <!-- Quality Improvement Wizard -->
+                    <button onclick="openWizardInterface('quality_improvement')" class="clinical-feature-btn bg-gradient-to-r from-pink-500 to-pink-600 text-white p-6 rounded-xl hover:from-pink-600 hover:to-pink-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Quality Improvement</h3>
+                            <p class="text-sm opacity-90">Process improvement initiatives</p>
+                        </div>
+                    </button>
+
+                    <!-- Dosage Calculation Wizard -->
+                    <button onclick="openWizardInterface('dosage_calculation')" class="clinical-feature-btn bg-gradient-to-r from-cyan-500 to-cyan-600 text-white p-6 rounded-xl hover:from-cyan-600 hover:to-cyan-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-calculator text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Dosage Calculator</h3>
+                            <p class="text-sm opacity-90">Step-by-step medication calculations</p>
+                        </div>
+                    </button>
                 </div>
             </div>
 
-            <!-- Patient Care Plans -->
-            <div class="clinical-card bg-green-50 border-2 border-green-200 rounded-xl p-6 cursor-pointer hover:border-green-400" onclick="quickClinicalQuery('Create nursing care plan for post-operative patient')">
-                <div class="text-center">
-                    <div class="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <i class="fas fa-clipboard-list text-green-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Care Planning</h3>
-                    <p class="text-sm text-gray-600">Nursing diagnoses, interventions, outcome evaluation</p>
-                </div>
-            </div>
+            <!-- Emergency & Critical Care Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-ambulance text-red-600 mr-3"></i>
+                    Emergency & Critical Care
+                </h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Emergency Assessment -->
+                    <button onclick="quickClinicalQuery('Emergency assessment protocols for sepsis recognition and qSOFA scoring')" class="clinical-feature-btn bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Sepsis Assessment</h3>
+                            <p class="text-sm opacity-90">Emergency protocols & qSOFA</p>
+                        </div>
+                    </button>
 
-            <!-- Clinical Documentation -->
-            <div class="clinical-card bg-purple-50 border-2 border-purple-200 rounded-xl p-6 cursor-pointer hover:border-purple-400" onclick="quickClinicalQuery('SBAR communication template for patient handoff')">
-                <div class="text-center">
-                    <div class="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <i class="fas fa-file-medical-alt text-purple-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-bold text-lg text-gray-800 mb-2">Documentation</h3>
-                    <p class="text-sm text-gray-600">SBAR reports, nursing notes, handoff communication</p>
-                </div>
-            </div>
-        </div>
+                    <!-- Medication Safety -->
+                    <button onclick="quickClinicalQuery('Safe medication administration protocols and dosage calculations')" class="clinical-feature-btn bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-calculator text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Dosage Calculations</h3>
+                            <p class="text-sm opacity-90">Safe medication dosing</p>
+                        </div>
+                    </button>
 
-        <!-- Advanced Clinical Tools (shown initially) -->
-        <div id="advancedToolsSection" class="grid md:grid-cols-2 gap-6 mb-8">
-            <!-- Disease Lookup Tool -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-orange-100 p-3 rounded-lg">
-                            <i class="fas fa-search-plus text-orange-600 text-xl"></i>
+                    <!-- Pain Management -->
+                    <button onclick="quickClinicalQuery('Pain assessment scales and management protocols for acute and chronic pain')" class="clinical-feature-btn bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-hand-holding-heart text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Pain Management</h3>
+                            <p class="text-sm opacity-90">Assessment & protocols</p>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-800">Disease Lookup</h3>
-                            <p class="text-sm text-gray-600">Search for disease information, symptoms, and clinical data</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Search Disease</label>
-                            <input 
-                                type="text" 
-                                id="diseaseSearchInput"
-                                placeholder="Enter disease name (e.g., diabetes, hypertension, pneumonia)"
-                                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                onkeypress="handleDiseaseSearchKeyPress(event)"
-                            >
-                        </div>
-                        <button 
-                            onclick="searchDisease()"
-                            class="w-full bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center space-x-2"
-                        >
-                            <i class="fas fa-search"></i>
-                            <span>Search Disease</span>
-                        </button>
-                        <div id="diseaseResults" class="hidden mt-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                            <!-- Disease results will be displayed here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    </button>
 
-            <!-- Drug Interaction Checker -->
-            <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex items-center space-x-3">
-                        <div class="bg-indigo-100 p-3 rounded-lg">
-                            <i class="fas fa-pills text-indigo-600 text-xl"></i>
+                    <!-- Fall Prevention -->
+                    <button onclick="quickClinicalQuery('Fall risk assessment tools and prevention strategies for hospitalized patients')" class="clinical-feature-btn bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-xl hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+                        <div class="text-center">
+                            <i class="fas fa-shield-alt text-3xl mb-3"></i>
+                            <h3 class="font-bold text-lg mb-2">Fall Prevention</h3>
+                            <p class="text-sm opacity-90">Risk assessment & safety</p>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-800">Drug Interaction Checker</h3>
-                            <p class="text-sm text-gray-600">Check for interactions between medications</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Medications</label>
-                            <div id="drugInputContainer" class="space-y-2">
-                                <input 
-                                    type="text" 
-                                    placeholder="Enter medication #1 (e.g., lisinopril, metformin)"
-                                    class="drug-input w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                >
-                                <input 
-                                    type="text" 
-                                    placeholder="Enter medication #2"
-                                    class="drug-input w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                >
-                            </div>
-                            <button 
-                                onclick="addDrugInput()"
-                                class="mt-2 text-indigo-600 text-sm hover:text-indigo-800 flex items-center space-x-1"
-                            >
-                                <i class="fas fa-plus"></i>
-                                <span>Add another medication</span>
-                            </button>
-                        </div>
-                        <button 
-                            onclick="checkDrugInteractions()"
-                            class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2"
-                        >
-                            <i class="fas fa-check-circle"></i>
-                            <span>Check Interactions</span>
-                        </button>
-                        <div id="drugInteractionResults" class="hidden mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                            <!-- Drug interaction results will be displayed here -->
-                        </div>
-                    </div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -403,135 +361,6 @@
                 </div>
             </div>
         </div>
-        </div>
-
-        <!-- Disease Lookup Tab Content -->
-        <div id="diseaseTab" class="tab-content hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-blue-700 mb-6">
-                    <i class="fas fa-search-plus"></i>
-                    Disease Information Lookup
-                </h2>
-                <p class="text-gray-600 mb-6">Search for comprehensive disease information from live medical databases with local fallback.</p>
-                
-                <!-- Disease Search Form -->
-                <div class="mb-6">
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label for="diseaseSearchTab" class="block text-sm font-medium text-gray-700 mb-2">
-                                Disease Name or Symptom
-                            </label>
-                            <input type="text" 
-                                   id="diseaseSearchTab" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   placeholder="e.g., diabetes, hypertension, chest pain..."
-                                   autocomplete="off"
-                                   onkeypress="handleDiseaseTabKeyPress(event)">
-                            <div id="diseaseTabAutocomplete" class="autocomplete-results" style="display: none;"></div>
-                        </div>
-                        <button onclick="searchDiseaseTab()" 
-                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-search"></i>
-                            Search
-                        </button>
-                    </div>
-                    
-                    <!-- Advanced Options -->
-                    <div class="mt-4">
-                        <label class="flex items-center text-sm text-gray-600">
-                            <input type="checkbox" id="includeSymptoms" checked class="mr-2">
-                            Include symptoms and signs
-                        </label>
-                        <label class="flex items-center text-sm text-gray-600 mt-1">
-                            <input type="checkbox" id="includeTreatments" checked class="mr-2">
-                            Include treatment options
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Disease Results -->
-                <div id="diseaseTabResults" class="disease-results" style="display: none;">
-                    <div class="bg-blue-50 p-4 rounded-lg mb-4">
-                        <h3 class="text-lg font-semibold text-blue-800 mb-2">
-                            <i class="fas fa-info-circle"></i>
-                            Disease Information
-                        </h3>
-                        <div id="diseaseTabContent" class="space-y-4"></div>
-                    </div>
-                </div>
-
-                <!-- Loading State -->
-                <div id="diseaseTabLoading" class="text-center py-8" style="display: none;">
-                    <i class="fas fa-spinner fa-spin text-2xl text-blue-600 mb-2"></i>
-                    <p class="text-gray-600">Searching live medical databases...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Drug Interaction Checker Tab Content -->
-        <div id="drugTab" class="tab-content hidden">
-            <div class="bg-white p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-purple-700 mb-6">
-                    <i class="fas fa-pills"></i>
-                    Drug Interaction Checker
-                </h2>
-                <p class="text-gray-600 mb-6">Check for potential interactions between medications using live FDA data and clinical databases.</p>
-                
-                <!-- Drug Input Form -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Enter Medications (one per line or comma-separated)
-                    </label>
-                    <div class="space-y-4">
-                        <div class="drug-input-group">
-                            <input type="text" 
-                                   id="drug1Tab" 
-                                   class="drug-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                   placeholder="e.g., Warfarin, Aspirin, Metformin..."
-                                   autocomplete="off">
-                            <div id="drug1TabAutocomplete" class="autocomplete-results" style="display: none;"></div>
-                        </div>
-                        <div class="drug-input-group">
-                            <input type="text" 
-                                   id="drug2Tab" 
-                                   class="drug-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                   placeholder="Second medication (optional)..."
-                                   autocomplete="off">
-                            <div id="drug2TabAutocomplete" class="autocomplete-results" style="display: none;"></div>
-                        </div>
-                        <div id="additionalDrugInputs"></div>
-                        <button onclick="addDrugInputTab()" 
-                                class="text-sm text-purple-600 hover:text-purple-800">
-                            <i class="fas fa-plus"></i>
-                            Add another medication
-                        </button>
-                    </div>
-                    
-                    <div class="mt-4 flex gap-4">
-                        <button onclick="checkDrugInteractionsTab()" 
-                                class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                            <i class="fas fa-search"></i>
-                            Check Interactions
-                        </button>
-                        <button onclick="clearDrugInputsTab()" 
-                                class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                            <i class="fas fa-times"></i>
-                            Clear All
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Drug Interaction Results -->
-                <div id="drugTabResults" class="drug-results" style="display: none;">
-                    <div id="drugTabContent" class="space-y-4"></div>
-                </div>
-
-                <!-- Drug Loading State -->
-                <div id="drugTabLoading" class="text-center py-8" style="display: none;">
-                    <i class="fas fa-spinner fa-spin text-2xl text-purple-600 mb-2"></i>
-                    <p class="text-gray-600">Checking FDA database and clinical resources...</p>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -826,18 +655,72 @@
 
         // Open dedicated interface in new tab (restored from yesterday's work)
         function openDedicatedInterface(filename) {
-            const url = `./${filename}`;
+            const url = `/static/${filename}`;
             window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-            
+
             // Update status to show interface opened
             const interfaceName = filename.replace('.html', '').replace('-', ' ');
-            const statusElement = document.querySelector('.status-indicator');
-            if (statusElement) {
-                statusElement.textContent = `Opened ${interfaceName} interface`;
-                setTimeout(() => {
-                    statusElement.textContent = 'Connected';
-                }, 3000);
+            addSystemMessage(`Opened ${interfaceName} interface in new tab`);
+        }
+
+        // Open wizard interface through API endpoint
+        function openWizardInterface(wizardType) {
+            // Map wizard types to their API endpoint names
+            const wizardEndpoints = {
+                'clinical_assessment': 'clinical-assessment',
+                'medication_reconciliation': 'medication-reconciliation',
+                'patient_education': 'patient-education',
+                'quality_improvement': 'quality-improvement',
+                'dosage_calculation': 'dosage-calculation',
+                'nursing_assessment': 'nursing-assessment',
+                'discharge_planning': 'discharge-planning',
+                'treatment_plan': 'treatment-plan'
+            };
+
+            const endpoint = wizardEndpoints[wizardType] || wizardType;
+            const wizardStartUrl = `${API_BASE_URL}/wizard/${endpoint}/start`;
+
+            // Test if wizard API is available
+            fetch(wizardStartUrl, { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        // Wizard API exists - for now, start it in chat
+                        // TODO: Create dedicated wizard UI pages
+                        console.log(`Wizard ${wizardType} is available via API`);
+                        startWizardInChat(wizardType);
+                    } else {
+                        throw new Error('Wizard API not available');
+                    }
+                })
+                .catch(error => {
+                    console.warn('Wizard API not available, using chat interface:', error);
+                    startWizardInChat(wizardType);
+                });
+        }
+
+        // Start wizard conversation in chat interface
+        function startWizardInChat(wizardType) {
+            if (document.getElementById('chatInterface').classList.contains('hidden')) {
+                startClinicalChat();
             }
+            
+            const wizardPrompts = {
+                'clinical_assessment': 'I need help with a comprehensive clinical assessment. Can you guide me through the systematic assessment process?',
+                'medication_reconciliation': 'I need to perform medication reconciliation for a patient. Can you help me with the step-by-step process?',
+                'patient_education': 'I need to develop a patient education plan. Can you help me structure the teaching materials?',
+                'quality_improvement': 'I want to work on a quality improvement initiative. Can you guide me through the process?',
+                'discharge_planning': 'I need assistance with discharge planning. Can you help me ensure all aspects are covered?',
+                'nursing_assessment': 'I need to conduct a nursing assessment. Can you walk me through the comprehensive process?',
+                'treatment_plan': 'I need help developing a treatment plan. Can you guide me through evidence-based planning?',
+                'dosage_calculation': 'I need help with medication dosage calculations. Can you guide me through safe calculation methods and formulas?'
+            };
+
+            const prompt = wizardPrompts[wizardType] || `I need help with ${wizardType.replace('_', ' ')}. Can you assist me?`;
+            
+            setTimeout(() => {
+                document.getElementById('messageInput').value = prompt;
+                sendMessage();
+            }, 100);
         }
 
         // Switch between main interface tabs

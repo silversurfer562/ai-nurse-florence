@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dosage Calculation Wizard - AI Nurse Florence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .calculation-card {
+            transition: all 0.3s ease;
+        }
+        .calculation-card:hover {
+            transform: translateY(-2px);
+        }
+        .formula-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .safety-warning {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <nav class="bg-white shadow-lg border-b-4 border-blue-600">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <i class="fas fa-calculator text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Dosage Calculation Wizard</h1>
+                        <p class="text-sm text-gray-600">Safe medication dosing calculator</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-shield-alt text-green-600 mr-1"></i>
+                        Educational Tool
+                    </div>
+                    <button onclick="window.close()" class="text-gray-600 hover:text-red-600 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Safety Banner -->
+        <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8 safety-warning">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl mr-4"></i>
+                <div>
+                    <h3 class="font-bold text-red-800 text-lg">⚠️ Critical Safety Notice</h3>
+                    <p class="text-red-700 mt-1">
+                        <strong>ALWAYS verify all calculations independently.</strong> This tool is for educational purposes only. 
+                        Double-check all dosages with a colleague and consult drug references before administration.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculation Type Selection -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-list-alt text-blue-600 mr-3"></i>
+                Select Calculation Type
+            </h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Basic Dosage -->
+                <div class="calculation-card bg-blue-50 border-2 border-blue-200 rounded-xl p-6 cursor-pointer hover:border-blue-400" onclick="selectCalculationType('basic')">
+                    <div class="text-center">
+                        <div class="bg-blue-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-pills text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-800 mb-2">Basic Dosage</h3>
+                        <p class="text-sm text-gray-600">Standard dose calculations using available strength</p>
+                    </div>
+                </div>
+
+                <!-- Weight-Based -->
+                <div class="calculation-card bg-green-50 border-2 border-green-200 rounded-xl p-6 cursor-pointer hover:border-green-400" onclick="selectCalculationType('weight_based')">
+                    <div class="text-center">
+                        <div class="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-weight text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-800 mb-2">Weight-Based</h3>
+                        <p class="text-sm text-gray-600">Calculations based on patient weight (mg/kg)</p>
+                    </div>
+                </div>
+
+                <!-- IV Rate -->
+                <div class="calculation-card bg-purple-50 border-2 border-purple-200 rounded-xl p-6 cursor-pointer hover:border-purple-400" onclick="selectCalculationType('iv_rate')">
+                    <div class="text-center">
+                        <div class="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-syringe text-purple-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-800 mb-2">IV Rate</h3>
+                        <p class="text-sm text-gray-600">Infusion rate calculations (ml/hr, drops/min)</p>
+                    </div>
+                </div>
+
+                <!-- Pediatric -->
+                <div class="calculation-card bg-orange-50 border-2 border-orange-200 rounded-xl p-6 cursor-pointer hover:border-orange-400" onclick="selectCalculationType('pediatric')">
+                    <div class="text-center">
+                        <div class="bg-orange-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-baby text-orange-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-800 mb-2">Pediatric</h3>
+                        <p class="text-sm text-gray-600">Specialized pediatric dosing calculations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculation Forms (Hidden initially) -->
+        
+        <!-- Basic Dosage Form -->
+        <div id="basicForm" class="calculation-form hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-pills text-blue-600 mr-3"></i>
+                Basic Dosage Calculation
+            </h3>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-4">Ordered Dose</h4>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <input type="number" id="orderedDose" placeholder="500" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <select id="orderedUnit" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                <option value="mg">mg</option>
+                                <option value="g">g</option>
+                                <option value="mcg">mcg</option>
+                                <option value="units">units</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-4">Available Strength</h4>
+                    <div class="space-y-3">
+                        <div class="flex gap-2">
+                            <input type="number" id="availableStrength" placeholder="250" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <select id="availableUnit" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                <option value="mg">mg</option>
+                                <option value="g">g</option>
+                                <option value="mcg">mcg</option>
+                                <option value="units">units</option>
+                            </select>
+                        </div>
+                        <div class="text-sm text-gray-600">per</div>
+                        <div class="flex gap-2">
+                            <input type="number" id="availableVolume" placeholder="5" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <select id="volumeUnit" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                <option value="ml">ml</option>
+                                <option value="tablets">tablets</option>
+                                <option value="capsules">capsules</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="calculateBasicDosage()" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
+                <i class="fas fa-calculator mr-2"></i>
+                Calculate Dosage
+            </button>
+        </div>
+
+        <!-- Weight-Based Form -->
+        <div id="weightForm" class="calculation-form hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-weight text-green-600 mr-3"></i>
+                Weight-Based Dosage Calculation
+            </h3>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-2">Dose per kg</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="dosePerKg" placeholder="10" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500">
+                        <span class="px-3 py-2 text-gray-600">mg/kg</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-2">Patient Weight</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="patientWeight" placeholder="70" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500">
+                        <span class="px-3 py-2 text-gray-600">kg</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-2">Frequency</label>
+                    <select id="frequency" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500">
+                        <option value="1">Once daily</option>
+                        <option value="2">Twice daily</option>
+                        <option value="3">Three times daily</option>
+                        <option value="4">Four times daily</option>
+                        <option value="6">Every 4 hours</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <label class="block font-semibold text-gray-700 mb-2">Available Concentration</label>
+                <div class="flex gap-2 max-w-md">
+                    <input type="number" id="concentration" placeholder="100" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500">
+                    <span class="px-3 py-2 text-gray-600">mg/ml</span>
+                </div>
+            </div>
+            
+            <button onclick="calculateWeightBased()" class="mt-6 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
+                <i class="fas fa-calculator mr-2"></i>
+                Calculate Dosage
+            </button>
+        </div>
+
+        <!-- IV Rate Form -->
+        <div id="ivForm" class="calculation-form hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-syringe text-purple-600 mr-3"></i>
+                IV Rate Calculation
+            </h3>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-2">Total Volume</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="totalVolume" placeholder="1000" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                        <select id="volumeUnit2" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                            <option value="ml">ml</option>
+                            <option value="L">L</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block font-semibold text-gray-700 mb-2">Infusion Time</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="infusionTime" placeholder="8" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                        <select id="timeUnit" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                            <option value="hours">hours</option>
+                            <option value="minutes">minutes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <label class="block font-semibold text-gray-700 mb-2">Drop Factor (optional, for gravity infusion)</label>
+                <div class="flex gap-2 max-w-md">
+                    <input type="number" id="dropFactor" placeholder="15" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                    <span class="px-3 py-2 text-gray-600">drops/ml</span>
+                </div>
+            </div>
+            
+            <button onclick="calculateIVRate()" class="mt-6 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
+                <i class="fas fa-calculator mr-2"></i>
+                Calculate Rate
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-line text-green-600 mr-3"></i>
+                Calculation Results
+            </h3>
+            
+            <!-- Formula Display -->
+            <div id="formulaDisplay" class="formula-display rounded-lg p-4 text-white mb-6">
+                <h4 class="font-semibold mb-2">Formula Used:</h4>
+                <div id="formulaText" class="font-mono text-lg"></div>
+            </div>
+            
+            <!-- Step-by-step work -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-3">Step-by-step calculation:</h4>
+                <div id="stepByStep" class="space-y-2 font-mono text-sm"></div>
+            </div>
+            
+            <!-- Final Answer -->
+            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
+                <h4 class="font-bold text-green-800 text-lg mb-2">Final Answer:</h4>
+                <div id="finalAnswer" class="text-2xl font-bold text-green-700"></div>
+            </div>
+            
+            <!-- Safety Checks -->
+            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6">
+                <h4 class="font-bold text-yellow-800 text-lg mb-3 flex items-center">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Safety Checklist
+                </h4>
+                <div id="safetyChecks" class="space-y-2"></div>
+            </div>
+            
+            <div class="mt-6 flex gap-4">
+                <button onclick="clearCalculation()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                    <i class="fas fa-redo mr-2"></i>
+                    New Calculation
+                </button>
+                <button onclick="printResults()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                    <i class="fas fa-print mr-2"></i>
+                    Print Results
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectCalculationType(type) {
+            // Hide all forms
+            document.querySelectorAll('.calculation-form').forEach(form => form.classList.add('hidden'));
+            document.getElementById('results').classList.add('hidden');
+            
+            // Show selected form
+            const formMap = {
+                'basic': 'basicForm',
+                'weight_based': 'weightForm', 
+                'iv_rate': 'ivForm',
+                'pediatric': 'pediatricForm'
+            };
+            
+            const formId = formMap[type];
+            if (formId) {
+                document.getElementById(formId).classList.remove('hidden');
+            }
+        }
+
+        function calculateBasicDosage() {
+            const orderedDose = parseFloat(document.getElementById('orderedDose').value);
+            const availableStrength = parseFloat(document.getElementById('availableStrength').value);
+            const availableVolume = parseFloat(document.getElementById('availableVolume').value);
+            const volumeUnit = document.getElementById('volumeUnit').value;
+            
+            if (!orderedDose || !availableStrength || !availableVolume) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const volumeToGive = (orderedDose * availableVolume) / availableStrength;
+            
+            const formula = `Volume = (Ordered Dose × Available Volume) ÷ Available Strength`;
+            const steps = [
+                `Ordered dose: ${orderedDose} mg`,
+                `Available: ${availableStrength} mg per ${availableVolume} ${volumeUnit}`,
+                `Calculation: (${orderedDose} × ${availableVolume}) ÷ ${availableStrength}`,
+                `Calculation: ${orderedDose * availableVolume} ÷ ${availableStrength}`,
+                `Result: ${volumeToGive.toFixed(2)} ${volumeUnit}`
+            ];
+            
+            const safetyChecks = [
+                `✓ Give ${volumeToGive.toFixed(2)} ${volumeUnit}`,
+                `✓ Check if this volume is reasonable for the route`,
+                `✓ Verify dose is within safe range`,
+                `✓ Double-check calculation with colleague`,
+                volumeToGive < 0.1 || volumeToGive > 50 ? '⚠️ Unusual volume - verify calculation' : '✓ Volume appears reasonable'
+            ];
+            
+            displayResults(formula, steps, `${volumeToGive.toFixed(2)} ${volumeUnit}`, safetyChecks);
+        }
+
+        function calculateWeightBased() {
+            const dosePerKg = parseFloat(document.getElementById('dosePerKg').value);
+            const weight = parseFloat(document.getElementById('patientWeight').value);
+            const frequency = parseInt(document.getElementById('frequency').value);
+            const concentration = parseFloat(document.getElementById('concentration').value);
+            
+            if (!dosePerKg || !weight || !frequency || !concentration) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const totalDailyDose = dosePerKg * weight;
+            const dosePerAdmin = totalDailyDose / frequency;
+            const volumePerDose = dosePerAdmin / concentration;
+            
+            const formula = `Total Daily Dose = Dose/kg × Weight × Frequency`;
+            const steps = [
+                `Dose per kg: ${dosePerKg} mg/kg`,
+                `Patient weight: ${weight} kg`,
+                `Total daily dose: ${dosePerKg} × ${weight} = ${totalDailyDose.toFixed(2)} mg`,
+                `Doses per day: ${frequency}`,
+                `Dose per administration: ${totalDailyDose.toFixed(2)} ÷ ${frequency} = ${dosePerAdmin.toFixed(2)} mg`,
+                `Available concentration: ${concentration} mg/ml`,
+                `Volume per dose: ${dosePerAdmin.toFixed(2)} ÷ ${concentration} = ${volumePerDose.toFixed(2)} ml`
+            ];
+            
+            const safetyChecks = [
+                `✓ Total daily dose: ${totalDailyDose.toFixed(2)} mg`,
+                `✓ Per dose: ${dosePerAdmin.toFixed(2)} mg`,
+                `✓ Volume per dose: ${volumePerDose.toFixed(2)} ml`,
+                `✓ Verify weight is accurate`,
+                `✓ Check maximum recommended dose`
+            ];
+            
+            displayResults(formula, steps, `${volumePerDose.toFixed(2)} ml per dose`, safetyChecks);
+        }
+
+        function calculateIVRate() {
+            const volume = parseFloat(document.getElementById('totalVolume').value);
+            const time = parseFloat(document.getElementById('infusionTime').value);
+            const timeUnit = document.getElementById('timeUnit').value;
+            const dropFactor = document.getElementById('dropFactor').value;
+            
+            if (!volume || !time) {
+                alert('Please fill in volume and time fields');
+                return;
+            }
+            
+            const timeHours = timeUnit === 'minutes' ? time / 60 : time;
+            const mlPerHour = volume / timeHours;
+            
+            const formula = `Rate (ml/hr) = Total Volume ÷ Time (hours)`;
+            const steps = [
+                `Total volume: ${volume} ml`,
+                `Infusion time: ${time} ${timeUnit}`,
+                `Rate calculation: ${volume} ÷ ${timeHours} hours = ${mlPerHour.toFixed(1)} ml/hr`
+            ];
+            
+            if (dropFactor) {
+                const dropsPerMin = (mlPerHour * parseFloat(dropFactor)) / 60;
+                steps.push(`Drops per minute: (${mlPerHour.toFixed(1)} × ${dropFactor}) ÷ 60 = ${dropsPerMin.toFixed(0)} drops/min`);
+            }
+            
+            const safetyChecks = [
+                `✓ Rate: ${mlPerHour.toFixed(1)} ml/hr`,
+                dropFactor ? `✓ Drops per minute: ${((mlPerHour * parseFloat(dropFactor)) / 60).toFixed(0)}` : '✓ Pump infusion',
+                `✓ Verify pump settings`,
+                `✓ Check IV site before starting`,
+                `✓ Monitor patient throughout infusion`
+            ];
+            
+            const answer = dropFactor ? 
+                `${mlPerHour.toFixed(1)} ml/hr (${((mlPerHour * parseFloat(dropFactor)) / 60).toFixed(0)} drops/min)` :
+                `${mlPerHour.toFixed(1)} ml/hr`;
+            
+            displayResults(formula, steps, answer, safetyChecks);
+        }
+
+        function displayResults(formula, steps, answer, safetyChecks) {
+            document.getElementById('formulaText').textContent = formula;
+            
+            const stepDiv = document.getElementById('stepByStep');
+            stepDiv.innerHTML = steps.map(step => `<div class="text-gray-700">${step}</div>`).join('');
+            
+            document.getElementById('finalAnswer').textContent = answer;
+            
+            const checksDiv = document.getElementById('safetyChecks');
+            checksDiv.innerHTML = safetyChecks.map(check => 
+                `<div class="flex items-center space-x-2">
+                    <i class="fas fa-check text-green-600"></i>
+                    <span class="text-gray-700">${check}</span>
+                </div>`
+            ).join('');
+            
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearCalculation() {
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            document.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+            document.querySelectorAll('.calculation-form').forEach(form => form.classList.add('hidden'));
+            document.getElementById('results').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function printResults() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

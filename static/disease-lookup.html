@@ -82,7 +82,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
             <div class="mb-6">
                 <h2 class="text-2xl font-bold text-gray-900 mb-2">Disease Information Lookup</h2>
-                <p class="text-gray-600">Search diseases using live data from MyDisease.info with database caching for reliability</p>
+                <p class="text-gray-600">Search diseases with comprehensive synonym support from MyDisease.info</p>
             </div>
 
             <div class="relative">
@@ -106,14 +106,6 @@
                     </button>
                 </div>
 
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <span class="text-sm text-gray-600">Quick searches:</span>
-                    <button class="quick-search ontology-badge mondo-badge" data-query="diabetes">Diabetes</button>
-                    <button class="quick-search ontology-badge snomed-badge" data-query="hypertension">Hypertension</button>
-                    <button class="quick-search ontology-badge icd10-badge" data-query="pneumonia">Pneumonia</button>
-                    <button class="quick-search ontology-badge mondo-badge" data-query="sepsis">Sepsis</button>
-                    <button class="quick-search ontology-badge snomed-badge" data-query="heart failure">Heart Failure</button>
-                </div>
             </div>
 
             <!-- Data Source Indicators -->
@@ -121,11 +113,11 @@
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center space-x-2">
                         <div class="live-indicator w-2 h-2 rounded-full"></div>
-                        <span>Live MyDisease.info API</span>
+                        <span>MyDisease.info API</span>
                     </div>
                     <div class="flex items-center space-x-2">
                         <div class="database-indicator w-2 h-2 rounded-full"></div>
-                        <span>Database Cache (646 diseases)</span>
+                        <span>With database fallback</span>
                     </div>
                 </div>
                 <div id="lastUpdated" class="text-gray-400"></div>
@@ -179,7 +171,6 @@
             setupEventListeners() {
                 const searchInput = document.getElementById('diseaseSearch');
                 const searchButton = document.getElementById('searchButton');
-                const quickSearchButtons = document.querySelectorAll('.quick-search');
 
                 // Real-time search with debouncing
                 searchInput.addEventListener('input', (e) => {
@@ -231,15 +222,6 @@
                     }
                 });
 
-                // Quick searches
-                quickSearchButtons.forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const query = e.target.dataset.query;
-                        searchInput.value = query;
-                        this.performSearch(query);
-                    });
-                });
-
                 // Hide autocomplete when clicking outside
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('#diseaseSearch') && !e.target.closest('#autocompleteResults')) {
@@ -250,23 +232,18 @@
 
             async showAutocomplete(query) {
                 try {
-                    const response = await fetch(`${this.apiBase}/disease/disease-names?query=${encodeURIComponent(query)}&limit=8`);
+                    const response = await fetch(`${this.apiBase}/disease/disease-names?query=${encodeURIComponent(query)}&limit=50`);
                     const data = await response.json();
                     
                     const resultsDiv = document.getElementById('autocompleteResults');
                     
                     if (data.success && data.data && data.data.diseases && data.data.diseases.length > 0) {
                         resultsDiv.innerHTML = data.data.diseases.map((disease, index) => `
-                            <div class="autocomplete-item px-4 py-3 cursor-pointer hover:bg-blue-50 border-b border-gray-100 transition-all duration-200" 
-                                 data-disease="${disease}" 
+                            <div class="autocomplete-item px-4 py-3 cursor-pointer hover:bg-blue-50 border-b border-gray-100 transition-all duration-200"
+                                 data-disease="${disease}"
                                  data-index="${index}">
                                 <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="font-medium text-gray-900">${disease}</div>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            <i class="fas fa-search mr-1"></i>Click to search
-                                        </div>
-                                    </div>
+                                    <div class="font-medium text-gray-900">${disease}</div>
                                     <div class="text-blue-500">
                                         <i class="fas fa-arrow-right"></i>
                                     </div>
@@ -395,8 +372,7 @@
                 
                 const query_lower = query.toLowerCase();
                 return commonDiseases
-                    .filter(disease => disease.toLowerCase().includes(query_lower))
-                    .slice(0, 5);
+                    .filter(disease => disease.toLowerCase().includes(query_lower));
             }
 
             async performSearch(query) {

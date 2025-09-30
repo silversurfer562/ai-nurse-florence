@@ -126,7 +126,8 @@ def _load_wizard_routers():
         'medication_reconciliation',
         'sbar_report',
         'patient_education',
-        'quality_improvement'
+        'quality_improvement',
+        'dosage_calculation'
     ]
     
     for wizard_name in wizard_modules:

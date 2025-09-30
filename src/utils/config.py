@@ -139,8 +139,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = Field(default="INFO", description="Logging level")
     
     # Use a plain dict for model_config to match pydantic v2 / pydantic-settings expectations
+    # Loads .env first, then .env.local (which overrides .env values)
     model_config = {
-        "env_file": ".env",
+        "env_file": [".env", ".env.local"],
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
         "extra": "allow",

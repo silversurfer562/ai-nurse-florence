@@ -259,6 +259,7 @@ try:
                     "medication_reconciliation",
                     "care_plan",
                     "discharge_planning",
+                    "dosage_calculation",
                 ]
             ):
                 try:

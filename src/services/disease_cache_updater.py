@@ -10,6 +10,7 @@ import asyncio
 import logging
 import httpx
 import uuid
+import re
 from datetime import datetime
 from typing import List, Optional
 from src.utils.redis_cache import cache_set, cache_get
@@ -134,10 +135,10 @@ class DiseaseCacheUpdaterService:
 
     async def fetch_mondo_disease_list(self) -> List[str]:
         """
-        Fetch comprehensive disease list from MONDO ontology via EBI OLS API.
+        Fetch comprehensive disease list with synonyms from MyDisease.info API.
 
         Fallback strategy:
-        1. Try MONDO API (primary source)
+        1. Try MyDisease.info API (primary source - includes synonyms)
         2. If API fails, use last successful data from database
         3. If no database backup, use comprehensive hardcoded list
 
@@ -145,39 +146,82 @@ class DiseaseCacheUpdaterService:
         preserving the last known good data during network issues.
 
         Returns:
-            List of disease names from MONDO
+            List of disease names and synonyms from MyDisease.info
         """
         try:
-            mondo_url = "https://www.ebi.ac.uk/ols4/api/search"
+            # Use MyDisease.info for comprehensive disease data with synonyms
+            mydisease_url = "https://mydisease.info/v1/query"
+
+            # Fetch a comprehensive list of common diseases
             params = {
-                "ontology": "mondo",
-                "type": "class",
-                "rows": 1000,  # Fetch large sample for comprehensive list
-                "start": 0
+                "q": "disease",
+                "size": 1000,  # Fetch large sample for comprehensive list
+                "fields": "mondo.label,mondo.synonym"
             }
 
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                response = await client.get(mondo_url, params=params)
+                response = await client.get(mydisease_url, params=params)
                 response.raise_for_status()
                 data = response.json()
 
-                # Extract disease names from response
-                disease_names = []
-                for doc in data.get("response", {}).get("docs", []):
-                    label = doc.get("label")
-                    if label:
-                        disease_names.append(label)
+                # Extract disease names and synonyms from response
+                # Filter out animal-specific diseases to focus on human conditions
+                animal_keywords = [", chicken", ", dog", ", horse", ", pig", ", cat", ", mouse",
+                                 ", rat", ", cattle", ", sheep", ", goat", ", rabbit", ", koala"]
+
+                disease_names = set()
+                for hit in data.get("hits", []):
+                    mondo = hit.get("mondo", {})
+
+                    # Add primary label
+                    label = mondo.get("label")
+                    if label and not any(keyword in label.lower() for keyword in animal_keywords):
+                        disease_names.add(label)
+
+                    # Add all synonyms (they're nested in exact and related fields)
+                    synonyms_obj = mondo.get("synonym", {})
+                    all_synonyms = []
+
+                    if isinstance(synonyms_obj, dict):
+                        # Get exact synonyms
+                        exact = synonyms_obj.get("exact", [])
+                        if isinstance(exact, list):
+                            all_synonyms.extend(exact)
+                        # Get related synonyms
+                        related = synonyms_obj.get("related", [])
+                        if isinstance(related, list):
+                            all_synonyms.extend(related)
+                    elif isinstance(synonyms_obj, list):
+                        all_synonyms = synonyms_obj
+                    elif isinstance(synonyms_obj, str):
+                        all_synonyms = [synonyms_obj]
+
+                    for synonym in all_synonyms:
+                        if synonym and not any(keyword in synonym.lower() for keyword in animal_keywords):
+                            # Filter out technical identifiers that aren't useful for clinical search
+                            # Skip: IDDM6, NIDDM5, MODY2, etc. (gene variants with numbers)
+                            # Keep: IDDM, NIDDM, T1DM, T2DM (common abbreviations)
+                            synonym_upper = synonym.upper()
+                            is_gene_variant = (
+                                bool(re.search(r'(IDDM|NIDDM|MODY|T\dDM)\d+$', synonym_upper)) or  # Gene variants with trailing numbers
+                                bool(re.search(r'^[A-Z]+\d+[A-Z]*\d*$', synonym)) or  # Codes like HLA-DQ2, FMO3, etc.
+                                synonym.startswith('rs') or  # SNP identifiers
+                                'susceptibility' in synonym.lower() or
+                                'protection against' in synonym.lower()
+                            )
+                            if not is_gene_variant:
+                                disease_names.add(synonym)
 
                 # Remove duplicates and sort
-                disease_names = sorted(list(set(disease_names)))
-                logger.info(f"✅ Fetched {len(disease_names)} disease names from MONDO API")
+                disease_names_list = sorted(list(disease_names))
+                logger.info(f"✅ Fetched {len(disease_names_list)} disease names and synonyms from MyDisease.info API")
 
                 # ONLY save to database on successful fetch
                 # This preserves the last known good data during API failures
-                await self.save_disease_list_to_db(disease_names, source="mondo_api")
+                await self.save_disease_list_to_db(disease_names_list, source="mydisease_api")
                 self.last_fetch_source = "api"
 
-                return disease_names
+                return disease_names_list
 
         except Exception as e:
             logger.error(f"❌ Failed to fetch MONDO disease list: {e}")

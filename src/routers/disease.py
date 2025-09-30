@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 import httpx
 import logging
+import re
+import xml.etree.ElementTree as ET
 
 from ..services.disease_service import lookup_disease_info
 from ..utils.config import get_educational_banner
@@ -123,34 +125,104 @@ async def get_disease_names(
                 }
             )
 
-        # Fetch from MONDO ontology API
-        # MONDO provides disease names with MONDO IDs
-        mondo_url = "https://www.ebi.ac.uk/ols/api/search"
+        # Fetch from BOTH MyDisease.info and MedlinePlus for comprehensive coverage
+        # MyDisease.info: technical terms and synonyms
+        # MedlinePlus: consumer-friendly disease names
 
-        params = {
-            "ontology": "mondo",
-            "type": "class",
-            "rows": limit,
-            "start": 0
-        }
+        animal_keywords = [", chicken", ", dog", ", horse", ", pig", ", cat", ", mouse",
+                         ", rat", ", cattle", ", sheep", ", goat", ", rabbit", ", koala"]
 
-        if query and len(query) >= 2:
-            params["q"] = query
+        disease_names = set()
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(mondo_url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            # 1. Fetch from MyDisease.info
+            try:
+                mydisease_url = "https://mydisease.info/v1/query"
+                params = {
+                    "q": query if query else "*",
+                    "size": limit // 2,  # Split limit between two sources
+                    "fields": "mondo.label,mondo.synonym"
+                }
+                response = await client.get(mydisease_url, params=params)
+                response.raise_for_status()
+                data = response.json()
 
-            # Extract disease names from response
-            disease_names = []
-            for doc in data.get("response", {}).get("docs", []):
-                label = doc.get("label")
-                if label:
-                    disease_names.append(label)
+                for hit in data.get("hits", []):
+                    mondo = hit.get("mondo", {})
 
-            # Remove duplicates and sort
-            disease_names = sorted(list(set(disease_names)))[:limit]
+                    # Add primary label
+                    label = mondo.get("label")
+                    if label and not any(keyword in label.lower() for keyword in animal_keywords):
+                        disease_names.add(label)
+
+                    # Add all synonyms (they're nested in exact and related fields)
+                    synonyms_obj = mondo.get("synonym", {})
+                    all_synonyms = []
+
+                    if isinstance(synonyms_obj, dict):
+                        exact = synonyms_obj.get("exact", [])
+                        if isinstance(exact, list):
+                            all_synonyms.extend(exact)
+                        related = synonyms_obj.get("related", [])
+                        if isinstance(related, list):
+                            all_synonyms.extend(related)
+                    elif isinstance(synonyms_obj, list):
+                        all_synonyms = synonyms_obj
+                    elif isinstance(synonyms_obj, str):
+                        all_synonyms = [synonyms_obj]
+
+                    for synonym in all_synonyms:
+                        if synonym and not any(keyword in synonym.lower() for keyword in animal_keywords):
+                            # Filter out technical identifiers
+                            synonym_upper = synonym.upper()
+                            is_gene_variant = (
+                                bool(re.search(r'(IDDM|NIDDM|MODY|T\dDM)\d+$', synonym_upper)) or
+                                bool(re.search(r'^[A-Z]+\d+[A-Z]*\d*$', synonym)) or
+                                synonym.startswith('rs') or
+                                'susceptibility' in synonym.lower() or
+                                'protection against' in synonym.lower()
+                            )
+                            if not is_gene_variant:
+                                disease_names.add(synonym)
+            except Exception as e:
+                logger.warning(f"MyDisease.info fetch failed: {e}")
+
+            # 2. Fetch from MedlinePlus for consumer-friendly names
+            try:
+                if query and len(query) >= 2:
+                    medlineplus_url = "https://wsearch.nlm.nih.gov/ws/query"
+                    params = {
+                        "db": "healthTopics",
+                        "term": query,
+                        "retmax": limit // 2
+                    }
+                    response = await client.get(medlineplus_url, params=params)
+                    response.raise_for_status()
+
+                    # Parse XML response
+                    root = ET.fromstring(response.text)
+
+                    # Extract disease names from title and altTitle fields
+                    for document in root.findall('.//document'):
+                        # Get main title
+                        title_elem = document.find('.//content[@name="title"]')
+                        if title_elem is not None and title_elem.text:
+                            # Remove HTML tags like <span class="qt0">
+                            title = re.sub(r'<[^>]+>', '', title_elem.text)
+                            if title and not any(keyword in title.lower() for keyword in animal_keywords):
+                                disease_names.add(title)
+
+                        # Get alternative titles
+                        for alt_title in document.findall('.//content[@name="altTitle"]'):
+                            if alt_title.text:
+                                alt = re.sub(r'<[^>]+>', '', alt_title.text)
+                                if alt and not any(keyword in alt.lower() for keyword in animal_keywords):
+                                    disease_names.add(alt)
+            except Exception as e:
+                logger.warning(f"MedlinePlus fetch failed: {e}")
+
+            # Remove duplicates, sort, and limit
+            disease_names = sorted(list(disease_names))[:limit]
 
             # Cache for 24 hours (disease names don't change often)
             await cache_manager.set(cache_key, disease_names, ttl_seconds=86400)
