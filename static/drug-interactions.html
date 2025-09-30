@@ -597,19 +597,14 @@
             }
 
             displayFullAnalysis(analysisData) {
-                console.log('=== displayFullAnalysis called ===');
-                console.log('Full analysis data:', analysisData);
-
                 const resultsSection = document.getElementById('resultsSection');
                 const summaryContainer = document.getElementById('interactionSummary');
                 const detailsContainer = document.getElementById('detailedInteractions');
 
                 // Build comprehensive verbose output
                 let output = '';
-                console.log('Starting to build output...');
 
                 // 1. Overall Summary Section
-                console.log('Checking summary:', analysisData.summary ? 'EXISTS' : 'MISSING');
                 if (analysisData.summary) {
                     output += `
                         <div class="drug-card rounded-lg p-6 mb-6">
@@ -628,9 +623,7 @@
                 }
 
                 // 2. Drug Information Section (Verbose)
-                console.log('Checking drug_information:', analysisData.drug_information ? `LENGTH: ${analysisData.drug_information.length}` : 'MISSING');
                 if (analysisData.drug_information && analysisData.drug_information.length > 0) {
-                    console.log('Building drug information section for', analysisData.drug_information.length, 'drugs');
                     output += `
                         <div class="drug-card rounded-lg p-6 mb-6">
                             <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
@@ -772,7 +765,7 @@
                             </div>
                         </div>
                     `;
-                } else if (analysisData.total_interactions === 0) {
+                } else if (!analysisData.interactions || analysisData.interactions.length === 0) {
                     output += `
                         <div class="no-interaction rounded-lg p-6 mb-6">
                             <h3 class="text-xl font-bold text-green-900 mb-3 flex items-center">
@@ -798,12 +791,9 @@
                 }
 
                 // Display everything
-                console.log('Final output length:', output.length);
-                console.log('Output preview:', output.substring(0, 200));
                 detailsContainer.innerHTML = output;
                 summaryContainer.innerHTML = ''; // Clear summary cards for verbose mode
                 resultsSection.classList.remove('hidden');
-                console.log('Display complete!');
             }
 
             displayInteractions(interactions) {
