@@ -100,27 +100,142 @@ class UserSession(Base):
 class WizardState(Base):
     """Multi-step wizard state management."""
     __tablename__ = "wizard_states"
-    
+
     id = Column(String, primary_key=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     wizard_type = Column(String(100), nullable=False, index=True)
-    
+
     # Wizard progress
     current_step = Column(Integer, default=1, nullable=False)
     total_steps = Column(Integer, nullable=False)
     is_completed = Column(Boolean, default=False, nullable=False)
-    
+
     # State data (JSON)
     step_data = Column(JSON, nullable=True)
     final_result = Column(JSON, nullable=True)
-    
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
-    
+
     def __repr__(self):
         return f"<WizardState(id={self.id}, type={self.wizard_type}, step={self.current_step}/{self.total_steps})>"
+
+class CachedDrugList(Base):
+    """Cached list of drug names from FDA API (Phase 4.2 - Drug Interactions)."""
+    __tablename__ = "cached_drug_lists"
+
+    id = Column(String, primary_key=True)
+    drug_names = Column(JSON, nullable=False)  # List of drug names
+    source = Column(String(100), nullable=False)  # "fda_api" or "manual"
+    count = Column(Integer, nullable=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<CachedDrugList(id={self.id}, count={self.count}, source={self.source})>"
+
+class CachedDiseaseList(Base):
+    """Cached list of disease names from MONDO ontology (Phase 4.2 - Disease Info)."""
+    __tablename__ = "cached_disease_lists"
+
+    id = Column(String, primary_key=True)
+    disease_names = Column(JSON, nullable=False)  # List of disease names
+    source = Column(String(100), nullable=False)  # "mondo_api" or "manual"
+    count = Column(Integer, nullable=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<CachedDiseaseList(id={self.id}, count={self.count}, source={self.source})>"
+
+class CachedDiseaseInfo(Base):
+    """Cached disease lookup results from MyDisease.info API (Phase 4.2 - Disease Info)."""
+    __tablename__ = "cached_disease_info"
+
+    id = Column(String, primary_key=True)
+    disease_query = Column(String(255), nullable=False, index=True)  # Search query
+    disease_data = Column(JSON, nullable=False)  # Full disease information
+    source = Column(String(100), nullable=False)  # "mydisease_api"
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<CachedDiseaseInfo(query={self.disease_query}, source={self.source})>"
+
+class DiseaseOntology(Base):
+    """
+    Comprehensive disease ontology database from MONDO.
+    Stores individual diseases with all metadata including synonyms.
+    Progressive collection strategy - accumulates diseases over time.
+    """
+    __tablename__ = "disease_ontology"
+
+    # Primary identifiers
+    id = Column(String, primary_key=True)  # UUID
+    mondo_id = Column(String(100), unique=True, nullable=False, index=True)  # e.g., "MONDO:0005148"
+
+    # Core disease information
+    label = Column(String(500), nullable=False, index=True)  # Official disease name
+    synonyms = Column(JSON, nullable=True)  # List of synonym strings
+    definition = Column(Text, nullable=True)  # Disease definition text
+
+    # Cross-references to other ontologies
+    xrefs = Column(JSON, nullable=True)  # Dict of xrefs (sctid, icd10cm, etc.)
+    snomed_code = Column(String(100), nullable=True, index=True)  # SNOMED CT Identifier (sctid)
+    icd10_code = Column(String(100), nullable=True, index=True)  # ICD-10 code
+    icd11_code = Column(String(100), nullable=True, index=True)  # ICD-11 code
+
+    # Metadata
+    source = Column(String(100), nullable=False, default="mondo_api")  # Data source
+    is_obsolete = Column(Boolean, default=False, nullable=False)  # Obsolete flag
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_verified_at = Column(DateTime, nullable=True)  # Last API verification
+
+    def __repr__(self):
+        return f"<DiseaseOntology(mondo_id={self.mondo_id}, label={self.label})>"
+
+class DiseaseCollectionProgress(Base):
+    """
+    Tracks progress of progressive disease collection from MONDO API.
+    Single row table that maintains pagination state.
+    """
+    __tablename__ = "disease_collection_progress"
+
+    id = Column(String, primary_key=True)  # Single row ID
+
+    # Pagination state
+    total_fetched = Column(Integer, default=0, nullable=False)  # Total diseases collected
+    current_offset = Column(Integer, default=0, nullable=False)  # Next offset to fetch
+    batch_size = Column(Integer, default=1000, nullable=False)  # Records per batch
+
+    # Completion tracking
+    is_complete = Column(Boolean, default=False, nullable=False)  # All diseases collected
+    total_available = Column(Integer, nullable=True)  # Total diseases in MONDO (from API response)
+
+    # Status tracking
+    last_fetch_status = Column(String(50), nullable=False, default="pending")  # pending, success, error
+    last_error_message = Column(Text, nullable=True)
+    consecutive_errors = Column(Integer, default=0, nullable=False)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_fetch_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+    def __repr__(self):
+        return f"<DiseaseCollectionProgress(fetched={self.total_fetched}, complete={self.is_complete})>"
 
 # Database Connection Management
 async def init_database():

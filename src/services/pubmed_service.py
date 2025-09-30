@@ -72,22 +72,14 @@ class PubMedService(BaseService[Dict[str, Any]]):
         self._log_request(query, max_results=max_results, sort_by=sort_by)
 
         try:
-            # Use live service if available and enabled
-            if self.settings.USE_LIVE_SERVICES and _has_httpx and _has_xml:
-                result = await self._fetch_from_pubmed(query, max_results, sort_by)
-                self._log_response(query, True, source="pubmed_api")
-                return self._create_response(result, query, source="pubmed_api")
-            else:
-                # Fallback to stub data
-                result = self._create_stub_response(query, max_results, sort_by)
-                self._log_response(query, True, source="stub_data")
-                return self._create_response(result, query, source="stub_data")
+            # Use live PubMed API
+            result = await self._fetch_from_pubmed(query, max_results, sort_by)
+            self._log_response(query, True, source="pubmed_api")
+            return self._create_response(result, query, source="pubmed_api")
 
         except Exception as e:
             self._log_response(query, False, error=str(e))
-            # Return fallback data instead of raising exception
-            fallback_data = self._create_stub_response(query, max_results, sort_by)
-            return self._handle_external_service_error(e, fallback_data)
+            raise ExternalServiceException(f"PubMed API error: {str(e)}", "pubmed_service")
     
     async def _fetch_from_pubmed(self, query: str, max_results: int, sort_by: str) -> Dict[str, Any]:
         """Fetch literature data from PubMed API asynchronously using httpx."""

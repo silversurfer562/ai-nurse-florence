@@ -31,7 +31,8 @@ class OpenAIService:
                 # Try to import OpenAI following Conditional Imports Pattern
                 try:
                     import openai
-                    self._client = openai.OpenAI(api_key=self.config["api_key"])
+                    # Use AsyncOpenAI for async/await compatibility
+                    self._client = openai.AsyncOpenAI(api_key=self.config["api_key"])
                     logger.info("OpenAI service: Client initialized successfully")
                 except ImportError:
                     logger.info("OpenAI service: openai library not available, using educational stubs")

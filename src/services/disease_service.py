@@ -4,6 +4,7 @@ MyDisease.info API integration from copilot-instructions.md
 """
 
 from typing import Dict, Any, List, Optional
+from datetime import datetime
 
 import logging
 import asyncio
@@ -84,28 +85,49 @@ class DiseaseService(BaseService[Dict[str, Any]]):
     @decorator
     async def lookup_disease(self, query: str, include_symptoms: bool = True, include_treatments: bool = True) -> Dict[str, Any]:
         """
-        Lookup disease information with enhanced caching
-        Uses smart caching with medical query normalization if available
+        Lookup disease information with enhanced caching and database fallback.
+
+        Fallback strategy:
+        1. Try MyDisease.info API (primary source)
+        2. If API fails, use last successful data from database
+        3. If no database backup, raise error with clear message
+
+        Database backup is ONLY updated on successful API fetch,
+        preserving the last known good data during network issues.
         """
         self._log_request(query, include_symptoms=include_symptoms, include_treatments=include_treatments)
-        
+
         try:
-            # Use live service if available and enabled
-            if self.settings.USE_LIVE_SERVICES and _has_httpx:
-                result = await self._fetch_from_api(query, include_symptoms, include_treatments)
-                self._log_response(query, True, source="live_api")
-                return self._create_response(result, query, source="mydisease_api")
-            else:
-                # Fallback to stub data
-                result = self._create_stub_response(query, include_symptoms, include_treatments)
-                self._log_response(query, True, source="stub_data")
-                return self._create_response(result, query, source="stub_data")
-                
+            # Use live MyDisease.info API
+            result = await self._fetch_from_api(query, include_symptoms, include_treatments)
+            self._log_response(query, True, source="live_api")
+            response = self._create_response(result, query, source="mydisease_api")
+
+            # ONLY save to database on successful fetch
+            # This preserves the last known good data during API failures
+            await self._save_to_database(query, response)
+
+            return response
+
         except Exception as e:
             self._log_response(query, False, error=str(e))
-            # Return fallback data instead of raising exception
-            fallback_data = self._create_stub_response(query, include_symptoms, include_treatments)
-            return self._handle_external_service_error(e, fallback_data)
+            logger.warning(f"❌ MyDisease.info API failed for '{query}': {e}")
+
+            # Try database fallback (last successful fetch)
+            # Database is NOT modified here - preserves backup
+            db_result = await self._get_from_database(query)
+            if db_result:
+                logger.info(f"✅ Using database fallback for disease query: {query}")
+                db_result["network_warning"] = "⚠️ Network connectivity issues - using cached data from last successful update"
+                db_result["fallback_source"] = "database"
+                return db_result
+
+            # No database backup available
+            logger.error(f"⚠️ No database backup available for disease query: {query}")
+            raise ExternalServiceException(
+                f"MyDisease.info API error and no cached data available: {str(e)}",
+                "disease_service"
+            )
     
     async def _fetch_from_api(self, query: str, include_symptoms: bool, include_treatments: bool) -> Dict[str, Any]:
         """Fetch disease data from MyDisease.info API asynchronously using httpx"""
@@ -235,7 +257,86 @@ class DiseaseService(BaseService[Dict[str, Any]]):
                 "Consider broader or more specific terms"
             ]
         }
-    
+
+    async def _save_to_database(self, query: str, response_data: Dict[str, Any]) -> None:
+        """
+        Save successful disease lookup to database as backup.
+        Only called on successful API fetch - preserves last known good data.
+        """
+        try:
+            from src.models.database import get_db_session, CachedDiseaseInfo
+            from sqlalchemy import select, delete
+            import uuid
+
+            # Normalize query for consistent lookups
+            normalized_query = query.lower().strip()
+
+            async for session in get_db_session():
+                try:
+                    # Delete existing entry for this query
+                    await session.execute(
+                        delete(CachedDiseaseInfo).where(
+                            CachedDiseaseInfo.disease_query == normalized_query
+                        )
+                    )
+
+                    # Create new cached entry
+                    cached_info = CachedDiseaseInfo(
+                        id=str(uuid.uuid4()),
+                        disease_query=normalized_query,
+                        disease_data=response_data,
+                        source="mydisease_api",
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow()
+                    )
+
+                    session.add(cached_info)
+                    await session.commit()
+                    logger.info(f"✅ Saved disease info to database backup: {query}")
+
+                except Exception as e:
+                    await session.rollback()
+                    logger.error(f"Failed to save disease info to database: {e}")
+
+        except Exception as e:
+            logger.error(f"Database operation failed: {e}")
+
+    async def _get_from_database(self, query: str) -> Optional[Dict[str, Any]]:
+        """
+        Get last successful disease lookup from database.
+        Returns None if not available.
+        """
+        try:
+            from src.models.database import get_db_session, CachedDiseaseInfo
+            from sqlalchemy import select
+
+            # Normalize query for consistent lookups
+            normalized_query = query.lower().strip()
+
+            async for session in get_db_session():
+                try:
+                    result = await session.execute(
+                        select(CachedDiseaseInfo)
+                        .where(CachedDiseaseInfo.disease_query == normalized_query)
+                        .order_by(CachedDiseaseInfo.updated_at.desc())
+                        .limit(1)
+                    )
+                    cached_info = result.scalar_one_or_none()
+
+                    if cached_info:
+                        logger.info(f"Retrieved disease info from database: {query}")
+                        return cached_info.disease_data
+
+                    return None
+
+                except Exception as e:
+                    logger.error(f"Failed to retrieve disease info from database: {e}")
+                    return None
+
+        except Exception as e:
+            logger.error(f"Database operation failed: {e}")
+            return None
+
     async def _process_request(self, query: str, **kwargs) -> Dict[str, Any]:
         """Implementation of abstract method from BaseService (async)"""
         return await self.lookup_disease(query, **kwargs)
@@ -279,36 +380,207 @@ async def lookup_disease_info(query: str) -> Dict[str, Any]:
         else:
             effective_query = query
         
-        # Use live MyDisease.info API if available and enabled
-        if settings.effective_use_live_services and _has_requests:
-            try:
-                result = await _lookup_disease_live(effective_query)
-                result["banner"] = banner
-                result["query"] = query
-                return result
-                
-            except Exception as e:
-                logger.warning(f"MyDisease.info API failed, using stub response: {e}")
-        
-        # Fallback stub response following Conditional Imports Pattern
-        return _create_disease_stub_response(query, banner)
-        
+        # Use live MyDisease.info API
+        result = await _lookup_disease_live(effective_query)
+        result["banner"] = banner
+        result["query"] = query
+        return result
+
     except Exception as e:
         logger.error(f"Disease lookup failed: {e}")
-        return _create_disease_stub_response(query, banner)
+        raise ExternalServiceException(f"MyDisease.info API error: {str(e)}", "disease_service")
+
+async def _fetch_medlineplus_symptoms(disease_name: str, snomed_code: str = None) -> List[str]:
+    """Fetch symptom information from MedlinePlus API using disease name or SNOMED code."""
+    symptoms = []
+
+    if not _has_httpx:
+        return symptoms
+
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+            # Try SNOMED code first if available, then fall back to disease name search
+            urls_to_try = []
+
+            if snomed_code:
+                urls_to_try.append((
+                    f"https://connect.medlineplus.gov/service?mainSearchCriteria.v.c={snomed_code}"
+                    f"&mainSearchCriteria.v.cs=2.16.840.1.113883.6.96&knowledgeResponseType=application/json",
+                    "SNOMED"
+                ))
+
+            # Always try disease name-based search as primary/fallback
+            # Clean disease name for URL (remove special chars, use proper encoding)
+            clean_name = disease_name.replace("'", "").strip()
+            urls_to_try.append((
+                f"https://connect.medlineplus.gov/service?mainSearchCriteria.v.c={clean_name}"
+                f"&knowledgeResponseType=application/json",
+                "name"
+            ))
+
+            for url, method in urls_to_try:
+                try:
+                    response = await client.get(url)
+                    response.raise_for_status()
+                    data = response.json()
+
+                    # Parse the feed entries
+                    entries = data.get("feed", {}).get("entry", [])
+                    logger.debug(f"🔍 MedlinePlus ({method}) returned {len(entries)} entries for: {disease_name}")
+
+                    if entries:
+                        # Get the first entry's summary
+                        summary_html = entries[0].get("summary", {}).get("_value", "")
+
+                        # Simple HTML parsing to extract symptoms list
+                        import re
+
+                        # Look for "symptoms of <condition> may include:" or similar patterns
+                        symptom_section = re.search(r'symptoms.*?(?:may include|include):.*?<ul>(.*?)</ul>', summary_html, re.IGNORECASE | re.DOTALL)
+                        if symptom_section:
+                            # Extract list items
+                            symptoms_html = symptom_section.group(1)
+                            symptom_items = re.findall(r'<li>(.*?)</li>', symptoms_html, re.DOTALL)
+
+                            for item in symptom_items:
+                                # Remove HTML tags and clean up
+                                clean_item = re.sub(r'<a[^>]*>(.*?)</a>', r'\1', item)  # Remove links but keep text
+                                clean_item = re.sub(r'<[^>]+>', '', clean_item)  # Remove other tags
+                                clean_item = clean_item.strip()
+                                if clean_item and len(clean_item) < 200:  # Reasonable length for a symptom
+                                    symptoms.append(clean_item)
+
+                            if symptoms:
+                                logger.info(f"📋 Found {len(symptoms)} symptoms from MedlinePlus ({method}) for {disease_name}")
+                                break  # Success, stop trying other methods
+
+                except Exception as method_error:
+                    logger.debug(f"MedlinePlus {method} query failed: {method_error}")
+                    continue  # Try next method
+
+    except Exception as e:
+        logger.warning(f"Could not fetch MedlinePlus symptoms: {e}")
+
+    return symptoms
+
+async def _fetch_related_pubmed_articles(disease_name: str) -> List[Dict[str, Any]]:
+    """Fetch top 3 most cited PubMed articles with abstracts (max 125 words)."""
+    articles = []
+
+    if not _has_httpx:
+        return articles
+
+    try:
+        # Search PubMed for articles, sorted by relevance/citation count
+        search_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+        search_params = {
+            "db": "pubmed",
+            "term": f"{disease_name}[Title/Abstract] AND Review[Publication Type]",
+            "retmax": 3,
+            "sort": "relevance",
+            "retmode": "json"
+        }
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            search_response = await client.get(search_url, params=search_params)
+            search_response.raise_for_status()
+            search_data = search_response.json()
+
+            pmids = search_data.get("esearchresult", {}).get("idlist", [])
+
+            if pmids:
+                # Fetch article details including abstracts using efetch
+                fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+                fetch_params = {
+                    "db": "pubmed",
+                    "id": ",".join(pmids),
+                    "retmode": "xml",
+                    "rettype": "abstract"
+                }
+
+                fetch_response = await client.get(fetch_url, params=fetch_params)
+                fetch_response.raise_for_status()
+
+                # Parse XML response to extract abstracts
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(fetch_response.text)
+
+                for article in root.findall(".//PubmedArticle"):
+                    pmid_elem = article.find(".//PMID")
+                    if pmid_elem is None:
+                        continue
+
+                    pmid = pmid_elem.text
+
+                    # Extract title
+                    title_elem = article.find(".//ArticleTitle")
+                    title = title_elem.text if title_elem is not None else "No title available"
+
+                    # Extract authors
+                    author_elems = article.findall(".//Author")
+                    first_author = "Unknown"
+                    if author_elems:
+                        last_name = author_elems[0].find("LastName")
+                        if last_name is not None:
+                            first_author = last_name.text
+
+                    # Extract journal
+                    journal_elem = article.find(".//Journal/Title")
+                    journal = journal_elem.text if journal_elem is not None else "Unknown journal"
+
+                    # Extract publication date
+                    pub_date_year = article.find(".//PubDate/Year")
+                    pub_date_month = article.find(".//PubDate/Month")
+                    pub_date = f"{pub_date_year.text if pub_date_year is not None else ''} {pub_date_month.text if pub_date_month is not None else ''}".strip()
+                    if not pub_date:
+                        pub_date = "Date unknown"
+
+                    # Extract abstract and limit to ~125 words
+                    abstract_elems = article.findall(".//AbstractText")
+                    abstract_text = ""
+                    if abstract_elems:
+                        abstract_parts = [elem.text for elem in abstract_elems if elem.text]
+                        abstract_text = " ".join(abstract_parts)
+
+                        # Limit to approximately 125 words
+                        words = abstract_text.split()
+                        if len(words) > 125:
+                            abstract_text = " ".join(words[:125]) + "..."
+
+                    if not abstract_text:
+                        abstract_text = "Abstract not available. Review article on " + disease_name + "."
+
+                    articles.append({
+                        "pmid": pmid,
+                        "title": title,
+                        "authors": first_author + " et al." if len(author_elems) > 1 else first_author,
+                        "journal": journal,
+                        "pub_date": pub_date,
+                        "summary": abstract_text,
+                        "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                    })
+
+        logger.info(f"📚 Found {len(articles)} related PubMed articles with abstracts for {disease_name}")
+
+    except Exception as e:
+        logger.warning(f"Could not fetch PubMed articles: {e}")
+
+    return articles
 
 async def _lookup_disease_live(query: str) -> Dict[str, Any]:
     """Look up disease using live MyDisease.info API following External Service Integration."""
-    
-    # MyDisease.info API
+
+    # MyDisease.info API with comprehensive fields
     base_url = "https://mydisease.info/v1/query"
-    
+
     params = {
         "q": query,
-        "fields": "disease_ontology,mondo,summary",
+        "fields": "mondo,disgenet,disease_ontology,umls,hpo,orphanet,name",
         "size": 1
     }
-    
+
+    logger.info(f"🔍 Looking up disease: {query}")
+
     if _has_httpx:
         async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
             response = await client.get(base_url, params=params)
@@ -319,24 +591,241 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
         response = await asyncio.to_thread(_requests_get, base_url, {"params": params, "timeout": 10})
         response.raise_for_status()
         data = response.json()
-    
+
+    logger.info(f"📊 API response: {data.get('total', 0)} results found")
+
     hits = data.get("hits", [])
     if hits:
         disease_data = hits[0]
-        summary = disease_data.get("summary") or "No summary available"
-        
+
+        # Extract MONDO data (primary source for disease information)
+        mondo = disease_data.get("mondo", {})
+        mondo_id = disease_data.get("_id", "")
+
+        # If we have a MONDO ID, fetch detailed disease info including HPO phenotypes
+        if mondo_id and _has_httpx:
+            try:
+                detailed_url = f"https://mydisease.info/v1/disease/{mondo_id}"
+                async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+                    detail_response = await client.get(detailed_url, params={"fields": "hpo"})
+                    if detail_response.status_code == 200:
+                        detailed_data = detail_response.json()
+                        # Merge HPO data from detailed endpoint
+                        if "hpo" in detailed_data:
+                            disease_data["hpo"] = detailed_data["hpo"]
+                        logger.info(f"📋 Fetched detailed HPO data for {mondo_id}")
+            except Exception as e:
+                logger.warning(f"Could not fetch detailed disease data: {e}")
+
+        # Extract disease name
+        disease_name = (
+            mondo.get("label") or
+            disease_data.get("name") or
+            disease_data.get("disease_ontology", {}).get("name") or
+            query
+        )
+
+        # Extract description/definition
+        description = (
+            mondo.get("definition") or
+            disease_data.get("disease_ontology", {}).get("def") or
+            f"Medical condition: {disease_name}. Consult medical literature for detailed information."
+        )
+
+        # Extract synonyms
+        synonyms = mondo.get("synonym", [])
+        if isinstance(synonyms, str):
+            synonyms = [synonyms]
+
+        # Extract symptoms from multiple sources
+        symptoms = []
+        hpo = disease_data.get("hpo", {})
+
+        # 1. Try MedlinePlus FIRST (primary source) - works with disease name directly
+        logger.info(f"🔍 Attempting to fetch symptoms from MedlinePlus for: {disease_name}")
+
+        # Extract SNOMED code from xrefs if available (for enhanced queries)
+        snomed_code = None
+        xrefs = mondo.get("xrefs", {})
+
+        # Debug: Log ALL available xrefs to understand data structure
+        if xrefs:
+            logger.info(f"🔍 DEBUG - Available xrefs for {disease_name}: {list(xrefs.keys())}")
+
+        if isinstance(xrefs, dict):
+            # Try multiple SNOMED reference fields
+            # sctid = SNOMED CT Identifier (the correct field!)
+            snomedct_refs = (
+                xrefs.get("sctid") or  # Primary: SNOMED CT ID
+                xrefs.get("snomedct_us") or
+                xrefs.get("snomedct") or
+                xrefs.get("SNOMEDCT_US_2023_03_01") or
+                xrefs.get("SNOMEDCT_US_2022_12_01") or
+                []
+            )
+
+            if snomedct_refs:
+                if isinstance(snomedct_refs, list) and len(snomedct_refs) > 0:
+                    snomed_code = snomedct_refs[0]
+                    # Strip SNOMED prefix if present (e.g., "SNOMEDCT_US:201826" -> "201826")
+                    if ":" in snomed_code:
+                        snomed_code = snomed_code.split(":")[-1]
+                    logger.info(f"✅ Found SNOMED code: {snomed_code}")
+                elif isinstance(snomedct_refs, str):
+                    snomed_code = snomedct_refs
+                    if ":" in snomed_code:
+                        snomed_code = snomed_code.split(":")[-1]
+                    logger.info(f"✅ Found SNOMED code (string): {snomed_code}")
+
+            # Also try ICD-10 codes as fallback for MedlinePlus
+            if not snomed_code:
+                icd10_refs = xrefs.get("icd10cm") or xrefs.get("ICD10CM") or []
+                if icd10_refs:
+                    logger.info(f"📋 Found ICD-10 codes: {icd10_refs} (not used for MedlinePlus yet)")
+
+        if not snomed_code:
+            logger.warning(f"⚠️ No SNOMED code found for {disease_name}")
+
+        # Build list of disease name variations to try for MedlinePlus
+        # Try: official label, simplified version, synonyms, original query
+        disease_name_variations = []
+
+        # Add official MONDO label first
+        if mondo.get("label"):
+            disease_name_variations.append(mondo["label"])
+
+            # Create simplified version by removing qualifiers (e.g., "resistant hypertension" -> "hypertension")
+            # Common qualifiers to strip
+            qualifiers = [
+                "resistant", "refractory", "monogenic", "thunderstorm triggered",
+                "drug-induced", "drug induced", "acute", "chronic", "severe",
+                "mild", "moderate", "familial", "hereditary", "congenital",
+                "acquired", "primary", "secondary", "type 1", "type 2",
+                "juvenile", "adult", "early onset", "late onset"
+            ]
+
+            label_lower = mondo["label"].lower()
+            simplified = mondo["label"]
+
+            for qualifier in qualifiers:
+                if qualifier in label_lower:
+                    # Remove qualifier and clean up spacing
+                    simplified = mondo["label"].lower().replace(qualifier, "").strip()
+                    simplified = " ".join(simplified.split())  # Remove extra spaces
+                    if simplified and simplified not in [v.lower() for v in disease_name_variations]:
+                        disease_name_variations.append(simplified)
+                        logger.info(f"📝 Created simplified disease name: '{simplified}' from '{mondo['label']}'")
+                        break  # Only use first match
+
+        # Add first 2-3 most common synonyms
+        if synonyms:
+            # Convert to list and slice to avoid caching issues
+            synonym_list = list(synonyms) if not isinstance(synonyms, list) else synonyms
+            for syn in synonym_list[:3]:
+                if syn not in disease_name_variations:
+                    disease_name_variations.append(syn)
+
+        # Add original user query last
+        if disease_name not in disease_name_variations:
+            disease_name_variations.append(disease_name)
+
+        # Fetch symptoms from MedlinePlus (tries SNOMED first if available, then disease name variations)
+        medlineplus_symptoms = []
+        for name_variant in disease_name_variations:
+            medlineplus_symptoms = await _fetch_medlineplus_symptoms(name_variant, snomed_code)
+            if medlineplus_symptoms:
+                logger.info(f"✅ Using MedlinePlus symptoms ({len(medlineplus_symptoms)} found) for variant: '{name_variant}'")
+                break  # Stop on first successful match
+
+        if medlineplus_symptoms:
+            symptoms = ["The following are some of the symptoms that may vary between individuals:"] + medlineplus_symptoms
+
+        # 2. If MedlinePlus didn't provide symptoms, try HPO (fallback)
+        if not symptoms:
+            logger.info(f"⚠️ MedlinePlus returned no symptoms, trying HPO fallback")
+            if hpo and isinstance(hpo, dict):
+                # Check for phenotypes in phenotype_related_to_disease
+                phenotypes = hpo.get("phenotype_related_to_disease", [])
+                if isinstance(phenotypes, list):
+                    for phenotype in phenotypes:  # Get ALL phenotypes (no limit)
+                        if isinstance(phenotype, dict):
+                            symptom_name = phenotype.get("hpo_name") or phenotype.get("phenotype_name")
+                            if symptom_name:
+                                symptoms.append(symptom_name)
+
+                # Also check clinical_course for additional info
+                if "clinical_course" in hpo:
+                    clinical = hpo["clinical_course"]
+                    if isinstance(clinical, dict) and "hpo_name" in clinical:
+                        if not any("Clinical course" in s for s in symptoms):
+                            symptoms.insert(0, f"Clinical course: {clinical['hpo_name']}")
+
+                if symptoms:
+                    logger.info(f"✅ Using HPO symptoms ({len(symptoms)} found)")
+
+        # 3. Final fallback: if no real symptoms found, provide clinical guidance
+        if not symptoms or (len(symptoms) == 1 and "Clinical course" in symptoms[0]):
+            logger.warning(f"⚠️ No symptoms found from any source for {disease_name}, using fallback text")
+            base_symptoms = [
+                "Detailed symptom information is not available in the database",
+                "Clinical manifestations may vary between individuals",
+                "Consult medical literature and clinical practice guidelines for comprehensive symptom assessment"
+            ]
+            # Keep clinical course if we have it
+            if symptoms and "Clinical course" in symptoms[0]:
+                symptoms.extend(base_symptoms)
+            else:
+                symptoms = base_symptoms
+
+        # Build comprehensive summary
+        summary_parts = []
+        if mondo.get("label"):
+            summary_parts.append(f"{mondo['label']} is a medical condition")
+        if mondo.get("definition"):
+            summary_parts.append(mondo["definition"][:200])  # Limit to 200 chars
+
+        summary = ". ".join(summary_parts) if summary_parts else f"{disease_name}: Consult medical literature for detailed information"
+
+        logger.info(f"✅ Successfully parsed disease data: {disease_name}")
+
+        # Build sources list
+        sources = ["MyDisease.info", "MONDO"]
+        if medlineplus_symptoms:
+            sources.append("MedlinePlus")
+        if hpo:
+            sources.append("HPO")
+
+        # Limit synonyms to 5 (must be done before return for caching)
+        limited_synonyms = []
+        if synonyms:
+            limited_synonyms = list(synonyms) if not isinstance(synonyms, list) else synonyms
+            limited_synonyms = limited_synonyms[:5]
+
+        # Fetch related PubMed articles (top 3 most cited)
+        related_articles = await _fetch_related_pubmed_articles(disease_name)
+
         return {
             "summary": summary,
-            "description": f"Medical information for {query}",
-            "symptoms": ["Consult medical literature for symptoms"],
-            "sources": ["MyDisease.info"]
+            "description": description,
+            "symptoms": symptoms,
+            "disease_name": disease_name,
+            "synonyms": limited_synonyms,
+            "mondo_id": mondo.get("mondo", ""),
+            "sources": sources,
+            "related_articles": related_articles,
         }
     else:
+        logger.warning(f"⚠️ No results found for query: {query}")
         return {
-            "summary": f"No specific information found for '{query}'. Consult medical literature.",
-            "description": "Disease information not available in database",
+            "summary": f"No specific information found for '{query}'. Consider rephrasing your search or consulting medical literature.",
+            "description": "Disease information not available in database. Try using standard medical terminology or alternative disease names.",
             "symptoms": [],
-            "sources": ["MyDisease.info"]
+            "sources": ["MyDisease.info"],
+            "suggestions": [
+                "Try using medical terminology (e.g., 'diabetes mellitus' instead of 'sugar disease')",
+                "Check spelling and try alternative names",
+                "Consider broader or more specific terms"
+            ]
         }
 
 def _create_disease_stub_response(query: str, banner: str) -> Dict[str, Any]:

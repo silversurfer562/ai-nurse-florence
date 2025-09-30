@@ -293,26 +293,150 @@ class DrugInteractionService:
         """Create cache key for drug interaction check."""
         sorted_drugs = sorted([self._normalize_drug_name(drug) for drug in drug_list])
         return f"drug_interactions_{'_'.join(sorted_drugs)}"
-    
+
+    async def _check_interactions_with_openai(
+        self,
+        drugs: List[str],
+        patient_context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Use OpenAI to check for drug interactions."""
+        try:
+            # Get OpenAI service from service registry
+            from src.services import get_service
+            openai_service = get_service('openai')
+            if not openai_service:
+                raise Exception("OpenAI service not available")
+        except Exception as e:
+            raise Exception(f"OpenAI service not available: {e}")
+
+        # Build the prompt
+        drug_list = ", ".join(drugs)
+        prompt = f"""Analyze the following medications for a nurse's clinical reference: {drug_list}
+
+Please provide TWO sections:
+
+SECTION 1 - Individual Drug Information:
+For EACH medication in the list, provide:
+1. Drug name (generic and common brand names)
+2. Drug class/category
+3. Primary indication (what it's used for)
+4. Key nursing considerations (monitoring, administration)
+5. Common side effects nurses should watch for
+6. Important contraindications or warnings
+
+SECTION 2 - Drug Interactions:
+For each pair of medications that have clinically significant interactions, provide:
+1. Drug names (drug1 and drug2)
+2. Severity level (minor, moderate, major, or contraindicated)
+3. Mechanism of interaction (pharmacokinetic, pharmacodynamic, pharmaceutical, or unknown)
+4. Description of the interaction
+5. Clinical significance
+6. Specific clinical recommendations (as a list)
+7. Evidence level (1A, 1B, 2A, 2B, 3, or expert opinion)
+8. Onset (rapid or delayed)
+9. Documentation quality (excellent, good, fair, or poor)
+
+{"Patient context: " + str(patient_context) if patient_context else ""}
+
+Return the response in JSON format with this structure:
+{{
+  "drug_information": [
+    {{
+      "name": "drug name (generic)",
+      "brand_names": ["brand1", "brand2"],
+      "drug_class": "therapeutic class",
+      "indication": "primary use",
+      "nursing_considerations": ["consideration 1", "consideration 2"],
+      "common_side_effects": ["side effect 1", "side effect 2"],
+      "warnings": ["warning 1", "warning 2"]
+    }}
+  ],
+  "interactions": [
+    {{
+      "drug1": "drug name",
+      "drug2": "drug name",
+      "severity": "major|moderate|minor|contraindicated",
+      "mechanism": "pharmacokinetic|pharmacodynamic|pharmaceutical|unknown",
+      "description": "detailed description",
+      "clinical_significance": "clinical impact statement",
+      "recommendations": ["recommendation 1", "recommendation 2", ...],
+      "evidence_level": "1A|1B|2A|2B|3|expert opinion",
+      "onset": "rapid|delayed",
+      "documentation": "excellent|good|fair|poor"
+    }}
+  ],
+  "summary": "overall summary including individual drugs and interaction risk",
+  "clinical_alerts": ["alert 1", "alert 2", ...]
+}}
+
+If there are no significant interactions, return an empty interactions array but ALWAYS include drug_information for all medications."""
+
+        # Call OpenAI
+        try:
+            import json
+            # Use generate_response with context for better medical accuracy
+            context = "You are analyzing drug interactions. Provide accurate, evidence-based medical information in the exact JSON format requested."
+            openai_response = await openai_service.generate_response(prompt, context)
+            response_text = openai_response.get("response", "")
+
+            # Parse JSON from response
+            # Try to extract JSON from markdown code blocks if present
+            if "```json" in response_text:
+                json_start = response_text.find("```json") + 7
+                json_end = response_text.find("```", json_start)
+                json_str = response_text[json_start:json_end].strip()
+            elif "```" in response_text:
+                json_start = response_text.find("```") + 3
+                json_end = response_text.find("```", json_start)
+                json_str = response_text[json_start:json_end].strip()
+            else:
+                json_str = response_text.strip()
+
+            ai_response = json.loads(json_str)
+
+            # Build standardized response
+            banner = getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice')
+            return {
+                "banner": banner,
+                "drugs_checked": drugs,
+                "drug_information": ai_response.get("drug_information", []),
+                "total_interactions": len(ai_response.get("interactions", [])),
+                "interactions": ai_response.get("interactions", []),
+                "summary": ai_response.get("summary", ""),
+                "clinical_alerts": ai_response.get("clinical_alerts", []),
+                "patient_context": patient_context,
+                "data_source": "OpenAI GPT-4 (Medical Literature Knowledge)",
+                "service_note": "AI-generated analysis based on medical literature. Verify with authoritative sources.",
+                "timestamp": datetime.now().isoformat()
+            }
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse OpenAI response as JSON: {e}")
+            logger.debug(f"OpenAI response: {response_text[:500]}")
+            raise Exception(f"Failed to parse AI response: {str(e)}")
+        except Exception as e:
+            logger.error(f"OpenAI API call failed: {e}")
+            raise
+
     async def check_drug_interactions(
-        self, 
+        self,
         drugs: List[str],
         patient_context: Optional[Dict[str, Any]] = None,
         use_cache: bool = True
     ) -> Dict[str, Any]:
         """
-        Check for drug interactions in a medication list.
-        
+        Check for drug interactions in a medication list using OpenAI.
+
         Args:
             drugs: List of drug names to check
             patient_context: Optional patient context (age, conditions, etc.)
             use_cache: Whether to use caching
-            
+
         Returns:
             Drug interaction results with recommendations
         """
         start_time = datetime.now()
-        
+
         if len(drugs) < 2:
             return {
                 "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
@@ -320,11 +444,11 @@ class DrugInteractionService:
                 "drugs_provided": len(drugs),
                 "timestamp": datetime.now().isoformat()
             }
-        
+
         # Check cache first
         cache_key = self._create_cache_key(drugs)
         cached_result = None
-        
+
         if use_cache and self.cache_enabled and smart_cache_manager and CacheStrategy:
             try:
                 cached_result = await smart_cache_manager.smart_cache_get(
@@ -334,85 +458,43 @@ class DrugInteractionService:
                 )
             except Exception as e:
                 logger.warning(f"Cache retrieval failed: {e}")
-        
+
         if cached_result:
             logger.info(f"Drug interaction cache hit for: {drugs}")
             cached_result["cache_hit"] = True
             cached_result["response_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
             return cached_result
-        
-        # Find drugs in database
-        found_drugs = []
-        missing_drugs = []
-        
-        for drug_name in drugs:
-            drug = self._find_drug_in_database(drug_name)
-            if drug:
-                found_drugs.append(drug)
-            else:
-                missing_drugs.append(drug_name)
-        
-        # Check interactions
-        interactions = []
-        for i, drug1 in enumerate(found_drugs):
-            for drug2 in found_drugs[i+1:]:
-                interaction = self._check_drug_pair_interaction(drug1, drug2)
-                if interaction:
-                    interactions.append(interaction)
-        
-        # Prepare response
-        banner = getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice')
-        response = {
-            "banner": banner,
-            "drugs_checked": drugs,
-            "drugs_found": len(found_drugs),
-            "drugs_missing": missing_drugs,
-            "total_interactions": len(interactions),
-            "interactions": [
-                {
-                    "drug1": {
-                        "name": interaction.drug1.name,
-                        "generic_name": interaction.drug1.generic_name,
-                        "drug_class": interaction.drug1.drug_class
-                    },
-                    "drug2": {
-                        "name": interaction.drug2.name,
-                        "generic_name": interaction.drug2.generic_name,
-                        "drug_class": interaction.drug2.drug_class
-                    },
-                    "severity": interaction.severity.value,
-                    "mechanism": interaction.mechanism.value,
-                    "description": interaction.description,
-                    "clinical_significance": interaction.clinical_significance,
-                    "recommendations": interaction.recommendations,
-                    "evidence_level": interaction.evidence_level,
-                    "onset": interaction.onset,
-                    "documentation": interaction.documentation
-                }
-                for interaction in interactions
-            ],
-            "severity_summary": self._get_severity_summary(interactions),
-            "clinical_alerts": self._generate_clinical_alerts(interactions),
-            "patient_context": patient_context,
-            "cache_hit": False,
-            "response_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # Cache the result
-        if use_cache and self.cache_enabled and smart_cache_manager and CacheStrategy:
-            try:
-                await smart_cache_manager.smart_cache_set(
-                    CacheStrategy.MEDICAL_REFERENCE,
-                    f"interactions_{cache_key}",
-                    response,
-                    drugs=drugs
-                )
-                logger.info(f"Cached drug interaction result for: {drugs}")
-            except Exception as e:
-                logger.warning(f"Failed to cache drug interaction result: {e}")
-        
-        return response
+
+        # Use OpenAI to check interactions
+        try:
+            response = await self._check_interactions_with_openai(drugs, patient_context)
+            response["cache_hit"] = False
+            response["response_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+
+            # Cache the result
+            if use_cache and self.cache_enabled and smart_cache_manager and CacheStrategy:
+                try:
+                    await smart_cache_manager.smart_cache_set(
+                        CacheStrategy.MEDICAL_REFERENCE,
+                        f"interactions_{cache_key}",
+                        response,
+                        drugs=drugs
+                    )
+                    logger.info(f"Cached drug interaction result for: {drugs}")
+                except Exception as e:
+                    logger.warning(f"Failed to cache drug interaction result: {e}")
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Error checking drug interactions with OpenAI: {e}")
+            return {
+                "banner": getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice'),
+                "error": "Failed to check drug interactions",
+                "error_details": str(e),
+                "drugs_checked": drugs,
+                "timestamp": datetime.now().isoformat()
+            }
     
     def _check_drug_pair_interaction(self, drug1: Drug, drug2: Drug) -> Optional[DrugInteraction]:
         """Check for interaction between two drugs."""

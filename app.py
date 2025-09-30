@@ -66,6 +66,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️ Session cleanup service not available: {e}")
 
+    # Initialize drug cache updater service (Phase 4.2)
+    try:
+        from src.services.drug_cache_updater import get_drug_cache_updater
+        drug_cache_updater = get_drug_cache_updater()
+        await drug_cache_updater.start()
+        logger.info("✅ Drug cache updater service started")
+    except Exception as e:
+        logger.warning(f"⚠️ Drug cache updater service not available: {e}")
+
+    # Initialize disease cache updater service (Phase 4.2)
+    try:
+        from src.services.disease_cache_updater import get_disease_cache_updater
+        disease_cache_updater = get_disease_cache_updater()
+        await disease_cache_updater.start()
+        logger.info("✅ Disease cache updater service started")
+    except Exception as e:
+        logger.warning(f"⚠️ Disease cache updater service not available: {e}")
+
     # Log effective base URL for observability and populate OpenAPI servers
     effective_base = None
     try:
@@ -102,7 +120,25 @@ async def lifespan(app: FastAPI):
             logger.info("✅ Session cleanup service stopped")
         except Exception as e:
             logger.warning(f"⚠️ Error stopping session cleanup service: {e}")
-        
+
+        # Stop drug cache updater service (Phase 4.2)
+        try:
+            from src.services.drug_cache_updater import get_drug_cache_updater
+            drug_cache_updater = get_drug_cache_updater()
+            await drug_cache_updater.stop()
+            logger.info("✅ Drug cache updater service stopped")
+        except Exception as e:
+            logger.warning(f"⚠️ Error stopping drug cache updater service: {e}")
+
+        # Stop disease cache updater service (Phase 4.2)
+        try:
+            from src.services.disease_cache_updater import get_disease_cache_updater
+            disease_cache_updater = get_disease_cache_updater()
+            await disease_cache_updater.stop()
+            logger.info("✅ Disease cache updater service stopped")
+        except Exception as e:
+            logger.warning(f"⚠️ Error stopping disease cache updater service: {e}")
+
         logger.info("Application shutdown complete")
 
 
@@ -188,6 +224,16 @@ try:
 except Exception as e:
     logger.warning(f"Failed to register enhanced literature router: {e}")
     ROUTERS_LOADED["enhanced_literature"] = False
+
+# Add drug interactions router (Phase 4.2 - Additional Medical Services)
+try:
+    from src.routers.drug_interactions import router as drug_interactions_router
+    api_router.include_router(drug_interactions_router)
+    ROUTERS_LOADED["drug_interactions"] = True
+    logger.info("Drug interactions router registered successfully - Phase 4.2 Additional Medical Services")
+except Exception as e:
+    logger.warning(f"Failed to register drug interactions router: {e}")
+    ROUTERS_LOADED["drug_interactions"] = False
 
 try:
     from src.routers import get_available_routers, get_router_status
