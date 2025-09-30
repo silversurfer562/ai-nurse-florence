@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drug Interaction Checker - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .drug-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #10b981;
+            transition: all 0.3s ease;
+        }
+        .drug-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .interaction-card {
+            border-left-width: 4px;
+        }
+        .severe-interaction {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+        .moderate-interaction {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+        .mild-interaction {
+            border-left-color: #eab308;
+            background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
+        }
+        .no-interaction {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+        .live-indicator {
+            background: linear-gradient(45deg, #10b981, #34d399);
+            animation: pulse 2s infinite;
+        }
+        .database-indicator {
+            background: linear-gradient(45deg, #f59e0b, #fbbf24);
+        }
+        .checker-container {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .drug-tag {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            margin: 0.25rem;
+        }
+        .remove-drug {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            color: #ef4444;
+        }
+        .severity-badge {
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+        .severe-badge { background-color: #fee2e2; color: #dc2626; }
+        .moderate-badge { background-color: #fef3c7; color: #d97706; }
+        .mild-badge { background-color: #fef9c3; color: #ca8a04; }
+        .safe-badge { background-color: #dcfce7; color: #16a34a; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="checker-container text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-pills text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-blue-200 text-sm">Drug Interaction Checker</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="live-indicator w-3 h-3 rounded-full"></div>
+                        <span class="text-sm">Live FDA Data + Cache</span>
+                    </div>
+                    <span class="text-blue-200 text-sm" id="statusIndicator">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Educational Banner -->
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800">Critical Safety Notice</h3>
+                    <p class="text-sm text-red-700">Educational use only — not medical advice. Always verify drug interactions with clinical pharmacist or current drug references before medication administration.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drug Input Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Drug Interaction Checker</h2>
+                <p class="text-gray-600">Add medications to check for potential interactions using live FDA data with database caching</p>
+            </div>
+
+            <!-- Drug Input -->
+            <div class="relative mb-6">
+                <div class="flex space-x-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-capsules absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="drugSearch" 
+                            placeholder="Search medications (generic or brand names, e.g., lisinopril, metformin...)"
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            autocomplete="off"
+                        >
+                        <div id="drugAutocomplete" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-64 overflow-y-auto"></div>
+                    </div>
+                    <button 
+                        id="addDrugButton" 
+                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                        disabled
+                    >
+                        <i class="fas fa-plus mr-2"></i>Add Drug
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <span class="text-sm text-gray-600">Common medications:</span>
+                    <button class="quick-add-drug text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors" data-drug="lisinopril">Lisinopril</button>
+                    <button class="quick-add-drug text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors" data-drug="metformin">Metformin</button>
+                    <button class="quick-add-drug text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors" data-drug="warfarin">Warfarin</button>
+                    <button class="quick-add-drug text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors" data-drug="amlodipine">Amlodipine</button>
+                    <button class="quick-add-drug text-sm px-3 py-1 bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors" data-drug="atorvastatin">Atorvastatin</button>
+                </div>
+            </div>
+
+            <!-- Current Medications -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">Current Medication List</h3>
+                <div id="currentMedications" class="min-h-12 bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
+                    <p class="text-gray-500 text-center">No medications added yet. Add medications above to check for interactions.</p>
+                </div>
+            </div>
+
+            <!-- Check Interactions Button -->
+            <div class="text-center">
+                <button 
+                    id="checkInteractionsButton" 
+                    class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    <i class="fas fa-search mr-2"></i>Check for Interactions
+                </button>
+            </div>
+
+            <!-- Data Source Info -->
+            <div class="flex items-center justify-between text-sm text-gray-500 border-t pt-4 mt-6">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="live-indicator w-2 h-2 rounded-full"></div>
+                        <span>Live FDA API</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="database-indicator w-2 h-2 rounded-full"></div>
+                        <span>Database Cache (648 drugs)</span>
+                    </div>
+                </div>
+                <div id="lastUpdated" class="text-gray-400"></div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden text-center py-12">
+            <div class="inline-flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span class="text-gray-600">Analyzing drug interactions...</span>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900">Interaction Analysis</h3>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Safety Check Complete</span>
+                </div>
+            </div>
+
+            <!-- Interaction Summary -->
+            <div id="interactionSummary" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <!-- Summary cards will be populated by JavaScript -->
+            </div>
+
+            <!-- Detailed Interactions -->
+            <div id="detailedInteractions" class="space-y-4">
+                <!-- Detailed interaction cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- No Interactions Found -->
+        <div id="noInteractions" class="hidden no-interaction rounded-lg p-8 text-center">
+            <div class="text-green-500 mb-4">
+                <i class="fas fa-check-circle text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">No Significant Interactions Found</h3>
+            <p class="text-gray-600">Based on current database, no major drug interactions detected between the selected medications.</p>
+            <p class="text-sm text-gray-500 mt-2">Always verify with clinical pharmacist for complex medication regimens.</p>
+        </div>
+    </main>
+
+    <script>
+        class DrugInteractionChecker {
+            constructor() {
+                this.apiBase = '/api/v1';
+                this.selectedDrugs = [];
+                this.drugCache = new Map();
+                this.debounceTimer = null;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateStatus();
+                this.loadCachedDrugs();
+            }
+
+            setupEventListeners() {
+                const drugSearch = document.getElementById('drugSearch');
+                const addDrugButton = document.getElementById('addDrugButton');
+                const checkInteractionsButton = document.getElementById('checkInteractionsButton');
+                const quickAddButtons = document.querySelectorAll('.quick-add-drug');
+
+                // Drug search with autocomplete
+                drugSearch.addEventListener('input', (e) => {
+                    clearTimeout(this.debounceTimer);
+                    const query = e.target.value.trim();
+                    
+                    if (query.length >= 2) {
+                        this.debounceTimer = setTimeout(() => {
+                            this.showDrugAutocomplete(query);
+                        }, 300);
+                        addDrugButton.disabled = false;
+                    } else {
+                        this.hideDrugAutocomplete();
+                        addDrugButton.disabled = true;
+                    }
+                });
+
+                // Add drug
+                addDrugButton.addEventListener('click', () => {
+                    this.addDrug(drugSearch.value.trim());
+                });
+
+                drugSearch.addEventListener('keydown', (e) => {
+                    const autocompleteDiv = document.getElementById('drugAutocomplete');
+                    const isVisible = !autocompleteDiv.classList.contains('hidden');
+                    
+                    if (isVisible) {
+                        const items = autocompleteDiv.querySelectorAll('.drug-autocomplete-item:not([data-disabled])');
+                        
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            this.selectedIndex = Math.min(this.selectedIndex + 1, items.length - 1);
+                            this.updateDrugSelection(items);
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+                            this.updateDrugSelection(items);
+                        } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (this.selectedIndex >= 0 && items[this.selectedIndex]) {
+                                const drugName = items[this.selectedIndex].dataset.drug;
+                                this.addDrug(drugName);
+                                this.hideDrugAutocomplete();
+                            } else if (drugSearch.value.trim()) {
+                                this.addDrug(drugSearch.value.trim());
+                            }
+                        } else if (e.key === 'Escape') {
+                            this.hideDrugAutocomplete();
+                        }
+                    } else if (e.key === 'Enter' && drugSearch.value.trim()) {
+                        this.addDrug(drugSearch.value.trim());
+                    }
+                });
+
+                // Check interactions
+                checkInteractionsButton.addEventListener('click', () => {
+                    this.checkInteractions();
+                });
+
+                // Quick add buttons
+                quickAddButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const drug = e.target.dataset.drug;
+                        this.addDrug(drug);
+                    });
+                });
+
+                // Hide autocomplete when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#drugSearch') && !e.target.closest('#drugAutocomplete')) {
+                        this.hideDrugAutocomplete();
+                    }
+                });
+            }
+
+            async loadCachedDrugs() {
+                try {
+                    const response = await fetch(`${this.apiBase}/drugs/list?limit=100`);
+                    const data = await response.json();
+                    
+                    if (data.drugs) {
+                        data.drugs.forEach(drug => {
+                            this.drugCache.set(drug.name.toLowerCase(), drug);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading cached drugs:', error);
+                }
+            }
+
+            async showDrugAutocomplete(query) {
+                try {
+                    const response = await fetch(`${this.apiBase}/drug-interactions/drug-names?query=${encodeURIComponent(query)}&limit=8`);
+                    const data = await response.json();
+                    
+                    const autocompleteDiv = document.getElementById('drugAutocomplete');
+                    
+                    if (data.success && data.data && data.data.drugs && data.data.drugs.length > 0) {
+                        autocompleteDiv.innerHTML = data.data.drugs.map((drug, index) => {
+                            const isAlreadyAdded = this.selectedDrugs.includes(drug.toLowerCase());
+                            return `
+                                <div class="drug-autocomplete-item px-4 py-3 cursor-pointer transition-all duration-200 ${isAlreadyAdded ? 'bg-gray-100 opacity-50' : 'hover:bg-green-50'}" 
+                                     data-drug="${drug}" 
+                                     data-index="${index}"
+                                     ${isAlreadyAdded ? 'data-disabled="true"' : ''}>
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <div class="font-medium ${isAlreadyAdded ? 'text-gray-500' : 'text-gray-900'}">${drug}</div>
+                                            <div class="text-xs mt-1 ${isAlreadyAdded ? 'text-gray-400' : 'text-gray-500'}">
+                                                ${isAlreadyAdded ? 
+                                                    '<i class="fas fa-check mr-1"></i>Already added' : 
+                                                    '<i class="fas fa-plus mr-1"></i>Click to add'
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="${isAlreadyAdded ? 'text-gray-400' : 'text-green-500'}">
+                                            <i class="fas ${isAlreadyAdded ? 'fa-check' : 'fa-arrow-right'}"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        // Add keyboard navigation
+                        this.selectedIndex = -1;
+                        
+                        // Add click handlers
+                        autocompleteDiv.querySelectorAll('.drug-autocomplete-item').forEach((item, index) => {
+                            if (!item.dataset.disabled) {
+                                item.addEventListener('click', (e) => {
+                                    const drugName = e.currentTarget.dataset.drug;
+                                    this.addDrug(drugName);
+                                    this.hideDrugAutocomplete();
+                                });
+                            }
+                            
+                            // Add hover effect for keyboard navigation
+                            item.addEventListener('mouseenter', () => {
+                                if (!item.dataset.disabled) {
+                                    this.setSelectedDrugIndex(index);
+                                }
+                            });
+                        });
+                        
+                        autocompleteDiv.classList.remove('hidden');
+                        
+                        // Show cache status if available
+                        if (data.data.cache_hit) {
+                            this.updateStatus('Drug search (cached)');
+                        } else if (data.data.fallback_source) {
+                            this.updateStatus(`Drug search (${data.data.fallback_source})`);
+                        } else {
+                            this.updateStatus('Drug search (live FDA data)');
+                        }
+                    } else {
+                        // Show "type more" hint for short queries
+                        if (query.length < 2) {
+                            autocompleteDiv.innerHTML = `
+                                <div class="px-4 py-3 text-gray-500 text-sm">
+                                    <i class="fas fa-lightbulb mr-2"></i>
+                                    Type at least 2 characters for drug suggestions
+                                </div>
+                            `;
+                            autocompleteDiv.classList.remove('hidden');
+                        } else {
+                            this.hideDrugAutocomplete();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Drug autocomplete error:', error);
+                    // Show fallback suggestions for common drugs
+                    if (query.length >= 2) {
+                        const fallbackSuggestions = this.getFallbackDrugSuggestions(query);
+                        if (fallbackSuggestions.length > 0) {
+                            const autocompleteDiv = document.getElementById('drugAutocomplete');
+                            autocompleteDiv.innerHTML = `
+                                <div class="px-4 py-2 bg-orange-50 border-b border-orange-200">
+                                    <div class="text-xs text-orange-800">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Network error - showing cached drug suggestions
+                                    </div>
+                                </div>
+                                ${fallbackSuggestions.map((drug, index) => {
+                                    const isAlreadyAdded = this.selectedDrugs.includes(drug.toLowerCase());
+                                    return `
+                                        <div class="drug-autocomplete-item px-4 py-3 cursor-pointer ${isAlreadyAdded ? 'bg-gray-100 opacity-50' : 'hover:bg-green-50'}" 
+                                             data-drug="${drug}" 
+                                             data-index="${index}"
+                                             ${isAlreadyAdded ? 'data-disabled="true"' : ''}>
+                                            <div class="font-medium ${isAlreadyAdded ? 'text-gray-500' : 'text-gray-900'}">${drug}</div>
+                                            <div class="text-xs ${isAlreadyAdded ? 'text-gray-400' : 'text-gray-500'} mt-1">
+                                                ${isAlreadyAdded ? 'Already added' : 'Cached suggestion'}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            `;
+                            
+                            autocompleteDiv.querySelectorAll('.drug-autocomplete-item').forEach(item => {
+                                if (!item.dataset.disabled) {
+                                    item.addEventListener('click', (e) => {
+                                        const drugName = e.currentTarget.dataset.drug;
+                                        this.addDrug(drugName);
+                                        this.hideDrugAutocomplete();
+                                    });
+                                }
+                            });
+                            
+                            autocompleteDiv.classList.remove('hidden');
+                        } else {
+                            this.hideDrugAutocomplete();
+                        }
+                    } else {
+                        this.hideDrugAutocomplete();
+                    }
+                }
+            }
+
+            hideDrugAutocomplete() {
+                document.getElementById('drugAutocomplete').classList.add('hidden');
+                this.selectedIndex = -1;
+            }
+
+            setSelectedDrugIndex(index) {
+                this.selectedIndex = index;
+                const items = document.querySelectorAll('#drugAutocomplete .drug-autocomplete-item:not([data-disabled])');
+                this.updateDrugSelection(items);
+            }
+
+            updateDrugSelection(items) {
+                items.forEach((item, index) => {
+                    if (index === this.selectedIndex) {
+                        item.classList.add('bg-green-50');
+                        item.classList.remove('hover:bg-green-50');
+                    } else {
+                        item.classList.remove('bg-green-50');
+                        item.classList.add('hover:bg-green-50');
+                    }
+                });
+            }
+
+            getFallbackDrugSuggestions(query) {
+                const commonDrugs = [
+                    "Acetaminophen", "Amoxicillin", "Aspirin", "Atorvastatin", "Azithromycin",
+                    "Ciprofloxacin", "Clopidogrel", "Doxycycline", "Furosemide", "Gabapentin",
+                    "Hydrochlorothiazide", "Ibuprofen", "Levothyroxine", "Lisinopril", "Losartan",
+                    "Metformin", "Metoprolol", "Omeprazole", "Prednisone", "Simvastatin", "Warfarin",
+                    "Amlodipine", "Metformin", "Omeprazole", "Prednisone", "Albuterol",
+                    "Insulin", "Morphine", "Tramadol", "Sertraline", "Fluoxetine",
+                    "Lorazepam", "Alprazolam", "Zolpidem", "Pantoprazole", "Ranitidine"
+                ];
+                
+                const query_lower = query.toLowerCase();
+                return commonDrugs
+                    .filter(drug => drug.toLowerCase().includes(query_lower))
+                    .slice(0, 6);
+            }
+
+            addDrug(drugName) {
+                if (!drugName || this.selectedDrugs.includes(drugName.toLowerCase())) {
+                    return;
+                }
+
+                this.selectedDrugs.push(drugName.toLowerCase());
+                this.updateMedicationDisplay();
+                this.clearDrugSearch();
+                this.updateStatus(`${this.selectedDrugs.length} medications added`);
+            }
+
+            removeDrug(drugName) {
+                this.selectedDrugs = this.selectedDrugs.filter(drug => drug !== drugName.toLowerCase());
+                this.updateMedicationDisplay();
+                this.clearResults();
+            }
+
+            updateMedicationDisplay() {
+                const container = document.getElementById('currentMedications');
+                const checkButton = document.getElementById('checkInteractionsButton');
+                
+                if (this.selectedDrugs.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center">No medications added yet. Add medications above to check for interactions.</p>';
+                    checkButton.disabled = true;
+                } else {
+                    container.innerHTML = this.selectedDrugs.map(drug => `
+                        <span class="drug-tag">
+                            <i class="fas fa-pills mr-2"></i>
+                            ${drug.charAt(0).toUpperCase() + drug.slice(1)}
+                            <i class="fas fa-times remove-drug" onclick="drugChecker.removeDrug('${drug}')"></i>
+                        </span>
+                    `).join('');
+                    checkButton.disabled = this.selectedDrugs.length < 2;
+                }
+            }
+
+            clearDrugSearch() {
+                document.getElementById('drugSearch').value = '';
+                document.getElementById('addDrugButton').disabled = true;
+                this.hideDrugAutocomplete();
+            }
+
+            async checkInteractions() {
+                if (this.selectedDrugs.length < 2) return;
+
+                this.showLoading();
+                this.clearResults();
+                this.updateStatus('Checking interactions...');
+
+                try {
+                    const response = await fetch(`${this.apiBase}/drug-interactions/check`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            drugs: this.selectedDrugs
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.interactions) {
+                        if (data.interactions.length > 0) {
+                            this.displayInteractions(data.interactions);
+                        } else {
+                            this.showNoInteractions();
+                        }
+                        this.updateStatus('Analysis complete');
+                    } else {
+                        this.showError('Failed to check interactions');
+                    }
+                } catch (error) {
+                    console.error('Interaction check error:', error);
+                    this.showError('Error checking interactions');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            displayInteractions(interactions) {
+                const resultsSection = document.getElementById('resultsSection');
+                const summaryContainer = document.getElementById('interactionSummary');
+                const detailsContainer = document.getElementById('detailedInteractions');
+                
+                // Count interactions by severity
+                const severityCounts = {
+                    severe: interactions.filter(i => i.severity === 'severe').length,
+                    moderate: interactions.filter(i => i.severity === 'moderate').length,
+                    mild: interactions.filter(i => i.severity === 'mild').length,
+                    total: interactions.length
+                };
+
+                // Create summary cards
+                summaryContainer.innerHTML = `
+                    <div class="severe-interaction rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-red-600">${severityCounts.severe}</div>
+                        <div class="text-sm text-red-800">Severe</div>
+                    </div>
+                    <div class="moderate-interaction rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-orange-600">${severityCounts.moderate}</div>
+                        <div class="text-sm text-orange-800">Moderate</div>
+                    </div>
+                    <div class="mild-interaction rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-yellow-600">${severityCounts.mild}</div>
+                        <div class="text-sm text-yellow-800">Mild</div>
+                    </div>
+                    <div class="drug-card rounded-lg p-4 text-center">
+                        <div class="text-2xl font-bold text-gray-600">${severityCounts.total}</div>
+                        <div class="text-sm text-gray-800">Total</div>
+                    </div>
+                `;
+
+                // Create detailed interaction cards
+                detailsContainer.innerHTML = interactions.map(interaction => `
+                    <div class="interaction-card ${this.getSeverityClass(interaction.severity)} rounded-lg p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">${interaction.drug1} + ${interaction.drug2}</h4>
+                                <p class="text-gray-600 mt-1">${interaction.description || 'Potential drug interaction detected'}</p>
+                            </div>
+                            <span class="severity-badge ${this.getSeverityBadgeClass(interaction.severity)}">
+                                ${interaction.severity.toUpperCase()}
+                            </span>
+                        </div>
+
+                        ${interaction.mechanism ? `
+                            <div class="mb-3">
+                                <h5 class="font-medium text-gray-800">Mechanism:</h5>
+                                <p class="text-gray-700 text-sm">${interaction.mechanism}</p>
+                            </div>
+                        ` : ''}
+
+                        ${interaction.clinical_effect ? `
+                            <div class="mb-3">
+                                <h5 class="font-medium text-gray-800">Clinical Effect:</h5>
+                                <p class="text-gray-700 text-sm">${interaction.clinical_effect}</p>
+                            </div>
+                        ` : ''}
+
+                        ${interaction.management ? `
+                            <div class="mb-3">
+                                <h5 class="font-medium text-gray-800">Management:</h5>
+                                <p class="text-gray-700 text-sm">${interaction.management}</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="border-t pt-3 mt-3 text-xs text-gray-500">
+                            <div class="flex items-center justify-between">
+                                <span><i class="fas fa-shield-alt"></i> Verify with clinical pharmacist</span>
+                                <span><i class="fas fa-database"></i> Source: ${interaction.source || 'Drug database'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                resultsSection.classList.remove('hidden');
+            }
+
+            getSeverityClass(severity) {
+                const classes = {
+                    severe: 'severe-interaction',
+                    moderate: 'moderate-interaction',
+                    mild: 'mild-interaction'
+                };
+                return classes[severity] || 'mild-interaction';
+            }
+
+            getSeverityBadgeClass(severity) {
+                const classes = {
+                    severe: 'severe-badge',
+                    moderate: 'moderate-badge',
+                    mild: 'mild-badge'
+                };
+                return classes[severity] || 'mild-badge';
+            }
+
+            showLoading() {
+                document.getElementById('loadingState').classList.remove('hidden');
+            }
+
+            hideLoading() {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+
+            showNoInteractions() {
+                document.getElementById('noInteractions').classList.remove('hidden');
+                document.getElementById('resultsSection').classList.add('hidden');
+            }
+
+            clearResults() {
+                document.getElementById('resultsSection').classList.add('hidden');
+                document.getElementById('noInteractions').classList.add('hidden');
+            }
+
+            showError(message) {
+                console.error(message);
+                this.updateStatus('Error occurred');
+                // TODO: Show user-friendly error message
+            }
+
+            updateStatus(status = 'Ready') {
+                document.getElementById('statusIndicator').textContent = status;
+            }
+        }
+
+        // Initialize the drug interaction checker
+        const drugChecker = new DrugInteractionChecker();
+
+        // Update last updated time
+        document.getElementById('lastUpdated').textContent = `Last cache update: ${new Date().toLocaleString()}`;
+    </script>
+</body>
+</html>

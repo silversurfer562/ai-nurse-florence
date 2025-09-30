@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Lookup - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .disease-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #3b82f6;
+            transition: all 0.3s ease;
+        }
+        .disease-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .live-indicator {
+            background: linear-gradient(45deg, #10b981, #34d399);
+            animation: pulse 2s infinite;
+        }
+        .database-indicator {
+            background: linear-gradient(45deg, #f59e0b, #fbbf24);
+        }
+        .search-container {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .autocomplete-item:hover {
+            background-color: #eff6ff;
+        }
+        .ontology-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .mondo-badge { background-color: #dbeafe; color: #1e40af; }
+        .snomed-badge { background-color: #dcfce7; color: #166534; }
+        .icd10-badge { background-color: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="search-container text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-stethoscope text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-blue-200 text-sm">Disease Lookup System</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="live-indicator w-3 h-3 rounded-full"></div>
+                        <span class="text-sm">Live Data + DB Cache</span>
+                    </div>
+                    <span class="text-blue-200 text-sm" id="statusIndicator">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Educational Banner -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-yellow-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-yellow-800">Educational Use Only</h3>
+                    <p class="text-sm text-yellow-700">Draft for clinician review — not medical advice. No PHI stored. Always consult current clinical guidelines.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Disease Information Lookup</h2>
+                <p class="text-gray-600">Search diseases using live data from MyDisease.info with database caching for reliability</p>
+            </div>
+
+            <div class="relative">
+                <div class="flex space-x-4 mb-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="diseaseSearch" 
+                            placeholder="Search diseases (e.g., diabetes, hypertension, pneumonia...)"
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            autocomplete="off"
+                        >
+                        <div id="autocompleteResults" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-64 overflow-y-auto"></div>
+                    </div>
+                    <button 
+                        id="searchButton" 
+                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="text-sm text-gray-600">Quick searches:</span>
+                    <button class="quick-search ontology-badge mondo-badge" data-query="diabetes">Diabetes</button>
+                    <button class="quick-search ontology-badge snomed-badge" data-query="hypertension">Hypertension</button>
+                    <button class="quick-search ontology-badge icd10-badge" data-query="pneumonia">Pneumonia</button>
+                    <button class="quick-search ontology-badge mondo-badge" data-query="sepsis">Sepsis</button>
+                    <button class="quick-search ontology-badge snomed-badge" data-query="heart failure">Heart Failure</button>
+                </div>
+            </div>
+
+            <!-- Data Source Indicators -->
+            <div class="flex items-center justify-between text-sm text-gray-500 border-t pt-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="live-indicator w-2 h-2 rounded-full"></div>
+                        <span>Live MyDisease.info API</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="database-indicator w-2 h-2 rounded-full"></div>
+                        <span>Database Cache (646 diseases)</span>
+                    </div>
+                </div>
+                <div id="lastUpdated" class="text-gray-400"></div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden text-center py-12">
+            <div class="inline-flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span class="text-gray-600">Searching disease database...</span>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900">Search Results</h3>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <i class="fas fa-database"></i>
+                    <span id="dataSource">Loading...</span>
+                </div>
+            </div>
+            <div id="diseaseResults" class="space-y-4"></div>
+        </div>
+
+        <!-- No Results -->
+        <div id="noResults" class="hidden text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <i class="fas fa-search text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No diseases found</h3>
+            <p class="text-gray-600">Try a different search term or check the spelling</p>
+        </div>
+    </main>
+
+    <script>
+        class DiseaseSearch {
+            constructor() {
+                this.apiBase = '/api/v1';
+                this.cache = new Map();
+                this.debounceTimer = null;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateStatus();
+            }
+
+            setupEventListeners() {
+                const searchInput = document.getElementById('diseaseSearch');
+                const searchButton = document.getElementById('searchButton');
+                const quickSearchButtons = document.querySelectorAll('.quick-search');
+
+                // Real-time search with debouncing
+                searchInput.addEventListener('input', (e) => {
+                    clearTimeout(this.debounceTimer);
+                    this.debounceTimer = setTimeout(() => {
+                        if (e.target.value.length >= 2) {
+                            this.showAutocomplete(e.target.value);
+                        } else {
+                            this.hideAutocomplete();
+                        }
+                    }, 300);
+                });
+
+                // Full search
+                searchButton.addEventListener('click', () => {
+                    this.performSearch(searchInput.value);
+                });
+
+                searchInput.addEventListener('keydown', (e) => {
+                    const autocompleteDiv = document.getElementById('autocompleteResults');
+                    const isVisible = !autocompleteDiv.classList.contains('hidden');
+                    
+                    if (isVisible) {
+                        const items = autocompleteDiv.querySelectorAll('.autocomplete-item');
+                        
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            this.selectedIndex = Math.min(this.selectedIndex + 1, items.length - 1);
+                            this.updateSelection(items);
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+                            this.updateSelection(items);
+                        } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (this.selectedIndex >= 0 && items[this.selectedIndex]) {
+                                const diseaseName = items[this.selectedIndex].dataset.disease;
+                                searchInput.value = diseaseName;
+                                this.performSearch(diseaseName);
+                                this.hideAutocomplete();
+                            } else {
+                                this.performSearch(searchInput.value);
+                            }
+                        } else if (e.key === 'Escape') {
+                            this.hideAutocomplete();
+                        }
+                    } else if (e.key === 'Enter') {
+                        this.performSearch(searchInput.value);
+                    }
+                });
+
+                // Quick searches
+                quickSearchButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const query = e.target.dataset.query;
+                        searchInput.value = query;
+                        this.performSearch(query);
+                    });
+                });
+
+                // Hide autocomplete when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#diseaseSearch') && !e.target.closest('#autocompleteResults')) {
+                        this.hideAutocomplete();
+                    }
+                });
+            }
+
+            async showAutocomplete(query) {
+                try {
+                    const response = await fetch(`${this.apiBase}/disease/disease-names?query=${encodeURIComponent(query)}&limit=8`);
+                    const data = await response.json();
+                    
+                    const resultsDiv = document.getElementById('autocompleteResults');
+                    
+                    if (data.success && data.data && data.data.diseases && data.data.diseases.length > 0) {
+                        resultsDiv.innerHTML = data.data.diseases.map((disease, index) => `
+                            <div class="autocomplete-item px-4 py-3 cursor-pointer hover:bg-blue-50 border-b border-gray-100 transition-all duration-200" 
+                                 data-disease="${disease}" 
+                                 data-index="${index}">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-gray-900">${disease}</div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            <i class="fas fa-search mr-1"></i>Click to search
+                                        </div>
+                                    </div>
+                                    <div class="text-blue-500">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        // Add keyboard navigation
+                        this.selectedIndex = -1;
+                        
+                        // Add click handlers
+                        resultsDiv.querySelectorAll('.autocomplete-item').forEach((item, index) => {
+                            item.addEventListener('click', (e) => {
+                                const diseaseName = e.currentTarget.dataset.disease;
+                                document.getElementById('diseaseSearch').value = diseaseName;
+                                this.performSearch(diseaseName);
+                                this.hideAutocomplete();
+                            });
+                            
+                            // Add hover effect for keyboard navigation
+                            item.addEventListener('mouseenter', () => {
+                                this.setSelectedIndex(index);
+                            });
+                        });
+                        
+                        resultsDiv.classList.remove('hidden');
+                        
+                        // Show cache status if available
+                        if (data.data.cache_hit) {
+                            this.updateStatus('Autocomplete (cached)');
+                        } else {
+                            this.updateStatus('Autocomplete (live data)');
+                        }
+                    } else {
+                        // Show "type more" hint for short queries
+                        if (query.length < 3) {
+                            resultsDiv.innerHTML = `
+                                <div class="px-4 py-3 text-gray-500 text-sm">
+                                    <i class="fas fa-lightbulb mr-2"></i>
+                                    Type at least 3 characters for suggestions
+                                </div>
+                            `;
+                            resultsDiv.classList.remove('hidden');
+                        } else {
+                            this.hideAutocomplete();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Autocomplete error:', error);
+                    // Show fallback suggestions for common diseases
+                    if (query.length >= 2) {
+                        const fallbackSuggestions = this.getFallbackSuggestions(query);
+                        if (fallbackSuggestions.length > 0) {
+                            const resultsDiv = document.getElementById('autocompleteResults');
+                            resultsDiv.innerHTML = `
+                                <div class="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
+                                    <div class="text-xs text-yellow-800">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Network error - showing cached suggestions
+                                    </div>
+                                </div>
+                                ${fallbackSuggestions.map((disease, index) => `
+                                    <div class="autocomplete-item px-4 py-3 cursor-pointer hover:bg-blue-50" 
+                                         data-disease="${disease}" 
+                                         data-index="${index}">
+                                        <div class="font-medium text-gray-900">${disease}</div>
+                                        <div class="text-xs text-gray-500 mt-1">Cached suggestion</div>
+                                    </div>
+                                `).join('')}
+                            `;
+                            
+                            resultsDiv.querySelectorAll('.autocomplete-item').forEach(item => {
+                                item.addEventListener('click', (e) => {
+                                    const diseaseName = e.currentTarget.dataset.disease;
+                                    document.getElementById('diseaseSearch').value = diseaseName;
+                                    this.performSearch(diseaseName);
+                                    this.hideAutocomplete();
+                                });
+                            });
+                            
+                            resultsDiv.classList.remove('hidden');
+                        } else {
+                            this.hideAutocomplete();
+                        }
+                    } else {
+                        this.hideAutocomplete();
+                    }
+                }
+            }
+
+            hideAutocomplete() {
+                document.getElementById('autocompleteResults').classList.add('hidden');
+                this.selectedIndex = -1;
+            }
+
+            setSelectedIndex(index) {
+                this.selectedIndex = index;
+                const items = document.querySelectorAll('#autocompleteResults .autocomplete-item');
+                this.updateSelection(items);
+            }
+
+            updateSelection(items) {
+                items.forEach((item, index) => {
+                    if (index === this.selectedIndex) {
+                        item.classList.add('bg-blue-50');
+                        item.classList.remove('hover:bg-blue-50');
+                    } else {
+                        item.classList.remove('bg-blue-50');
+                        item.classList.add('hover:bg-blue-50');
+                    }
+                });
+            }
+
+            getFallbackSuggestions(query) {
+                const commonDiseases = [
+                    "Diabetes Mellitus", "Type 1 Diabetes", "Type 2 Diabetes", "Hypertension", 
+                    "Pneumonia", "Heart Failure", "Sepsis", "Stroke", "Myocardial Infarction",
+                    "Chronic Obstructive Pulmonary Disease", "Asthma", "Tuberculosis", 
+                    "HIV/AIDS", "Malaria", "Cancer", "Breast Cancer", "Lung Cancer",
+                    "Alzheimer Disease", "Parkinson Disease", "Multiple Sclerosis",
+                    "Rheumatoid Arthritis", "Osteoarthritis", "Fibromyalgia",
+                    "Depression", "Anxiety Disorders", "Bipolar Disorder",
+                    "Chronic Kidney Disease", "Acute Kidney Injury", "Liver Cirrhosis",
+                    "Hepatitis B", "Hepatitis C", "Influenza", "COVID-19"
+                ];
+                
+                const query_lower = query.toLowerCase();
+                return commonDiseases
+                    .filter(disease => disease.toLowerCase().includes(query_lower))
+                    .slice(0, 5);
+            }
+
+            async performSearch(query) {
+                if (!query.trim()) return;
+                
+                this.showLoading();
+                this.hideResults();
+                this.updateStatus('Searching...');
+                
+                try {
+                    const response = await fetch(`${this.apiBase}/disease/lookup?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.data) {
+                        this.displayResults(data.data, query);
+                        this.updateStatus('Results loaded');
+                    } else {
+                        this.showNoResults();
+                        this.updateStatus('No results found');
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    this.showError('Search failed. Please try again.');
+                    this.updateStatus('Search failed');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            displayResults(disease, query) {
+                const resultsSection = document.getElementById('resultsSection');
+                const resultsContainer = document.getElementById('diseaseResults');
+                const dataSource = document.getElementById('dataSource');
+                
+                // Update data source indicator
+                dataSource.innerHTML = disease.source === 'live_api' ? 
+                    '<i class="fas fa-wifi text-green-500"></i> Live API Data' : 
+                    '<i class="fas fa-database text-yellow-500"></i> Cached Database';
+
+                resultsContainer.innerHTML = `
+                    <div class="disease-card rounded-lg p-6 mb-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">${disease.name || query}</h3>
+                                <p class="text-gray-600 mt-1">${disease.definition || 'Clinical information available'}</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                ${disease.mondo_id ? `<span class="ontology-badge mondo-badge">MONDO: ${disease.mondo_id}</span>` : ''}
+                                ${disease.snomed_code ? `<span class="ontology-badge snomed-badge">SNOMED: ${disease.snomed_code}</span>` : ''}
+                                ${disease.icd10_code ? `<span class="ontology-badge icd10-badge">ICD-10: ${disease.icd10_code}</span>` : ''}
+                            </div>
+                        </div>
+
+                        ${disease.synonyms && disease.synonyms.length > 0 ? `
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-gray-800 mb-2">Alternative Names:</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${disease.synonyms.slice(0, 5).map(synonym => `
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">${synonym}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${disease.clinical_info ? `
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-gray-800 mb-2">Clinical Information:</h4>
+                                <div class="text-gray-700 leading-relaxed">${disease.clinical_info}</div>
+                            </div>
+                        ` : ''}
+
+                        <div class="border-t pt-4 mt-4">
+                            <div class="flex items-center justify-between text-sm text-gray-500">
+                                <div class="flex items-center space-x-4">
+                                    <span><i class="fas fa-clock"></i> Last updated: ${disease.last_updated || 'Recently'}</span>
+                                    <span><i class="fas fa-shield-alt"></i> Educational use only</span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800" onclick="diseaseSearch.exportInfo('${disease.name || query}')">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <button class="text-blue-600 hover:text-blue-800" onclick="diseaseSearch.shareInfo('${disease.name || query}')">
+                                        <i class="fas fa-share"></i> Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                resultsSection.classList.remove('hidden');
+            }
+
+            showLoading() {
+                document.getElementById('loadingState').classList.remove('hidden');
+            }
+
+            hideLoading() {
+                document.getElementById('loadingState').classList.add('hidden');
+            }
+
+            showResults() {
+                document.getElementById('resultsSection').classList.remove('hidden');
+                document.getElementById('noResults').classList.add('hidden');
+            }
+
+            hideResults() {
+                document.getElementById('resultsSection').classList.add('hidden');
+                document.getElementById('noResults').classList.add('hidden');
+            }
+
+            showNoResults() {
+                document.getElementById('noResults').classList.remove('hidden');
+                document.getElementById('resultsSection').classList.add('hidden');
+            }
+
+            showError(message) {
+                // Show error state
+                console.error(message);
+                this.updateStatus('Error occurred');
+            }
+
+            updateStatus(status = 'Ready') {
+                document.getElementById('statusIndicator').textContent = status;
+            }
+
+            exportInfo(diseaseName) {
+                // TODO: Implement export functionality
+                console.log('Exporting info for:', diseaseName);
+            }
+
+            shareInfo(diseaseName) {
+                // TODO: Implement share functionality  
+                console.log('Sharing info for:', diseaseName);
+            }
+        }
+
+        // Initialize the disease search system
+        const diseaseSearch = new DiseaseSearch();
+
+        // Update last updated time
+        document.getElementById('lastUpdated').textContent = `Last cache update: ${new Date().toLocaleString()}`;
+    </script>
+</body>
+</html>

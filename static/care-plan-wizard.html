@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Care Plan Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .care-plan-header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        .intervention-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 4px solid #10b981;
+        }
+        .goal-card {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+        }
+        .outcome-card {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="care-plan-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-clipboard-check text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-green-200 text-sm">Care Plan Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm">Evidence-Based Planning</span>
+                    </div>
+                    <span class="text-green-200 text-sm" id="statusIndicator">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Educational Banner -->
+    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-green-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-green-800">Professional Care Planning Tool</h3>
+                    <p class="text-sm text-green-700">Educational use only — always follow institutional care planning protocols and seek appropriate clinical supervision.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Care Plan Wizard Container -->
+        <div id="carePlanWizardContainer" class="wizard-container">
+            <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Generated Care Plan Preview Modal -->
+        <div id="carePlanPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-screen overflow-y-auto">
+                    <div class="bg-green-600 text-white p-6 rounded-t-lg">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold">Generated Care Plan</h2>
+                            <button onclick="closeCarePlanModal()" class="text-white hover:text-gray-200">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <div class="flex space-x-4">
+                                <button onclick="copyCarePlan()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                    <i class="fas fa-copy mr-2"></i>Copy Plan
+                                </button>
+                                <button onclick="printCarePlan()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    <i class="fas fa-print mr-2"></i>Print
+                                </button>
+                                <button onclick="saveCarePlanDraft()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                    <i class="fas fa-save mr-2"></i>Save Draft
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="carePlanContent" class="bg-gray-50 p-6 rounded-lg">
+                            <!-- Generated care plan will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        class CarePlanWizard {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.currentStep = 0;
+                this.data = {};
+                this.steps = [
+                    {
+                        title: 'Patient Assessment',
+                        description: 'Comprehensive patient assessment and data collection.',
+                        fields: ['patient_name', 'medical_record', 'primary_diagnosis', 'secondary_diagnoses']
+                    },
+                    {
+                        title: 'Nursing Diagnoses',
+                        description: 'Identify priority nursing diagnoses based on assessment.',
+                        fields: ['nursing_diagnosis_1', 'nursing_diagnosis_2', 'nursing_diagnosis_3']
+                    },
+                    {
+                        title: 'Goals & Outcomes',
+                        description: 'Establish measurable patient goals and expected outcomes.',
+                        fields: ['short_term_goals', 'long_term_goals', 'outcome_criteria']
+                    },
+                    {
+                        title: 'Nursing Interventions',
+                        description: 'Plan evidence-based nursing interventions.',
+                        fields: ['interventions', 'rationales', 'evaluation_criteria']
+                    }
+                ];
+                this.init();
+            }
+
+            init() {
+                this.render();
+                this.attachEventListeners();
+            }
+
+            render() {
+                this.container.innerHTML = '<div class="wizard-container bg-white rounded-lg shadow-lg">' +
+                    '<div class="wizard-header bg-green-600 text-white p-6 rounded-t-lg">' +
+                        '<h2 class="text-2xl font-bold">Care Plan Development Wizard</h2>' +
+                        '<p class="text-green-100 mt-2">Evidence-based care planning for optimal patient outcomes</p>' +
+                    '</div>' +
+                    '<div class="wizard-progress bg-gray-50 p-4">' +
+                        '<div class="flex items-center justify-between mb-2">' +
+                            '<span class="text-sm font-medium text-gray-700">Progress</span>' +
+                            '<span class="text-sm text-gray-500">' + (this.currentStep + 1) + ' of ' + this.steps.length + '</span>' +
+                        '</div>' +
+                        '<div class="w-full bg-gray-200 rounded-full h-2">' +
+                            '<div class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: ' + (((this.currentStep + 1) / this.steps.length) * 100) + '%"></div>' +
+                        '</div>' +
+                        '<div class="flex justify-between mt-3">' +
+                            this.steps.map((step, index) => 
+                                '<div class="flex flex-col items-center">' +
+                                    '<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ' +
+                                    (index <= this.currentStep ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600') + '">' +
+                                        (index + 1) +
+                                    '</div>' +
+                                    '<span class="text-xs text-gray-600 mt-1 text-center">' + step.title + '</span>' +
+                                '</div>'
+                            ).join('') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="wizard-content p-6">' +
+                        this.renderStepContent() +
+                    '</div>' +
+                    '<div class="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex justify-between">' +
+                        '<button id="prev-btn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors' +
+                        (this.currentStep === 0 ? ' opacity-50 cursor-not-allowed' : '') + '"' +
+                        (this.currentStep === 0 ? ' disabled' : '') + '>' +
+                            '<i class="fas fa-arrow-left mr-2"></i>Previous' +
+                        '</button>' +
+                        '<div class="flex space-x-2">' +
+                            '<button id="save-draft-btn" class="px-4 py-2 text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">' +
+                                '<i class="fas fa-save mr-2"></i>Save Draft' +
+                            '</button>' +
+                            '<button id="next-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">' +
+                                (this.currentStep === this.steps.length - 1 ? 
+                                    '<i class="fas fa-check mr-2"></i>Complete' : 
+                                    'Next<i class="fas fa-arrow-right ml-2"></i>'
+                                ) +
+                            '</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+
+            renderStepContent() {
+                const step = this.steps[this.currentStep];
+                return '<div class="step-content">' +
+                    '<h3 class="text-xl font-bold text-gray-800 mb-4">' + step.title + '</h3>' +
+                    '<p class="text-gray-600 mb-6">' + step.description + '</p>' +
+                    '<div class="step-fields space-y-4">' +
+                        this.renderFields(this.currentStep) +
+                    '</div>' +
+                '</div>';
+            }
+
+            renderFields(stepIndex) {
+                switch (stepIndex) {
+                    case 0: // Patient Assessment
+                        return '<div class="goal-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Patient Name/Identifier <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<input type="text" name="patient_name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Patient initials or ID" value="' + (this.data.patient_name || '') + '" required>' +
+                        '</div>' +
+                        '<div class="goal-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Medical Record Number' +
+                            '</label>' +
+                            '<input type="text" name="medical_record" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="MRN (if applicable)" value="' + (this.data.medical_record || '') + '">' +
+                        '</div>' +
+                        '<div class="goal-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Primary Diagnosis <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<input type="text" name="primary_diagnosis" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Primary medical diagnosis" value="' + (this.data.primary_diagnosis || '') + '" required>' +
+                        '</div>' +
+                        '<div class="goal-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Secondary Diagnoses/Comorbidities' +
+                            '</label>' +
+                            '<textarea name="secondary_diagnoses" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="List secondary diagnoses and relevant comorbidities...">' + (this.data.secondary_diagnoses || '') + '</textarea>' +
+                        '</div>';
+                    
+                    case 1: // Nursing Diagnoses
+                        return '<div class="intervention-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Priority Nursing Diagnosis #1 <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="nursing_diagnosis_1" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Primary nursing diagnosis with related to and as evidenced by..." required>' + (this.data.nursing_diagnosis_1 || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="intervention-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Nursing Diagnosis #2' +
+                            '</label>' +
+                            '<textarea name="nursing_diagnosis_2" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Secondary nursing diagnosis...">' + (this.data.nursing_diagnosis_2 || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="intervention-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Nursing Diagnosis #3' +
+                            '</label>' +
+                            '<textarea name="nursing_diagnosis_3" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Additional nursing diagnosis if applicable...">' + (this.data.nursing_diagnosis_3 || '') + '</textarea>' +
+                        '</div>';
+                    
+                    case 2: // Goals & Outcomes
+                        return '<div class="outcome-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Short-term Goals (24-48 hours) <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="short_term_goals" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Specific, measurable, achievable short-term goals..." required>' + (this.data.short_term_goals || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="outcome-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Long-term Goals (discharge/resolution) <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="long_term_goals" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Long-term patient outcomes and goals..." required>' + (this.data.long_term_goals || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="outcome-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Outcome Criteria/Evaluation Measures <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="outcome_criteria" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="How will you measure goal achievement? Include specific criteria..." required>' + (this.data.outcome_criteria || '') + '</textarea>' +
+                        '</div>';
+                    
+                    case 3: // Nursing Interventions
+                        return '<div class="intervention-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Nursing Interventions <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="interventions" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="List specific nursing interventions to achieve goals..." required>' + (this.data.interventions || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="intervention-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Rationales <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="rationales" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Evidence-based rationales for each intervention..." required>' + (this.data.rationales || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="intervention-card p-4 rounded-lg">' +
+                            '<label class="block text-sm font-medium text-gray-700 mb-2">' +
+                                'Evaluation Criteria <span class="text-red-500">*</span>' +
+                            '</label>' +
+                            '<textarea name="evaluation_criteria" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" placeholder="How will you evaluate intervention effectiveness..." required>' + (this.data.evaluation_criteria || '') + '</textarea>' +
+                        '</div>';
+                    
+                    default:
+                        return '';
+                }
+            }
+
+            attachEventListeners() {
+                const prevBtn = this.container.querySelector('#prev-btn');
+                const nextBtn = this.container.querySelector('#next-btn');
+                const saveDraftBtn = this.container.querySelector('#save-draft-btn');
+
+                prevBtn?.addEventListener('click', () => this.previousStep());
+                nextBtn?.addEventListener('click', () => this.nextStep());
+                saveDraftBtn?.addEventListener('click', () => this.saveDraft());
+
+                this.container.addEventListener('change', (e) => {
+                    if (e.target.name) {
+                        this.data[e.target.name] = e.target.value;
+                    }
+                });
+
+                this.container.addEventListener('input', (e) => {
+                    if (e.target.name) {
+                        this.data[e.target.name] = e.target.value;
+                    }
+                });
+            }
+
+            nextStep() {
+                if (!this.validateCurrentStep()) return;
+                
+                this.collectStepData();
+                
+                if (this.currentStep < this.steps.length - 1) {
+                    this.currentStep++;
+                    this.render();
+                    this.attachEventListeners();
+                } else {
+                    this.complete();
+                }
+            }
+
+            previousStep() {
+                if (this.currentStep > 0) {
+                    this.collectStepData();
+                    this.currentStep--;
+                    this.render();
+                    this.attachEventListeners();
+                }
+            }
+
+            validateCurrentStep() {
+                const stepContent = this.container.querySelector('.step-content');
+                const requiredFields = stepContent.querySelectorAll('[required]');
+                let isValid = true;
+
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        field.classList.add('border-red-500');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('border-red-500');
+                    }
+                });
+
+                if (!isValid) {
+                    this.showToast('Please fill in all required fields.', 'error');
+                }
+
+                return isValid;
+            }
+
+            collectStepData() {
+                const stepContent = this.container.querySelector('.step-content');
+                const inputs = stepContent.querySelectorAll('input, textarea, select');
+                
+                inputs.forEach(input => {
+                    this.data[input.name] = input.value;
+                });
+            }
+
+            complete() {
+                this.collectStepData();
+                this.generateCarePlan(this.data);
+            }
+
+            generateCarePlan(data) {
+                const timestamp = new Date().toLocaleString();
+                
+                const carePlan = 'COMPREHENSIVE NURSING CARE PLAN\\n' +
+                    'Generated: ' + timestamp + '\\n\\n' +
+                    '===============================================\\n\\n' +
+                    'PATIENT INFORMATION\\n' +
+                    'Patient: ' + (data.patient_name || 'N/A') + '\\n' +
+                    'MRN: ' + (data.medical_record || 'N/A') + '\\n' +
+                    'Primary Diagnosis: ' + (data.primary_diagnosis || 'N/A') + '\\n\\n' +
+                    'Secondary Diagnoses:\\n' +
+                    (data.secondary_diagnoses || 'None documented') + '\\n\\n' +
+                    '===============================================\\n\\n' +
+                    'NURSING DIAGNOSES\\n\\n' +
+                    '1. ' + (data.nursing_diagnosis_1 || 'Not specified') + '\\n\\n' +
+                    (data.nursing_diagnosis_2 ? '2. ' + data.nursing_diagnosis_2 + '\\n\\n' : '') +
+                    (data.nursing_diagnosis_3 ? '3. ' + data.nursing_diagnosis_3 + '\\n\\n' : '') +
+                    '===============================================\\n\\n' +
+                    'PATIENT GOALS & EXPECTED OUTCOMES\\n\\n' +
+                    'SHORT-TERM GOALS (24-48 hours):\\n' +
+                    (data.short_term_goals || 'Not specified') + '\\n\\n' +
+                    'LONG-TERM GOALS (discharge/resolution):\\n' +
+                    (data.long_term_goals || 'Not specified') + '\\n\\n' +
+                    'OUTCOME CRITERIA:\\n' +
+                    (data.outcome_criteria || 'Not specified') + '\\n\\n' +
+                    '===============================================\\n\\n' +
+                    'NURSING INTERVENTIONS\\n\\n' +
+                    'INTERVENTIONS:\\n' +
+                    (data.interventions || 'Not specified') + '\\n\\n' +
+                    'RATIONALES:\\n' +
+                    (data.rationales || 'Not specified') + '\\n\\n' +
+                    'EVALUATION CRITERIA:\\n' +
+                    (data.evaluation_criteria || 'Not specified') + '\\n\\n' +
+                    '===============================================\\n' +
+                    'End of Care Plan\\n\\n' +
+                    'Note: This is an educational template. Always follow institutional protocols and seek appropriate clinical supervision.';
+
+                document.getElementById('carePlanContent').textContent = carePlan;
+                document.getElementById('carePlanPreviewModal').classList.remove('hidden');
+            }
+
+            saveDraft() {
+                this.collectStepData();
+                localStorage.setItem('carePlanDraft', JSON.stringify({
+                    currentStep: this.currentStep,
+                    data: this.data,
+                    timestamp: new Date().toISOString()
+                }));
+                this.showToast('Care plan draft saved!', 'success');
+            }
+
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                let className = 'fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ';
+                if (type === 'success') {
+                    className += 'bg-green-500 text-white';
+                } else if (type === 'error') {
+                    className += 'bg-red-500 text-white';
+                } else {
+                    className += 'bg-blue-500 text-white';
+                }
+                toast.className = className;
+                toast.textContent = message;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }
+
+        // Global functions for modal interactions
+        function closeCarePlanModal() {
+            document.getElementById('carePlanPreviewModal').classList.add('hidden');
+        }
+
+        function copyCarePlan() {
+            const planContent = document.getElementById('carePlanContent').textContent;
+            navigator.clipboard.writeText(planContent).then(() => {
+                alert('Care plan copied to clipboard');
+            });
+        }
+
+        function printCarePlan() {
+            const planContent = document.getElementById('carePlanContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>Nursing Care Plan</title></head><body style="font-family: Courier New, monospace; white-space: pre-wrap;">' + planContent + '</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function saveCarePlanDraft() {
+            carePlanApp.saveDraft();
+            closeCarePlanModal();
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusIndicator').textContent = message;
+        }
+
+        // Initialize the application
+        let carePlanApp;
+        document.addEventListener('DOMContentLoaded', () => {
+            carePlanApp = new CarePlanWizard('carePlanWizardContainer');
+            updateStatus('Care plan wizard ready');
+        });
+    </script>
+</body>
+</html>

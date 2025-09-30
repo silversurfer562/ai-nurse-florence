@@ -106,6 +106,16 @@ def _load_medical_routers():
         logger.warning(f"⚠️ Clinical Decision Support router unavailable: {e}")
         router_status['clinical_decision_support'] = False
 
+    # Chat router  
+    try:
+        from .chat import router
+        _router_registry['chat'] = router
+        router_status['chat'] = True
+        logger.info("✅ Chat router loaded")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Chat router unavailable: {e}")
+        router_status['chat'] = False
+
 def _load_wizard_routers():
     """Load wizard routers following Wizard Pattern Implementation with Conditional Imports."""
     

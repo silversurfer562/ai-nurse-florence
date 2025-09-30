@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBAR Communication Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+        }
+        .step-indicator.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .field-group {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #3b82f6;
+        }
+        .priority-urgent {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+        .priority-stat {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+        .wizard-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .sbar-preview {
+            font-family: 'Courier New', monospace;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+        }
+        .floating-save {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="wizard-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-comments-medical text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-blue-200 text-sm">SBAR Communication Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-sm">Structured Communication</span>
+                    </div>
+                    <span class="text-blue-200 text-sm" id="statusIndicator">Ready</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Critical Safety Banner -->
+    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800">Critical Communication Tool</h3>
+                    <p class="text-sm text-red-700">Educational use only — ensure patient privacy. Use initials/IDs only. Not a substitute for direct clinical communication.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Wizard Container -->
+        <div id="sbarWizardContainer" class="wizard-container">
+            <!-- This will be populated by the JavaScript wizard -->
+        </div>
+
+        <!-- Floating Save Button -->
+        <div class="floating-save">
+            <button id="quickSave" class="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-save"></i>
+            </button>
+        </div>
+
+        <!-- Generated SBAR Preview Modal -->
+        <div id="sbarPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                    <div class="bg-blue-600 text-white p-6 rounded-t-lg">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold">Generated SBAR Report</h2>
+                            <button onclick="closePreviewModal()" class="text-white hover:text-gray-200">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="mb-6">
+                            <div class="flex space-x-4">
+                                <button onclick="copySbarReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                    <i class="fas fa-copy mr-2"></i>Copy Report
+                                </button>
+                                <button onclick="printSbarReport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                    <i class="fas fa-print mr-2"></i>Print
+                                </button>
+                                <button onclick="saveSbarDraft()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                    <i class="fas fa-save mr-2"></i>Save Draft
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="sbarReportContent" class="sbar-preview p-4 rounded-lg">
+                            <!-- Generated SBAR content will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Include Base Wizard and SBAR Wizard Components -->
+    <script>
+        /**
+         * Simplified SBAR Wizard Implementation
+         * Inline version of the sophisticated wizard system built during 2-3 AM session
+         */
+        
+        class SimpleSbarWizard {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.currentStep = 0;
+                this.data = {};
+                this.steps = [
+                    {
+                        title: 'Situation',
+                        description: 'Briefly describe the current situation and reason for communication.',
+                        fields: ['patient_name', 'room_unit', 'situation_description', 'communication_purpose']
+                    },
+                    {
+                        title: 'Background',
+                        description: 'Provide relevant clinical background and history.',
+                        fields: ['admission_date', 'primary_diagnosis', 'relevant_history', 'current_medications']
+                    },
+                    {
+                        title: 'Assessment',
+                        description: 'Current assessment findings and clinical status.',
+                        fields: ['vital_signs', 'physical_assessment', 'mental_status', 'clinical_concerns']
+                    },
+                    {
+                        title: 'Recommendation',
+                        description: 'Your recommendations and suggested actions.',
+                        fields: ['immediate_needs', 'priority_level', 'follow_up_needed']
+                    }
+                ];
+                this.init();
+            }
+
+            init() {
+                this.render();
+                this.attachEventListeners();
+            }
+
+            render() {
+                this.container.innerHTML = \`
+                    <div class="wizard-container bg-white rounded-lg shadow-lg">
+                        <!-- Wizard Header -->
+                        <div class="wizard-header bg-blue-600 text-white p-6 rounded-t-lg">
+                            <h2 class="text-2xl font-bold">SBAR Communication Wizard</h2>
+                            <p class="text-blue-100 mt-2">Structured clinical communication for patient handoffs</p>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="wizard-progress bg-gray-50 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Progress</span>
+                                <span class="text-sm text-gray-500">\${this.currentStep + 1} of \${this.steps.length}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                     style="width: \${((this.currentStep + 1) / this.steps.length) * 100}%"></div>
+                            </div>
+                            <div class="flex justify-between mt-3">
+                                \${this.steps.map((step, index) => \`
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                                            \${index <= this.currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}">
+                                            \${index + 1}
+                                        </div>
+                                        <span class="text-xs text-gray-600 mt-1 text-center">\${step.title}</span>
+                                    </div>
+                                \`).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Step Content -->
+                        <div class="wizard-content p-6">
+                            \${this.renderStepContent()}
+                        </div>
+
+                        <!-- Navigation -->
+                        <div class="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex justify-between">
+                            <button id="prev-btn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors
+                                \${this.currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}" 
+                                \${this.currentStep === 0 ? 'disabled' : ''}>
+                                <i class="fas fa-arrow-left mr-2"></i>Previous
+                            </button>
+                            
+                            <div class="flex space-x-2">
+                                <button id="save-draft-btn" class="px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                    <i class="fas fa-save mr-2"></i>Save Draft
+                                </button>
+                                
+                                <button id="next-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    \${this.currentStep === this.steps.length - 1 ? 
+                                        '<i class="fas fa-check mr-2"></i>Complete' : 
+                                        'Next<i class="fas fa-arrow-right ml-2"></i>'
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                \`;
+            }
+
+            renderStepContent() {
+                const step = this.steps[this.currentStep];
+                return \`
+                    <div class="step-content">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">\${step.title}</h3>
+                        <p class="text-gray-600 mb-6">\${step.description}</p>
+                        <div class="step-fields space-y-4">
+                            \${this.renderFields(this.currentStep)}
+                        </div>
+                    </div>
+                \`;
+            }
+
+            renderFields(stepIndex) {
+                switch (stepIndex) {
+                    case 0: // Situation
+                        return \`
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Patient Name/ID <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="patient_name" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Patient initials or ID (for privacy)"
+                                    value="\${this.data.patient_name || ''}" required>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Room/Unit <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="room_unit" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Room 205, ICU Bed 3"
+                                    value="\${this.data.room_unit || ''}" required>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Current Situation <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="situation_description" rows="4"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Briefly describe why you are calling and the current situation..."
+                                    required>\${this.data.situation_description || ''}</textarea>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Purpose of Communication <span class="text-red-500">*</span>
+                                </label>
+                                <select name="communication_purpose" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Select purpose</option>
+                                    <option value="shift_handoff" \${this.data.communication_purpose === 'shift_handoff' ? 'selected' : ''}>Shift Handoff</option>
+                                    <option value="urgent_concern" \${this.data.communication_purpose === 'urgent_concern' ? 'selected' : ''}>Urgent Patient Concern</option>
+                                    <option value="physician_notification" \${this.data.communication_purpose === 'physician_notification' ? 'selected' : ''}>Physician Notification</option>
+                                    <option value="transfer_report" \${this.data.communication_purpose === 'transfer_report' ? 'selected' : ''}>Transfer Report</option>
+                                </select>
+                            </div>
+                        \`;
+                    
+                    case 1: // Background
+                        return \`
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Admission Date <span class="text-red-500">*</span>
+                                </label>
+                                <input type="date" name="admission_date" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value="\${this.data.admission_date || ''}" required>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Primary Diagnosis <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="primary_diagnosis" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Pneumonia, CHF exacerbation"
+                                    value="\${this.data.primary_diagnosis || ''}" required>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Relevant Medical History <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="relevant_history" rows="4"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Include pertinent medical history, allergies, recent procedures..."
+                                    required>\${this.data.relevant_history || ''}</textarea>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Current Medications
+                                </label>
+                                <textarea name="current_medications" rows="3"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="List current medications and recent changes...">\${this.data.current_medications || ''}</textarea>
+                            </div>
+                        \`;
+                    
+                    case 2: // Assessment
+                        return \`
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Current Vital Signs <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="vital_signs" rows="2"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="BP: ___ HR: ___ RR: ___ Temp: ___ O2 Sat: ___ Pain: ___"
+                                    required>\${this.data.vital_signs || ''}</textarea>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Physical Assessment Findings <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="physical_assessment" rows="4"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Significant physical assessment findings..."
+                                    required>\${this.data.physical_assessment || ''}</textarea>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Mental Status <span class="text-red-500">*</span>
+                                </label>
+                                <select name="mental_status" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                                    <option value="">Select mental status</option>
+                                    <option value="alert_oriented" \${this.data.mental_status === 'alert_oriented' ? 'selected' : ''}>Alert and Oriented x 4</option>
+                                    <option value="alert_confused" \${this.data.mental_status === 'alert_confused' ? 'selected' : ''}>Alert but Confused</option>
+                                    <option value="lethargic" \${this.data.mental_status === 'lethargic' ? 'selected' : ''}>Lethargic</option>
+                                    <option value="sedated" \${this.data.mental_status === 'sedated' ? 'selected' : ''}>Sedated</option>
+                                </select>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Clinical Concerns
+                                </label>
+                                <textarea name="clinical_concerns" rows="3"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Any concerning changes or clinical issues...">\${this.data.clinical_concerns || ''}</textarea>
+                            </div>
+                        \`;
+                    
+                    case 3: // Recommendation
+                        return \`
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Immediate Actions Needed <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="immediate_needs" rows="3"
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="What needs to be done immediately..."
+                                    required>\${this.data.immediate_needs || ''}</textarea>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Priority Level <span class="text-red-500">*</span>
+                                </label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="priority_level" value="routine" 
+                                            class="mr-2 text-blue-600" \${this.data.priority_level === 'routine' ? 'checked' : ''} required>
+                                        <span class="text-gray-700">📋 Routine - Can wait for next rounds</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="priority_level" value="urgent" 
+                                            class="mr-2 text-yellow-600" \${this.data.priority_level === 'urgent' ? 'checked' : ''} required>
+                                        <span class="text-gray-700">⚠️ Urgent - Within 1 hour</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="priority_level" value="stat" 
+                                            class="mr-2 text-red-600" \${this.data.priority_level === 'stat' ? 'checked' : ''} required>
+                                        <span class="text-gray-700">🚨 STAT - Immediate attention required</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="field-group p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Follow-up Needed
+                                </label>
+                                <select name="follow_up_needed" 
+                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select follow-up requirement</option>
+                                    <option value="yes_callback" \${this.data.follow_up_needed === 'yes_callback' ? 'selected' : ''}>Yes - Please call back with orders</option>
+                                    <option value="yes_visit" \${this.data.follow_up_needed === 'yes_visit' ? 'selected' : ''}>Yes - Please come assess patient</option>
+                                    <option value="no_followup" \${this.data.follow_up_needed === 'no_followup' ? 'selected' : ''}>No follow-up needed</option>
+                                </select>
+                            </div>
+                        \`;
+                    
+                    default:
+                        return '';
+                }
+            }
+
+            attachEventListeners() {
+                // Navigation buttons
+                const prevBtn = this.container.querySelector('#prev-btn');
+                const nextBtn = this.container.querySelector('#next-btn');
+                const saveDraftBtn = this.container.querySelector('#save-draft-btn');
+
+                prevBtn?.addEventListener('click', () => this.previousStep());
+                nextBtn?.addEventListener('click', () => this.nextStep());
+                saveDraftBtn?.addEventListener('click', () => this.saveDraft());
+
+                // Form field change listeners
+                this.container.addEventListener('change', (e) => {
+                    if (e.target.name) {
+                        this.data[e.target.name] = e.target.value;
+                        this.updatePriorityStyles();
+                    }
+                });
+
+                this.container.addEventListener('input', (e) => {
+                    if (e.target.name) {
+                        this.data[e.target.name] = e.target.value;
+                    }
+                });
+            }
+
+            updatePriorityStyles() {
+                const container = this.container;
+                container.classList.remove('priority-urgent', 'priority-stat');
+                
+                if (this.data.priority_level === 'urgent') {
+                    container.classList.add('priority-urgent');
+                } else if (this.data.priority_level === 'stat') {
+                    container.classList.add('priority-stat');
+                }
+            }
+
+            nextStep() {
+                if (!this.validateCurrentStep()) return;
+                
+                this.collectStepData();
+                
+                if (this.currentStep < this.steps.length - 1) {
+                    this.currentStep++;
+                    this.render();
+                    this.attachEventListeners();
+                } else {
+                    this.complete();
+                }
+            }
+
+            previousStep() {
+                if (this.currentStep > 0) {
+                    this.collectStepData();
+                    this.currentStep--;
+                    this.render();
+                    this.attachEventListeners();
+                }
+            }
+
+            validateCurrentStep() {
+                const stepContent = this.container.querySelector('.step-content');
+                const requiredFields = stepContent.querySelectorAll('[required]');
+                let isValid = true;
+
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        field.classList.add('border-red-500');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('border-red-500');
+                    }
+                });
+
+                if (!isValid) {
+                    this.showToast('Please fill in all required fields.', 'error');
+                }
+
+                return isValid;
+            }
+
+            collectStepData() {
+                const stepContent = this.container.querySelector('.step-content');
+                const inputs = stepContent.querySelectorAll('input, textarea, select');
+                
+                inputs.forEach(input => {
+                    if (input.type === 'radio') {
+                        if (input.checked) {
+                            this.data[input.name] = input.value;
+                        }
+                    } else {
+                        this.data[input.name] = input.value;
+                    }
+                });
+            }
+
+            complete() {
+                this.collectStepData();
+                if (window.sbarApp) {
+                    window.sbarApp.handleComplete(this.data);
+                }
+            }
+
+            saveDraft() {
+                this.collectStepData();
+                if (window.sbarApp) {
+                    window.sbarApp.saveDraft();
+                }
+            }
+
+            showToast(message, type = 'info') {
+                if (window.sbarApp) {
+                    window.sbarApp.showToast(message, type);
+                }
+            }
+        }
+
+        class SbarWizardPage {
+            constructor() {
+                this.wizard = null;
+                this.savedDrafts = JSON.parse(localStorage.getItem('sbarDrafts') || '[]');
+                this.currentDraft = null;
+                this.init();
+            }
+
+            init() {
+                this.initializeWizard();
+                this.setupEventListeners();
+                this.updateStatus('SBAR wizard ready');
+            }
+
+            initializeWizard() {
+                this.wizard = new SimpleSbarWizard('sbarWizardContainer');
+                this.wizard.onComplete = (data) => this.handleComplete(data);
+                this.wizard.onStepChange = (step, data) => this.handleStepChange(step, data);
+            }
+
+            setupEventListeners() {
+                // Quick save button
+                document.getElementById('quickSave').addEventListener('click', () => {
+                    this.saveDraft();
+                });
+
+                // Auto-save every 30 seconds
+                setInterval(() => {
+                    if (this.wizard && Object.keys(this.wizard.data).length > 0) {
+                        this.autoSave();
+                    }
+                }, 30000);
+            }
+
+            handleStepChange(step, data) {
+                this.updateStatus('Step ' + (step + 1) + ': ' + this.wizard.steps[step].title);
+                
+                // Update field styling based on priority
+                if (data.priority_level) {
+                    this.updatePriorityStyles(data.priority_level);
+                }
+            }
+
+            handleComplete(data) {
+                this.generateSbarReport(data);
+                this.updateStatus('SBAR report generated');
+            }
+
+            updatePriorityStyles(priority) {
+                const container = document.getElementById('sbarWizardContainer');
+                container.classList.remove('priority-urgent', 'priority-stat');
+                
+                if (priority === 'urgent') {
+                    container.classList.add('priority-urgent');
+                } else if (priority === 'stat') {
+                    container.classList.add('priority-stat');
+                }
+            }
+
+            generateSbarReport(data) {
+                const timestamp = new Date().toLocaleString();
+                const priorityEmoji = {
+                    'routine': '📋',
+                    'urgent': '⚠️',
+                    'stat': '🚨'
+                };
+
+                const report = 
+'SBAR COMMUNICATION REPORT\\n' +
+'Generated: ' + timestamp + '\\n' +
+'Priority: ' + (priorityEmoji[data.priority_level] || '') + ' ' + (data.priority_level || '').toUpperCase() + '\\n\\n' +
+'===============================================\\n\\n' +
+'SITUATION\\n' +
+'Patient: ' + (data.patient_name || 'N/A') + '\\n' +
+'Location: ' + (data.room_unit || 'N/A') + '\\n' +
+'Purpose: ' + (data.communication_purpose || 'N/A') + '\\n\\n' +
+(data.situation_description || 'No situation description provided.') + '\\n\\n' +
+'BACKGROUND\\n' +
+'Admission Date: ' + (data.admission_date || 'N/A') + '\\n' +
+'Primary Diagnosis: ' + (data.primary_diagnosis || 'N/A') + '\\n\\n' +
+'Medical History:\\n' +
+(data.relevant_history || 'No relevant history documented.') + '\\n\\n' +
+'Current Medications:\\n' +
+(data.current_medications || 'No medications listed.') + '\\n\\n' +
+'ASSESSMENT\\n' +
+'Vital Signs: ' + (data.vital_signs || 'Not documented') + '\\n\\n' +
+'Mental Status: ' + (data.mental_status || 'Not assessed') + '\\n\\n' +
+'Physical Assessment:\\n' +
+(data.physical_assessment || 'No physical assessment documented.') + '\\n\\n' +
+'Clinical Concerns:\\n' +
+(data.clinical_concerns || 'No specific concerns noted.') + '\\n\\n' +
+'RECOMMENDATION\\n' +
+'Immediate Actions Needed:\\n' +
+(data.immediate_needs || 'No immediate actions specified.') + '\\n\\n' +
+'Priority Level: ' + (data.priority_level || 'Not specified') + '\\n\\n' +
+'Follow-up: ' + (data.follow_up_needed || 'No follow-up specified') + '\\n\\n' +
+'===============================================\\n' +
+'End of SBAR Report';
+
+                document.getElementById('sbarReportContent').textContent = report;
+                document.getElementById('sbarPreviewModal').classList.remove('hidden');
+            }
+
+            saveDraft() {
+                if (!this.wizard || Object.keys(this.wizard.data).length === 0) {
+                    alert('No data to save');
+                    return;
+                }
+
+                const draft = {
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                    data: { ...this.wizard.data },
+                    patientName: this.wizard.data.patient_name || 'Unnamed Patient',
+                    step: this.wizard.currentStep
+                };
+
+                this.savedDrafts.push(draft);
+                localStorage.setItem('sbarDrafts', JSON.stringify(this.savedDrafts));
+                
+                this.updateStatus('Draft saved successfully');
+                this.showToast('Draft saved successfully!', 'success');
+            }
+
+            autoSave() {
+                // Silent auto-save without notifications
+                if (this.wizard && Object.keys(this.wizard.data).length > 0) {
+                    const autoSaveDraft = {
+                        id: 'autosave',
+                        timestamp: new Date().toISOString(),
+                        data: { ...this.wizard.data },
+                        step: this.wizard.currentStep,
+                        isAutoSave: true
+                    };
+                    
+                    localStorage.setItem('sbarAutoSave', JSON.stringify(autoSaveDraft));
+                }
+            }
+
+            updateStatus(message) {
+                document.getElementById('statusIndicator').textContent = message;
+            }
+
+            showToast(message, type = 'info') {
+                // Create toast notification
+                const toast = document.createElement('div');
+                let className = 'fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ';
+                if (type === 'success') {
+                    className += 'bg-green-500 text-white';
+                } else if (type === 'error') {
+                    className += 'bg-red-500 text-white';
+                } else {
+                    className += 'bg-blue-500 text-white';
+                }
+                toast.className = className;
+                toast.textContent = message;
+                
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        }
+
+        // Global functions for modal interactions
+        function closePreviewModal() {
+            document.getElementById('sbarPreviewModal').classList.add('hidden');
+        }
+
+        function copySbarReport() {
+            const reportContent = document.getElementById('sbarReportContent').textContent;
+            navigator.clipboard.writeText(reportContent).then(() => {
+                alert('SBAR report copied to clipboard');
+            });
+        }
+
+        function printSbarReport() {
+            const reportContent = document.getElementById('sbarReportContent').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>SBAR Report</title></head><body style="font-family: Courier New, monospace; white-space: pre-wrap;">' + reportContent + '</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function saveSbarDraft() {
+            sbarApp.saveDraft();
+            closePreviewModal();
+        }
+
+        // Initialize the application
+        let sbarApp;
+        document.addEventListener('DOMContentLoaded', () => {
+            sbarApp = new SbarWizardPage();
+        });
+    </script>
+</body>
+</html>
