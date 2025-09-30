@@ -653,10 +653,11 @@ async def seed_medications_endpoint():
 
         async for session in get_db_session():
             try:
-                # Clear existing
-                await session.execute(delete(Medication))
+                # Clear existing medications with TRUNCATE (more aggressive than DELETE)
+                from sqlalchemy import text
+                await session.execute(text("TRUNCATE TABLE medications RESTART IDENTITY CASCADE"))
                 await session.commit()
-                logger.info("Cleared existing medications")
+                logger.info("Truncated medications table")
 
                 # Insert medication names for autocomplete
                 medications_created = 0
