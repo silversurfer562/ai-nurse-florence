@@ -341,12 +341,15 @@
 
             async showDrugAutocomplete(query) {
                 try {
+                    console.log('Fetching autocomplete for:', query);
                     const response = await fetch(`${this.apiBase}/drug-interactions/drug-names?query=${encodeURIComponent(query)}&limit=8`);
                     const data = await response.json();
-                    
+                    console.log('Autocomplete response:', data);
+
                     const autocompleteDiv = document.getElementById('drugAutocomplete');
-                    
+
                     if (data.success && data.data && data.data.drugs && data.data.drugs.length > 0) {
+                        console.log('Showing', data.data.drugs.length, 'drugs');
                         autocompleteDiv.innerHTML = data.data.drugs.map((drug, index) => {
                             const isAlreadyAdded = this.selectedDrugs.includes(drug.toLowerCase());
                             return `
