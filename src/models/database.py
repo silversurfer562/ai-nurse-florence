@@ -237,6 +237,38 @@ class DiseaseCollectionProgress(Base):
     def __repr__(self):
         return f"<DiseaseCollectionProgress(fetched={self.total_fetched}, complete={self.is_complete})>"
 
+class Medication(Base):
+    """
+    Comprehensive medication database for drug interaction checking and autocomplete.
+    Stores both generic and brand names for commonly prescribed medications.
+    """
+    __tablename__ = "medications"
+
+    # Primary identifier
+    id = Column(String, primary_key=True)  # UUID
+
+    # Medication name (generic or brand)
+    name = Column(String(255), nullable=False, index=True, unique=True)
+
+    # Generic/Brand classification
+    generic_name = Column(String(255), nullable=True, index=True)  # Generic name if this is a brand
+    is_brand = Column(Boolean, default=False, nullable=False)  # True if brand name, False if generic
+
+    # Drug classification
+    drug_class = Column(String(255), nullable=True, index=True)  # e.g., "NSAID", "antibiotic"
+    category = Column(String(255), nullable=True, index=True)  # e.g., "Pain & Anti-inflammatory", "Cardiovascular"
+
+    # Metadata
+    source = Column(String(100), nullable=False, default="curated")  # Data source
+    is_active = Column(Boolean, default=True, nullable=False)  # Active medication
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<Medication(name={self.name}, generic={self.generic_name}, is_brand={self.is_brand})>"
+
 # Database Connection Management
 async def init_database():
     """Initialize database connection and create tables."""

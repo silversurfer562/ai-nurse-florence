@@ -558,68 +558,197 @@ async def get_drug_names(
     """
     Get common drug names for autocomplete.
 
-    Returns a curated list of commonly prescribed medications.
+    Returns medications from database with both generic and brand names.
     Optionally filter by query string for autocomplete functionality.
     """
     try:
-        # Curated list of common medications - both generic and brand names
+        # Import database models and session
+        from src.models.database import get_db_session, Medication
+        from sqlalchemy import select
+
+        async for session in get_db_session():
+            try:
+                # Build query
+                query_stmt = select(Medication.name).where(Medication.is_active == True)
+
+                # Filter by search query if provided
+                if query and len(query) >= 2:
+                    query_stmt = query_stmt.where(Medication.name.ilike(f"%{query}%"))
+
+                # Order and limit
+                query_stmt = query_stmt.order_by(Medication.name).limit(limit)
+
+                # Execute query
+                result = await session.execute(query_stmt)
+                medications = result.scalars().all()
+                drug_list = [med for med in medications]
+
+                return JSONResponse(
+                    content=create_success_response(
+                        {"drugs": drug_list, "count": len(drug_list), "source": "database"},
+                        f"Retrieved {len(drug_list)} drug names from database"
+                    )
+                )
+            except Exception as db_error:
+                logger.warning(f"Database query failed, falling back to hardcoded list: {db_error}")
+                # Fall through to fallback hardcoded list
+                pass
+
+        # Fallback: If database query fails, use hardcoded list
+        # Comprehensive curated list of 500+ medications - both generic and brand names
         # (avoids FDA NDC homeopathic/bath products contamination)
         common_drugs = [
-            # Pain & Anti-inflammatory (Generic + Brand)
-            "Acetaminophen", "Tylenol", "Ibuprofen", "Advil", "Motrin", "Naproxen", "Aleve",
-            "Aspirin", "Celecoxib", "Celebrex", "Diclofenac", "Voltaren", "Indomethacin", "Indocin",
-            "Meloxicam", "Mobic", "Tramadol", "Ultram", "Morphine", "Oxycodone", "OxyContin", "Percocet",
-            "Hydrocodone", "Vicodin", "Norco", "Codeine", "Fentanyl", "Duragesic", "Hydromorphone", "Dilaudid",
+            # Pain & Anti-inflammatory
+            "Acetaminophen", "Tylenol", "Paracetamol", "Ibuprofen", "Advil", "Motrin", "Naproxen", "Aleve", "Naprosyn",
+            "Aspirin", "Ecotrin", "Bufferin", "Celecoxib", "Celebrex", "Diclofenac", "Voltaren", "Cataflam", "Pennsaid",
+            "Indomethacin", "Indocin", "Meloxicam", "Mobic", "Ketorolac", "Toradol", "Piroxicam", "Feldene",
+            "Tramadol", "Ultram", "ConZip", "Morphine", "MS Contin", "Kadian", "Avinza", "Oxycodone", "OxyContin", "Roxicodone", "Percocet", "OxyIR",
+            "Hydrocodone", "Vicodin", "Norco", "Lortab", "Codeine", "Tylenol #3", "Fentanyl", "Duragesic", "Actiq", "Sublimaze", "Abstral",
+            "Hydromorphone", "Dilaudid", "Exalgo", "Meperidine", "Demerol", "Methadone", "Dolophine", "Methadose",
+            "Buprenorphine", "Subutex", "Butrans", "Belbuca", "Nalbuphine", "Nubain", "Pentazocine", "Talwin",
 
-            # Antibiotics (Generic + Brand)
-            "Amoxicillin", "Amoxil", "Azithromycin", "Zithromax", "Z-Pak", "Ciprofloxacin", "Cipro",
-            "Levofloxacin", "Levaquin", "Doxycycline", "Vibramycin", "Cephalexin", "Keflex",
-            "Clindamycin", "Cleocin", "Metronidazole", "Flagyl", "Trimethoprim-Sulfamethoxazole", "Bactrim", "Septra",
-            "Penicillin", "Ampicillin", "Ceftriaxone", "Rocephin", "Vancomycin", "Vancocin", "Gentamicin",
+            # Antibiotics
+            "Amoxicillin", "Amoxil", "Trimox", "Moxatag", "Amoxicillin-Clavulanate", "Augmentin", "Augmentin XR",
+            "Azithromycin", "Zithromax", "Z-Pak", "Zmax", "Ciprofloxacin", "Cipro", "Cipro XR", "Proquin",
+            "Levofloxacin", "Levaquin", "Moxifloxacin", "Avelox", "Ofloxacin", "Floxin", "Doxycycline", "Vibramycin", "Doryx", "Oracea", "Monodox",
+            "Minocycline", "Minocin", "Solodyn", "Dynacin", "Tetracycline", "Sumycin", "Cephalexin", "Keflex",
+            "Cefuroxime", "Ceftin", "Zinacef", "Cefdinir", "Omnicef", "Cefpodoxime", "Vantin", "Cefixime", "Suprax",
+            "Clindamycin", "Cleocin", "Metronidazole", "Flagyl", "Trimethoprim-Sulfamethoxazole", "Bactrim", "Septra", "Sulfatrim",
+            "Penicillin", "Pen-VK", "Veetids", "Ampicillin", "Principen", "Ceftriaxone", "Rocephin", "Cefazolin", "Ancef", "Kefzol",
+            "Vancomycin", "Vancocin", "Gentamicin", "Garamycin", "Tobramycin", "Nebcin", "Erythromycin", "Ery-Tab", "E.E.S.",
+            "Clarithromycin", "Biaxin", "Biaxin XL", "Nitrofurantoin", "Macrobid", "Macrodantin", "Furadantin", "Linezolid", "Zyvox",
 
-            # Cardiovascular (Generic + Brand)
-            "Atorvastatin", "Lipitor", "Simvastatin", "Zocor", "Rosuvastatin", "Crestor",
-            "Pravastatin", "Pravachol", "Lisinopril", "Prinivil", "Zestril", "Losartan", "Cozaar",
-            "Valsartan", "Diovan", "Amlodipine", "Norvasc", "Metoprolol", "Lopressor", "Toprol-XL",
-            "Carvedilol", "Coreg", "Atenolol", "Tenormin", "Warfarin", "Coumadin", "Jantoven",
-            "Clopidogrel", "Plavix", "Apixaban", "Eliquis", "Rivaroxaban", "Xarelto",
-            "Furosemide", "Lasix", "Hydrochlorothiazide", "HCTZ", "Microzide", "Spironolactone", "Aldactone",
-            "Digoxin", "Lanoxin", "Amiodarone", "Cordarone", "Diltiazem", "Cardizem", "Cartia",
+            # Cardiovascular
+            "Atorvastatin", "Lipitor", "Simvastatin", "Zocor", "Rosuvastatin", "Crestor", "Pravastatin", "Pravachol",
+            "Lovastatin", "Mevacor", "Altoprev", "Fluvastatin", "Lescol", "Pitavastatin", "Livalo", "Zypitamag",
+            "Lisinopril", "Prinivil", "Zestril", "Qbrelis", "Enalapril", "Vasotec", "Ramipril", "Altace", "Benazepril", "Lotensin",
+            "Quinapril", "Accupril", "Perindopril", "Aceon", "Fosinopril", "Monopril", "Trandolapril", "Mavik",
+            "Losartan", "Cozaar", "Valsartan", "Diovan", "Irbesartan", "Avapro", "Olmesartan", "Benicar", "Candesartan", "Atacand", "Telmisartan", "Micardis",
+            "Amlodipine", "Norvasc", "Nifedipine", "Procardia", "Adalat", "Felodipine", "Plendil", "Nicardipine", "Cardene", "Isradipine", "DynaCirc",
+            "Metoprolol", "Lopressor", "Toprol-XL", "Atenolol", "Tenormin", "Carvedilol", "Coreg", "Coreg CR",
+            "Bisoprolol", "Zebeta", "Propranolol", "Inderal", "Inderal LA", "InnoPran XL", "Nadolol", "Corgard", "Labetalol", "Trandate", "Normodyne",
+            "Warfarin", "Coumadin", "Jantoven", "Clopidogrel", "Plavix", "Prasugrel", "Effient", "Ticagrelor", "Brilinta",
+            "Apixaban", "Eliquis", "Rivaroxaban", "Xarelto", "Dabigatran", "Pradaxa", "Edoxaban", "Savaysa",
+            "Furosemide", "Lasix", "Bumetanide", "Bumex", "Torsemide", "Demadex", "Hydrochlorothiazide", "HCTZ", "Microzide",
+            "Chlorthalidone", "Thalitone", "Spironolactone", "Aldactone", "Triamterene", "Dyrenium", "Amiloride", "Midamor",
+            "Digoxin", "Lanoxin", "Digitek", "Amiodarone", "Cordarone", "Pacerone", "Nexterone", "Sotalol", "Betapace", "Sorine", "Flecainide", "Tambocor",
+            "Diltiazem", "Cardizem", "Cartia", "Tiazac", "Taztia", "Verapamil", "Calan", "Isoptin", "Verelan",
+            "Nitroglycerin", "Nitro-Dur", "Nitrostat", "Nitrolingual", "Isosorbide", "Imdur", "Isordil", "Monoket", "Hydralazine", "Apresoline",
+            "Clonidine", "Catapres", "Kapvay", "Doxazosin", "Cardura", "Prazosin", "Minipress", "Terazosin", "Hytrin",
 
-            # Diabetes (Generic + Brand)
-            "Metformin", "Glucophage", "Glumetza", "Glipizide", "Glucotrol", "Glyburide", "DiaBeta", "Micronase",
-            "Insulin", "Humalog", "Novolog", "Lantus", "Levemir", "Sitagliptin", "Januvia",
-            "Empagliflozin", "Jardiance",
+            # Diabetes
+            "Metformin", "Glucophage", "Glucophage XR", "Glumetza", "Fortamet", "Riomet",
+            "Glipizide", "Glucotrol", "Glucotrol XL", "Glyburide", "DiaBeta", "Micronase", "Glynase", "Glimepiride", "Amaryl",
+            "Pioglitazone", "Actos", "Rosiglitazone", "Avandia", "Insulin", "Humalog", "Novolog", "Apidra", "Lantus", "Levemir", "Tresiba", "Toujeo", "Basaglar",
+            "Humulin", "Novolin", "Sitagliptin", "Januvia", "Saxagliptin", "Onglyza", "Linagliptin", "Tradjenta", "Alogliptin", "Nesina",
+            "Empagliflozin", "Jardiance", "Canagliflozin", "Invokana", "Dapagliflozin", "Farxiga", "Ertugliflozin", "Steglatro",
+            "Exenatide", "Byetta", "Bydureon", "Liraglutide", "Victoza", "Saxenda", "Dulaglutide", "Trulicity",
+            "Semaglutide", "Ozempic", "Rybelsus", "Wegovy", "Acarbose", "Precose", "Miglitol", "Glyset", "Nateglinide", "Starlix", "Repaglinide", "Prandin",
 
-            # GI/Acid Reducers (Generic + Brand)
-            "Omeprazole", "Prilosec", "Pantoprazole", "Protonix", "Esomeprazole", "Nexium",
-            "Ranitidine", "Zantac", "Famotidine", "Pepcid", "Ondansetron", "Zofran",
-            "Metoclopramide", "Reglan", "Loperamide", "Imodium",
+            # GI/Acid Reducers
+            "Omeprazole", "Prilosec", "Prilosec OTC", "Pantoprazole", "Protonix", "Esomeprazole", "Nexium",
+            "Lansoprazole", "Prevacid", "Rabeprazole", "Aciphex", "Dexlansoprazole", "Dexilant",
+            "Ranitidine", "Zantac", "Famotidine", "Pepcid", "Pepcid AC", "Nizatidine", "Axid", "Cimetidine", "Tagamet",
+            "Ondansetron", "Zofran", "Granisetron", "Kytril", "Sancuso", "Dolasetron", "Anzemet", "Palonosetron", "Aloxi",
+            "Metoclopramide", "Reglan", "Promethazine", "Phenergan", "Prochlorperazine", "Compazine",
+            "Loperamide", "Imodium", "Diphenoxylate-Atropine", "Lomotil", "Bismuth Subsalicylate", "Pepto-Bismol", "Kaopectate",
+            "Mesalamine", "Asacol", "Pentasa", "Lialda", "Apriso", "Sulfasalazine", "Azulfidine",
+            "Lactulose", "Enulose", "Kristalose", "Polyethylene Glycol", "MiraLAX", "GlycoLax", "Docusate", "Colace", "Dulcolax",
 
-            # Respiratory (Generic + Brand)
-            "Albuterol", "Proventil", "Ventolin", "ProAir", "Fluticasone", "Flonase", "Flovent",
-            "Budesonide", "Pulmicort", "Rhinocort", "Montelukast", "Singulair", "Prednisone", "Deltasone",
-            "Methylprednisolone", "Medrol", "Dexamethasone", "Decadron",
+            # Respiratory
+            "Albuterol", "Proventil", "Ventolin", "ProAir", "Levalbuterol", "Xopenex",
+            "Ipratropium", "Atrovent", "Tiotropium", "Spiriva", "Aclidinium", "Tudorza", "Umeclidinium", "Incruse", "Glycopyrrolate", "Seebri",
+            "Albuterol-Ipratropium", "Combivent", "DuoNeb",
+            "Fluticasone", "Flonase", "Flovent", "Arnuity", "Armonair", "Budesonide", "Pulmicort", "Rhinocort", "Entocort",
+            "Beclomethasone", "Qvar", "Mometasone", "Nasonex", "Asmanex", "Ciclesonide", "Alvesco", "Omnaris",
+            "Fluticasone-Salmeterol", "Advair", "AirDuo", "Budesonide-Formoterol", "Symbicort",
+            "Montelukast", "Singulair", "Zafirlukast", "Accolate", "Zileuton", "Zyflo",
+            "Prednisone", "Deltasone", "Rayos", "Prednisolone", "Orapred", "Prelone", "Methylprednisolone", "Medrol", "Solu-Medrol", "Depo-Medrol",
+            "Dexamethasone", "Decadron", "Dexamethasone Intensol", "Hydrocortisone", "Cortef", "Solu-Cortef",
+            "Theophylline", "Theo-24", "Uniphyl", "Elixophyllin", "Guaifenesin", "Mucinex", "Robitussin",
+            "Dextromethorphan", "Delsym", "Robitussin DM", "Benzonatate", "Tessalon Perles",
 
-            # Psychiatric/Neuro (Generic + Brand)
-            "Sertraline", "Zoloft", "Fluoxetine", "Prozac", "Escitalopram", "Lexapro",
-            "Citalopram", "Celexa", "Duloxetine", "Cymbalta", "Venlafaxine", "Effexor",
-            "Bupropion", "Wellbutrin", "Zyban", "Trazodone", "Desyrel", "Mirtazapine", "Remeron",
-            "Lorazepam", "Ativan", "Alprazolam", "Xanax", "Clonazepam", "Klonopin",
-            "Diazepam", "Valium", "Zolpidem", "Ambien", "Gabapentin", "Neurontin",
-            "Pregabalin", "Lyrica", "Levetiracetam", "Keppra", "Phenytoin", "Dilantin",
-            "Valproic Acid", "Depakote", "Carbamazepine", "Tegretol",
+            # Psychiatric/Neuro
+            "Sertraline", "Zoloft", "Fluoxetine", "Prozac", "Sarafem", "Selfemra", "Escitalopram", "Lexapro",
+            "Citalopram", "Celexa", "Paroxetine", "Paxil", "Pexeva", "Brisdelle", "Fluvoxamine", "Luvox",
+            "Duloxetine", "Cymbalta", "Drizalma", "Venlafaxine", "Effexor", "Effexor XR", "Desvenlafaxine", "Pristiq", "Khedezla",
+            "Bupropion", "Wellbutrin", "Wellbutrin SR", "Wellbutrin XL", "Zyban", "Aplenzin", "Forfivo",
+            "Trazodone", "Desyrel", "Oleptro", "Mirtazapine", "Remeron", "Remeron SolTab", "Nefazodone", "Serzone",
+            "Amitriptyline", "Elavil", "Endep", "Nortriptyline", "Pamelor", "Aventyl", "Desipramine", "Norpramin",
+            "Imipramine", "Tofranil", "Doxepin", "Sinequan", "Silenor", "Clomipramine", "Anafranil",
+            "Lorazepam", "Ativan", "Alprazolam", "Xanax", "Xanax XR", "Niravam", "Clonazepam", "Klonopin",
+            "Diazepam", "Valium", "Diastat", "Valtoco", "Temazepam", "Restoril", "Oxazepam", "Serax", "Chlordiazepoxide", "Librium",
+            "Zolpidem", "Ambien", "Ambien CR", "Edluar", "Intermezzo", "Eszopiclone", "Lunesta", "Zaleplon", "Sonata",
+            "Buspirone", "BuSpar", "Hydroxyzine", "Atarax", "Vistaril",
+            "Aripiprazole", "Abilify", "Abilify Maintena", "Risperidone", "Risperdal", "Risperdal Consta", "Quetiapine", "Seroquel", "Seroquel XR",
+            "Olanzapine", "Zyprexa", "Zyprexa Zydis", "Ziprasidone", "Geodon", "Paliperidone", "Invega", "Invega Sustenna", "Lurasidone", "Latuda",
+            "Haloperidol", "Haldol", "Chlorpromazine", "Thorazine", "Perphenazine", "Trilafon", "Fluphenazine", "Prolixin",
+            "Lithium", "Lithobid", "Eskalith", "Lamotrigine", "Lamictal",
+            "Gabapentin", "Neurontin", "Gralise", "Horizant", "Pregabalin", "Lyrica", "Lyrica CR",
+            "Levetiracetam", "Keppra", "Keppra XR", "Phenytoin", "Dilantin", "Phenytek", "Valproic Acid", "Depakote", "Depakene", "Depakote ER",
+            "Carbamazepine", "Tegretol", "Carbatrol", "Epitol", "Oxcarbazepine", "Trileptal", "Topiramate", "Topamax", "Trokendi", "Qudexy",
+            "Donepezil", "Aricept", "Rivastigmine", "Exelon", "Galantamine", "Razadyne", "Memantine", "Namenda", "Namzaric",
 
-            # Thyroid & Hormones (Generic + Brand)
-            "Levothyroxine", "Synthroid", "Levoxyl", "Liothyronine", "Cytomel",
-            "Estradiol", "Estrace", "Climara", "Progesterone", "Prometrium", "Testosterone", "AndroGel", "Testim",
+            # Thyroid & Hormones
+            "Levothyroxine", "Synthroid", "Levoxyl", "Unithroid", "Tirosint", "Liothyronine", "Cytomel", "Triostat",
+            "Thyroid", "Armour Thyroid", "Nature-Throid", "WP Thyroid", "Methimazole", "Tapazole", "Propylthiouracil", "PTU",
+            "Estradiol", "Estrace", "Climara", "Vivelle-Dot", "Divigel", "Evamist", "Elestrin", "Conjugated Estrogens", "Premarin",
+            "Progesterone", "Prometrium", "Crinone", "Medroxyprogesterone", "Provera", "Depo-Provera", "Depo-SubQ",
+            "Norethindrone", "Aygestin", "Camila", "Errin", "Testosterone", "AndroGel", "Testim", "Axiron", "Fortesta", "Androderm",
+            "Oxytocin", "Pitocin", "Vasopressin", "Pitressin", "Desmopressin", "DDAVP", "Stimate", "Minirin",
 
-            # Other Common (Generic + Brand)
-            "Allopurinol", "Zyloprim", "Colchicine", "Colcrys", "Vitamin D", "Calcium", "Caltrate", "Os-Cal",
-            "Potassium Chloride", "K-Dur", "Klor-Con", "Cyclobenzaprine", "Flexeril",
-            "Baclofen", "Lioresal", "Tizanidine", "Zanaflex", "Diphenhydramine", "Benadryl",
-            "Cetirizine", "Zyrtec", "Loratadine", "Claritin", "Finasteride", "Proscar", "Propecia",
-            "Tamsulosin", "Flomax", "Sildenafil", "Viagra", "Tadalafil", "Cialis"
+            # Musculoskeletal/Muscle Relaxants
+            "Cyclobenzaprine", "Flexeril", "Fexmid", "Amrix", "Baclofen", "Lioresal", "Gablofen", "Tizanidine", "Zanaflex",
+            "Methocarbamol", "Robaxin", "Carisoprodol", "Soma", "Metaxalone", "Skelaxin",
+            "Orphenadrine", "Norflex", "Chlorzoxazone", "Parafon Forte", "Dantrolene", "Dantrium",
+
+            # Antihistamines/Allergy
+            "Diphenhydramine", "Benadryl", "Cetirizine", "Zyrtec", "Loratadine", "Claritin", "Alavert",
+            "Fexofenadine", "Allegra", "Levocetirizine", "Xyzal", "Desloratadine", "Clarinex",
+            "Chlorpheniramine", "Chlor-Trimeton", "Brompheniramine", "Dimetapp", "Promethazine", "Phenergan",
+            "Azelastine", "Astelin", "Astepro", "Olopatadine", "Patanase", "Pataday", "Patanol",
+
+            # Urological
+            "Tamsulosin", "Flomax", "Finasteride", "Proscar", "Propecia", "Dutasteride", "Avodart",
+            "Alfuzosin", "Uroxatral", "Doxazosin", "Cardura", "Terazosin", "Hytrin", "Silodosin", "Rapaflo",
+            "Tolterodine", "Detrol", "Detrol LA", "Oxybutynin", "Ditropan", "Ditropan XL", "Oxytrol", "Solifenacin", "VESIcare",
+            "Darifenacin", "Enablex", "Fesoterodine", "Toviaz", "Trospium", "Sanctura",
+            "Mirabegron", "Myrbetriq", "Phenazopyridine", "Pyridium", "AZO", "Uristat",
+
+            # Osteoporosis/Bone Health
+            "Alendronate", "Fosamax", "Risedronate", "Actonel", "Atelvia", "Ibandronate", "Boniva",
+            "Zoledronic Acid", "Reclast", "Zometa", "Raloxifene", "Evista", "Teriparatide", "Forteo",
+            "Denosumab", "Prolia", "Xgeva", "Calcitonin", "Miacalcin", "Fortical",
+
+            # Vitamins/Supplements
+            "Vitamin D", "Vitamin D3", "Cholecalciferol", "Ergocalciferol", "Drisdol", "Calcium", "Calcium Carbonate",
+            "Caltrate", "Os-Cal", "Tums", "Calcium Citrate", "Citracal", "Iron", "Ferrous Sulfate", "Feosol", "Slow FE",
+            "Folic Acid", "Folate", "Vitamin B12", "Cyanocobalamin", "Multivitamin", "Centrum", "One-A-Day",
+            "Potassium Chloride", "K-Dur", "Klor-Con", "K-Tab", "Magnesium", "Mag-Ox", "Magnesium Citrate", "Omega-3", "Fish Oil",
+
+            # Anticoagulants/Antiplatelets
+            "Enoxaparin", "Lovenox", "Heparin", "Fondaparinux", "Arixtra", "Cilostazol", "Pletal",
+            "Pentoxifylline", "Trental", "Ticlopidine", "Ticlid", "Dipyridamole", "Persantine", "Aggrenox",
+
+            # Immunosuppressants
+            "Cyclosporine", "Neoral", "Sandimmune", "Gengraf", "Tacrolimus", "Prograf", "Envarsus", "Astagraf",
+            "Azathioprine", "Imuran", "Mycophenolate", "CellCept", "Myfortic", "Sirolimus", "Rapamune",
+            "Methotrexate", "Rheumatrex", "Trexall", "Otrexup", "Rasuvo", "Leflunomide", "Arava",
+
+            # Antivirals
+            "Acyclovir", "Zovirax", "Valacyclovir", "Valtrex", "Famciclovir", "Famvir",
+            "Oseltamivir", "Tamiflu", "Zanamivir", "Relenza", "Baloxavir", "Xofluza", "Peramivir", "Rapivab",
+
+            # Migraine/Headache
+            "Sumatriptan", "Imitrex", "Rizatriptan", "Maxalt", "Zolmitriptan", "Zomig",
+            "Eletriptan", "Relpax", "Almotriptan", "Axert", "Frovatriptan", "Frova", "Naratriptan", "Amerge",
+
+            # Other Common
+            "Allopurinol", "Zyloprim", "Aloprim", "Colchicine", "Colcrys", "Mitigare", "Probenecid", "Probalan",
+            "Sildenafil", "Viagra", "Revatio", "Tadalafil", "Cialis", "Adcirca", "Vardenafil", "Levitra", "Staxyn",
+            "Epinephrine", "EpiPen", "Adrenaclick", "Auvi-Q", "Naloxone", "Narcan", "Evzio",
+            "Ivermectin", "Stromectol", "Soolantra", "Clotrimazole", "Lotrimin", "Mycelex", "Fluconazole", "Diflucan",
+            "Isotretinoin", "Accutane", "Claravis", "Absorica", "Tretinoin", "Retin-A", "Renova", "Benzoyl Peroxide", "PanOxyl"
         ]
 
         # Filter by query if provided

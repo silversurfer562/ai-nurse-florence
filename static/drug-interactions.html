@@ -547,13 +547,20 @@
             }
 
             async checkInteractions() {
-                if (this.selectedDrugs.length < 2) return;
+                console.log('checkInteractions called, selectedDrugs:', this.selectedDrugs);
+
+                if (this.selectedDrugs.length < 2) {
+                    console.warn('Not enough drugs selected. Need at least 2 drugs.');
+                    this.showError('Please select at least 2 medications to check for interactions');
+                    return;
+                }
 
                 this.showLoading();
                 this.clearResults();
                 this.updateStatus('Checking interactions...');
 
                 try {
+                    console.log('Sending POST request to:', `${this.apiBase}/drug-interactions/check`);
                     const response = await fetch(`${this.apiBase}/drug-interactions/check`, {
                         method: 'POST',
                         headers: {
@@ -563,25 +570,196 @@
                             drugs: this.selectedDrugs
                         })
                     });
-                    
-                    const data = await response.json();
 
-                    if (data.success && data.data && data.data.interactions) {
-                        if (data.data.interactions.length > 0) {
-                            this.displayInteractions(data.data.interactions);
-                        } else {
-                            this.showNoInteractions();
-                        }
+                    console.log('Response status:', response.status);
+                    const data = await response.json();
+                    console.log('Response data:', data);
+
+                    if (data.success && data.data) {
+                        console.log('Full API response:', data.data);
+
+                        // Display full analysis results
+                        this.displayFullAnalysis(data.data);
                         this.updateStatus('Analysis complete');
                     } else {
-                        this.showError('Failed to check interactions');
+                        console.error('Invalid response format:', data);
+                        this.showError('Failed to check interactions: ' + (data.message || 'Invalid response'));
                     }
                 } catch (error) {
                     console.error('Interaction check error:', error);
-                    this.showError('Error checking interactions');
+                    this.showError('Error checking interactions: ' + error.message);
                 } finally {
                     this.hideLoading();
                 }
+            }
+
+            displayFullAnalysis(analysisData) {
+                console.log('=== displayFullAnalysis called ===');
+                console.log('Full analysis data:', analysisData);
+
+                const resultsSection = document.getElementById('resultsSection');
+                const summaryContainer = document.getElementById('interactionSummary');
+                const detailsContainer = document.getElementById('detailedInteractions');
+
+                // Build comprehensive verbose output
+                let output = '';
+
+                // 1. Overall Summary Section
+                if (analysisData.summary) {
+                    output += `
+                        <div class="drug-card rounded-lg p-6 mb-6">
+                            <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-center">
+                                <i class="fas fa-file-medical-alt mr-2 text-blue-600"></i>
+                                Analysis Summary
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed">${analysisData.summary}</p>
+                            ${analysisData.data_source ? `
+                                <div class="mt-3 text-sm text-gray-500">
+                                    <i class="fas fa-database mr-1"></i> ${analysisData.data_source}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                // 2. Drug Information Section (Verbose)
+                if (analysisData.drug_information && analysisData.drug_information.length > 0) {
+                    output += `
+                        <div class="drug-card rounded-lg p-6 mb-6">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-pills mr-2 text-green-600"></i>
+                                Detailed Drug Information
+                            </h3>
+                            <div class="space-y-6">
+                    `;
+
+                    analysisData.drug_information.forEach(drug => {
+                        output += `
+                            <div class="border-l-4 border-blue-500 pl-4 py-2">
+                                <h4 class="text-lg font-semibold text-gray-900 mb-2">
+                                    ${drug.name.charAt(0).toUpperCase() + drug.name.slice(1)}
+                                    ${drug.brand_names && drug.brand_names.length > 0 ?
+                                        `<span class="text-sm text-gray-600 font-normal">(${drug.brand_names.join(', ')})</span>`
+                                        : ''}
+                                </h4>
+
+                                ${drug.drug_class ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-gray-800">Drug Class:</span>
+                                        <span class="text-gray-700"> ${drug.drug_class}</span>
+                                    </div>
+                                ` : ''}
+
+                                ${drug.indication ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-gray-800">Indication:</span>
+                                        <span class="text-gray-700"> ${drug.indication}</span>
+                                    </div>
+                                ` : ''}
+
+                                ${drug.nursing_considerations && drug.nursing_considerations.length > 0 ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-gray-800">Nursing Considerations:</span>
+                                        <ul class="list-disc ml-6 mt-1">
+                                            ${drug.nursing_considerations.map(consideration =>
+                                                `<li class="text-gray-700">${consideration}</li>`
+                                            ).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+
+                                ${drug.common_side_effects && drug.common_side_effects.length > 0 ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-gray-800">Common Side Effects:</span>
+                                        <ul class="list-disc ml-6 mt-1">
+                                            ${drug.common_side_effects.map(effect =>
+                                                `<li class="text-gray-700">${effect}</li>`
+                                            ).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+
+                                ${drug.warnings && drug.warnings.length > 0 ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-red-800"><i class="fas fa-exclamation-triangle mr-1"></i>Warnings:</span>
+                                        <ul class="list-disc ml-6 mt-1">
+                                            ${drug.warnings.map(warning =>
+                                                `<li class="text-red-700">${warning}</li>`
+                                            ).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+
+                    output += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 3. Clinical Alerts Section
+                if (analysisData.clinical_alerts && analysisData.clinical_alerts.length > 0) {
+                    output += `
+                        <div class="moderate-interaction rounded-lg p-6 mb-6">
+                            <h3 class="text-xl font-bold text-orange-900 mb-3 flex items-center">
+                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                Clinical Alerts
+                            </h3>
+                            <ul class="space-y-2">
+                                ${analysisData.clinical_alerts.map(alert =>
+                                    `<li class="flex items-start">
+                                        <i class="fas fa-chevron-right text-orange-600 mt-1 mr-2"></i>
+                                        <span class="text-orange-900">${alert}</span>
+                                    </li>`
+                                ).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                // 4. Interactions Section
+                if (analysisData.interactions && analysisData.interactions.length > 0) {
+                    output += `
+                        <div class="severe-interaction rounded-lg p-6 mb-6">
+                            <h3 class="text-xl font-bold text-red-900 mb-3 flex items-center">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Drug Interactions Detected (${analysisData.interactions.length})
+                            </h3>
+                    `;
+
+                    this.displayInteractions(analysisData.interactions);
+                    return; // Use existing interaction display logic
+                } else if (analysisData.total_interactions === 0) {
+                    output += `
+                        <div class="no-interaction rounded-lg p-6 mb-6">
+                            <h3 class="text-xl font-bold text-green-900 mb-3 flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                No Major Drug Interactions Detected
+                            </h3>
+                            <p class="text-green-800">Based on current medical literature, no significant drug interactions were identified between the selected medications.</p>
+                        </div>
+                    `;
+                }
+
+                // 5. Metadata
+                if (analysisData.timestamp || analysisData.response_time_ms) {
+                    output += `
+                        <div class="text-sm text-gray-500 mt-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                ${analysisData.timestamp ? `<span><i class="fas fa-clock mr-1"></i> Analysis completed: ${new Date(analysisData.timestamp).toLocaleString()}</span>` : ''}
+                                ${analysisData.response_time_ms ? `<span><i class="fas fa-tachometer-alt mr-1"></i> Response time: ${Math.round(analysisData.response_time_ms)}ms</span>` : ''}
+                            </div>
+                            ${analysisData.service_note ? `<div class="mt-2 text-xs italic">${analysisData.service_note}</div>` : ''}
+                        </div>
+                    `;
+                }
+
+                // Display everything
+                detailsContainer.innerHTML = output;
+                summaryContainer.innerHTML = ''; // Clear summary cards for verbose mode
+                resultsSection.classList.remove('hidden');
             }
 
             displayInteractions(interactions) {
@@ -718,3 +896,4 @@
     </script>
 </body>
 </html>
+<!-- Version: 1759255616 -->
