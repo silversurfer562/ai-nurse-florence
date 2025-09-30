@@ -37,11 +37,12 @@ except Exception:
 _redis_client: Optional[Any] = None
 _memory_cache: Dict[str, Dict[str, Any]] = {}
 _cache_lock = threading.RLock()
+_redis_connection_logged = False  # Track if we've already logged Redis failure
 
 async def get_redis_client():
     """Get Redis client with graceful fallback"""
-    global _redis_client
-    
+    global _redis_client, _redis_connection_logged
+
     # Allow tests or environments to force in-memory-only mode by setting
     # AI_NURSE_DISABLE_REDIS=1 in the environment. This prevents background
     # Redis connection attempts that can leave pending tasks during test runs.
@@ -50,12 +51,12 @@ async def get_redis_client():
 
     if not _redis_available:
         return None
-    
+
     if _redis_client is None:
         redis_config = get_redis_config()
         if not redis_config:
             return None
-        
+
         try:
             # redis is imported conditionally; ensure the name is not None for static checkers
             assert redis is not None
@@ -68,11 +69,15 @@ async def get_redis_client():
             )
             # Test connection
             await _redis_client.ping()
-            logging.info("Redis connection established")
+            logging.info("✅ Redis connection established")
+            _redis_connection_logged = True
         except Exception as e:
-            logging.warning(f"Redis connection failed: {e}, using in-memory cache")
+            # Only log the warning once to avoid flooding logs
+            if not _redis_connection_logged:
+                logging.warning(f"⚠️ Redis unavailable ({e}), using in-memory cache fallback")
+                _redis_connection_logged = True
             _redis_client = None
-    
+
     return _redis_client
 
 def _memory_cache_set(key: str, value: Any, ttl_seconds: int = 3600):
