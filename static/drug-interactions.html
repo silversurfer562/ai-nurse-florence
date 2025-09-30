@@ -566,7 +566,6 @@
                 this.updateStatus('Checking interactions...');
 
                 try {
-                    console.log('Sending POST request to:', `${this.apiBase}/drug-interactions/check`);
                     const response = await fetch(`${this.apiBase}/drug-interactions/check`, {
                         method: 'POST',
                         headers: {
@@ -577,13 +576,9 @@
                         })
                     });
 
-                    console.log('Response status:', response.status);
                     const data = await response.json();
-                    console.log('Response data:', data);
 
                     if (data.success && data.data) {
-                        console.log('Full API response:', data.data);
-
                         // Display full analysis results
                         this.displayFullAnalysis(data.data);
                         this.updateStatus('Analysis complete');
