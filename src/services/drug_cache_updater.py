@@ -223,7 +223,7 @@ class DrugCacheUpdaterService:
 
             # Cache the full drug list (no query filter)
             cache_key = "drug_names_all_1000"
-            await self.cache_manager.set(cache_key, drug_list, ttl=7200)  # 2 hours TTL
+            await self.cache_manager.set(cache_key, drug_list, ttl_seconds=7200)  # 2 hours TTL
 
             self.last_update = datetime.now()
             logger.info(f"Drug cache updated successfully with {len(drug_list)} drugs at {self.last_update}")

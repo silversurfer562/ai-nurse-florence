@@ -153,7 +153,7 @@ async def get_disease_names(
             disease_names = sorted(list(set(disease_names)))[:limit]
 
             # Cache for 24 hours (disease names don't change often)
-            await cache_manager.set(cache_key, disease_names, ttl=86400)
+            await cache_manager.set(cache_key, disease_names, ttl_seconds=86400)
 
             return JSONResponse(
                 content={

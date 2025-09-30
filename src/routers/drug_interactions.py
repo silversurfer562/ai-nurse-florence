@@ -8,7 +8,7 @@ with clinical decision support and smart caching.
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from fastapi.responses import JSONResponse
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field, validator
 import logging
 from datetime import datetime
@@ -486,17 +486,17 @@ async def get_service_statistics():
 __all__ = ['router']
 
 @router.post(
-    "/check",
-    summary="Check Drug Interactions",
-    description="Check for interactions between multiple medications with clinical recommendations"
+    "/check-advanced",
+    summary="Advanced Drug Interaction Check",
+    description="Advanced drug interaction analysis with enhanced filtering and patient context"
 )
-async def check_drug_interactions(
+async def check_drug_interactions_advanced(
     request: DrugInteractionRequest
 ):
     """
-    Check for drug interactions in a medication list.
+    Advanced drug interaction check with comprehensive analysis.
     
-    Returns comprehensive interaction analysis with:
+    Returns enhanced interaction analysis with:
     - Interaction severity levels
     - Clinical recommendations
     - Monitoring requirements
@@ -588,7 +588,7 @@ async def get_drug_names(
         fda_url = "https://api.fda.gov/drug/ndc.json"
 
         # Build query parameters
-        params = {
+        params: Dict[str, Union[str, int]] = {
             "limit": 1000  # Get a good sample of drugs
         }
 
@@ -614,7 +614,7 @@ async def get_drug_names(
             drug_list = sorted(list(drug_names))[:limit]
 
             # Cache for 24 hours (drug names don't change often)
-            await cache_manager.set(cache_key, drug_list, ttl=86400)
+            await cache_manager.set(cache_key, drug_list, ttl_seconds=86400)
 
             return JSONResponse(
                 content=create_success_response(
