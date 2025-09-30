@@ -632,8 +632,9 @@ async def test_admin_system(
 @router.post("/seed-medications")
 async def seed_medications_endpoint():
     """
-    Seed the medications database with detailed clinical information.
-    Includes brand names, nursing considerations, side effects, and warnings.
+    Seed the medications database with 700+ medication names for autocomplete.
+    Database is used ONLY for medication name search - NOT for drug details.
+    All drug interaction analysis comes from OpenAI.
     ONE-TIME USE endpoint for production database initialization.
     """
     try:
@@ -641,15 +642,14 @@ async def seed_medications_endpoint():
         from sqlalchemy import select, delete
         from uuid import uuid4
         import logging
-        import json
 
         logger = logging.getLogger(__name__)
 
-        # Import detailed medication data
+        # Import autocomplete medication list (700+ names)
         import sys
         import os
         sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        from scripts.seed_medications_detailed import DETAILED_MEDICATIONS
+        from scripts.seed_medications_autocomplete import COMMON_MEDICATIONS
 
         async for session in get_db_session():
             try:
@@ -658,42 +658,28 @@ async def seed_medications_endpoint():
                 await session.commit()
                 logger.info("Cleared existing medications")
 
-                # Insert detailed medications
+                # Insert medication names for autocomplete
                 medications_created = 0
-                for med_data in DETAILED_MEDICATIONS:
+                for med_name in COMMON_MEDICATIONS:
                     medication = Medication(
                         id=str(uuid4()),
-                        name=med_data["name"],
-                        generic_name=med_data["generic"],
-                        is_brand=med_data["is_brand"],
-                        brand_names=json.dumps(med_data["brand_names"]),
-                        drug_class=med_data["drug_class"],
-                        category=med_data["category"],
-                        indication=med_data["indication"],
-                        nursing_considerations=json.dumps(med_data["nursing_considerations"]),
-                        common_side_effects=json.dumps(med_data["common_side_effects"]),
-                        warnings=json.dumps(med_data["warnings"]),
-                        source="curated_detailed",
+                        name=med_name,
+                        source="curated_autocomplete",
                         is_active=True
                     )
                     session.add(medication)
                     medications_created += 1
-                    logger.info(f"Added: {med_data['name']}")
+
+                    if medications_created % 100 == 0:
+                        logger.info(f"Added {medications_created} medications...")
 
                 await session.commit()
-                logger.info(f"Successfully seeded {medications_created} detailed medications")
+                logger.info(f"Successfully seeded {medications_created} medications for autocomplete")
 
                 return create_success_response({
-                    "message": f"Successfully seeded {medications_created} detailed medications",
+                    "message": f"Successfully seeded {medications_created} medication names for autocomplete",
                     "count": medications_created,
-                    "includes": [
-                        "Brand names",
-                        "Drug class and category",
-                        "Clinical indications",
-                        "Nursing considerations",
-                        "Common side effects",
-                        "Warnings and contraindications"
-                    ],
+                    "purpose": "Medication name autocomplete only - drug details come from OpenAI",
                     "timestamp": datetime.utcnow().isoformat()
                 })
 
