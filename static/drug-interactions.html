@@ -323,12 +323,12 @@
 
             async loadCachedDrugs() {
                 try {
-                    const response = await fetch(`${this.apiBase}/drugs/list?limit=100`);
+                    const response = await fetch(`${this.apiBase}/drug-interactions/drug-names?limit=100&query=`);
                     const data = await response.json();
-                    
-                    if (data.drugs) {
-                        data.drugs.forEach(drug => {
-                            this.drugCache.set(drug.name.toLowerCase(), drug);
+
+                    if (data.success && data.data && data.data.drugs) {
+                        data.data.drugs.forEach(drug => {
+                            this.drugCache.set(drug.toLowerCase(), drug);
                         });
                     }
                 } catch (error) {
@@ -565,10 +565,10 @@
                     });
                     
                     const data = await response.json();
-                    
-                    if (data.success && data.interactions) {
-                        if (data.interactions.length > 0) {
-                            this.displayInteractions(data.interactions);
+
+                    if (data.success && data.data && data.data.interactions) {
+                        if (data.data.interactions.length > 0) {
+                            this.displayInteractions(data.data.interactions);
                         } else {
                             this.showNoInteractions();
                         }

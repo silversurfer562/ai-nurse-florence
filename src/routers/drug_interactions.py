@@ -547,8 +547,8 @@ async def check_drug_interactions_advanced(
 
 @router.get(
     "/drug-names",
-    summary="Get FDA drug names for autocomplete",
-    description="Returns a list of common drug names from FDA database for autocomplete functionality",
+    summary="Get common drug names for autocomplete",
+    description="Returns a curated list of commonly prescribed medications for autocomplete functionality",
     response_description="List of drug names"
 )
 async def get_drug_names(
@@ -556,72 +556,88 @@ async def get_drug_names(
     limit: int = Query(50, description="Maximum number of results to return", ge=1, le=200)
 ):
     """
-    Get FDA drug names for autocomplete.
+    Get common drug names for autocomplete.
 
     Returns a curated list of commonly prescribed medications.
     Optionally filter by query string for autocomplete functionality.
-    Uses smart caching for performance.
     """
     try:
-        # Import smart cache
-        from src.utils.smart_cache import SmartCacheManager
-        cache_manager = SmartCacheManager()
+        # Curated list of common medications - both generic and brand names
+        # (avoids FDA NDC homeopathic/bath products contamination)
+        common_drugs = [
+            # Pain & Anti-inflammatory (Generic + Brand)
+            "Acetaminophen", "Tylenol", "Ibuprofen", "Advil", "Motrin", "Naproxen", "Aleve",
+            "Aspirin", "Celecoxib", "Celebrex", "Diclofenac", "Voltaren", "Indomethacin", "Indocin",
+            "Meloxicam", "Mobic", "Tramadol", "Ultram", "Morphine", "Oxycodone", "OxyContin", "Percocet",
+            "Hydrocodone", "Vicodin", "Norco", "Codeine", "Fentanyl", "Duragesic", "Hydromorphone", "Dilaudid",
 
-        # Create cache key based on query
-        cache_key = f"drug_names_{query or 'all'}_{limit}"
+            # Antibiotics (Generic + Brand)
+            "Amoxicillin", "Amoxil", "Azithromycin", "Zithromax", "Z-Pak", "Ciprofloxacin", "Cipro",
+            "Levofloxacin", "Levaquin", "Doxycycline", "Vibramycin", "Cephalexin", "Keflex",
+            "Clindamycin", "Cleocin", "Metronidazole", "Flagyl", "Trimethoprim-Sulfamethoxazole", "Bactrim", "Septra",
+            "Penicillin", "Ampicillin", "Ceftriaxone", "Rocephin", "Vancomycin", "Vancocin", "Gentamicin",
 
-        # Try to get from cache first
-        cached_data = await cache_manager.get(cache_key)
-        if cached_data:
-            return JSONResponse(
-                content=create_success_response(
-                    {"drugs": cached_data, "count": len(cached_data), "cache_hit": True},
-                    f"Retrieved {len(cached_data)} drug names (cached)"
-                )
-            )
+            # Cardiovascular (Generic + Brand)
+            "Atorvastatin", "Lipitor", "Simvastatin", "Zocor", "Rosuvastatin", "Crestor",
+            "Pravastatin", "Pravachol", "Lisinopril", "Prinivil", "Zestril", "Losartan", "Cozaar",
+            "Valsartan", "Diovan", "Amlodipine", "Norvasc", "Metoprolol", "Lopressor", "Toprol-XL",
+            "Carvedilol", "Coreg", "Atenolol", "Tenormin", "Warfarin", "Coumadin", "Jantoven",
+            "Clopidogrel", "Plavix", "Apixaban", "Eliquis", "Rivaroxaban", "Xarelto",
+            "Furosemide", "Lasix", "Hydrochlorothiazide", "HCTZ", "Microzide", "Spironolactone", "Aldactone",
+            "Digoxin", "Lanoxin", "Amiodarone", "Cordarone", "Diltiazem", "Cardizem", "Cartia",
 
-        # Import httpx for FDA API calls
-        import httpx
+            # Diabetes (Generic + Brand)
+            "Metformin", "Glucophage", "Glumetza", "Glipizide", "Glucotrol", "Glyburide", "DiaBeta", "Micronase",
+            "Insulin", "Humalog", "Novolog", "Lantus", "Levemir", "Sitagliptin", "Januvia",
+            "Empagliflozin", "Jardiance",
 
-        # FDA OpenFDA drugs endpoint
-        # We'll fetch generic drug names from the NDC (National Drug Code) database
-        fda_url = "https://api.fda.gov/drug/ndc.json"
+            # GI/Acid Reducers (Generic + Brand)
+            "Omeprazole", "Prilosec", "Pantoprazole", "Protonix", "Esomeprazole", "Nexium",
+            "Ranitidine", "Zantac", "Famotidine", "Pepcid", "Ondansetron", "Zofran",
+            "Metoclopramide", "Reglan", "Loperamide", "Imodium",
 
-        # Build query parameters
-        params: Dict[str, Union[str, int]] = {
-            "limit": 1000  # Get a good sample of drugs
-        }
+            # Respiratory (Generic + Brand)
+            "Albuterol", "Proventil", "Ventolin", "ProAir", "Fluticasone", "Flonase", "Flovent",
+            "Budesonide", "Pulmicort", "Rhinocort", "Montelukast", "Singulair", "Prednisone", "Deltasone",
+            "Methylprednisolone", "Medrol", "Dexamethasone", "Decadron",
 
+            # Psychiatric/Neuro (Generic + Brand)
+            "Sertraline", "Zoloft", "Fluoxetine", "Prozac", "Escitalopram", "Lexapro",
+            "Citalopram", "Celexa", "Duloxetine", "Cymbalta", "Venlafaxine", "Effexor",
+            "Bupropion", "Wellbutrin", "Zyban", "Trazodone", "Desyrel", "Mirtazapine", "Remeron",
+            "Lorazepam", "Ativan", "Alprazolam", "Xanax", "Clonazepam", "Klonopin",
+            "Diazepam", "Valium", "Zolpidem", "Ambien", "Gabapentin", "Neurontin",
+            "Pregabalin", "Lyrica", "Levetiracetam", "Keppra", "Phenytoin", "Dilantin",
+            "Valproic Acid", "Depakote", "Carbamazepine", "Tegretol",
+
+            # Thyroid & Hormones (Generic + Brand)
+            "Levothyroxine", "Synthroid", "Levoxyl", "Liothyronine", "Cytomel",
+            "Estradiol", "Estrace", "Climara", "Progesterone", "Prometrium", "Testosterone", "AndroGel", "Testim",
+
+            # Other Common (Generic + Brand)
+            "Allopurinol", "Zyloprim", "Colchicine", "Colcrys", "Vitamin D", "Calcium", "Caltrate", "Os-Cal",
+            "Potassium Chloride", "K-Dur", "Klor-Con", "Cyclobenzaprine", "Flexeril",
+            "Baclofen", "Lioresal", "Tizanidine", "Zanaflex", "Diphenhydramine", "Benadryl",
+            "Cetirizine", "Zyrtec", "Loratadine", "Claritin", "Finasteride", "Proscar", "Propecia",
+            "Tamsulosin", "Flomax", "Sildenafil", "Viagra", "Tadalafil", "Cialis"
+        ]
+
+        # Filter by query if provided
         if query and len(query) >= 2:
-            # Search by generic name
-            params["search"] = f'generic_name:"{query}"'
+            query_lower = query.lower()
+            filtered_drugs = [drug for drug in common_drugs if query_lower in drug.lower()]
+        else:
+            filtered_drugs = common_drugs
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(fda_url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        # Sort and limit
+        drug_list = sorted(filtered_drugs)[:limit]
 
-            # Extract unique generic names
-            drug_names = set()
-            for result in data.get("results", []):
-                generic_name = result.get("generic_name", "").strip()
-                if generic_name:
-                    # Split comma-separated names and clean them
-                    names = [n.strip().title() for n in generic_name.split(",")]
-                    drug_names.update(names[:1])  # Take first name only
-
-            # Convert to sorted list and limit
-            drug_list = sorted(list(drug_names))[:limit]
-
-            # Cache for 24 hours (drug names don't change often)
-            await cache_manager.set(cache_key, drug_list, ttl_seconds=86400)
-
-            return JSONResponse(
-                content=create_success_response(
-                    {"drugs": drug_list, "count": len(drug_list), "cache_hit": False},
-                    f"Retrieved {len(drug_list)} drug names"
-                )
+        return JSONResponse(
+            content=create_success_response(
+                {"drugs": drug_list, "count": len(drug_list), "cache_hit": False},
+                f"Retrieved {len(drug_list)} drug names"
             )
+        )
 
     except Exception as e:
         logger.error(f"Failed to fetch FDA drug names: {e}")
