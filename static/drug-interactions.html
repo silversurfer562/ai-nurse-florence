@@ -738,10 +738,13 @@
 
                 // 4. Interactions Section
                 if (analysisData.interactions && analysisData.interactions.length > 0) {
-                    // Group interactions by severity
-                    const major = analysisData.interactions.filter(i => i.severity?.toLowerCase() === 'major' || i.severity?.toLowerCase() === 'contraindicated');
+                    // Group interactions by severity - handle all possible levels
+                    const contraindicated = analysisData.interactions.filter(i => i.severity?.toLowerCase() === 'contraindicated');
+                    const severe = analysisData.interactions.filter(i => i.severity?.toLowerCase() === 'severe');
+                    const major = analysisData.interactions.filter(i => i.severity?.toLowerCase() === 'major');
                     const moderate = analysisData.interactions.filter(i => i.severity?.toLowerCase() === 'moderate');
                     const minor = analysisData.interactions.filter(i => i.severity?.toLowerCase() === 'minor');
+                    const unknown = analysisData.interactions.filter(i => !i.severity || !['contraindicated', 'severe', 'major', 'moderate', 'minor'].includes(i.severity.toLowerCase()));
 
                     output += `
                         <div class="severe-interaction rounded-lg p-6 mb-6">
@@ -750,6 +753,18 @@
                                 Drug Interactions Detected (${analysisData.interactions.length})
                             </h3>
                             <div class="mb-4 space-y-2">
+                                ${contraindicated.length > 0 ? `
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-3 py-1 bg-black text-white text-sm font-semibold rounded-full">${contraindicated.length} Contraindicated</span>
+                                        <span class="text-sm text-gray-700">${contraindicated.map(i => i.drug1 + ' ↔ ' + i.drug2).join(', ')}</span>
+                                    </div>
+                                ` : ''}
+                                ${severe.length > 0 ? `
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-3 py-1 bg-red-700 text-white text-sm font-semibold rounded-full">${severe.length} Severe</span>
+                                        <span class="text-sm text-gray-700">${severe.map(i => i.drug1 + ' ↔ ' + i.drug2).join(', ')}</span>
+                                    </div>
+                                ` : ''}
                                 ${major.length > 0 ? `
                                     <div class="flex items-center gap-2">
                                         <span class="px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded-full">${major.length} Major</span>
@@ -768,6 +783,12 @@
                                         <span class="text-sm text-gray-700">${minor.map(i => i.drug1 + ' ↔ ' + i.drug2).join(', ')}</span>
                                     </div>
                                 ` : ''}
+                                ${unknown.length > 0 ? `
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-3 py-1 bg-gray-500 text-white text-sm font-semibold rounded-full">${unknown.length} Unknown</span>
+                                        <span class="text-sm text-gray-700">${unknown.map(i => i.drug1 + ' ↔ ' + i.drug2).join(', ')}</span>
+                                    </div>
+                                ` : ''}
                             </div>
                             <div class="space-y-4">
                     `;
@@ -775,14 +796,26 @@
                     // Add each interaction
                     analysisData.interactions.forEach(interaction => {
                         const severityLabel = interaction.severity?.toUpperCase() || 'UNKNOWN';
-                        const severityColor =
-                            interaction.severity?.toLowerCase() === 'major' || interaction.severity?.toLowerCase() === 'contraindicated' ? 'red' :
-                            interaction.severity?.toLowerCase() === 'moderate' ? 'orange' :
-                            'yellow';
-                        const severityBg = severityColor === 'red' ? 'bg-red-600' : severityColor === 'orange' ? 'bg-orange-500' : 'bg-yellow-500';
+                        const sev = interaction.severity?.toLowerCase();
+
+                        // Map all severity levels to colors
+                        let severityColor, severityBg, borderClass, bgClass, textClass;
+                        if (sev === 'contraindicated') {
+                            severityColor = 'black'; severityBg = 'bg-black'; borderClass = 'border-black'; bgClass = 'bg-gray-900 bg-opacity-5'; textClass = 'text-black';
+                        } else if (sev === 'severe') {
+                            severityColor = 'red'; severityBg = 'bg-red-700'; borderClass = 'border-red-700'; bgClass = 'bg-red-50'; textClass = 'text-red-700';
+                        } else if (sev === 'major') {
+                            severityColor = 'red'; severityBg = 'bg-red-600'; borderClass = 'border-red-600'; bgClass = 'bg-red-50'; textClass = 'text-red-700';
+                        } else if (sev === 'moderate') {
+                            severityColor = 'orange'; severityBg = 'bg-orange-500'; borderClass = 'border-orange-500'; bgClass = 'bg-orange-50'; textClass = 'text-orange-700';
+                        } else if (sev === 'minor') {
+                            severityColor = 'yellow'; severityBg = 'bg-yellow-500'; borderClass = 'border-yellow-500'; bgClass = 'bg-yellow-50'; textClass = 'text-yellow-700';
+                        } else {
+                            severityColor = 'gray'; severityBg = 'bg-gray-500'; borderClass = 'border-gray-500'; bgClass = 'bg-gray-50'; textClass = 'text-gray-700';
+                        }
 
                         output += `
-                            <div class="border-l-4 ${severityColor === 'red' ? 'border-red-600' : severityColor === 'orange' ? 'border-orange-500' : 'border-yellow-500'} pl-4 py-3 ${severityColor === 'red' ? 'bg-red-50' : severityColor === 'orange' ? 'bg-orange-50' : 'bg-yellow-50'}">
+                            <div class="border-l-4 ${borderClass} pl-4 py-3 ${bgClass}">
                                 <div class="flex items-center gap-2 mb-3">
                                     <h4 class="font-semibold text-gray-900 text-lg">
                                         ${interaction.drug1} + ${interaction.drug2}
@@ -791,7 +824,7 @@
                                         ${severityLabel} INTERACTION
                                     </span>
                                 </div>
-                                ${interaction.description ? `<p class="text-gray-700 mb-2"><strong class="text-${severityColor}-700">⚠️ ${severityLabel} Risk:</strong> ${interaction.description}</p>` : ''}
+                                ${interaction.description ? `<p class="text-gray-700 mb-2"><strong class="${textClass}">⚠️ ${severityLabel} Risk:</strong> ${interaction.description}</p>` : ''}
                                 ${interaction.clinical_significance ? `
                                     <div class="mb-2">
                                         <span class="font-medium text-gray-800">Clinical Significance:</span>
