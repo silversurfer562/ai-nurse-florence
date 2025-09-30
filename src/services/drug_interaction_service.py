@@ -412,7 +412,7 @@ If there are no significant interactions, return an empty interactions array but
                 "summary": ai_response.get("summary", ""),
                 "clinical_alerts": ai_response.get("clinical_alerts", []),
                 "patient_context": patient_context,
-                "data_source": "OpenAI GPT-4 (Medical Literature Knowledge)",
+                "data_source": "OpenAI + Database (Medication Names) + FDA Data",
                 "service_note": "AI-generated analysis based on medical literature. Verify with authoritative sources.",
                 "timestamp": datetime.now().isoformat()
             }
