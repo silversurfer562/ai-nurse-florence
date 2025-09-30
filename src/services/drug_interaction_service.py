@@ -365,11 +365,11 @@ Return the response in JSON format with this structure:
       "documentation": "excellent|good|fair|poor"
     }}
   ],
-  "summary": "overall summary including individual drugs and interaction risk",
   "clinical_alerts": ["alert 1", "alert 2", ...]
 }}
 
-If there are no significant interactions, return an empty interactions array but ALWAYS include drug_information for all medications."""
+If there are no significant interactions, return an empty interactions array but ALWAYS include drug_information for all medications.
+Do NOT include a summary field - all important information should be in the interactions and clinical_alerts arrays."""
 
         # Call OpenAI
         try:
@@ -401,7 +401,7 @@ If there are no significant interactions, return an empty interactions array but
 
             ai_response = json.loads(json_str)
 
-            # Build standardized response
+            # Build standardized response (no summary - details are in interactions and alerts)
             banner = getattr(self.settings, 'educational_banner', 'Educational use only - not medical advice')
             return {
                 "banner": banner,
@@ -409,7 +409,6 @@ If there are no significant interactions, return an empty interactions array but
                 "drug_information": ai_response.get("drug_information", []),
                 "total_interactions": len(ai_response.get("interactions", [])),
                 "interactions": ai_response.get("interactions", []),
-                "summary": ai_response.get("summary", ""),
                 "clinical_alerts": ai_response.get("clinical_alerts", []),
                 "patient_context": patient_context,
                 "data_source": "OpenAI (Medical AI)",
