@@ -379,6 +379,13 @@ If there are no significant interactions, return an empty interactions array but
             openai_response = await openai_service.generate_response(prompt, context)
             response_text = openai_response.get("response", "")
 
+            # Log response details for debugging
+            logger.info(f"OpenAI response keys: {list(openai_response.keys())}")
+            logger.info(f"OpenAI response text length: {len(response_text)}")
+            if len(response_text) == 0:
+                logger.error(f"Empty response from OpenAI. Full response: {openai_response}")
+                raise Exception(f"Empty response from OpenAI service. Service status: {openai_response.get('service_note', 'unknown')}")
+
             # Parse JSON from response
             # Try to extract JSON from markdown code blocks if present
             if "```json" in response_text:
@@ -418,6 +425,49 @@ If there are no significant interactions, return an empty interactions array but
             logger.error(f"OpenAI API call failed: {e}")
             raise
 
+    async def _get_drug_info_from_database(self, drug_names: List[str]) -> List[Dict[str, Any]]:
+        """Retrieve detailed drug information from database."""
+        try:
+            from src.models.database import get_db_session, Medication
+            from sqlalchemy import select
+            import json as json_module
+
+            drug_info_list = []
+
+            async for session in get_db_session():
+                for drug_name in drug_names:
+                    # Search for medication (case-insensitive)
+                    query = select(Medication).where(
+                        Medication.name.ilike(drug_name)
+                    ).where(Medication.is_active == True)
+
+                    result = await session.execute(query)
+                    medication = result.scalar_one_or_none()
+
+                    if medication and medication.brand_names:
+                        # Parse JSON fields
+                        brand_names = json_module.loads(medication.brand_names) if medication.brand_names else []
+                        nursing_considerations = json_module.loads(medication.nursing_considerations) if medication.nursing_considerations else []
+                        common_side_effects = json_module.loads(medication.common_side_effects) if medication.common_side_effects else []
+                        warnings = json_module.loads(medication.warnings) if medication.warnings else []
+
+                        drug_info_list.append({
+                            "name": medication.name,
+                            "brand_names": brand_names,
+                            "drug_class": medication.drug_class or "N/A",
+                            "indication": medication.indication or "N/A",
+                            "nursing_considerations": nursing_considerations,
+                            "common_side_effects": common_side_effects,
+                            "warnings": warnings
+                        })
+                        logger.info(f"Found detailed info for {medication.name} in database")
+
+            return drug_info_list
+
+        except Exception as e:
+            logger.warning(f"Failed to get drug info from database: {e}")
+            return []
+
     async def check_drug_interactions(
         self,
         drugs: List[str],
@@ -425,7 +475,8 @@ If there are no significant interactions, return an empty interactions array but
         use_cache: bool = True
     ) -> Dict[str, Any]:
         """
-        Check for drug interactions in a medication list using OpenAI.
+        Check for drug interactions in a medication list.
+        First tries to get detailed info from database, then falls back to OpenAI if needed.
 
         Args:
             drugs: List of drug names to check
@@ -444,6 +495,10 @@ If there are no significant interactions, return an empty interactions array but
                 "drugs_provided": len(drugs),
                 "timestamp": datetime.now().isoformat()
             }
+
+        # First, try to get detailed drug information from database
+        drug_info_from_db = await self._get_drug_info_from_database(drugs)
+        logger.info(f"Retrieved {len(drug_info_from_db)} drugs from database out of {len(drugs)} requested")
 
         # Check cache first
         cache_key = self._create_cache_key(drugs)
@@ -465,9 +520,17 @@ If there are no significant interactions, return an empty interactions array but
             cached_result["response_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
             return cached_result
 
-        # Use OpenAI to check interactions
+        # Use OpenAI to check interactions (if database had all drugs, just get interaction analysis)
         try:
             response = await self._check_interactions_with_openai(drugs, patient_context)
+
+            # Merge database drug information with OpenAI response
+            if drug_info_from_db:
+                logger.info(f"Merging {len(drug_info_from_db)} database results with OpenAI response")
+                # Replace OpenAI's drug_information with database version (more detailed)
+                response["drug_information"] = drug_info_from_db
+                response["data_source"] = "Database + OpenAI GPT-4 (Interactions)"
+
             response["cache_hit"] = False
             response["response_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
 

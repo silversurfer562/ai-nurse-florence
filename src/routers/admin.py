@@ -632,7 +632,8 @@ async def test_admin_system(
 @router.post("/seed-medications")
 async def seed_medications_endpoint():
     """
-    Seed the medications database with common drugs.
+    Seed the medications database with detailed clinical information.
+    Includes brand names, nursing considerations, side effects, and warnings.
     ONE-TIME USE endpoint for production database initialization.
     """
     try:
@@ -640,47 +641,65 @@ async def seed_medications_endpoint():
         from sqlalchemy import select, delete
         from uuid import uuid4
         import logging
+        import json
 
         logger = logging.getLogger(__name__)
 
-        # Import medication data from seed script
+        # Import detailed medication data
         import sys
         import os
         sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        from scripts.seed_medications import MEDICATIONS_DATA
+        from scripts.seed_medications_detailed import DETAILED_MEDICATIONS
 
         async for session in get_db_session():
             try:
                 # Clear existing
                 await session.execute(delete(Medication))
                 await session.commit()
+                logger.info("Cleared existing medications")
 
-                # Insert medications
+                # Insert detailed medications
                 medications_created = 0
-                for med_data in MEDICATIONS_DATA:
+                for med_data in DETAILED_MEDICATIONS:
                     medication = Medication(
                         id=str(uuid4()),
                         name=med_data["name"],
                         generic_name=med_data["generic"],
                         is_brand=med_data["is_brand"],
-                        category=med_data["category"],
+                        brand_names=json.dumps(med_data["brand_names"]),
                         drug_class=med_data["drug_class"],
-                        source="curated",
+                        category=med_data["category"],
+                        indication=med_data["indication"],
+                        nursing_considerations=json.dumps(med_data["nursing_considerations"]),
+                        common_side_effects=json.dumps(med_data["common_side_effects"]),
+                        warnings=json.dumps(med_data["warnings"]),
+                        source="curated_detailed",
                         is_active=True
                     )
                     session.add(medication)
                     medications_created += 1
+                    logger.info(f"Added: {med_data['name']}")
 
                 await session.commit()
+                logger.info(f"Successfully seeded {medications_created} detailed medications")
 
                 return create_success_response({
-                    "message": f"Successfully seeded {medications_created} medications",
+                    "message": f"Successfully seeded {medications_created} detailed medications",
                     "count": medications_created,
+                    "includes": [
+                        "Brand names",
+                        "Drug class and category",
+                        "Clinical indications",
+                        "Nursing considerations",
+                        "Common side effects",
+                        "Warnings and contraindications"
+                    ],
                     "timestamp": datetime.utcnow().isoformat()
                 })
 
             except Exception as db_error:
                 await session.rollback()
+                logger.error(f"Database error during seeding: {db_error}")
                 raise db_error
 
     except Exception as e:

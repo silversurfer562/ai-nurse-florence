@@ -253,10 +253,17 @@ class Medication(Base):
     # Generic/Brand classification
     generic_name = Column(String(255), nullable=True, index=True)  # Generic name if this is a brand
     is_brand = Column(Boolean, default=False, nullable=False)  # True if brand name, False if generic
+    brand_names = Column(Text, nullable=True)  # JSON array of brand names
 
     # Drug classification
     drug_class = Column(String(255), nullable=True, index=True)  # e.g., "NSAID", "antibiotic"
     category = Column(String(255), nullable=True, index=True)  # e.g., "Pain & Anti-inflammatory", "Cardiovascular"
+
+    # Clinical information
+    indication = Column(Text, nullable=True)  # Primary indication/use
+    nursing_considerations = Column(Text, nullable=True)  # JSON array of nursing considerations
+    common_side_effects = Column(Text, nullable=True)  # JSON array of common side effects
+    warnings = Column(Text, nullable=True)  # JSON array of warnings/contraindications
 
     # Metadata
     source = Column(String(100), nullable=False, default="curated")  # Data source
