@@ -727,10 +727,44 @@
                                 <i class="fas fa-exclamation-triangle mr-2"></i>
                                 Drug Interactions Detected (${analysisData.interactions.length})
                             </h3>
+                            <div class="space-y-4">
                     `;
 
-                    this.displayInteractions(analysisData.interactions);
-                    return; // Use existing interaction display logic
+                    // Add each interaction
+                    analysisData.interactions.forEach(interaction => {
+                        output += `
+                            <div class="border-l-4 border-red-500 pl-4 py-3 bg-red-50">
+                                <h4 class="font-semibold text-red-900 mb-2">
+                                    ${interaction.drug1} + ${interaction.drug2}
+                                    <span class="ml-2 text-xs px-2 py-1 rounded ${
+                                        interaction.severity === 'major' ? 'bg-red-600 text-white' :
+                                        interaction.severity === 'moderate' ? 'bg-orange-500 text-white' :
+                                        'bg-yellow-500 text-white'
+                                    }">${interaction.severity?.toUpperCase()}</span>
+                                </h4>
+                                ${interaction.description ? `<p class="text-gray-700 mb-2">${interaction.description}</p>` : ''}
+                                ${interaction.clinical_significance ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-gray-800">Clinical Significance:</span>
+                                        <span class="text-gray-700"> ${interaction.clinical_significance}</span>
+                                    </div>
+                                ` : ''}
+                                ${interaction.recommendations && interaction.recommendations.length > 0 ? `
+                                    <div class="mb-2">
+                                        <span class="font-medium text-gray-800">Recommendations:</span>
+                                        <ul class="list-disc ml-6 mt-1">
+                                            ${interaction.recommendations.map(rec => `<li class="text-gray-700">${rec}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+
+                    output += `
+                            </div>
+                        </div>
+                    `;
                 } else if (analysisData.total_interactions === 0) {
                     output += `
                         <div class="no-interaction rounded-lg p-6 mb-6">
