@@ -14,6 +14,15 @@ import xml.etree.ElementTree as ET
 
 from ..services.disease_service import lookup_disease_info
 
+# Conditional translation import
+try:
+    from src.services.translation_service import translate_text
+    _has_translation = True
+except ImportError:
+    _has_translation = False
+    async def translate_text(text: str, target_language: str, source_language: str = "en", context: str = "medical"):
+        return {"translated_text": text, "success": False}
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
@@ -51,7 +60,8 @@ class DiseaseResponse(BaseModel):
 async def lookup_disease(
     q: str = Query(...,
                    description="Disease name or condition to look up",
-                   examples=["hypertension", "diabetes mellitus", "pneumonia", "t1dm", "heart attack"])
+                   examples=["hypertension", "diabetes mellitus", "pneumonia", "t1dm", "heart attack"]),
+    language: str = Query("en", description="Response language code (en, es, fr, de, it, pt, zh-CN)")
 ):
     """
     Look up disease information using alias mapping for reliable results.
@@ -81,6 +91,45 @@ async def lookup_disease(
                     "clarification_question": result.get("clarification_question")
                 }
             )
+
+        # Translate description and summary if needed
+        if language and language.lower() != "en" and _has_translation:
+            if result.get("description"):
+                trans_result = await translate_text(
+                    result["description"],
+                    target_language=language,
+                    source_language="en",
+                    context="medical"
+                )
+                if trans_result.get("success"):
+                    result["description"] = trans_result.get("translated_text")
+                    logger.info(f"Translated description to {language}")
+
+            if result.get("summary"):
+                trans_result = await translate_text(
+                    result["summary"],
+                    target_language=language,
+                    source_language="en",
+                    context="medical"
+                )
+                if trans_result.get("success"):
+                    result["summary"] = trans_result.get("translated_text")
+
+            # Translate symptoms if available
+            if result.get("symptoms") and isinstance(result["symptoms"], list):
+                translated_symptoms = []
+                for symptom in result["symptoms"]:
+                    trans_result = await translate_text(
+                        symptom,
+                        target_language=language,
+                        source_language="en",
+                        context="medical"
+                    )
+                    if trans_result.get("success"):
+                        translated_symptoms.append(trans_result.get("translated_text"))
+                    else:
+                        translated_symptoms.append(symptom)
+                result["symptoms"] = translated_symptoms
 
         return DiseaseResponse(**result)
 

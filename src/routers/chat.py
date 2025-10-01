@@ -30,6 +30,14 @@ except ImportError:
     def enhance_prompt(prompt: str, service_type: str = "general"):
         return prompt, False, None
 
+try:
+    from src.services.translation_service import translate_text
+    _has_translation = True
+except ImportError:
+    _has_translation = False
+    async def translate_text(text: str, target_language: str, source_language: str = "en", context: str = "medical"):
+        return {"translated_text": text, "success": False}
+
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="", tags=["chat"])  # No prefix so it's directly under /api/v1
@@ -123,9 +131,24 @@ Always include:
                         max_tokens=1000,
                         temperature=0.7
                     )
-                    
+
                     ai_response = response.choices[0].message.content
-                    
+
+                    # Translate response if needed
+                    if request.language and request.language.lower() != "en":
+                        if _has_translation:
+                            translation_result = await translate_text(
+                                ai_response,
+                                target_language=request.language,
+                                source_language="en",
+                                context="clinical"
+                            )
+                            if translation_result.get("success"):
+                                ai_response = translation_result.get("translated_text")
+                                logger.info(f"Translated response to {request.language} using {translation_result.get('method')}")
+                            else:
+                                logger.warning(f"Translation to {request.language} not available, returning English")
+
                     return ChatResponse(
                         response=ai_response,
                         language=request.language,
@@ -172,6 +195,19 @@ I'd be happy to help with your clinical question. For specific guidance, please 
 
 Always follow your institution's protocols and consult with physicians for patient-specific decisions."""
 
+        # Translate fallback response if needed
+        if request.language and request.language.lower() != "en":
+            if _has_translation:
+                translation_result = await translate_text(
+                    response_text,
+                    target_language=request.language,
+                    source_language="en",
+                    context="clinical"
+                )
+                if translation_result.get("success"):
+                    response_text = translation_result.get("translated_text")
+                    logger.info(f"Translated fallback response to {request.language}")
+
         return ChatResponse(
             response=response_text,
             language=request.language,
@@ -197,5 +233,6 @@ async def chat_health():
         "service": "clinical-chat",
         "openai_available": _has_openai,
         "prompt_enhancement_available": _has_prompt_enhancement,
+        "translation_available": _has_translation,
         "timestamp": datetime.utcnow().isoformat()
     }

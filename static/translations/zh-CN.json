@@ -1,0 +1,123 @@
+{
+  "common": {
+    "app_name": "AI护士弗洛伦斯",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "submit": "提交",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭",
+    "search": "搜索",
+    "export": "导出",
+    "share": "分享",
+    "copy": "复制",
+    "download": "下载",
+    "language": "语言"
+  },
+  "navigation": {
+    "home": "首页",
+    "dashboard": "仪表板",
+    "chat": "聊天",
+    "disease_lookup": "疾病查询",
+    "drug_interactions": "药物相互作用",
+    "sbar_wizard": "SBAR向导",
+    "dosage_calculator": "剂量计算器",
+    "patient_education": "患者教育",
+    "literature_search": "文献搜索",
+    "api_docs": "API文档"
+  },
+  "chat": {
+    "title": "临床聊天助手",
+    "subtitle": "提出临床问题并获得循证指导",
+    "placeholder": "在此输入您的临床问题...",
+    "send": "发送",
+    "thinking": "AI护士弗洛伦斯正在思考...",
+    "new_conversation": "新对话",
+    "clear_history": "清除历史"
+  },
+  "disease_lookup": {
+    "title": "疾病信息查询",
+    "subtitle": "搜索疾病信息和临床指导",
+    "search_placeholder": "搜索疾病或病症...",
+    "no_results": "未找到疾病",
+    "symptoms": "症状",
+    "description": "描述",
+    "research_articles": "研究文章",
+    "related_conditions": "相关疾病",
+    "export_info": "导出信息",
+    "share_info": "分享信息"
+  },
+  "sbar": {
+    "title": "SBAR向导",
+    "subtitle": "带AI辅助的专业临床文档",
+    "situation": "情况",
+    "background": "背景",
+    "assessment": "评估",
+    "recommendation": "建议",
+    "step": "步骤",
+    "of": "共",
+    "next": "下一步",
+    "previous": "上一步",
+    "finish": "完成",
+    "generate_report": "生成报告",
+    "enhance_with_ai": "使用AI增强"
+  },
+  "drug_interactions": {
+    "title": "药物相互作用检查器",
+    "subtitle": "检查潜在的药物相互作用和安全警报",
+    "add_medication": "添加药物",
+    "check_interactions": "检查相互作用",
+    "severity": "严重程度",
+    "high": "高",
+    "moderate": "中等",
+    "low": "低",
+    "clinical_recommendation": "临床建议",
+    "no_interactions": "未发现显著相互作用"
+  },
+  "dosage_calculator": {
+    "title": "剂量计算器",
+    "subtitle": "计算准确的药物剂量",
+    "medication_name": "药物名称",
+    "patient_weight": "患者体重",
+    "dose_ordered": "处方剂量",
+    "calculate": "计算",
+    "result": "结果",
+    "mg_per_kg": "毫克/公斤"
+  },
+  "patient_education": {
+    "title": "患者教育材料",
+    "subtitle": "生成患者友好的教育内容",
+    "topic": "主题",
+    "generate": "生成",
+    "reading_level": "阅读水平",
+    "beginner": "初学者",
+    "intermediate": "中级",
+    "advanced": "高级"
+  },
+  "literature_search": {
+    "title": "医学文献搜索",
+    "subtitle": "搜索PubMed和医学数据库",
+    "search_query": "搜索查询",
+    "max_results": "最大结果数",
+    "filter_by_year": "按年份过滤",
+    "recent_articles": "最近的文章"
+  },
+  "settings": {
+    "title": "设置",
+    "language_selection": "语言选择",
+    "select_language": "选择您的首选语言",
+    "theme": "主题",
+    "light": "明亮",
+    "dark": "暗黑",
+    "notifications": "通知",
+    "enable_sound": "启用声音",
+    "enable_notifications": "启用通知"
+  },
+  "disclaimer": {
+    "title": "教育用途免责声明",
+    "content": "AI护士弗洛伦斯是一种教育工具，旨在用于学习和参考目的。该应用程序提供信息和指导，但不能替代专业的医疗判断、诊断或治疗。始终咨询合格的医疗保健专业人员以做出患者护理决策。所提供的信息应作为医疗从业者的知识、专业知识和判断的补充，而不是替代品。"
+  }
+}

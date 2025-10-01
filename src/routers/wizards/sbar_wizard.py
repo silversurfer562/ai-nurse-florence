@@ -10,12 +10,21 @@ from datetime import datetime
 
 from src.services import get_service
 from src.models.schemas import (
-    SBARWizardRequest, 
+    SBARWizardRequest,
     SBARWizardResponse
 )
 from src.utils.api_responses import create_success_response
 from src.utils.exceptions import ServiceException
 from src.utils.config import get_settings
+
+# Conditional translation import
+try:
+    from src.services.translation_service import translate_text
+    _has_translation = True
+except ImportError:
+    _has_translation = False
+    async def translate_text(text: str, target_language: str, source_language: str = "en", context: str = "medical"):
+        return {"translated_text": text, "success": False}
 
 # Settings following coding instructions
 settings = get_settings()

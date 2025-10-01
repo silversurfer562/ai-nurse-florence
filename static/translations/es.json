@@ -1,0 +1,123 @@
+{
+  "common": {
+    "app_name": "AI Enfermera Florence",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "submit": "Enviar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "export": "Exportar",
+    "share": "Compartir",
+    "copy": "Copiar",
+    "download": "Descargar",
+    "language": "Idioma"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "chat": "Chat",
+    "disease_lookup": "Búsqueda de Enfermedades",
+    "drug_interactions": "Interacciones de Medicamentos",
+    "sbar_wizard": "Asistente SBAR",
+    "dosage_calculator": "Calculadora de Dosis",
+    "patient_education": "Educación del Paciente",
+    "literature_search": "Búsqueda de Literatura",
+    "api_docs": "Documentación API"
+  },
+  "chat": {
+    "title": "Asistente de Chat Clínico",
+    "subtitle": "Haga preguntas clínicas y obtenga orientación basada en evidencia",
+    "placeholder": "Escriba su pregunta clínica aquí...",
+    "send": "Enviar",
+    "thinking": "AI Enfermera Florence está pensando...",
+    "new_conversation": "Nueva Conversación",
+    "clear_history": "Borrar Historial"
+  },
+  "disease_lookup": {
+    "title": "Búsqueda de Información sobre Enfermedades",
+    "subtitle": "Busque información sobre enfermedades y orientación clínica",
+    "search_placeholder": "Buscar una enfermedad o condición...",
+    "no_results": "No se encontró ninguna enfermedad",
+    "symptoms": "Síntomas",
+    "description": "Descripción",
+    "research_articles": "Artículos de Investigación",
+    "related_conditions": "Condiciones Relacionadas",
+    "export_info": "Exportar Información",
+    "share_info": "Compartir Información"
+  },
+  "sbar": {
+    "title": "Asistente SBAR",
+    "subtitle": "Documentación Clínica Profesional con Asistencia de IA",
+    "situation": "Situación",
+    "background": "Antecedentes",
+    "assessment": "Evaluación",
+    "recommendation": "Recomendación",
+    "step": "Paso",
+    "of": "de",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "finish": "Finalizar",
+    "generate_report": "Generar Informe",
+    "enhance_with_ai": "Mejorar con IA"
+  },
+  "drug_interactions": {
+    "title": "Verificador de Interacciones de Medicamentos",
+    "subtitle": "Verifique posibles interacciones de medicamentos y alertas de seguridad",
+    "add_medication": "Agregar Medicamento",
+    "check_interactions": "Verificar Interacciones",
+    "severity": "Gravedad",
+    "high": "Alta",
+    "moderate": "Moderada",
+    "low": "Baja",
+    "clinical_recommendation": "Recomendación Clínica",
+    "no_interactions": "No se encontraron interacciones significativas"
+  },
+  "dosage_calculator": {
+    "title": "Calculadora de Dosis",
+    "subtitle": "Calcule dosis precisas de medicamentos",
+    "medication_name": "Nombre del Medicamento",
+    "patient_weight": "Peso del Paciente",
+    "dose_ordered": "Dosis Ordenada",
+    "calculate": "Calcular",
+    "result": "Resultado",
+    "mg_per_kg": "mg/kg"
+  },
+  "patient_education": {
+    "title": "Materiales de Educación del Paciente",
+    "subtitle": "Genere contenido educativo amigable para el paciente",
+    "topic": "Tema",
+    "generate": "Generar",
+    "reading_level": "Nivel de Lectura",
+    "beginner": "Principiante",
+    "intermediate": "Intermedio",
+    "advanced": "Avanzado"
+  },
+  "literature_search": {
+    "title": "Búsqueda de Literatura Médica",
+    "subtitle": "Busque en PubMed y bases de datos médicas",
+    "search_query": "Consulta de Búsqueda",
+    "max_results": "Resultados Máximos",
+    "filter_by_year": "Filtrar por Año",
+    "recent_articles": "Artículos Recientes"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language_selection": "Selección de Idioma",
+    "select_language": "Seleccione su idioma preferido",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "notifications": "Notificaciones",
+    "enable_sound": "Habilitar Sonido",
+    "enable_notifications": "Habilitar Notificaciones"
+  },
+  "disclaimer": {
+    "title": "Aviso de Uso Educativo",
+    "content": "AI Enfermera Florence es una herramienta educativa diseñada para propósitos de aprendizaje y referencia. Esta aplicación proporciona información y orientación, pero no reemplaza el juicio médico profesional, el diagnóstico o el tratamiento. Siempre consulte con profesionales de la salud calificados para decisiones de atención al paciente. La información proporcionada debe usarse como complemento, no como sustituto, del conocimiento, la experiencia y el juicio de los profesionales de la salud."
+  }
+}

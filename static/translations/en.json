@@ -1,0 +1,123 @@
+{
+  "common": {
+    "app_name": "AI Nurse Florence",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "export": "Export",
+    "share": "Share",
+    "copy": "Copy",
+    "download": "Download",
+    "language": "Language"
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "chat": "Chat",
+    "disease_lookup": "Disease Lookup",
+    "drug_interactions": "Drug Interactions",
+    "sbar_wizard": "SBAR Wizard",
+    "dosage_calculator": "Dosage Calculator",
+    "patient_education": "Patient Education",
+    "literature_search": "Literature Search",
+    "api_docs": "API Documentation"
+  },
+  "chat": {
+    "title": "Clinical Chat Assistant",
+    "subtitle": "Ask clinical questions and get evidence-based guidance",
+    "placeholder": "Type your clinical question here...",
+    "send": "Send",
+    "thinking": "AI Nurse Florence is thinking...",
+    "new_conversation": "New Conversation",
+    "clear_history": "Clear History"
+  },
+  "disease_lookup": {
+    "title": "Disease Information Lookup",
+    "subtitle": "Search for disease information and clinical guidance",
+    "search_placeholder": "Search for a disease or condition...",
+    "no_results": "No disease found",
+    "symptoms": "Symptoms",
+    "description": "Description",
+    "research_articles": "Research Articles",
+    "related_conditions": "Related Conditions",
+    "export_info": "Export Information",
+    "share_info": "Share Information"
+  },
+  "sbar": {
+    "title": "SBAR Wizard",
+    "subtitle": "Professional Clinical Documentation with AI Assistance",
+    "situation": "Situation",
+    "background": "Background",
+    "assessment": "Assessment",
+    "recommendation": "Recommendation",
+    "step": "Step",
+    "of": "of",
+    "next": "Next",
+    "previous": "Previous",
+    "finish": "Finish",
+    "generate_report": "Generate Report",
+    "enhance_with_ai": "Enhance with AI"
+  },
+  "drug_interactions": {
+    "title": "Drug Interaction Checker",
+    "subtitle": "Check for potential drug interactions and safety alerts",
+    "add_medication": "Add Medication",
+    "check_interactions": "Check Interactions",
+    "severity": "Severity",
+    "high": "High",
+    "moderate": "Moderate",
+    "low": "Low",
+    "clinical_recommendation": "Clinical Recommendation",
+    "no_interactions": "No significant interactions found"
+  },
+  "dosage_calculator": {
+    "title": "Dosage Calculator",
+    "subtitle": "Calculate accurate medication dosages",
+    "medication_name": "Medication Name",
+    "patient_weight": "Patient Weight",
+    "dose_ordered": "Dose Ordered",
+    "calculate": "Calculate",
+    "result": "Result",
+    "mg_per_kg": "mg/kg"
+  },
+  "patient_education": {
+    "title": "Patient Education Materials",
+    "subtitle": "Generate patient-friendly educational content",
+    "topic": "Topic",
+    "generate": "Generate",
+    "reading_level": "Reading Level",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "literature_search": {
+    "title": "Medical Literature Search",
+    "subtitle": "Search PubMed and medical databases",
+    "search_query": "Search Query",
+    "max_results": "Maximum Results",
+    "filter_by_year": "Filter by Year",
+    "recent_articles": "Recent Articles"
+  },
+  "settings": {
+    "title": "Settings",
+    "language_selection": "Language Selection",
+    "select_language": "Select your preferred language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "notifications": "Notifications",
+    "enable_sound": "Enable Sound",
+    "enable_notifications": "Enable Notifications"
+  },
+  "disclaimer": {
+    "title": "Educational Use Disclaimer",
+    "content": "AI Nurse Florence is an educational tool designed for learning and reference purposes. This application provides information and guidance but does not replace professional medical judgment, diagnosis, or treatment. Always consult with qualified healthcare professionals for patient care decisions. The information provided should be used as a supplement to, not a substitute for, the knowledge, expertise, and judgment of healthcare practitioners."
+  }
+}
