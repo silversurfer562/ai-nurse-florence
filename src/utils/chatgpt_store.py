@@ -5,7 +5,7 @@ Following OAuth2 + JWT authentication patterns
 
 from typing import Optional, Dict, Any
 from fastapi import HTTPException, status
-from utils.config import get_settings
+from src.utils.config import get_settings
 
 settings = get_settings()
 

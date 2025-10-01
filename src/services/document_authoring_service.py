@@ -4,11 +4,11 @@ Following Service Layer Architecture pattern
 """
 
 from typing import Dict, Any
-from utils.redis_cache import cached
+from src.utils.redis_cache import cached
 
 # Conditional imports following coding instructions
 try:
-    from services.openai_client import get_openai_client
+    from src.services.openai_client import get_openai_client
     _has_openai = True
 except ImportError:
     _has_openai = False

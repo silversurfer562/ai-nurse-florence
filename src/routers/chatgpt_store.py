@@ -5,8 +5,8 @@ Following OAuth2 + JWT authentication patterns
 
 from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPBearer
-from services.chatgpt_store_service import get_chatgpt_store_service, ChatGPTStoreService
-from utils.api_responses import create_success_response, create_error_response
+from src.services.chatgpt_store_service import get_chatgpt_store_service, ChatGPTStoreService
+from src.utils.api_responses import create_success_response, create_error_response
 
 # OAuth2 + JWT authentication following coding instructions
 security = HTTPBearer()

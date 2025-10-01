@@ -4,11 +4,11 @@ Following OAuth2 + JWT authentication patterns
 """
 
 from typing import Dict, Any, Optional
-from utils.config import get_settings
+from src.utils.config import get_settings
 
 # Conditional imports for ChatGPT Store features
 try:
-    from utils.auth import verify_gpt_token
+    from src.utils.auth import verify_gpt_token
     from src.utils.metrics import record_gpt_usage
     _has_gpt_integration = True
 except ImportError:

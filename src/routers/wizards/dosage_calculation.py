@@ -10,11 +10,8 @@ import uuid
 from datetime import datetime
 import math
 
-from utils.api_responses import create_success_response, create_error_response
-from utils.exceptions import ServiceException
-
-# Educational banner for all responses
-EDU_BANNER = "Educational tool for healthcare professionals - Verify all calculations independently"
+from src.utils.api_responses import create_success_response, create_error_response
+from src.utils.exceptions import ServiceException
 
 router = APIRouter(prefix="/wizards/dosage-calculation", tags=["wizards", "dosage-calculation"])
 
@@ -76,7 +73,6 @@ class PediatricDosageStep(BaseModel):
 
 class DosageCalculationResponse(BaseModel):
     """Dosage calculation result"""
-    banner: str = Field(default=EDU_BANNER)
     wizard_id: str
     step: str
     calculation_result: Dict[str, Any]
@@ -106,7 +102,6 @@ def start_dosage_calculation(request: DosageCalculationStart):
         next_steps = get_next_steps_for_type(request.calculation_type)
         
         return create_success_response({
-            "banner": EDU_BANNER,
             "wizard_id": wizard_id,
             "step": "started",
             "calculation_result": {
@@ -145,7 +140,6 @@ def calculate_basic_dosage(wizard_id: str, dosage_data: BasicDosageStep):
         session["current_step"] = "verification"
         
         return create_success_response({
-            "banner": EDU_BANNER,
             "wizard_id": wizard_id,
             "step": "basic_dosage_calculated",
             "calculation_result": result,
@@ -183,7 +177,6 @@ def calculate_weight_based_dosage(wizard_id: str, dosage_data: WeightBasedDosage
         session["current_step"] = "verification"
         
         return create_success_response({
-            "banner": EDU_BANNER,
             "wizard_id": wizard_id,
             "step": "weight_based_calculated",
             "calculation_result": result,
@@ -222,7 +215,6 @@ def calculate_iv_rate(wizard_id: str, rate_data: IVRateStep):
         session["current_step"] = "verification"
         
         return create_success_response({
-            "banner": EDU_BANNER,
             "wizard_id": wizard_id,
             "step": "iv_rate_calculated",
             "calculation_result": result,
@@ -261,13 +253,12 @@ def calculate_pediatric_dosage(wizard_id: str, pediatric_data: PediatricDosageSt
         session["current_step"] = "verification"
         
         return create_success_response({
-            "banner": EDU_BANNER,
             "wizard_id": wizard_id,
             "step": "pediatric_calculated",
             "calculation_result": result,
             "safety_checks": [
                 f"Calculated pediatric dose: {result['calculated_dose']:.2f} {pediatric_data.dose_unit}",
-                "⚠️ CRITICAL: Verify dose is appropriate for age/weight",
+                "CRITICAL: Verify dose is appropriate for age/weight",
                 "Check pediatric dosing references",
                 "Consider maximum safe dose limits",
                 "Have pediatric emergency protocols ready"
@@ -294,19 +285,18 @@ def get_calculation_summary(wizard_id: str):
     session = get_session(wizard_id)
     
     summary = {
-        "banner": EDU_BANNER,
         "wizard_id": wizard_id,
         "calculation_type": session.get("calculation_type"),
         "completed_steps": session.get("completed_steps", []),
         "results": {},
         "final_safety_checklist": [
-            "✓ All calculations double-checked",
-            "✓ Patient identity verified with two identifiers", 
-            "✓ Allergies and contraindications reviewed",
-            "✓ Dose within safe parameters",
-            "✓ Route and timing appropriate",
-            "✓ Equipment prepared and checked",
-            "✓ Monitoring plan in place"
+            "All calculations double-checked",
+            "Patient identity verified with two identifiers",
+            "Allergies and contraindications reviewed",
+            "Dose within safe parameters",
+            "Route and timing appropriate",
+            "Equipment prepared and checked",
+            "Monitoring plan in place"
         ]
     }
     
@@ -473,5 +463,5 @@ def perform_pediatric_calculation(data: PediatricDosageStep) -> Dict[str, Any]:
         "method_used": data.calculation_method,
         "formula_used": formula_used,
         "show_work": show_work,
-        "safety_note": "⚠️ ALWAYS verify pediatric doses with current pediatric references"
+        "safety_note": "ALWAYS verify pediatric doses with current pediatric references"
     }

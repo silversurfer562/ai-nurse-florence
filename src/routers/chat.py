@@ -10,12 +10,12 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from utils.logging import get_logger
-from utils.api_responses import create_success_response, create_error_response
+from src.utils.logging import get_logger
+from src.utils.api_responses import create_success_response, create_error_response
 
 # Conditional imports pattern
 try:
-    from services.openai_client import get_openai_client
+    from src.services.openai_client import get_openai_client
     _has_openai = True
 except ImportError:
     _has_openai = False
@@ -23,7 +23,7 @@ except ImportError:
         return None
 
 try:
-    from services.prompt_enhancement import enhance_prompt
+    from src.services.prompt_enhancement import enhance_prompt
     _has_prompt_enhancement = True
 except ImportError:
     _has_prompt_enhancement = False
@@ -47,19 +47,16 @@ class ChatResponse(BaseModel):
     response: str = Field(description="The AI assistant's response")
     language: str = Field(description="Language of the response")
     timestamp: str = Field(description="Response timestamp")
-    educational_banner: str = Field(default="Educational purposes only — not medical advice. No PHI stored.")
 
 
 @router.post("/chat",
     summary="Clinical Chat",
     description="""
     Chat with AI Nurse Florence for clinical guidance and support.
-    
+
     This endpoint provides clinical decision support through natural language conversation.
     Designed for healthcare professionals seeking evidence-based guidance.
-    
-    **Important**: Educational use only. Always follow institutional protocols.
-    
+
     Example request:
     ```json
     {
@@ -115,9 +112,7 @@ Always include:
 - Clear, actionable guidance
 - Evidence-based recommendations
 - Appropriate safety considerations
-- References to protocols when relevant
-
-Remember: Educational purposes only. Healthcare professionals should always verify information and follow institutional guidelines."""
+- References to protocols when relevant"""
 
                     response = client.chat.completions.create(
                         model="gpt-4o-mini",
@@ -175,7 +170,7 @@ I'd be happy to help with your clinical question. For specific guidance, please 
 - Patient education strategies
 - Clinical decision-making frameworks
 
-**Remember:** This is educational guidance only. Always follow your institution's protocols and consult with physicians for patient-specific decisions."""
+Always follow your institution's protocols and consult with physicians for patient-specific decisions."""
 
         return ChatResponse(
             response=response_text,

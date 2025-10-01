@@ -167,9 +167,6 @@ class AINurseFlorence {
             </div>
             
             <div class="wizard-body">
-                <div class="educational-banner">
-                    ⚠️ ${wizardData.educational_note || wizardData.banner || 'Educational use only - not medical advice. No PHI stored.'}
-                </div>
                 
                 <div class="wizard-info">
                     <div class="info-section">
@@ -324,7 +321,6 @@ class AINurseFlorence {
             resultsPanel.innerHTML = `
                 <div class="search-result">
                     <h3>🔬 Disease Information Results</h3>
-                    <div class="educational-banner">${data.banner || 'Educational use only - not medical advice'}</div>
                     <div class="result-header">
                         <strong>Query:</strong> ${data.query || query}
                     </div>
@@ -366,7 +362,6 @@ class AINurseFlorence {
             resultsPanel.innerHTML = `
                 <div class="search-result">
                     <h3>📚 Literature Search Results</h3>
-                    <div class="educational-banner">${data.banner || 'Educational use only - not medical advice'}</div>
                     <div class="result-header">
                         <strong>Query:</strong> ${data.query || query}
                     </div>

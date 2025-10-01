@@ -1,0 +1,77 @@
+/*
+ * Tooltip Styles for AI Nurse Florence
+ * Shared tooltip component for consistent UX across all pages
+ */
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 280px;
+    background-color: #1f2937;
+    color: #fff;
+    text-align: left;
+    border-radius: 8px;
+    padding: 12px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -140px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Tooltip arrow */
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1f2937 transparent transparent transparent;
+}
+
+/* Show tooltip on hover */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Tooltip variants for different positions */
+.tooltip-top .tooltiptext {
+    bottom: 125%;
+    top: auto;
+}
+
+.tooltip-bottom .tooltiptext {
+    top: 125%;
+    bottom: auto;
+}
+
+.tooltip-bottom .tooltiptext::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent #1f2937 transparent;
+}
+
+/* Tooltip for small text/icons */
+.tooltip-sm .tooltiptext {
+    width: 200px;
+    margin-left: -100px;
+    font-size: 12px;
+}
+
+/* Tooltip for wide content */
+.tooltip-lg .tooltiptext {
+    width: 360px;
+    margin-left: -180px;
+}

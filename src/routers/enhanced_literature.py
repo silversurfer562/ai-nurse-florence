@@ -319,7 +319,6 @@ async def get_supported_specialties(
     }
     
     response = {
-        "banner": "Educational use only - not medical advice",
         "supported_specialties": specialties,
         "total_specialties": len(specialties),
         "requested_by": current_user.get("user_id"),
@@ -364,11 +363,10 @@ async def test_enhanced_literature_service(
         "system_status": system_status,
         "service_features": [
             "Intelligent query processing",
-            "Smart caching with similarity matching", 
+            "Smart caching with similarity matching",
             "Evidence-based result ranking",
             "Medical specialty filtering",
             "Citation analysis and impact scoring",
             "Evidence quality assessment"
-        ],
-        "educational_notice": "Educational use only - not medical advice"
+        ]
     })

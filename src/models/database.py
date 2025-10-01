@@ -237,6 +237,44 @@ class DiseaseCollectionProgress(Base):
     def __repr__(self):
         return f"<DiseaseCollectionProgress(fetched={self.total_fetched}, complete={self.is_complete})>"
 
+class DiseaseAlias(Base):
+    """
+    Maps user-friendly disease names and synonyms to canonical MONDO identifiers.
+    Enables reliable lookups regardless of how users phrase the disease name.
+
+    Examples:
+    - "diabetes type 1" -> MONDO:0005147
+    - "t1dm" -> MONDO:0005147
+    - "juvenile diabetes" -> MONDO:0005147
+    """
+    __tablename__ = "disease_aliases"
+
+    # Primary key
+    id = Column(String, primary_key=True)  # UUID
+
+    # Alias information
+    alias = Column(String(500), nullable=False, index=True)  # User-friendly name (normalized lowercase)
+    alias_display = Column(String(500), nullable=False)  # Original case for display
+
+    # Canonical reference
+    mondo_id = Column(String(100), nullable=False, index=True)  # Points to DiseaseOntology.mondo_id
+    canonical_name = Column(String(500), nullable=False)  # Official disease name for display
+
+    # Alias metadata
+    alias_type = Column(String(50), nullable=False, default="synonym")  # synonym, abbreviation, common_name, related
+    search_weight = Column(Integer, default=1, nullable=False)  # For ranking autocomplete results
+    is_preferred = Column(Boolean, default=False, nullable=False)  # Marks the canonical/preferred term
+
+    # Source tracking
+    source = Column(String(100), nullable=False, default="mondo_api")  # Where the alias came from
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<DiseaseAlias(alias='{self.alias}', mondo_id={self.mondo_id})>"
+
 class Medication(Base):
     """
     Comprehensive medication database for drug interaction checking and autocomplete.

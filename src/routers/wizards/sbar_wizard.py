@@ -17,9 +17,8 @@ from src.utils.api_responses import create_success_response
 from src.utils.exceptions import ServiceException
 from src.utils.config import get_settings
 
-# Educational banner following coding instructions
+# Settings following coding instructions
 settings = get_settings()
-EDU_BANNER = settings.EDUCATIONAL_BANNER
 
 router = APIRouter(
     prefix="/api/v1/wizards/sbar",
@@ -71,7 +70,6 @@ async def start_sbar_wizard():
         response_data = {
             "wizard_session": session_data,
             "current_step": step_data,
-            "banner": EDU_BANNER,
             "progress": {"current": 1, "total": 4, "percentage": 25}
         }
         
@@ -133,10 +131,9 @@ async def submit_wizard_step(
             response_data = {
                 "wizard_session": session,
                 "current_step": next_step_data,
-                "banner": EDU_BANNER,
                 "progress": {
-                    "current": next_step, 
-                    "total": session["total_steps"], 
+                    "current": next_step,
+                    "total": session["total_steps"],
                     "percentage": (next_step / session["total_steps"]) * 100
                 }
             }
@@ -176,7 +173,6 @@ async def get_wizard_status(wizard_id: str):
     return create_success_response(
         data={
             "wizard_session": session,
-            "banner": EDU_BANNER,
             "progress": {
                 "current": session["current_step"],
                 "total": session["total_steps"],
@@ -235,7 +231,6 @@ async def _complete_sbar_wizard(wizard_id: str, session: Dict[str, Any]) -> Dict
             data={
                 "wizard_session": session,
                 "sbar_report": sbar_report,
-                "banner": EDU_BANNER,
                 "message": "SBAR documentation completed successfully"
             },
             message="SBAR wizard completed successfully"
@@ -338,7 +333,6 @@ def _generate_sbar_report(collected_data: Dict[str, Any]) -> Dict[str, Any]:
     report = {
         "report_type": "SBAR",
         "generated_at": datetime.now().isoformat(),
-        "banner": EDU_BANNER,
         "sections": {},
         "metadata": {
             "framework": "SBAR (Situation, Background, Assessment, Recommendation)",

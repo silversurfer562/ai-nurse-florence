@@ -11,7 +11,6 @@ from uuid import uuid4
 from datetime import datetime
 import logging
 
-from ...utils.config import get_educational_banner
 from ...services.openai_client import create_openai_service
 
 logger = logging.getLogger(__name__)
@@ -62,7 +61,6 @@ async def start_patient_education(
     _wizard_sessions[wizard_id] = session_data
 
     return {
-        "banner": get_educational_banner(),
         "wizard_id": wizard_id,
         "wizard_type": "patient_education",
         "current_step": 1,
@@ -89,7 +87,6 @@ async def get_patient_education_status(wizard_id: str):
     session = _wizard_sessions[wizard_id]
 
     return {
-        "banner": get_educational_banner(),
         "wizard_id": wizard_id,
         "wizard_type": session["wizard_type"],
         "current_step": session["current_step"],
@@ -175,7 +172,6 @@ async def submit_patient_education_step(
         next_step_info = None
 
     response = {
-        "banner": get_educational_banner(),
         "wizard_id": wizard_id,
         "step_completed": step_number,
         "current_step": session["current_step"],
@@ -218,7 +214,6 @@ async def get_patient_education_step(wizard_id: str, step_number: int):
     existing_data = session["data"].get(step_mapping.get(step_number, ""), {})
 
     return {
-        "banner": get_educational_banner(),
         "wizard_id": wizard_id,
         "step_number": step_number,
         "existing_data": existing_data,
@@ -240,7 +235,6 @@ async def get_education_materials(wizard_id: str):
     materials = _generate_educational_materials(topic, learning_style)
 
     return {
-        "banner": get_educational_banner(),
         "wizard_id": wizard_id,
         "topic": topic,
         "learning_style": learning_style,
@@ -257,7 +251,6 @@ async def cancel_patient_education(wizard_id: str):
     del _wizard_sessions[wizard_id]
 
     return {
-        "banner": get_educational_banner(),
         "message": "Patient education wizard session cancelled",
         "wizard_id": wizard_id
     }
@@ -449,7 +442,6 @@ Format with clear headings and short paragraphs for easy reading."""
             "reading_level": reading_level,
             "educational_content": ai_response.get("response", ""),
             "learning_style_adapted": learning_style,
-            "disclaimer": "AI-generated educational content for patient use. Review with healthcare provider for personalized medical advice.",
             "ai_model": ai_response.get("model", "gpt-4"),
             "service_status": ai_response.get("service_status", "available"),
             "customization_note": f"Content adapted to {reading_level} reading level and {learning_style} learning style"
@@ -516,7 +508,6 @@ Make questions practical and relevant to daily life."""
             "reading_level": reading_level,
             "quiz_questions": ai_response.get("response", ""),
             "question_count": 5,
-            "disclaimer": "Use teach-back method in addition to quiz for comprehensive assessment",
             "ai_model": ai_response.get("model", "gpt-4")
         }
 

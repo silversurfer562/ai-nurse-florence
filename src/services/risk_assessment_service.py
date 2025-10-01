@@ -4,7 +4,7 @@ Following caching strategy patterns
 """
 
 from typing import Dict, Any
-from utils.redis_cache import cached
+from src.utils.redis_cache import cached
 
 class RiskAssessmentService:
     """

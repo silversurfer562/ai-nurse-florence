@@ -7,13 +7,13 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi import Request
 from typing import Dict, Any
-from utils.config import get_settings
+from src.utils.config import get_settings
 
 # Conditional ChatGPT Store integration following coding instructions pattern
 try:
     # Import module only to detect availability; avoid importing unused symbols
     import importlib.util
-    _has_chatgpt_integration = importlib.util.find_spec("utils.chatgpt_store") is not None
+    _has_chatgpt_integration = importlib.util.find_spec("src.utils.chatgpt_store") is not None
 except Exception:
     _has_chatgpt_integration = False
 

@@ -13,7 +13,6 @@ import re
 import xml.etree.ElementTree as ET
 
 from ..services.disease_service import lookup_disease_info
-from ..utils.config import get_educational_banner
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,6 @@ class RelatedArticle(BaseModel):
     url: str
 
 class DiseaseResponse(BaseModel):
-    banner: str = Field(default_factory=get_educational_banner)
     query: str
     summary: Optional[str] = None
     description: Optional[str] = None
@@ -51,34 +49,45 @@ class DiseaseResponse(BaseModel):
 
 @router.get("/lookup", response_model=DiseaseResponse)
 async def lookup_disease(
-    q: str = Query(..., 
+    q: str = Query(...,
                    description="Disease name or condition to look up",
-                   examples=["hypertension", "diabetes mellitus", "pneumonia"])
+                   examples=["hypertension", "diabetes mellitus", "pneumonia", "t1dm", "heart attack"])
 ):
     """
-    Look up disease information following External Service Integration pattern.
-    
+    Look up disease information using alias mapping for reliable results.
+
+    Supports common abbreviations (T1DM, COPD, MI) and variations.
     Provides evidence-based medical information for healthcare professionals.
-    All responses include educational disclaimers per API Design Standards.
     """
     try:
-        result = await lookup_disease_info(q)
-        
+        # Try alias lookup first for more reliable MONDO ID matching
+        from src.services.disease_alias_service import lookup_disease_by_alias
+
+        alias_result = await lookup_disease_by_alias(q)
+
+        # If we found an alias, use the canonical name for lookup
+        lookup_query = q
+        if alias_result:
+            lookup_query = alias_result.get("canonical_name", q)
+            logger.info(f"Alias match: '{q}' -> '{lookup_query}' (MONDO: {alias_result.get('mondo_id')})")
+
+        result = await lookup_disease_info(lookup_query)
+
         if result.get("needs_clarification"):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail={
                     "message": "Query needs clarification",
-                    "clarification_question": result.get("clarification_question"),
-                    "banner": get_educational_banner()
+                    "clarification_question": result.get("clarification_question")
                 }
             )
-        
+
         return DiseaseResponse(**result)
-        
+
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Disease lookup failed for '{q}': {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Disease lookup failed: {str(e)}"
@@ -87,7 +96,7 @@ async def lookup_disease(
 @router.get(
     "/disease-names",
     summary="Get disease names for autocomplete",
-    description="Returns a list of disease names from MONDO ontology for autocomplete functionality",
+    description="Returns a list of disease names with alias support for better matching",
     response_description="List of disease names"
 )
 async def get_disease_names(
@@ -95,13 +104,33 @@ async def get_disease_names(
     limit: int = Query(50, description="Maximum number of results to return", ge=1, le=200)
 ):
     """
-    Get disease names for autocomplete from MONDO ontology.
+    Get disease names for autocomplete with intelligent alias matching.
 
-    Returns a curated list of diseases and conditions.
-    Optionally filter by query string for autocomplete functionality.
-    Uses smart caching for performance.
+    Supports abbreviations (T1DM, COPD) and variations.
+    Returns canonical disease names for consistent display.
     """
     try:
+        # Try alias-based autocomplete first for better results
+        from src.services.disease_alias_service import get_disease_autocomplete
+
+        if query and len(query) >= 2:
+            alias_suggestions = await get_disease_autocomplete(query, limit)
+
+            if alias_suggestions:
+                return JSONResponse(
+                    content={
+                        "success": True,
+                        "message": f"Retrieved {len(alias_suggestions)} disease names (alias-based)",
+                        "status_code": 200,
+                        "data": {
+                            "diseases": alias_suggestions,
+                            "count": len(alias_suggestions),
+                            "source": "alias_database"
+                        }
+                    }
+                )
+
+        # Fallback to original API-based lookup if no query or no alias results
         # Import smart cache
         from src.utils.smart_cache import SmartCacheManager
         cache_manager = SmartCacheManager()

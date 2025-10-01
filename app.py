@@ -38,6 +38,9 @@ except Exception as e:
 
     settings = FallbackSettings()
 
+# Load and register routers following Router Organization pattern
+ROUTERS_LOADED = {}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -191,9 +194,6 @@ try:
         logger.info(f"Rate limiting enabled: {rate_limit} requests per minute")
 except ImportError:
     logger.warning("Rate limiting middleware not available")
-
-# Load and register routers following Router Organization pattern
-ROUTERS_LOADED = {}
 
 # Add admin router first (from local routers directory)
 try:

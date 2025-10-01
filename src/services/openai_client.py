@@ -5,7 +5,7 @@ Following OpenAI Integration pattern with environment-based API key loading
 
 import logging
 from typing import Optional, Dict, Any
-from src.utils.config import get_settings, get_educational_banner, get_openai_config
+from src.utils.config import get_settings, get_openai_config
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,7 @@ class OpenAIService:
     def __init__(self):
         self.settings = get_settings()
         self.config = get_openai_config()
-        self.banner = get_educational_banner()
-        
+
         # Try to initialize OpenAI client following lazy client pattern
         self._client = None
         self._initialize_client()
@@ -76,13 +75,13 @@ class OpenAIService:
             
             if context:
                 messages.append({
-                    "role": "system", 
-                    "content": f"You are a healthcare AI assistant. Context: {context}. Always include educational disclaimers that this is for educational purposes only and not medical advice."
+                    "role": "system",
+                    "content": f"You are a healthcare AI assistant. Context: {context}."
                 })
             else:
                 messages.append({
                     "role": "system",
-                    "content": "You are a healthcare AI assistant providing educational information only. Always include disclaimers that this is not medical advice."
+                    "content": "You are a healthcare AI assistant providing information."
                 })
             
             messages.append({"role": "user", "content": prompt})
@@ -98,13 +97,11 @@ class OpenAIService:
             ai_response = response.choices[0].message.content
             
             return {
-                "banner": self.banner,
                 "prompt": prompt,
                 "context": context,
                 "response": ai_response,
                 "model": self.config["model"],
                 "service_note": "OpenAI service: Live API response",
-                "disclaimer": "AI-generated content for educational purposes only. Clinical decisions require professional judgment.",
                 "usage": {
                     "prompt_tokens": response.usage.prompt_tokens,
                     "completion_tokens": response.usage.completion_tokens,
@@ -136,23 +133,19 @@ class OpenAIService:
             response = f"Educational AI response: This is a simulated response to '{prompt}' for demonstration purposes. A live system would provide comprehensive, evidence-based healthcare information with appropriate clinical context and safety considerations."
         
         return {
-            "banner": self.banner,
             "prompt": prompt,
             "context": context,
             "response": response,
             "model": self.config["model"],
-            "service_note": service_note,
-            "disclaimer": "AI-generated content for educational purposes only. Clinical decisions require professional judgment.",
-            "educational_note": "This response is generated for learning purposes and should not replace professional medical advice."
+            "service_note": service_note
         }
     
     def _create_error_response(self, prompt: str, error: str) -> Dict[str, Any]:
         """Create standardized error response."""
         return {
-            "banner": self.banner,
             "prompt": prompt,
             "error": f"OpenAI service temporarily unavailable: {error}",
-            "fallback_note": "AI service experiencing issues. Educational content may be limited.",
+            "fallback_note": "AI service experiencing issues. Content may be limited.",
             "service_status": "degraded"
         }
 
@@ -174,10 +167,9 @@ async def clinical_decision_support(
         Dict with clinical recommendations and educational disclaimers
     """
     service = create_openai_service()
-    
+
     if not service:
         return {
-            "banner": get_educational_banner(),
             "clinical_question": clinical_question,
             "error": "Clinical decision support temporarily unavailable",
             "fallback_note": "Please consult clinical protocols and healthcare team for decision support",
@@ -187,18 +179,16 @@ async def clinical_decision_support(
     # Create clinical decision prompt
     clinical_prompt = f"""
     Clinical Decision Support Request:
-    
+
     Clinical Question: {clinical_question}
     Context: {context}
     Patient Data: {patient_data}
-    
+
     Please provide evidence-based clinical guidance including:
     1. Assessment considerations
     2. Recommended interventions
     3. Monitoring parameters
     4. When to escalate care
-    
-    Remember: This is educational support only - clinical decisions require professional judgment.
     """
     
     try:
@@ -211,7 +201,6 @@ async def clinical_decision_support(
         result.update({
             "clinical_question": clinical_question,
             "decision_support_type": context,
-            "clinical_disclaimer": "This AI-generated guidance is for educational purposes only. All clinical decisions must be made by qualified healthcare professionals based on complete patient assessment.",
             "escalation_note": "Escalate to attending physician or specialist for complex cases or when patient condition changes."
         })
         
@@ -219,7 +208,6 @@ async def clinical_decision_support(
         
     except Exception as e:
         return {
-            "banner": get_educational_banner(),
             "clinical_question": clinical_question,
             "error": f"Clinical decision support failed: {str(e)}",
             "fallback_note": "AI decision support temporarily unavailable - rely on clinical protocols",

@@ -49,6 +49,95 @@
             right: 20px;
             z-index: 1000;
         }
+
+        /* Tooltip Styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 280px;
+            background-color: #1f2937;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 13px;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Help Panel Styles */
+        .help-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease-in-out;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        .help-panel.open {
+            right: 0;
+        }
+        .help-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+        }
+        .help-overlay.active {
+            display: block;
+        }
+        .task-guide {
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 8px;
+        }
+        .task-guide h4 {
+            color: #1e3a8a;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .task-guide ol {
+            margin-left: 20px;
+            color: #475569;
+        }
+        .task-guide ol li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -71,6 +160,10 @@
                         <span class="text-sm">Structured Communication</span>
                     </div>
                     <span class="text-blue-200 text-sm" id="statusIndicator">Ready</span>
+                    <button onclick="toggleHelpPanel()" class="flex items-center space-x-2 px-3 py-2 bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="text-sm">Help</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -118,16 +211,31 @@
                     
                     <div class="p-6">
                         <div class="mb-6">
-                            <div class="flex space-x-4">
-                                <button onclick="copySbarReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    <i class="fas fa-copy mr-2"></i>Copy Report
-                                </button>
-                                <button onclick="printSbarReport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                    <i class="fas fa-print mr-2"></i>Print
-                                </button>
-                                <button onclick="saveSbarDraft()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                                    <i class="fas fa-save mr-2"></i>Save Draft
-                                </button>
+                            <div class="flex flex-wrap gap-3">
+                                <div class="tooltip">
+                                    <button onclick="copySbarReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        <i class="fas fa-copy mr-2"></i>Copy to Clipboard
+                                    </button>
+                                    <span class="tooltiptext">Copy report text to paste into EMR or other system</span>
+                                </div>
+                                <div class="tooltip">
+                                    <button onclick="downloadSbarReport()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                        <i class="fas fa-download mr-2"></i>Download as .txt
+                                    </button>
+                                    <span class="tooltiptext">Save report as a text file to your computer</span>
+                                </div>
+                                <div class="tooltip">
+                                    <button onclick="printSbarReport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        <i class="fas fa-print mr-2"></i>Print
+                                    </button>
+                                    <span class="tooltiptext">Print physical copy of SBAR report</span>
+                                </div>
+                                <div class="tooltip">
+                                    <button onclick="saveSbarDraft()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                                        <i class="fas fa-save mr-2"></i>Save to Browser
+                                    </button>
+                                    <span class="tooltiptext">Save to browser storage for later retrieval</span>
+                                </div>
                             </div>
                         </div>
                         
@@ -139,6 +247,143 @@
             </div>
         </div>
     </main>
+
+    <!-- Help Panel Overlay -->
+    <div id="helpOverlay" class="help-overlay" onclick="toggleHelpPanel()"></div>
+
+    <!-- Help Panel -->
+    <div id="helpPanel" class="help-panel">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">SBAR Wizard Help</h2>
+                <button onclick="toggleHelpPanel()" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Quick Start Guide -->
+            <div class="task-guide">
+                <h4><i class="fas fa-rocket mr-2"></i>Quick Start: Creating an SBAR Report</h4>
+                <ol>
+                    <li>Navigate through the 4 steps using the Next button</li>
+                    <li>Fill in required fields (marked with <span class="text-red-500">*</span>)</li>
+                    <li>Use AI features to enhance your documentation</li>
+                    <li>Click "Complete" to generate your SBAR report</li>
+                    <li>Copy, print, or save your report for handoff</li>
+                </ol>
+            </div>
+
+            <!-- AI Features Guide -->
+            <div class="task-guide">
+                <h4><i class="fas fa-magic mr-2 text-purple-600"></i>Using AI Text Enhancement</h4>
+                <ol>
+                    <li>Write your notes in informal language (e.g., "pt has chest pain")</li>
+                    <li>Click the purple "Enhance with AI" button next to the field</li>
+                    <li>Review the AI-generated professional text</li>
+                    <li>Edit as needed - you have full control</li>
+                    <li>The AI learns from SBAR best practices for each section</li>
+                </ol>
+            </div>
+
+            <!-- Medication Safety Guide -->
+            <div class="task-guide">
+                <h4><i class="fas fa-exclamation-triangle mr-2 text-red-600"></i>Checking Drug Interactions</h4>
+                <ol>
+                    <li>Enter current medications in the Background step</li>
+                    <li>Click the red "Check Interactions" button</li>
+                    <li>AI parses medication names from your text</li>
+                    <li>Review top 3 interactions with severity levels</li>
+                    <li>Major interactions are flagged with warnings</li>
+                    <li>Use full Drug Checker for complete analysis</li>
+                </ol>
+            </div>
+
+            <!-- Priority Suggestion Guide -->
+            <div class="task-guide">
+                <h4><i class="fas fa-lightbulb mr-2 text-orange-600"></i>Getting Priority Suggestions</h4>
+                <ol>
+                    <li>Complete vital signs and assessment in Step 3</li>
+                    <li>Click "Suggest Priority" button</li>
+                    <li>AI analyzes vital signs and clinical findings</li>
+                    <li>Review suggested priority (STAT, URGENT, or ROUTINE)</li>
+                    <li>Read the AI's reasoning for the recommendation</li>
+                    <li>Make final decision based on clinical judgment</li>
+                </ol>
+            </div>
+
+            <!-- SBAR Best Practices -->
+            <div class="task-guide">
+                <h4><i class="fas fa-clipboard-check mr-2 text-blue-600"></i>SBAR Best Practices</h4>
+                <ol>
+                    <li><strong>Situation:</strong> Be concise - state the problem in 1-2 sentences</li>
+                    <li><strong>Background:</strong> Include relevant history, not entire chart</li>
+                    <li><strong>Assessment:</strong> Use objective data - vitals, labs, observations</li>
+                    <li><strong>Recommendation:</strong> Be specific about what you need</li>
+                    <li>Use professional, clear language throughout</li>
+                    <li>Include only pertinent information for handoff</li>
+                </ol>
+            </div>
+
+            <!-- Save & Export Options -->
+            <div class="task-guide">
+                <h4><i class="fas fa-file-export mr-2 text-purple-600"></i>Saving and Exporting Your Report</h4>
+                <ol>
+                    <li><strong>Save Draft (Browser):</strong> Saves to browser storage - resume work later on this computer only</li>
+                    <li><strong>Download as .txt:</strong> Downloads plain text file to your computer for permanent storage</li>
+                    <li><strong>Copy to Clipboard:</strong> Copy report text to paste directly into EMR or documentation system</li>
+                    <li><strong>Print:</strong> Opens print dialog for physical hard copy</li>
+                    <li><strong>Auto-save:</strong> Your work is automatically saved to browser every 30 seconds while editing</li>
+                </ol>
+            </div>
+
+            <!-- Keyboard Shortcuts -->
+            <div class="task-guide">
+                <h4><i class="fas fa-keyboard mr-2 text-gray-600"></i>Tips & Tricks</h4>
+                <ol>
+                    <li><strong>Tooltips:</strong> Hover over any button to see what it does</li>
+                    <li><strong>Quick Save:</strong> Use the floating save button (bottom right corner)</li>
+                    <li><strong>Navigation:</strong> Required fields must be filled to proceed to next step</li>
+                    <li><strong>File Format:</strong> Reports are saved as plain text (.txt) for universal compatibility</li>
+                    <li><strong>Privacy:</strong> Draft saves are local to your browser - not sent to server</li>
+                </ol>
+            </div>
+
+            <!-- Tooltip Legend -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-bold text-gray-800 mb-3">Button Legend</h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-1 bg-purple-600 text-white rounded text-xs">
+                            <i class="fas fa-magic"></i>
+                        </span>
+                        <span>Enhance with AI - Convert notes to professional language</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                            <i class="fas fa-lightbulb"></i>
+                        </span>
+                        <span>Suggest Priority - AI recommends urgency level</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-1 bg-red-600 text-white rounded text-xs">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                        <span>Check Interactions - Screen for drug interactions</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Support -->
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 class="font-bold text-blue-900 mb-2">
+                    <i class="fas fa-question-circle mr-2"></i>Need More Help?
+                </h4>
+                <p class="text-sm text-blue-800">
+                    Contact your clinical informatics team or system administrator for additional support and training.
+                </p>
+            </div>
+        </div>
+    </div>
 
     <!-- Include Base Wizard and SBAR Wizard Components -->
     <script>
@@ -183,7 +428,7 @@
             }
 
             render() {
-                this.container.innerHTML = \`
+                this.container.innerHTML = `
                     <div class="wizard-container bg-white rounded-lg shadow-lg">
                         <!-- Wizard Header -->
                         <div class="wizard-header bg-blue-600 text-white p-6 rounded-t-lg">
@@ -195,72 +440,96 @@
                         <div class="wizard-progress bg-gray-50 p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm font-medium text-gray-700">Progress</span>
-                                <span class="text-sm text-gray-500">\${this.currentStep + 1} of \${this.steps.length}</span>
+                                <span class="text-sm text-gray-500">${this.currentStep + 1} of ${this.steps.length}</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
                                 <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                                     style="width: \${((this.currentStep + 1) / this.steps.length) * 100}%"></div>
+                                     style="width: ${((this.currentStep + 1) / this.steps.length) * 100}%"></div>
                             </div>
                             <div class="flex justify-between mt-3">
-                                \${this.steps.map((step, index) => \`
+                                ${this.steps.map((step, index) => `
                                     <div class="flex flex-col items-center">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
-                                            \${index <= this.currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}">
-                                            \${index + 1}
+                                            ${index <= this.currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}">
+                                            ${index + 1}
                                         </div>
-                                        <span class="text-xs text-gray-600 mt-1 text-center">\${step.title}</span>
+                                        <span class="text-xs text-gray-600 mt-1 text-center">${step.title}</span>
                                     </div>
-                                \`).join('')}
+                                `).join('')}
                             </div>
                         </div>
 
                         <!-- Step Content -->
                         <div class="wizard-content p-6">
-                            \${this.renderStepContent()}
+                            ${this.renderStepContent()}
                         </div>
 
                         <!-- Navigation -->
-                        <div class="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex justify-between">
-                            <button id="prev-btn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors
-                                \${this.currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}" 
-                                \${this.currentStep === 0 ? 'disabled' : ''}>
-                                <i class="fas fa-arrow-left mr-2"></i>Previous
-                            </button>
-                            
-                            <div class="flex space-x-2">
-                                <button id="save-draft-btn" class="px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                                    <i class="fas fa-save mr-2"></i>Save Draft
-                                </button>
-                                
-                                <button id="next-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                    \${this.currentStep === this.steps.length - 1 ? 
-                                        '<i class="fas fa-check mr-2"></i>Complete' : 
-                                        'Next<i class="fas fa-arrow-right ml-2"></i>'
-                                    }
-                                </button>
+                        <div class="wizard-navigation bg-gray-50 p-4 rounded-b-lg">
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex space-x-2">
+                                    <div class="tooltip">
+                                        <button type="button" onclick="suggestPriority()"
+                                            class="px-3 py-2 text-sm text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                                            ${this.currentStep !== 2 ? 'style="display:none"' : ''}>
+                                            <i class="fas fa-lightbulb mr-1"></i>Suggest Priority
+                                        </button>
+                                        <span class="tooltiptext">AI analyzes vital signs and assessment to recommend priority level (STAT, URGENT, or ROUTINE) with clinical reasoning.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between">
+                                <div class="tooltip">
+                                    <button id="prev-btn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors
+                                        ${this.currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
+                                        ${this.currentStep === 0 ? 'disabled' : ''}>
+                                        <i class="fas fa-arrow-left mr-2"></i>Previous
+                                    </button>
+                                    <span class="tooltiptext">Return to previous step. Your data is saved automatically.</span>
+                                </div>
+
+                                <div class="flex space-x-2">
+                                    <div class="tooltip">
+                                        <button id="save-draft-btn" class="px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                            <i class="fas fa-save mr-2"></i>Save Draft
+                                        </button>
+                                        <span class="tooltiptext">Save your work to browser storage. Resume later on this computer.</span>
+                                    </div>
+
+                                    <div class="tooltip">
+                                        <button id="next-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                            ${this.currentStep === this.steps.length - 1 ?
+                                                '<i class="fas fa-check mr-2"></i>Complete' :
+                                                'Next<i class="fas fa-arrow-right ml-2"></i>'
+                                            }
+                                        </button>
+                                        <span class="tooltiptext">${this.currentStep === this.steps.length - 1 ? 'Generate your final SBAR report for handoff' : 'Continue to next step. Required fields must be filled.'}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                \`;
+                `;
             }
 
             renderStepContent() {
                 const step = this.steps[this.currentStep];
-                return \`
+                return `
                     <div class="step-content">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">\${step.title}</h3>
-                        <p class="text-gray-600 mb-6">\${step.description}</p>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">${step.title}</h3>
+                        <p class="text-gray-600 mb-6">${step.description}</p>
                         <div class="step-fields space-y-4">
-                            \${this.renderFields(this.currentStep)}
+                            ${this.renderFields(this.currentStep)}
                         </div>
                     </div>
-                \`;
+                `;
             }
 
             renderFields(stepIndex) {
                 switch (stepIndex) {
                     case 0: // Situation
-                        return \`
+                        return `
                             <div class="field-group p-4 rounded-lg">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Patient Name/ID <span class="text-red-500">*</span>
@@ -268,7 +537,7 @@
                                 <input type="text" name="patient_name" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Patient initials or ID (for privacy)"
-                                    value="\${this.data.patient_name || ''}" required>
+                                    value="${this.data.patient_name || ''}" required>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
@@ -278,17 +547,27 @@
                                 <input type="text" name="room_unit" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="e.g., Room 205, ICU Bed 3"
-                                    value="\${this.data.room_unit || ''}" required>
+                                    value="${this.data.room_unit || ''}" required>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Current Situation <span class="text-red-500">*</span>
-                                </label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Current Situation <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="tooltip">
+                                        <button type="button" onclick="enhanceText('situation_description', 'situation')"
+                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
+                                        </button>
+                                        <span class="tooltiptext">Convert informal notes to professional SBAR format. AI will enhance clarity and use proper medical terminology.</span>
+                                    </div>
+                                </div>
                                 <textarea name="situation_description" rows="4"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Briefly describe why you are calling and the current situation..."
-                                    required>\${this.data.situation_description || ''}</textarea>
+                                    required>${this.data.situation_description || ''}</textarea>
+                                <p class="text-xs text-gray-500 mt-1">💡 Tip: Write quick notes, then click "Enhance with AI" to convert to professional language</p>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
@@ -298,23 +577,23 @@
                                 <select name="communication_purpose" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                                     <option value="">Select purpose</option>
-                                    <option value="shift_handoff" \${this.data.communication_purpose === 'shift_handoff' ? 'selected' : ''}>Shift Handoff</option>
-                                    <option value="urgent_concern" \${this.data.communication_purpose === 'urgent_concern' ? 'selected' : ''}>Urgent Patient Concern</option>
-                                    <option value="physician_notification" \${this.data.communication_purpose === 'physician_notification' ? 'selected' : ''}>Physician Notification</option>
-                                    <option value="transfer_report" \${this.data.communication_purpose === 'transfer_report' ? 'selected' : ''}>Transfer Report</option>
+                                    <option value="shift_handoff" ${this.data.communication_purpose === 'shift_handoff' ? 'selected' : ''}>Shift Handoff</option>
+                                    <option value="urgent_concern" ${this.data.communication_purpose === 'urgent_concern' ? 'selected' : ''}>Urgent Patient Concern</option>
+                                    <option value="physician_notification" ${this.data.communication_purpose === 'physician_notification' ? 'selected' : ''}>Physician Notification</option>
+                                    <option value="transfer_report" ${this.data.communication_purpose === 'transfer_report' ? 'selected' : ''}>Transfer Report</option>
                                 </select>
                             </div>
-                        \`;
+                        `;
                     
                     case 1: // Background
-                        return \`
+                        return `
                             <div class="field-group p-4 rounded-lg">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Admission Date <span class="text-red-500">*</span>
                                 </label>
                                 <input type="date" name="admission_date" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    value="\${this.data.admission_date || ''}" required>
+                                    value="${this.data.admission_date || ''}" required>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
@@ -324,31 +603,50 @@
                                 <input type="text" name="primary_diagnosis" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="e.g., Pneumonia, CHF exacerbation"
-                                    value="\${this.data.primary_diagnosis || ''}" required>
+                                    value="${this.data.primary_diagnosis || ''}" required>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Relevant Medical History <span class="text-red-500">*</span>
-                                </label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Relevant Medical History <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="tooltip">
+                                        <button type="button" onclick="enhanceText('relevant_history', 'background')"
+                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
+                                        </button>
+                                        <span class="tooltiptext">Transform brief medical history notes into comprehensive background information with proper clinical documentation.</span>
+                                    </div>
+                                </div>
                                 <textarea name="relevant_history" rows="4"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Include pertinent medical history, allergies, recent procedures..."
-                                    required>\${this.data.relevant_history || ''}</textarea>
+                                    required>${this.data.relevant_history || ''}</textarea>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Current Medications
-                                </label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Current Medications
+                                    </label>
+                                    <div class="tooltip">
+                                        <button type="button" onclick="checkMedicationInteractions()"
+                                            class="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>Check Interactions
+                                        </button>
+                                        <span class="tooltiptext">Screen medications for dangerous drug interactions. AI parses medication names and checks for major/critical interactions.</span>
+                                    </div>
+                                </div>
                                 <textarea name="current_medications" rows="3"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="List current medications and recent changes...">\${this.data.current_medications || ''}</textarea>
+                                    placeholder="List current medications and recent changes...">${this.data.current_medications || ''}</textarea>
+                                <p class="text-xs text-gray-500 mt-1">⚠️ Tip: List all current medications, then click "Check Interactions" for safety screening</p>
                             </div>
-                        \`;
+                        `;
                     
                     case 2: // Assessment
-                        return \`
+                        return `
                             <div class="field-group p-4 rounded-lg">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Current Vital Signs <span class="text-red-500">*</span>
@@ -356,17 +654,26 @@
                                 <textarea name="vital_signs" rows="2"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="BP: ___ HR: ___ RR: ___ Temp: ___ O2 Sat: ___ Pain: ___"
-                                    required>\${this.data.vital_signs || ''}</textarea>
+                                    required>${this.data.vital_signs || ''}</textarea>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Physical Assessment Findings <span class="text-red-500">*</span>
-                                </label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Physical Assessment Findings <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="tooltip">
+                                        <button type="button" onclick="enhanceText('physical_assessment', 'assessment')"
+                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
+                                        </button>
+                                        <span class="tooltiptext">Convert assessment notes into structured clinical findings with proper medical terminology and organization.</span>
+                                    </div>
+                                </div>
                                 <textarea name="physical_assessment" rows="4"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Significant physical assessment findings..."
-                                    required>\${this.data.physical_assessment || ''}</textarea>
+                                    required>${this.data.physical_assessment || ''}</textarea>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
@@ -376,33 +683,52 @@
                                 <select name="mental_status" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                                     <option value="">Select mental status</option>
-                                    <option value="alert_oriented" \${this.data.mental_status === 'alert_oriented' ? 'selected' : ''}>Alert and Oriented x 4</option>
-                                    <option value="alert_confused" \${this.data.mental_status === 'alert_confused' ? 'selected' : ''}>Alert but Confused</option>
-                                    <option value="lethargic" \${this.data.mental_status === 'lethargic' ? 'selected' : ''}>Lethargic</option>
-                                    <option value="sedated" \${this.data.mental_status === 'sedated' ? 'selected' : ''}>Sedated</option>
+                                    <option value="alert_oriented" ${this.data.mental_status === 'alert_oriented' ? 'selected' : ''}>Alert and Oriented x 4</option>
+                                    <option value="alert_confused" ${this.data.mental_status === 'alert_confused' ? 'selected' : ''}>Alert but Confused</option>
+                                    <option value="lethargic" ${this.data.mental_status === 'lethargic' ? 'selected' : ''}>Lethargic</option>
+                                    <option value="sedated" ${this.data.mental_status === 'sedated' ? 'selected' : ''}>Sedated</option>
                                 </select>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Clinical Concerns
-                                </label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Clinical Concerns
+                                    </label>
+                                    <div class="tooltip">
+                                        <button type="button" onclick="enhanceText('clinical_concerns', 'assessment')"
+                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
+                                        </button>
+                                        <span class="tooltiptext">Transform clinical concerns into professional documentation highlighting key issues requiring attention.</span>
+                                    </div>
+                                </div>
                                 <textarea name="clinical_concerns" rows="3"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Any concerning changes or clinical issues...">\${this.data.clinical_concerns || ''}</textarea>
+                                    placeholder="Any concerning changes or clinical issues...">${this.data.clinical_concerns || ''}</textarea>
+                                <p class="text-xs text-gray-500 mt-1">💡 Tip: Write quick notes, then click "Enhance with AI" to convert to professional language</p>
                             </div>
-                        \`;
+                        `;
                     
                     case 3: // Recommendation
-                        return \`
+                        return `
                             <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Immediate Actions Needed <span class="text-red-500">*</span>
-                                </label>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        Immediate Actions Needed <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="tooltip">
+                                        <button type="button" onclick="enhanceText('immediate_needs', 'recommendation')"
+                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
+                                        </button>
+                                        <span class="tooltiptext">Convert action requests into clear, specific recommendations with appropriate clinical urgency and detail.</span>
+                                    </div>
+                                </div>
                                 <textarea name="immediate_needs" rows="3"
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="What needs to be done immediately..."
-                                    required>\${this.data.immediate_needs || ''}</textarea>
+                                    required>${this.data.immediate_needs || ''}</textarea>
                             </div>
                             
                             <div class="field-group p-4 rounded-lg">
@@ -412,17 +738,17 @@
                                 <div class="space-y-2">
                                     <label class="flex items-center">
                                         <input type="radio" name="priority_level" value="routine" 
-                                            class="mr-2 text-blue-600" \${this.data.priority_level === 'routine' ? 'checked' : ''} required>
+                                            class="mr-2 text-blue-600" ${this.data.priority_level === 'routine' ? 'checked' : ''} required>
                                         <span class="text-gray-700">📋 Routine - Can wait for next rounds</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" name="priority_level" value="urgent" 
-                                            class="mr-2 text-yellow-600" \${this.data.priority_level === 'urgent' ? 'checked' : ''} required>
+                                            class="mr-2 text-yellow-600" ${this.data.priority_level === 'urgent' ? 'checked' : ''} required>
                                         <span class="text-gray-700">⚠️ Urgent - Within 1 hour</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" name="priority_level" value="stat" 
-                                            class="mr-2 text-red-600" \${this.data.priority_level === 'stat' ? 'checked' : ''} required>
+                                            class="mr-2 text-red-600" ${this.data.priority_level === 'stat' ? 'checked' : ''} required>
                                         <span class="text-gray-700">🚨 STAT - Immediate attention required</span>
                                     </label>
                                 </div>
@@ -435,12 +761,12 @@
                                 <select name="follow_up_needed" 
                                     class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                     <option value="">Select follow-up requirement</option>
-                                    <option value="yes_callback" \${this.data.follow_up_needed === 'yes_callback' ? 'selected' : ''}>Yes - Please call back with orders</option>
-                                    <option value="yes_visit" \${this.data.follow_up_needed === 'yes_visit' ? 'selected' : ''}>Yes - Please come assess patient</option>
-                                    <option value="no_followup" \${this.data.follow_up_needed === 'no_followup' ? 'selected' : ''}>No follow-up needed</option>
+                                    <option value="yes_callback" ${this.data.follow_up_needed === 'yes_callback' ? 'selected' : ''}>Yes - Please call back with orders</option>
+                                    <option value="yes_visit" ${this.data.follow_up_needed === 'yes_visit' ? 'selected' : ''}>Yes - Please come assess patient</option>
+                                    <option value="no_followup" ${this.data.follow_up_needed === 'no_followup' ? 'selected' : ''}>No follow-up needed</option>
                                 </select>
                             </div>
-                        \`;
+                        `;
                     
                     default:
                         return '';
@@ -728,35 +1054,251 @@
             }
         }
 
+        // AI Enhancement Functions
+        async function enhanceText(fieldName, section) {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (!field || !field.value.trim()) {
+                sbarApp.showToast('Please enter some text first', 'error');
+                return;
+            }
+
+            const originalText = field.value;
+            const button = event.target.closest('button');
+            const originalButtonText = button.innerHTML;
+
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Enhancing...';
+
+            try {
+                const response = await fetch('/api/v1/wizard/sbar-report/ai/enhance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: originalText,
+                        section: section
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.enhanced && data.enhanced !== originalText) {
+                    field.value = data.enhanced;
+                    sbarApp.showToast('Text enhanced successfully!', 'success');
+                } else {
+                    sbarApp.showToast('No enhancement needed', 'info');
+                }
+            } catch (error) {
+                console.error('Enhancement error:', error);
+                sbarApp.showToast('Enhancement failed. Please try again.', 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalButtonText;
+            }
+        }
+
+        async function checkCompleteness() {
+            if (!sbarApp || !sbarApp.wizard) return;
+
+            const data = sbarApp.wizard.data;
+            if (Object.keys(data).length === 0) {
+                sbarApp.showToast('Please fill in some fields first', 'error');
+                return;
+            }
+
+            sbarApp.showToast('Checking completeness...', 'info');
+
+            try {
+                const response = await fetch('/api/v1/wizard/sbar-report/ai/check-completeness', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                alert('Completeness Check:\n\n' + result.completeness_check);
+            } catch (error) {
+                console.error('Completeness check error:', error);
+                sbarApp.showToast('Completeness check failed', 'error');
+            }
+        }
+
+        async function suggestPriority() {
+            if (!sbarApp || !sbarApp.wizard) return;
+
+            const data = sbarApp.wizard.data;
+            if (!data.vital_signs && !data.physical_assessment) {
+                sbarApp.showToast('Please complete the Assessment section first', 'error');
+                return;
+            }
+
+            sbarApp.showToast('Analyzing priority...', 'info');
+
+            try {
+                const response = await fetch('/api/v1/wizard/sbar-report/ai/suggest-priority', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vital_signs: data.vital_signs || '',
+                        physical_assessment: data.physical_assessment || '',
+                        mental_status: data.mental_status || '',
+                        clinical_concerns: data.clinical_concerns || ''
+                    })
+                });
+
+                const result = await response.json();
+
+                const message = `Suggested Priority: ${result.suggested_priority.toUpperCase()}\n\nReasoning:\n${result.reasoning}`;
+
+                if (confirm(message + '\n\nApply this priority?')) {
+                    const priorityRadio = document.querySelector(`input[name="priority_level"][value="${result.suggested_priority}"]`);
+                    if (priorityRadio) {
+                        priorityRadio.checked = true;
+                        sbarApp.wizard.data.priority_level = result.suggested_priority;
+                        sbarApp.showToast('Priority set!', 'success');
+                    }
+                }
+            } catch (error) {
+                console.error('Priority suggestion error:', error);
+                sbarApp.showToast('Priority suggestion failed', 'error');
+            }
+        }
+
+        async function checkMedicationInteractions() {
+            if (!sbarApp || !sbarApp.wizard) return;
+
+            const medField = document.querySelector('[name="current_medications"]');
+            if (!medField || !medField.value.trim()) {
+                sbarApp.showToast('Please enter medications first', 'error');
+                return;
+            }
+
+            const medications = medField.value;
+            const button = event.target.closest('button');
+            const originalButtonText = button.innerHTML;
+
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Checking...';
+
+            try {
+                const response = await fetch('/api/v1/wizard/sbar-report/ai/check-medications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        medications: medications
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    alert('Medication Check Error:\n\n' + result.error);
+                } else if (!result.has_interactions) {
+                    const medsFound = result.medications_found && result.medications_found.length > 0
+                        ? `\n\nMedications found: ${result.medications_found.join(', ')}`
+                        : '';
+                    alert('✅ No Drug Interactions Detected' + medsFound + '\n\n' + (result.message || 'Medications appear safe to use together.'));
+                    sbarApp.showToast('No interactions found', 'success');
+                } else {
+                    let message = '⚠️ DRUG INTERACTIONS DETECTED\n\n';
+                    message += `Medications: ${result.medications_found.join(', ')}\n`;
+                    message += `Total Interactions: ${result.total_interactions}\n\n`;
+
+                    if (result.has_major_interactions) {
+                        message += '🚨 WARNING: MAJOR INTERACTIONS FOUND\n\n';
+                    }
+
+                    if (result.interactions && result.interactions.length > 0) {
+                        message += 'Top Interactions:\n';
+                        result.interactions.forEach((inter, idx) => {
+                            message += `\n${idx + 1}. ${inter.drugs ? inter.drugs.join(' + ') : 'N/A'}\n`;
+                            message += `   Severity: ${inter.severity || 'Unknown'}\n`;
+                            message += `   ${inter.description || inter.effect || 'No details'}\n`;
+                        });
+                    }
+
+                    if (result.full_report_available) {
+                        message += '\n\n💡 More interactions detected. Use Drug Interaction Checker for full report.';
+                    }
+
+                    alert(message);
+                    sbarApp.showToast(result.has_major_interactions ? 'MAJOR interactions found!' : 'Interactions detected', 'error');
+                }
+            } catch (error) {
+                console.error('Medication check error:', error);
+                sbarApp.showToast('Medication check failed', 'error');
+                alert('Error checking medications. Please try again.');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalButtonText;
+            }
+        }
+
         // Global functions for modal interactions
         function closePreviewModal() {
             document.getElementById('sbarPreviewModal').classList.add('hidden');
         }
 
+        function toggleHelpPanel() {
+            const helpPanel = document.getElementById('helpPanel');
+            const helpOverlay = document.getElementById('helpOverlay');
+
+            if (helpPanel.classList.contains('open')) {
+                helpPanel.classList.remove('open');
+                helpOverlay.classList.remove('active');
+            } else {
+                helpPanel.classList.add('open');
+                helpOverlay.classList.add('active');
+            }
+        }
+
         function copySbarReport() {
             const reportContent = document.getElementById('sbarReportContent').textContent;
             navigator.clipboard.writeText(reportContent).then(() => {
-                alert('SBAR report copied to clipboard');
+                alert('✅ SBAR report copied to clipboard!\n\nYou can now paste it into your EMR or documentation system.');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('❌ Failed to copy to clipboard. Please try again.');
             });
+        }
+
+        function downloadSbarReport() {
+            const reportContent = document.getElementById('sbarReportContent').textContent;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `SBAR_Report_${timestamp}.txt`;
+
+            // Create blob and download
+            const blob = new Blob([reportContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            alert(`✅ Report downloaded as: ${filename}\n\nCheck your Downloads folder.`);
         }
 
         function printSbarReport() {
             const reportContent = document.getElementById('sbarReportContent').innerHTML;
             const printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>SBAR Report</title></head><body style="font-family: Courier New, monospace; white-space: pre-wrap;">' + reportContent + '</body></html>');
+            printWindow.document.write('<html><head><title>SBAR Report</title></head><body style="font-family: Courier New, monospace; white-space: pre-wrap; padding: 20px;">' + reportContent + '</body></html>');
             printWindow.document.close();
             printWindow.print();
         }
 
         function saveSbarDraft() {
-            sbarApp.saveDraft();
+            window.sbarApp.saveDraft();
             closePreviewModal();
+            alert('✅ Draft saved to browser storage!\n\nYou can resume your work later on this computer.');
         }
 
         // Initialize the application
-        let sbarApp;
+        window.sbarApp = null;
         document.addEventListener('DOMContentLoaded', () => {
-            sbarApp = new SbarWizardPage();
+            window.sbarApp = new SbarWizardPage();
         });
     </script>
 </body>

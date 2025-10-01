@@ -364,7 +364,7 @@ class DiseaseCacheUpdaterService:
 
     async def update_disease_cache(self):
         """
-        Update the disease cache with fresh MONDO data.
+        Update the disease cache with fresh MONDO data and populate aliases.
         """
         try:
             if not self.cache_manager:
@@ -382,6 +382,15 @@ class DiseaseCacheUpdaterService:
 
             self.last_update = datetime.now()
             logger.info(f"Disease cache updated successfully with {len(disease_list)} diseases at {self.last_update}")
+
+            # Populate disease aliases from the cached data
+            try:
+                from src.services.disease_alias_service import populate_disease_aliases
+                alias_count = await populate_disease_aliases()
+                logger.info(f"✅ Populated {alias_count} disease aliases for improved search")
+            except Exception as alias_error:
+                logger.warning(f"Failed to populate disease aliases: {alias_error}")
+                # Don't fail the entire update if alias population fails
 
         except Exception as e:
             logger.error(f"Error updating disease cache: {e}")
