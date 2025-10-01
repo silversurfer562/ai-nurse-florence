@@ -235,6 +235,26 @@ except Exception as e:
     logger.warning(f"Failed to register drug interactions router: {e}")
     ROUTERS_LOADED["drug_interactions"] = False
 
+# Add patient documents router (PDF generation for patient education)
+try:
+    from routers.patient_documents import router as patient_documents_router
+    api_router.include_router(patient_documents_router)
+    ROUTERS_LOADED["patient_documents"] = True
+    logger.info("Patient documents router registered successfully - PDF generation enabled")
+except Exception as e:
+    logger.warning(f"Failed to register patient documents router: {e}")
+    ROUTERS_LOADED["patient_documents"] = False
+
+# Add user profile router (Personalization and work settings)
+try:
+    from routers.user_profile import router as user_profile_router
+    api_router.include_router(user_profile_router)
+    ROUTERS_LOADED["user_profile"] = True
+    logger.info("User profile router registered successfully - Personalization enabled")
+except Exception as e:
+    logger.warning(f"Failed to register user profile router: {e}")
+    ROUTERS_LOADED["user_profile"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 
