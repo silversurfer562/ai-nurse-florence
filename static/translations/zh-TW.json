@@ -1,0 +1,123 @@
+{
+  "common": {
+    "app_name": "AI護士弗洛倫斯",
+    "loading": "載入中...",
+    "error": "錯誤",
+    "success": "成功",
+    "cancel": "取消",
+    "submit": "提交",
+    "save": "保存",
+    "delete": "刪除",
+    "edit": "編輯",
+    "close": "關閉",
+    "search": "搜尋",
+    "export": "匯出",
+    "share": "分享",
+    "copy": "複製",
+    "download": "下載",
+    "language": "語言"
+  },
+  "navigation": {
+    "home": "首頁",
+    "dashboard": "儀表板",
+    "chat": "聊天",
+    "disease_lookup": "疾病查詢",
+    "drug_interactions": "藥物相互作用",
+    "sbar_wizard": "SBAR嚮導",
+    "dosage_calculator": "劑量計算器",
+    "patient_education": "患者教育",
+    "literature_search": "文獻搜尋",
+    "api_docs": "API文件"
+  },
+  "chat": {
+    "title": "臨床聊天助手",
+    "subtitle": "提出臨床問題並獲得循證指導",
+    "placeholder": "在此輸入您的臨床問題...",
+    "send": "發送",
+    "thinking": "AI護士弗洛倫斯正在思考...",
+    "new_conversation": "新對話",
+    "clear_history": "清除歷史"
+  },
+  "disease_lookup": {
+    "title": "疾病資訊查詢",
+    "subtitle": "搜尋疾病資訊和臨床指導",
+    "search_placeholder": "搜尋疾病或病症...",
+    "no_results": "未找到疾病",
+    "symptoms": "症狀",
+    "description": "描述",
+    "research_articles": "研究文章",
+    "related_conditions": "相關疾病",
+    "export_info": "匯出資訊",
+    "share_info": "分享資訊"
+  },
+  "sbar": {
+    "title": "SBAR嚮導",
+    "subtitle": "帶AI輔助的專業臨床文件",
+    "situation": "情況",
+    "background": "背景",
+    "assessment": "評估",
+    "recommendation": "建議",
+    "step": "步驟",
+    "of": "共",
+    "next": "下一步",
+    "previous": "上一步",
+    "finish": "完成",
+    "generate_report": "生成報告",
+    "enhance_with_ai": "使用AI增強"
+  },
+  "drug_interactions": {
+    "title": "藥物相互作用檢查器",
+    "subtitle": "檢查潛在的藥物相互作用和安全警報",
+    "add_medication": "添加藥物",
+    "check_interactions": "檢查相互作用",
+    "severity": "嚴重程度",
+    "high": "高",
+    "moderate": "中等",
+    "low": "低",
+    "clinical_recommendation": "臨床建議",
+    "no_interactions": "未發現顯著相互作用"
+  },
+  "dosage_calculator": {
+    "title": "劑量計算器",
+    "subtitle": "計算準確的藥物劑量",
+    "medication_name": "藥物名稱",
+    "patient_weight": "患者體重",
+    "dose_ordered": "處方劑量",
+    "calculate": "計算",
+    "result": "結果",
+    "mg_per_kg": "毫克/公斤"
+  },
+  "patient_education": {
+    "title": "患者教育材料",
+    "subtitle": "生成患者友好的教育內容",
+    "topic": "主題",
+    "generate": "生成",
+    "reading_level": "閱讀水平",
+    "beginner": "初學者",
+    "intermediate": "中級",
+    "advanced": "高級"
+  },
+  "literature_search": {
+    "title": "醫學文獻搜尋",
+    "subtitle": "搜尋PubMed和醫學資料庫",
+    "search_query": "搜尋查詢",
+    "max_results": "最大結果數",
+    "filter_by_year": "按年份過濾",
+    "recent_articles": "最近的文章"
+  },
+  "settings": {
+    "title": "設定",
+    "language_selection": "語言選擇",
+    "select_language": "選擇您的首選語言",
+    "theme": "主題",
+    "light": "明亮",
+    "dark": "暗黑",
+    "notifications": "通知",
+    "enable_sound": "啟用聲音",
+    "enable_notifications": "啟用通知"
+  },
+  "disclaimer": {
+    "title": "教育用途免責聲明",
+    "content": "AI護士弗洛倫斯是一種教育工具，旨在用於學習和參考目的。該應用程序提供資訊和指導，但不能替代專業的醫療判斷、診斷或治療。始終諮詢合格的醫療保健專業人員以做出患者護理決策。所提供的資訊應作為醫療從業者的知識、專業知識和判斷的補充，而不是替代品。"
+  }
+}
