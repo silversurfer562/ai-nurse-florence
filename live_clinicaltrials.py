@@ -7,17 +7,18 @@ from typing import Dict, Any, List
 # ClinicalTrials.gov API base URL
 BASE_URL = "https://clinicaltrials.gov/api/v2"
 
-def search_studies(query: str, max_results: int = 10) -> List[Dict[str, Any]]:
+def search_studies(query: str, max_results: int = 10, status: str = None) -> List[Dict[str, Any]]:
     """
     Search ClinicalTrials.gov for studies matching the query.
-    
+
     Args:
         query: Search term for clinical trials
         max_results: Maximum number of results to return
-        
+        status: Optional recruitment status filter (e.g., 'recruiting', 'active', 'completed')
+
     Returns:
         List of clinical trial information dictionaries
-        
+
     Raises:
         requests.RequestException: If API call fails
     """
@@ -44,7 +45,11 @@ def search_studies(query: str, max_results: int = 10) -> List[Dict[str, Any]]:
                 "LocationCountry"
             ]
         }
-        
+
+        # Add status filter if provided
+        if status:
+            params["filter.overallStatus"] = status.upper()
+
         response = requests.get(
             f"{BASE_URL}/studies",
             params=params,
@@ -177,8 +182,19 @@ def get_study_details(nct_id: str) -> Dict[str, Any]:
             "error": "Failed to retrieve trial details"
         }
 
-def search(query: str, max_results: int = 10) -> List[Dict[str, Any]]:
+def search(condition: str = None, query: str = None, status: str = None, max_results: int = 10) -> List[Dict[str, Any]]:
     """
     Alias for search_studies to maintain compatibility with existing services.
+
+    Args:
+        condition: Condition/disease to search for (alias for query)
+        query: Search term for clinical trials
+        status: Optional recruitment status filter
+        max_results: Maximum number of results to return
+
+    Returns:
+        List of clinical trial information dictionaries
     """
-    return search_studies(query, max_results)
+    # Use condition if provided, otherwise use query
+    search_term = condition or query or ""
+    return search_studies(search_term, max_results, status)
