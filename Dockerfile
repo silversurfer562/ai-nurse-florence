@@ -44,4 +44,4 @@ USER florence
 EXPOSE 8000
 
 # Default command: use our startup script that handles PORT properly
-CMD ["/app/start-railway.sh"]
+CMD ["/app/start-railway.sh"]# Force rebuild - Thu Oct  2 18:25:05 EDT 2025
