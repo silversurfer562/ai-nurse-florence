@@ -89,8 +89,14 @@ async def lifespan(app: FastAPI):
 
     # Initialize diagnosis content library (auto-seed if empty)
     try:
-        from src.database import SessionLocal
-        from src.models.content_settings import DiagnosisContentMap
+        from src.database import SessionLocal, engine
+        from src.models.content_settings import Base, DiagnosisContentMap
+
+        # Create all tables if they don't exist
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ Database tables initialized")
+
+        # Check if seeding is needed
         db = SessionLocal()
         count = db.query(DiagnosisContentMap).count()
         db.close()
@@ -99,7 +105,7 @@ async def lifespan(app: FastAPI):
             logger.info("📚 Diagnosis library empty, seeding initial data...")
             from scripts.populate_diagnosis_library import populate_diagnoses
             populate_diagnoses()
-            logger.info("✅ Diagnosis library seeded")
+            logger.info("✅ Diagnosis library seeded with 34 diagnoses")
         else:
             logger.info(f"✅ Diagnosis library ready ({count} diagnoses)")
     except Exception as e:
