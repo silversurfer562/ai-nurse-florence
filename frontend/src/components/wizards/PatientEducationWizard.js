@@ -87,10 +87,9 @@ class PatientEducationWizard extends BaseWizard {
                         },
                         {
                             id: 'follow_up_date',
-                            type: 'text',
-                            label: 'Follow-up Appointment',
-                            placeholder: 'e.g., "2 weeks" or specific date',
-                            help: 'When should the patient return for follow-up?'
+                            type: 'date',
+                            label: 'Follow-up Appointment Date',
+                            help: 'Select the date for the patient\'s follow-up appointment'
                         }
                     ]
                 },
@@ -191,6 +190,11 @@ class PatientEducationWizard extends BaseWizard {
                     searchTimeout = setTimeout(async () => {
                         try {
                             const response = await fetch(\`/api/v1/content-settings/diagnosis/search?q=\${encodeURIComponent(query)}&limit=20\`);
+
+                            if (!response.ok) {
+                                throw new Error(\`HTTP error! status: \${response.status}\`);
+                            }
+
                             const data = await response.json();
 
                             if (Array.isArray(data) && data.length > 0) {
@@ -242,11 +246,13 @@ class PatientEducationWizard extends BaseWizard {
                                 \`;
                             }
                         } catch (error) {
+                            console.error('Diagnosis search error:', error);
                             resultsContainer.innerHTML = \`
                                 <div class="text-center py-8">
                                     <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-3"></i>
                                     <p class="text-red-600">Error searching diagnoses</p>
                                     <p class="text-sm text-gray-500 mt-2">\${error.message}</p>
+                                    <p class="text-xs text-gray-400 mt-1">Check browser console for details</p>
                                 </div>
                             \`;
                         }
