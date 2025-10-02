@@ -255,6 +255,16 @@ except Exception as e:
     logger.warning(f"Failed to register user profile router: {e}")
     ROUTERS_LOADED["user_profile"] = False
 
+# Add content settings router (Settings infrastructure for document creation)
+try:
+    from routers.content_settings import router as content_settings_router
+    api_router.include_router(content_settings_router)
+    ROUTERS_LOADED["content_settings"] = True
+    logger.info("Content settings router registered successfully - Settings infrastructure enabled")
+except Exception as e:
+    logger.warning(f"Failed to register content settings router: {e}")
+    ROUTERS_LOADED["content_settings"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 

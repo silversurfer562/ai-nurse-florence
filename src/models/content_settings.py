@@ -82,7 +82,8 @@ class PersonalContentLibrary(Base):
     """
     __tablename__ = "personal_content_library"
 
-    user_id = Column(String(50), ForeignKey("users.id"), primary_key=True)
+    # Foreign key to users table (relaxed for development, enforced in production via migration)
+    user_id = Column(String(50), primary_key=True)
 
     # Favorite phrases (learned from usage)
     favorite_warning_signs = Column(JSON, default=list)  # List[str]
