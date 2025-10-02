@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
@@ -39,6 +39,7 @@ export default function PatientEducation() {
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisOption | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const debounceRef = useRef<NodeJS.Timeout>();
 
   // Care setting integration
   const { careSetting } = useCareSettings();
@@ -204,24 +205,32 @@ export default function PatientEducation() {
     },
   ];
 
-  const handleDiagnosisSearch = async (query: string) => {
+  const handleDiagnosisSearch = (query: string) => {
     setDiagnosisQuery(query);
     setHighlightedIndex(-1);
 
-    if (query.length >= 3) {
-      try {
-        const response = await fetch(`/api/v1/content-settings/diagnosis/search?q=${encodeURIComponent(query)}&limit=15`);
-        const results = await response.json();
-        setDiagnosisResults(results);
-        setShowDropdown(true);
-      } catch (error) {
-        console.error('Failed to search diagnoses:', error);
-        setDiagnosisResults([]);
-      }
-    } else {
-      setDiagnosisResults([]);
-      setShowDropdown(false);
+    // Clear previous debounce timer
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
     }
+
+    // Debounce with 0ms delay (instant response like IDE autocomplete)
+    debounceRef.current = setTimeout(async () => {
+      if (query.length >= 3) {
+        try {
+          const response = await fetch(`/api/v1/content-settings/diagnosis/search?q=${encodeURIComponent(query)}&limit=15`);
+          const results = await response.json();
+          setDiagnosisResults(results);
+          setShowDropdown(true);
+        } catch (error) {
+          console.error('Failed to search diagnoses:', error);
+          setDiagnosisResults([]);
+        }
+      } else {
+        setDiagnosisResults([]);
+        setShowDropdown(false);
+      }
+    }, 0);
   };
 
   const selectDiagnosis = (diagnosis: DiagnosisOption) => {

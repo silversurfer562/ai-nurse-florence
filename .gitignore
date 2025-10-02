@@ -302,6 +302,14 @@ test-results/
 docs/_build/
 site/
 
+# Markdown documentation files
+*.md
+!README.md
+!CONTRIBUTING.md
+!CODE_OF_CONDUCT.md
+!CHANGELOG.md
+!LICENSE.md
+
 # ================================
 # TEMPORARY FILES
 # ================================
