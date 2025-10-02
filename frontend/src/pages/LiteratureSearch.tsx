@@ -11,6 +11,7 @@ export default function LiteratureSearch() {
   const [query, setQuery] = useState('');
   const [maxResults, setMaxResults] = useState(10);
   const [announceMessage, setAnnounceMessage] = useState('');
+  const [displayCount, setDisplayCount] = useState(3); // Show 3 articles initially
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['literature', query, maxResults],
@@ -22,9 +23,15 @@ export default function LiteratureSearch() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setQuery(searchQuery);
+      setDisplayCount(3); // Reset to 3 articles on new search
       setAnnounceMessage(`Searching for "${searchQuery}"...`);
       refetch();
     }
+  };
+
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + 5); // Show 5 more articles
+    setAnnounceMessage(`Loading 5 more articles...`);
   };
 
   const handleVoiceTranscript = (transcript: string) => {
@@ -114,7 +121,7 @@ export default function LiteratureSearch() {
           </div>
 
           <div className="space-y-4">
-            {data.articles?.map((article: any) => (
+            {data.articles?.slice(0, displayCount).map((article: any) => (
               <div key={article.pmid} className="card">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-bold text-gray-800 flex-1">{article.title}</h3>
@@ -159,6 +166,23 @@ export default function LiteratureSearch() {
               </div>
             ))}
           </div>
+
+          {/* Load More Button */}
+          {data.articles && data.articles.length > displayCount && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleLoadMore}
+                className="btn-secondary px-6 py-3"
+                aria-label={`Load 5 more articles. Currently showing ${displayCount} of ${data.articles.length} articles`}
+              >
+                <i className="fas fa-plus-circle mr-2"></i>
+                Load More (5 more articles)
+                <span className="ml-2 text-sm text-gray-600">
+                  {displayCount} of {data.articles.length}
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Banner */}
           {data.banner && (
