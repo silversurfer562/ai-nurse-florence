@@ -276,6 +276,15 @@ except Exception as e:
     ROUTERS_LOADED["patient_education_documents"] = False
 
 try:
+    from routers.genes import router as genes_router
+    api_router.include_router(genes_router)
+    ROUTERS_LOADED["genes"] = True
+    logger.info("Genes router registered successfully - Gene information and disease-gene associations enabled")
+except Exception as e:
+    logger.warning(f"Failed to register genes router: {e}")
+    ROUTERS_LOADED["genes"] = False
+
+try:
     from src.routers import get_available_routers, get_router_status
 
     # Get available routers following Conditional Imports Pattern

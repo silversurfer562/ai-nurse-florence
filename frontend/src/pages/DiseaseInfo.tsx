@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { diseaseService } from '../services/api';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
+import VoiceDictation from '../components/VoiceDictation';
 
 export default function DiseaseInfo() {
   const { t } = useTranslation();
@@ -39,9 +40,14 @@ export default function DiseaseInfo() {
       <div className="card mb-6">
         <form onSubmit={handleSearch}>
           <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2">
-              {t('diseaseInfo.subtitle')}
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-gray-700 font-medium">
+                {t('diseaseInfo.subtitle')}
+              </label>
+              <VoiceDictation
+                onTranscript={(text) => setSearchQuery(text)}
+              />
+            </div>
             <DiseaseAutocomplete
               value={searchQuery}
               onChange={setSearchQuery}
