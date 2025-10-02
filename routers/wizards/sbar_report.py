@@ -42,6 +42,18 @@ class GenerateSbarResponse(BaseModel):
     wizard_id: str
     sbar_report: str
 
+class DirectSbarInput(BaseModel):
+    patient_id: str = Field(..., description="Patient identifier")
+    situation: str = Field(..., description="The 'Situation' text")
+    background: str = Field(..., description="The 'Background' text")
+    assessment: str = Field(..., description="The 'Assessment' text")
+    recommendation: str = Field(..., description="The 'Recommendation' text")
+    care_setting: str = Field(default="med-surg", description="Care setting context")
+
+class DirectSbarResponse(BaseModel):
+    sbar_report: str
+    care_setting: str
+
 # --- Wizard Endpoints ---
 
 @router.post("/start", response_model=StartSbarResponse, summary="Step 1: Start the SBAR wizard")
@@ -89,11 +101,79 @@ async def add_assessment(step_input: SbarStepInput):
     """Adds the **Assessment** component to the SBAR report."""
     return _update_step(step_input.wizard_id, "assessment", step_input.text, "recommendation")
 
-@router.post("/generate", response_model=GenerateSbarResponse, summary="Step 5: Add Recommendation and Generate Report")
-async def generate_sbar_report(step_input: GenerateSbarInput):
+@router.post("/generate", response_model=DirectSbarResponse, summary="Generate Complete SBAR Report (Direct)")
+async def generate_sbar_report_direct(input_data: DirectSbarInput):
+    """
+    Generate a complete SBAR report directly from all provided components.
+    This is a simplified endpoint that doesn't require wizard session management.
+    """
+    # Validate that all required fields are present
+    if not all([input_data.situation, input_data.background, input_data.assessment, input_data.recommendation]):
+        return create_error_response(
+            "All SBAR components (situation, background, assessment, recommendation) are required.",
+            status.HTTP_400_BAD_REQUEST,
+            "missing_required_fields"
+        )
+
+    # Build context-aware prompt based on care setting
+    care_setting_context = {
+        'icu': 'critical care setting with focus on hemodynamic stability and ventilator management',
+        'emergency': 'emergency department with focus on rapid assessment and triage',
+        'home-health': 'home health setting with focus on patient/caregiver education and safety',
+        'med-surg': 'medical-surgical unit with focus on routine monitoring and care coordination'
+    }.get(input_data.care_setting, 'general clinical setting')
+
+    prompt = f"""
+    Format the following clinical information into a clear, professional SBAR report for a {care_setting_context}.
+
+    Use these exact headings:
+    - SITUATION
+    - BACKGROUND
+    - ASSESSMENT
+    - RECOMMENDATION
+
+    Format the report professionally with proper spacing and organization suitable for clinical handoff.
+    Patient ID: {input_data.patient_id}
+
+    Situation: {input_data.situation}
+
+    Background: {input_data.background}
+
+    Assessment: {input_data.assessment}
+
+    Recommendation: {input_data.recommendation}
+    """
+
+    try:
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": f"You are an expert nursing assistant specializing in clinical communication in a {care_setting_context}. Format SBAR reports clearly and professionally."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3  # Lower temperature for more consistent formatting
+        )
+        sbar_report = response.choices[0].message.content
+        logger.info(f"Successfully generated SBAR report for patient {input_data.patient_id} in {input_data.care_setting} setting")
+
+        return create_success_response({
+            "sbar_report": sbar_report,
+            "care_setting": input_data.care_setting
+        })
+    except Exception as e:
+        logger.error(f"SBAR report generation failed: {e}", exc_info=True)
+        return create_error_response(
+            f"Failed to generate SBAR report from AI model: {str(e)}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "generation_failed"
+        )
+
+@router.post("/generate-wizard", response_model=GenerateSbarResponse, summary="Step 5: Add Recommendation and Generate Report (Wizard)")
+async def generate_sbar_report_wizard(step_input: GenerateSbarInput):
     """
     Adds the final **Recommendation** component and generates the complete,
-    formatted SBAR report using an AI model.
+    formatted SBAR report using an AI model. (Wizard session-based flow)
     """
     wizard_id = step_input.wizard_id
     if wizard_id not in wizard_sessions:
@@ -134,10 +214,10 @@ async def generate_sbar_report(step_input: GenerateSbarInput):
         )
         sbar_report = response.choices[0].message.content
         logger.info(f"Successfully generated SBAR report for session {wizard_id}")
-        
+
         # Clean up the session
         del wizard_sessions[wizard_id]
-        
+
         return create_success_response({
             "wizard_id": wizard_id,
             "sbar_report": sbar_report
