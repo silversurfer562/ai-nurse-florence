@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
+import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
 
 interface WizardData {
   [key: string]: string | number;
@@ -35,11 +36,7 @@ export default function PatientEducation() {
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<WizardData>({});
   const [diagnosisQuery, setDiagnosisQuery] = useState('');
-  const [diagnosisResults, setDiagnosisResults] = useState<DiagnosisOption[]>([]);
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisOption | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const debounceRef = useRef<NodeJS.Timeout>();
 
   // Care setting integration
   const { careSetting } = useCareSettings();
@@ -66,56 +63,23 @@ export default function PatientEducation() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Search for Diagnosis <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
-            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            <input
-              type="text"
-              value={diagnosisQuery}
-              onChange={(e) => handleDiagnosisSearch(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => diagnosisResults.length > 0 && setShowDropdown(true)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Type the disease name (e.g., diabetes, hypertension, asthma)..."
-              autoComplete="off"
-            />
-            {showDropdown && diagnosisResults.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {diagnosisResults.map((result, index) => (
-                  <div
-                    key={result.disease_id}
-                    onClick={() => selectDiagnosis(result)}
-                    className={`px-4 py-2 cursor-pointer ${
-                      index === highlightedIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-medium text-gray-900">{result.disease_name}</div>
-                    <div className="text-xs text-gray-500">{result.category}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {selectedDiagnosis && (
-            <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
-              <div>
-                <div className="font-medium text-blue-900">{selectedDiagnosis.disease_name}</div>
-                <div className="text-xs text-blue-700">{selectedDiagnosis.category}</div>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedDiagnosis(null);
-                  setDiagnosisQuery('');
-                  setData({ ...data, diagnosis_id: '', diagnosis_name: '' });
-                }}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-          )}
+          <DiseaseAutocomplete
+            value={diagnosisQuery}
+            onChange={(value) => {
+              setDiagnosisQuery(value);
+              setData({ ...data, diagnosis_name: value });
+            }}
+            onSelect={(disease) => {
+              setDiagnosisQuery(disease);
+              setSelectedDiagnosis({ disease_id: 0, disease_name: disease, category: '' });
+              setData({ ...data, diagnosis_name: disease });
+            }}
+            placeholder="Type the disease name (e.g., diabetes, hypertension, asthma)..."
+            enableVoice={true}
+          />
           <p className="text-sm text-gray-500 mt-2">
             <i className="fas fa-info-circle mr-1"></i>
-            Start typing the disease name - results refine as you type. Use arrow keys to navigate, Enter to select.
+            Start typing the disease name (minimum 2 characters). Autocomplete suggestions appear instantly.
           </p>
         </div>
       ),
@@ -205,68 +169,6 @@ export default function PatientEducation() {
     },
   ];
 
-  const handleDiagnosisSearch = (query: string) => {
-    setDiagnosisQuery(query);
-    setHighlightedIndex(-1);
-
-    // Clear previous debounce timer
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    // Debounce with 0ms delay (instant response like IDE autocomplete)
-    debounceRef.current = setTimeout(async () => {
-      if (query.length >= 3) {
-        try {
-          const response = await fetch(`/api/v1/content-settings/diagnosis/search?q=${encodeURIComponent(query)}&limit=15`);
-          const results = await response.json();
-          setDiagnosisResults(results);
-          setShowDropdown(true);
-        } catch (error) {
-          console.error('Failed to search diagnoses:', error);
-          setDiagnosisResults([]);
-        }
-      } else {
-        setDiagnosisResults([]);
-        setShowDropdown(false);
-      }
-    }, 0);
-  };
-
-  const selectDiagnosis = (diagnosis: DiagnosisOption) => {
-    setSelectedDiagnosis(diagnosis);
-    setDiagnosisQuery(diagnosis.disease_name);
-    setData({
-      ...data,
-      diagnosis_id: diagnosis.disease_id,
-      diagnosis_name: diagnosis.disease_name,
-    });
-    setShowDropdown(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showDropdown || diagnosisResults.length === 0) return;
-
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setHighlightedIndex((prev) => (prev < diagnosisResults.length - 1 ? prev + 1 : prev));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (highlightedIndex >= 0 && highlightedIndex < diagnosisResults.length) {
-          selectDiagnosis(diagnosisResults[highlightedIndex]);
-        }
-        break;
-      case 'Escape':
-        setShowDropdown(false);
-        break;
-    }
-  };
 
   const updateData = (field: string, value: string) => {
     setData({ ...data, [field]: value });
@@ -277,8 +179,8 @@ export default function PatientEducation() {
 
     // Special validation for diagnosis step
     if (currentStep === 0) {
-      if (!selectedDiagnosis) {
-        alert('Please select a diagnosis');
+      if (!data.diagnosis_name || data.diagnosis_name.toString().trim() === '') {
+        alert('Please select or enter a diagnosis');
         return false;
       }
       return true;
