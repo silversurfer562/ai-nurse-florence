@@ -33,7 +33,19 @@ class PatientEducationWizard extends BaseWizard {
                             options: [
                                 { value: 'en', label: 'English' },
                                 { value: 'es', label: 'Spanish (Español)' },
-                                { value: 'zh', label: 'Chinese (中文)' }
+                                { value: 'zh', label: 'Chinese (中文)' },
+                                { value: 'fr', label: 'French (Français)' },
+                                { value: 'de', label: 'German (Deutsch)' },
+                                { value: 'pt', label: 'Portuguese (Português)' },
+                                { value: 'ar', label: 'Arabic (العربية)' },
+                                { value: 'hi', label: 'Hindi (हिन्दी)' },
+                                { value: 'ru', label: 'Russian (Русский)' },
+                                { value: 'ja', label: 'Japanese (日本語)' },
+                                { value: 'ko', label: 'Korean (한국어)' },
+                                { value: 'vi', label: 'Vietnamese (Tiếng Việt)' },
+                                { value: 'tl', label: 'Tagalog (Filipino)' },
+                                { value: 'it', label: 'Italian (Italiano)' },
+                                { value: 'pl', label: 'Polish (Polski)' }
                             ],
                             help: 'Educational materials will be provided in this language'
                         },
