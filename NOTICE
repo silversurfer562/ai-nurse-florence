@@ -1,0 +1,85 @@
+AI Nurse Florence
+Copyright 2023-2025 DeepStudy AI, LLC
+
+This product includes software developed by DeepStudy AI, LLC.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+================================================================================
+
+PATENT GRANT NOTICE
+
+This software is licensed under Apache License 2.0, which includes an express
+patent license grant in Section 3. Key points:
+
+1. Contributors grant a perpetual, worldwide, royalty-free patent license
+2. Patent license covers claims necessarily infringed by contributions
+3. Patent license terminates if you file patent litigation against the project
+4. Defensive termination clause protects against patent trolls
+
+For full patent grant details, see Section 3 of the LICENSE file.
+
+================================================================================
+
+THIRD-PARTY COMPONENTS AND DATA SOURCES
+
+This application integrates with the following third-party services and data:
+
+NIH/NLM Resources:
+- MyDisease.info API (biothings.io)
+- MyGene.info API (biothings.io)
+- MyChem.info API (biothings.io)
+- PubMed/MEDLINE database
+- MedlinePlus health information
+- ClinicalTrials.gov data
+
+FDA Resources:
+- OpenFDA drug labels
+- Adverse event reporting system (FAERS)
+
+These data sources have their own terms of use and attribution requirements.
+See individual API documentation for details.
+
+================================================================================
+
+ATTRIBUTION REQUIREMENTS
+
+When distributing this software or derivative works, you must:
+
+1. Include a copy of the LICENSE file
+2. Include this NOTICE file
+3. Retain all copyright, patent, and trademark notices
+4. State prominent notices for any modifications
+5. Attribute third-party data sources appropriately
+
+================================================================================
+
+TRADEMARK NOTICE
+
+"AI Nurse Florence" is a trademark of DeepStudy AI, LLC.
+Use of this trademark is subject to separate trademark policy.
+
+The Apache License does not grant permission to use trade names, trademarks,
+service marks, or product names of the Licensor, except as required for
+reasonable and customary use in describing the origin of the Work.
+
+================================================================================
+
+CONTACT INFORMATION
+
+DeepStudy AI, LLC
+Email: patrick.roebuck1955@gmail.com
+GitHub: https://github.com/silversurfer562/ai-nurse-florence
+
+For patent-related inquiries, licensing questions, or collaboration
+opportunities, please contact the above email.

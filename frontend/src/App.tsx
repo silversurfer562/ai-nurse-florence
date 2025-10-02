@@ -16,16 +16,18 @@ import MedicationGuide from './pages/MedicationGuide'
 import IncidentReport from './pages/IncidentReport'
 
 // Public Pages (No Auth Required)
+import LandingPage from './pages/LandingPage'
 import PublicDrugInteractions from './pages/PublicDrugInteractions'
 
 function App() {
   return (
     <Routes>
       {/* Public Routes (No Authentication Required) */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/public/drug-interactions" element={<PublicDrugInteractions />} />
 
       {/* Authenticated Routes */}
-      <Route path="/" element={<Layout />}>
+      <Route path="/app" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="clinical-trials" element={<ClinicalTrials />} />
         <Route path="disease-info" element={<DiseaseInfo />} />
@@ -41,6 +43,10 @@ function App() {
         <Route path="medication-guide" element={<MedicationGuide />} />
         <Route path="incident-report" element={<IncidentReport />} />
       </Route>
+
+      {/* Legacy auth routes - redirect to /app */}
+      <Route path="/login" element={<LandingPage />} />
+      <Route path="/register" element={<LandingPage />} />
     </Routes>
   )
 }
