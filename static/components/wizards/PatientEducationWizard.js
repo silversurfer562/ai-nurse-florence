@@ -116,37 +116,34 @@ class PatientEducationWizard extends BaseWizard {
             <div class="diagnosis-selection">
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Search for Diagnosis <span class="text-red-500">*</span>
+                        Select Diagnosis <span class="text-red-500">*</span>
                     </label>
-                    <input
-                        type="text"
-                        id="diagnosis_search"
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Type to search (e.g., diabetes, hypertension, asthma)..."
-                        autocomplete="off"
-                    >
-                    <p class="text-sm text-gray-500 mt-1">
-                        Search by name, ICD-10 code, or common terms
+                    <div class="relative">
+                        <i class="fas fa-heartbeat absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input
+                            type="text"
+                            id="diagnosis_search"
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Type diagnosis name or ICD-10 code (e.g., diabetes, hypertension)..."
+                            autocomplete="off"
+                        >
+                        <div id="diagnosis_dropdown" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-80 overflow-y-auto"></div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Start typing to see matching diagnoses from the database.
                     </p>
                 </div>
 
-                <div id="diagnosis_results" class="space-y-2 max-h-96 overflow-y-auto">
-                    <!-- Search results will appear here -->
-                    <div class="text-gray-500 text-center py-8">
-                        <i class="fas fa-search text-4xl mb-3"></i>
-                        <p>Start typing to search for a diagnosis</p>
-                    </div>
-                </div>
-
                 <div id="selected_diagnosis" class="mt-4 hidden">
-                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
                         <div class="flex items-center justify-between">
-                            <div>
-                                <p class="font-medium text-green-800" id="selected_diagnosis_name"></p>
-                                <p class="text-sm text-green-600 mt-1" id="selected_diagnosis_codes"></p>
+                            <div class="flex-1">
+                                <p class="font-semibold text-green-900" id="selected_diagnosis_name"></p>
+                                <p class="text-sm text-green-700 mt-1" id="selected_diagnosis_codes"></p>
+                                <p class="text-xs text-green-600 mt-2" id="selected_diagnosis_description"></p>
                             </div>
-                            <button onclick="clearDiagnosisSelection()" class="text-green-600 hover:text-green-800">
-                                <i class="fas fa-times"></i>
+                            <button onclick="clearDiagnosisSelection()" class="text-green-700 hover:text-green-900 ml-4">
+                                <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
                     </div>
@@ -158,12 +155,13 @@ class PatientEducationWizard extends BaseWizard {
             </div>
 
             <script>
-                // Diagnosis search functionality
+                // Diagnosis autocomplete dropdown functionality
                 const diagnosisSearch = document.getElementById('diagnosis_search');
-                const resultsContainer = document.getElementById('diagnosis_results');
+                const dropdown = document.getElementById('diagnosis_dropdown');
                 const selectedDiagnosisDiv = document.getElementById('selected_diagnosis');
 
                 let searchTimeout;
+                let currentDiagnoses = [];
 
                 diagnosisSearch.addEventListener('input', function(e) {
                     const query = e.target.value.trim();
@@ -171,64 +169,48 @@ class PatientEducationWizard extends BaseWizard {
                     clearTimeout(searchTimeout);
 
                     if (query.length < 2) {
-                        resultsContainer.innerHTML = \`
-                            <div class="text-gray-500 text-center py-8">
-                                <i class="fas fa-search text-4xl mb-3"></i>
-                                <p>Start typing to search for a diagnosis</p>
-                            </div>
-                        \`;
+                        dropdown.classList.add('hidden');
                         return;
                     }
 
-                    resultsContainer.innerHTML = \`
-                        <div class="text-center py-4">
-                            <i class="fas fa-spinner fa-spin text-2xl text-blue-500"></i>
-                            <p class="text-gray-600 mt-2">Searching...</p>
-                        </div>
-                    \`;
-
                     searchTimeout = setTimeout(async () => {
                         try {
-                            const response = await fetch(\`/api/v1/content-settings/diagnosis/search?q=\${encodeURIComponent(query)}&limit=20\`);
+                            const response = await fetch(\`/api/v1/content-settings/diagnosis/search?q=\${encodeURIComponent(query)}&limit=15\`);
 
                             if (!response.ok) {
                                 throw new Error(\`HTTP error! status: \${response.status}\`);
                             }
 
                             const data = await response.json();
+                            currentDiagnoses = data;
 
                             if (Array.isArray(data) && data.length > 0) {
-                                resultsContainer.innerHTML = data.map(diagnosis => \`
-                                    <div class="diagnosis-result p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
-                                         onclick="selectDiagnosis('\${diagnosis.id}', '\${diagnosis.diagnosis_display}', '\${diagnosis.icd10_code}', '\${diagnosis.snomed_code || ''}')">
-                                        <div class="flex justify-between items-start">
+                                dropdown.innerHTML = data.map((diagnosis, idx) => \`
+                                    <div class="diagnosis-option px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                         data-index="\${idx}"
+                                         onclick="selectDiagnosisFromDropdown(\${idx})">
+                                        <div class="flex items-start justify-between">
                                             <div class="flex-1">
                                                 <p class="font-medium text-gray-900">\${diagnosis.diagnosis_display}</p>
-                                                <p class="text-sm text-gray-600 mt-1">
-                                                    ICD-10: <span class="font-mono">\${diagnosis.icd10_code}</span>
-                                                    \${diagnosis.snomed_code ? \` | SNOMED: <span class="font-mono">\${diagnosis.snomed_code}</span>\` : ''}
+                                                <p class="text-xs text-gray-600 mt-1">
+                                                    <span class="font-mono bg-gray-100 px-2 py-0.5 rounded">\${diagnosis.icd10_code}</span>
+                                                    \${diagnosis.snomed_code ? \`<span class="font-mono bg-blue-100 px-2 py-0.5 rounded ml-2">\${diagnosis.snomed_code}</span>\` : ''}
                                                 </p>
                                                 \${diagnosis.patient_friendly_description ? \`
-                                                    <p class="text-sm text-gray-500 mt-2 italic">
-                                                        <i class="fas fa-info-circle mr-1"></i>
-                                                        \${diagnosis.patient_friendly_description.substring(0, 120)}...
+                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">
+                                                        \${diagnosis.patient_friendly_description.substring(0, 100)}...
                                                     </p>
                                                 \` : ''}
                                             </div>
-                                            <div class="ml-4">
+                                            <div class="ml-3">
                                                 \${diagnosis.is_billable === false ? \`
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                                                        <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                        Not Billable
-                                                    </span>
-                                                \` : diagnosis.billable_note ? \`
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                                                        <i class="fas fa-exclamation-circle mr-1"></i>
-                                                        Verify
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-red-100 text-red-800">
+                                                        <i class="fas fa-exclamation-triangle text-xs mr-1"></i>
+                                                        Non-billable
                                                     </span>
                                                 \` : \`
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                                        <i class="fas fa-check mr-1"></i>
+                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                                                        <i class="fas fa-check text-xs mr-1"></i>
                                                         Billable
                                                     </span>
                                                 \`}
@@ -236,46 +218,68 @@ class PatientEducationWizard extends BaseWizard {
                                         </div>
                                     </div>
                                 \`).join('');
+                                dropdown.classList.remove('hidden');
                             } else {
-                                resultsContainer.innerHTML = \`
-                                    <div class="text-center py-8">
-                                        <i class="fas fa-search-minus text-4xl text-gray-400 mb-3"></i>
-                                        <p class="text-gray-600">No diagnoses found</p>
-                                        <p class="text-sm text-gray-500 mt-2">Try different search terms or check spelling</p>
+                                dropdown.innerHTML = \`
+                                    <div class="px-4 py-6 text-center text-gray-500">
+                                        <i class="fas fa-search-minus text-2xl mb-2"></i>
+                                        <p class="text-sm">No diagnoses found matching "\${query}"</p>
+                                        <p class="text-xs mt-1">Try different search terms</p>
                                     </div>
                                 \`;
+                                dropdown.classList.remove('hidden');
                             }
                         } catch (error) {
                             console.error('Diagnosis search error:', error);
-                            resultsContainer.innerHTML = \`
-                                <div class="text-center py-8">
-                                    <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-3"></i>
-                                    <p class="text-red-600">Error searching diagnoses</p>
-                                    <p class="text-sm text-gray-500 mt-2">\${error.message}</p>
-                                    <p class="text-xs text-gray-400 mt-1">Check browser console for details</p>
+                            dropdown.innerHTML = \`
+                                <div class="px-4 py-6 text-center text-red-500">
+                                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                                    <p class="text-sm">Error loading diagnoses</p>
+                                    <p class="text-xs mt-1">\${error.message}</p>
                                 </div>
                             \`;
+                            dropdown.classList.remove('hidden');
                         }
                     }, 300);
                 });
 
-                window.selectDiagnosis = function(id, name, icd10, snomed) {
-                    document.getElementById('selected_diagnosis_id').value = id;
-                    document.getElementById('selected_icd10_code').value = icd10;
-                    document.getElementById('selected_snomed_code').value = snomed || '';
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!diagnosisSearch.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
 
-                    document.getElementById('selected_diagnosis_name').textContent = name;
+                // Focus shows dropdown if there are results
+                diagnosisSearch.addEventListener('focus', function() {
+                    if (dropdown.innerHTML && diagnosisSearch.value.length >= 2) {
+                        dropdown.classList.remove('hidden');
+                    }
+                });
+
+                window.selectDiagnosisFromDropdown = function(index) {
+                    const diagnosis = currentDiagnoses[index];
+                    if (!diagnosis) return;
+
+                    document.getElementById('selected_diagnosis_id').value = diagnosis.id;
+                    document.getElementById('selected_icd10_code').value = diagnosis.icd10_code;
+                    document.getElementById('selected_snomed_code').value = diagnosis.snomed_code || '';
+
+                    document.getElementById('selected_diagnosis_name').textContent = diagnosis.diagnosis_display;
                     document.getElementById('selected_diagnosis_codes').textContent =
-                        \`ICD-10: \${icd10}\${snomed ? \` | SNOMED: \${snomed}\` : ''}\`;
+                        \`ICD-10: \${diagnosis.icd10_code}\${diagnosis.snomed_code ? \` | SNOMED: \${diagnosis.snomed_code}\` : ''}\`;
+
+                    const descEl = document.getElementById('selected_diagnosis_description');
+                    if (diagnosis.patient_friendly_description) {
+                        descEl.textContent = diagnosis.patient_friendly_description;
+                        descEl.classList.remove('hidden');
+                    } else {
+                        descEl.classList.add('hidden');
+                    }
 
                     selectedDiagnosisDiv.classList.remove('hidden');
-                    diagnosisSearch.value = '';
-                    resultsContainer.innerHTML = \`
-                        <div class="text-green-600 text-center py-4">
-                            <i class="fas fa-check-circle text-4xl mb-3"></i>
-                            <p>Diagnosis selected!</p>
-                        </div>
-                    \`;
+                    diagnosisSearch.value = diagnosis.diagnosis_display;
+                    dropdown.classList.add('hidden');
                 };
 
                 window.clearDiagnosisSelection = function() {
@@ -284,12 +288,7 @@ class PatientEducationWizard extends BaseWizard {
                     document.getElementById('selected_snomed_code').value = '';
                     selectedDiagnosisDiv.classList.add('hidden');
                     diagnosisSearch.value = '';
-                    resultsContainer.innerHTML = \`
-                        <div class="text-gray-500 text-center py-8">
-                            <i class="fas fa-search text-4xl mb-3"></i>
-                            <p>Start typing to search for a diagnosis</p>
-                        </div>
-                    \`;
+                    dropdown.classList.add('hidden');
                 };
             </script>
         `;
