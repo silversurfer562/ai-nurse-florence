@@ -22,12 +22,20 @@ export default function Dashboard() {
       path: '/drug-interactions',
     },
     {
-      title: 'Medical Glossary',
-      description: 'Searchable medical terms with downloadable dictionaries',
-      action: 'Browse',
-      icon: 'fa-book-medical',
+      title: 'Clinical Trials',
+      description: 'Find relevant clinical trials for patient conditions',
+      action: 'Search',
+      icon: 'fa-flask',
+      color: 'purple',
+      path: '/clinical-trials',
+    },
+    {
+      title: 'Disease Information',
+      description: 'Evidence-based disease information and clinical guidelines',
+      action: 'Learn',
+      icon: 'fa-stethoscope',
       color: 'green',
-      path: '/medical-glossary',
+      path: '/disease-info',
     },
   ];
 
@@ -46,8 +54,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Access Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      {/* Quick Access Cards - 4 Primary Features */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {quickAccessCards.map((card) => (
           <Link
             key={card.path}
