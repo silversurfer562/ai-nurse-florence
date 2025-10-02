@@ -23,6 +23,9 @@ class BaseWizard {
     render() {
         this.container.innerHTML = `
             <div class="wizard-container bg-white rounded-lg shadow-lg">
+                <!-- Care Setting Context Banner (injected by React if present) -->
+                <div id="care-setting-banner-slot" class="care-setting-banner-slot"></div>
+
                 <!-- Wizard Header -->
                 <div class="wizard-header bg-blue-600 text-white p-6 rounded-t-lg">
                     <h2 class="text-2xl font-bold">${this.getTitle()}</h2>

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HelpSystem } from '../components/Help/HelpSystem';
+import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
+import CareSettingContextBanner from '../components/CareSettingContextBanner';
 
 interface WizardData {
   [key: string]: string | number;
@@ -37,6 +39,22 @@ export default function PatientEducation() {
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisOption | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+
+  // Care setting integration
+  const { careSetting } = useCareSettings();
+  const { getTemplateDefaults } = useCareSettingTemplates();
+
+  // Load care setting template defaults when setting changes
+  useEffect(() => {
+    if (careSetting) {
+      const defaults = getTemplateDefaults('patient-education');
+      setData((prev) => ({
+        ...prev,
+        reading_level: defaults.readingLevel || prev.reading_level || 'middle',
+        language: prev.language || 'en',
+      }));
+    }
+  }, [careSetting, getTemplateDefaults]);
 
   const steps: WizardStep[] = [
     {
@@ -288,29 +306,24 @@ export default function PatientEducation() {
 
   const handleComplete = async () => {
     try {
-      // Get file extension based on format
       const format = data.format || 'pdf';
-      const extensions: Record<string, string> = {
-        pdf: 'pdf',
-        docx: 'docx',
-        text: 'txt',
-      };
-      const extension = extensions[format as string] || 'pdf';
 
-      const response = await fetch('/api/v1/patient-education/generate', {
+      const response = await fetch('/api/v1/documents/patient-education', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, format }),
+        body: JSON.stringify({
+          ...data,
+          format,
+          care_setting: careSetting || 'med-surg'
+        }),
       });
 
       if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `patient-education-${data.diagnosis_name}.${extension}`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        const result = await response.json();
+        // Open the PDF URL in a new tab or download it
+        if (result.pdf_url) {
+          window.open(result.pdf_url, '_blank');
+        }
       } else {
         alert('Failed to generate document. Please try again.');
       }
@@ -461,6 +474,9 @@ export default function PatientEducation() {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Patient Education Wizard</h1>
           <p className="text-gray-600">Generate customized patient education materials</p>
         </div>
+
+        {/* Care Setting Context Banner */}
+        {careSetting && <CareSettingContextBanner className="mb-6" />}
 
         {/* Wizard Container */}
         <div className="wizard-container bg-white rounded-lg shadow-lg overflow-visible">

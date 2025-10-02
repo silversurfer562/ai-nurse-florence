@@ -38,6 +38,12 @@ class PatientEducationRequest(BaseModel):
     preferred_language: str = Field(default="en", description="Language code: en, es, zh")
     reading_level: str = Field(default="intermediate", description="basic, intermediate, or advanced")
 
+    # Care setting context (Care Setting Framework)
+    care_setting: Optional[str] = Field(
+        default="med-surg",
+        description="Care setting: icu, med-surg, emergency, outpatient, home-health, skilled-nursing"
+    )
+
     # Diagnosis
     diagnosis_id: str = Field(..., description="Diagnosis ID from content library")
     icd10_code: str = Field(..., description="ICD-10 code")
