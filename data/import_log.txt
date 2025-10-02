@@ -1,0 +1,72 @@
+======================================================================
+CDC ICD-10-CM BULK IMPORT
+======================================================================
+
+📂 Reading file: data/icd10_raw/icd10cm-codes-2025.txt
+
+  ✅ Progress: 500 diseases processed
+  ✅ Progress: 1000 diseases processed
+  ✅ Progress: 1500 diseases processed
+  ✅ Progress: 2000 diseases processed
+  ✅ Progress: 2500 diseases processed
+  ✅ Progress: 3000 diseases processed
+  ✅ Progress: 3500 diseases processed
+  ✅ Progress: 4000 diseases processed
+  ✅ Progress: 4500 diseases processed
+  ✅ Progress: 5000 diseases processed
+  ✅ Progress: 5500 diseases processed
+  ✅ Progress: 6000 diseases processed
+  ✅ Progress: 6500 diseases processed
+  ✅ Progress: 7000 diseases processed
+  ✅ Progress: 7500 diseases processed
+  ✅ Progress: 8000 diseases processed
+  ✅ Progress: 8500 diseases processed
+  ✅ Progress: 9000 diseases processed
+  ✅ Progress: 9500 diseases processed
+  ✅ Progress: 10000 diseases processed
+  ✅ Progress: 10500 diseases processed
+  ✅ Progress: 11000 diseases processed
+  ✅ Progress: 11500 diseases processed
+  ✅ Progress: 12000 diseases processed
+
+======================================================================
+IMPORT COMPLETE
+======================================================================
+  Total codes in CDC file: 74260
+  ✅ Passed filter: 12160
+  ⏭️  Skipped (too specific): 10922
+  📥 Imported: 12153
+  🔄 Updated: 7
+
+📊 By Code Length:
+  • 3 characters: 216
+  • 4 characters: 5395
+  • 5 characters: 6283
+  • 6 characters: 266
+
+📊 By Chapter:
+  • Blood and Immune Disorders: 244
+  • Circulatory System Diseases: 646
+  • Congenital Malformations: 810
+  • Digestive System Diseases: 624
+  • Ear and Mastoid Diseases: 299
+  • Endocrine, Nutritional and Metabolic Diseases: 574
+  • External Causes of Morbidity: 131
+  • Eye and Adnexa Diseases: 381
+  • Factors Influencing Health Status: 467
+  • Genitourinary System Diseases: 617
+  • Infectious and Parasitic Diseases: 1065
+  • Injury, Poisoning and External Causes: 7
+  • Mental and Behavioral Disorders: 551
+  • Musculoskeletal System Diseases: 1321
+  • Neoplasms: 1556
+  • Nervous System Diseases: 540
+  • Perinatal Period Conditions: 452
+  • Pregnancy, Childbirth and Puerperium: 618
+  • Respiratory System Diseases: 325
+  • Skin and Subcutaneous Tissue Diseases: 409
+  • Special Purpose Codes: 3
+  • Symptoms, Signs and Abnormal Findings: 520
+
+📊 Total diseases in reference DB: 12251
+
