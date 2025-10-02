@@ -138,6 +138,7 @@ class DiagnosisContentMap(Base):
     # Educational content for patients
     patient_education_key_points = Column(JSON)  # List[str]
     patient_education_urls = Column(JSON)  # List[str] - MedlinePlus, etc.
+    patient_friendly_description = Column(Text)  # Grade 6-8 reading level explanation
 
     # Clinical metadata
     is_chronic_condition = Column(Boolean, default=False)
