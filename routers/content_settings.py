@@ -403,8 +403,13 @@ async def search_diagnoses(
     Fuzzy search across diagnosis names and aliases.
     Returns up to `limit` results.
     """
-    results = search_diagnosis_by_name(db, q)
-    return results[:limit]
+    try:
+        results = search_diagnosis_by_name(db, q)
+        return results[:limit]
+    except Exception as e:
+        logger.error(f"Diagnosis search failed: {str(e)}")
+        # Return empty list instead of 500 error - graceful degradation
+        return []
 
 
 @router.get("/diagnosis/icd10/{icd10_code}", response_model=DiagnosisSearchResponse)
@@ -456,17 +461,22 @@ async def autocomplete_diagnosis(
 
     Returns minimal data for autocomplete dropdowns.
     """
-    results = search_diagnosis_by_name(db, q)
+    try:
+        results = search_diagnosis_by_name(db, q)
 
-    return [
-        {
-            "id": d.id,
-            "label": f"{d.diagnosis_display} ({d.icd10_code})",
-            "value": d.id,
-            "icd10_code": d.icd10_code
-        }
-        for d in results[:limit]
-    ]
+        return [
+            {
+                "id": d.id,
+                "label": f"{d.diagnosis_display} ({d.icd10_code})",
+                "value": d.id,
+                "icd10_code": d.icd10_code
+            }
+            for d in results[:limit]
+        ]
+    except Exception as e:
+        logger.error(f"Diagnosis autocomplete failed: {str(e)}")
+        # Return empty list instead of 500 error - graceful degradation
+        return []
 
 
 # ============================================================================
