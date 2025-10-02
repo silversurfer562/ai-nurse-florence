@@ -451,6 +451,9 @@ app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 import os
 if os.path.exists("frontend/dist"):
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="react-assets")
+    # Mount translation files
+    if os.path.exists("frontend/dist/locales"):
+        app.mount("/locales", StaticFiles(directory="frontend/dist/locales"), name="locales")
 
 templates = Jinja2Templates(directory="templates")
 
