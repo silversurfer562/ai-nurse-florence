@@ -71,7 +71,7 @@ export default function DiseaseAutocomplete({
     }
   };
 
-  // Debounced input handler (0ms - instant)
+  // Debounced input handler (0ms - instant, but only after 2 characters)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
@@ -79,6 +79,13 @@ export default function DiseaseAutocomplete({
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+    }
+
+    // Only search if 2 or more characters entered
+    if (newValue.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
     }
 
     debounceRef.current = setTimeout(() => {

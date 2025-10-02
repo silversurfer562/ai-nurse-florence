@@ -363,42 +363,74 @@ class DrugInteractionService:
         drug_list = ", ".join(drugs)
         prompt = f"""Analyze the following medications for a nurse's clinical reference: {drug_list}
 
+CRITICAL: You must provide COMPREHENSIVE, DETAILED information for each medication. Do NOT provide minimal or abbreviated information.
+
 Please provide TWO sections:
 
 SECTION 1 - Individual Drug Information:
-For EACH medication in the list, provide:
-1. Drug name (generic and common brand names)
-2. Drug class/category
-3. Primary indication (what it's used for)
-4. Key nursing considerations (monitoring, administration)
-5. Common side effects nurses should watch for
-6. Important contraindications or warnings
+For EACH medication in the list, you MUST provide COMPLETE and DETAILED information:
+1. Drug name (generic and ALL common brand names - minimum 2-3 brands)
+2. Drug class/category (be specific, e.g., "ACE Inhibitor" not just "antihypertensive")
+3. Primary indication (detailed explanation of what it treats, e.g., "Used to treat hypertension, heart failure, and post-MI cardioprotection")
+4. Key nursing considerations (minimum 3-5 items including: monitoring parameters, administration timing, patient education points, baseline assessments)
+5. Common side effects (minimum 4-6 effects that nurses should monitor for, with clinical significance)
+6. Important warnings (minimum 2-4 contraindications, black box warnings, or serious adverse effects)
+
+EXAMPLE of GOOD drug information:
+{{
+  "name": "Aspirin",
+  "brand_names": ["Bayer", "Ecotrin", "Bufferin", "Ascriptin"],
+  "drug_class": "Antiplatelet agent / NSAID",
+  "indication": "Used to prevent blood clots in patients with cardiovascular disease, reduce risk of heart attack and stroke, and provide anti-inflammatory and analgesic effects. Also used for acute coronary syndrome and following stent placement.",
+  "nursing_considerations": [
+    "Monitor for signs of bleeding (bruising, melena, hematemesis, epistaxis)",
+    "Assess platelet count and coagulation studies before long-term therapy",
+    "Administer with food or milk to minimize GI upset",
+    "Hold 7-10 days before surgical procedures (consult surgeon)",
+    "Educate patient to avoid alcohol and NSAIDs while taking aspirin",
+    "Monitor for tinnitus (sign of salicylate toxicity)"
+  ],
+  "common_side_effects": [
+    "Gastrointestinal upset, heartburn, nausea",
+    "Increased bleeding risk and bruising",
+    "Tinnitus (ringing in ears) at higher doses",
+    "Allergic reactions (rare but serious)",
+    "Gastric ulceration with prolonged use"
+  ],
+  "warnings": [
+    "Contraindicated in active bleeding or bleeding disorders",
+    "Use with caution in patients with peptic ulcer disease",
+    "Increased risk of Reye's syndrome in children with viral infections",
+    "May cause bronchospasm in aspirin-sensitive asthmatics",
+    "Risk of serious bleeding when combined with anticoagulants"
+  ]
+}}
 
 SECTION 2 - Drug Interactions:
 For each pair of medications that have clinically significant interactions, provide:
 1. Drug names (drug1 and drug2)
 2. Severity level (minor, moderate, major, or contraindicated)
 3. Mechanism of interaction (pharmacokinetic, pharmacodynamic, pharmaceutical, or unknown)
-4. Description of the interaction
-5. Clinical significance
-6. Specific clinical recommendations (as a list)
+4. Description of the interaction (detailed, clinical explanation)
+5. Clinical significance (what could happen to the patient)
+6. Specific clinical recommendations (minimum 2-3 actionable items)
 7. Evidence level (1A, 1B, 2A, 2B, 3, or expert opinion)
 8. Onset (rapid or delayed)
 9. Documentation quality (excellent, good, fair, or poor)
 
 {"Patient context: " + str(patient_context) if patient_context else ""}
 
-Return the response in JSON format with this structure:
+Return the response in JSON format with this EXACT structure:
 {{
   "drug_information": [
     {{
-      "name": "drug name (generic)",
-      "brand_names": ["brand1", "brand2"],
-      "drug_class": "therapeutic class",
-      "indication": "primary use",
-      "nursing_considerations": ["consideration 1", "consideration 2"],
-      "common_side_effects": ["side effect 1", "side effect 2"],
-      "warnings": ["warning 1", "warning 2"]
+      "name": "generic drug name",
+      "brand_names": ["Brand1", "Brand2", "Brand3"],
+      "drug_class": "Specific therapeutic class",
+      "indication": "Detailed indication with multiple uses",
+      "nursing_considerations": ["Detailed consideration 1", "Detailed consideration 2", "Detailed consideration 3", "Detailed consideration 4", "Detailed consideration 5"],
+      "common_side_effects": ["Effect 1 with detail", "Effect 2 with detail", "Effect 3 with detail", "Effect 4 with detail"],
+      "warnings": ["Warning 1 with clinical context", "Warning 2 with clinical context", "Warning 3 with clinical context"]
     }}
   ],
   "interactions": [
@@ -407,19 +439,21 @@ Return the response in JSON format with this structure:
       "drug2": "drug name",
       "severity": "major|moderate|minor|contraindicated",
       "mechanism": "pharmacokinetic|pharmacodynamic|pharmaceutical|unknown",
-      "description": "detailed description",
-      "clinical_significance": "clinical impact statement",
-      "recommendations": ["recommendation 1", "recommendation 2", ...],
+      "description": "detailed clinical description of the interaction",
+      "clinical_significance": "detailed clinical impact statement",
+      "recommendations": ["Specific recommendation 1", "Specific recommendation 2", "Specific recommendation 3"],
       "evidence_level": "1A|1B|2A|2B|3|expert opinion",
       "onset": "rapid|delayed",
       "documentation": "excellent|good|fair|poor"
     }}
   ],
-  "clinical_alerts": ["alert 1", "alert 2", ...]
+  "clinical_alerts": ["Detailed alert 1", "Detailed alert 2"]
 }}
 
-If there are no significant interactions, return an empty interactions array but ALWAYS include drug_information for all medications.
-Do NOT include a summary field - all important information should be in the interactions and clinical_alerts arrays."""
+If there are no significant interactions, return an empty interactions array but ALWAYS include COMPLETE drug_information for ALL medications with detailed information as shown in the example above.
+Do NOT include a summary field - all important information should be in the interactions and clinical_alerts arrays.
+
+REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated responses. Nurses need complete clinical information to provide safe patient care."""
 
         # Call OpenAI
         try:
