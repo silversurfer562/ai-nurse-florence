@@ -231,11 +231,11 @@
                 drugSearch.addEventListener('input', (e) => {
                     clearTimeout(this.debounceTimer);
                     const query = e.target.value.trim();
-                    
-                    if (query.length >= 2) {
+
+                    if (query.length >= 3) {
                         this.debounceTimer = setTimeout(() => {
                             this.showDrugAutocomplete(query);
-                        }, 300);
+                        }, 0);
                         addDrugButton.disabled = false;
                     } else {
                         this.hideDrugAutocomplete();

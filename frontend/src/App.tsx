@@ -5,6 +5,8 @@ import ClinicalTrials from './pages/ClinicalTrials'
 import DiseaseInfo from './pages/DiseaseInfo'
 import LiteratureSearch from './pages/LiteratureSearch'
 import DrugInteractions from './pages/DrugInteractions'
+import PatientEducation from './pages/PatientEducation'
+import MedicalGlossary from './pages/MedicalGlossary'
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
         <Route path="disease-info" element={<DiseaseInfo />} />
         <Route path="literature" element={<LiteratureSearch />} />
         <Route path="drug-interactions" element={<DrugInteractions />} />
+        <Route path="patient-education" element={<PatientEducation />} />
+        <Route path="medical-glossary" element={<MedicalGlossary />} />
       </Route>
     </Routes>
   )

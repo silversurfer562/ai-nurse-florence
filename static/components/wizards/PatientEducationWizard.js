@@ -127,14 +127,14 @@ class PatientEducationWizard extends BaseWizard {
                             type="text"
                             id="diagnosis_search"
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="Type diagnosis name or ICD-10 code (e.g., diabetes, hypertension)..."
+                            placeholder="Type the disease name (e.g., diabetes, hypertension, asthma)..."
                             autocomplete="off"
                         >
                         <div id="diagnosis_dropdown" class="absolute z-20 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-80 overflow-y-auto"></div>
                     </div>
                     <p class="text-sm text-gray-500 mt-2">
-                        <i class="fas fa-keyboard mr-1"></i>
-                        Use arrow keys to navigate, Enter to select, Escape to close.
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Start typing the disease name - results refine as you type. Use arrow keys to navigate, Enter to select.
                     </p>
                 </div>
 
@@ -176,8 +176,8 @@ class PatientEducationWizard extends BaseWizard {
 
         // Get settings from global config (if available) or use defaults
         const settings = window.autocompleteSettings || {};
-        const debounceMs = settings.debounceMs || 300;
-        const minQueryLength = settings.minQueryLength || 2;
+        const debounceMs = settings.debounceMs !== undefined ? settings.debounceMs : 0;
+        const minQueryLength = settings.minQueryLength || 3;
         const maxResults = settings.maxResults || 15;
 
         // Create autocomplete instance
@@ -412,7 +412,7 @@ class PatientEducationWizard extends BaseWizard {
                     const diagnosisId = '${data.diagnosis_id || ''}';
                     if (diagnosisId) {
                         try {
-                            const response = await fetch(\`/api/diagnosis/\${diagnosisId}\`);
+                            const response = await fetch(\`/api/v1/content-settings/diagnosis/\${diagnosisId}\`);
                             const diagnosis = await response.json();
 
                             document.getElementById('review_diagnosis_name').textContent = diagnosis.diagnosis_display;

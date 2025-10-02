@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { diseaseService } from '../services/api';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
 
 export default function DiseaseInfo() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [disease, setDisease] = useState('');
   const queryClient = useQueryClient();
@@ -31,19 +33,19 @@ export default function DiseaseInfo() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Disease Information Lookup</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">{t('diseaseInfo.title')}</h1>
 
       {/* Search Form */}
       <div className="card mb-6">
         <form onSubmit={handleSearch}>
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">
-              Search for Disease or Condition
+              {t('diseaseInfo.subtitle')}
             </label>
             <DiseaseAutocomplete
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="e.g., diabetes, hypertension, asthma (start typing...)"
+              placeholder={t('diseaseInfo.searchPlaceholder')}
               className="w-full"
             />
           </div>
@@ -52,12 +54,12 @@ export default function DiseaseInfo() {
             {isLoading ? (
               <>
                 <i className="fas fa-spinner fa-spin mr-2"></i>
-                Searching...
+                {t('diseaseInfo.searchButton')}...
               </>
             ) : (
               <>
                 <i className="fas fa-search mr-2"></i>
-                Lookup Disease
+                {t('diseaseInfo.searchButton')}
               </>
             )}
           </button>

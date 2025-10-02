@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { literatureService } from '../services/api';
+import VoiceDictation from '../components/VoiceDictation';
+import { LiveRegion } from '../components/ScreenReaderOnly';
 
 export default function LiteratureSearch() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [query, setQuery] = useState('');
   const [maxResults, setMaxResults] = useState(10);
+  const [announceMessage, setAnnounceMessage] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['literature', query, maxResults],
@@ -17,29 +22,49 @@ export default function LiteratureSearch() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setQuery(searchQuery);
+      setAnnounceMessage(`Searching for "${searchQuery}"...`);
       refetch();
     }
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    setSearchQuery(prev => prev + ' ' + transcript);
+  };
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Medical Literature Search</h1>
+      {/* Live Region for Screen Reader Announcements */}
+      <LiveRegion>{announceMessage}</LiveRegion>
+
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">{t('literatureSearch.title')}</h1>
 
       {/* Search Form */}
-      <div className="card mb-6">
+      <div className="card mb-6" role="search" aria-label="Literature search">
         <form onSubmit={handleSearch}>
           <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-2">
-              Search PubMed Literature
+            <label htmlFor="literature-search" className="block text-gray-700 font-medium mb-2">
+              <i className="fas fa-search mr-2" aria-hidden="true"></i>
+              {t('literatureSearch.subtitle')}
             </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="e.g., diabetes treatment, hypertension guidelines"
-              className="input-field w-full"
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                id="literature-search"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('literatureSearch.searchPlaceholder')}
+                className="input-field flex-1"
+                aria-describedby="search-hint"
+                required
+              />
+              <VoiceDictation
+                onTranscript={handleVoiceTranscript}
+                placeholder="Use voice to search literature"
+              />
+            </div>
+            <p id="search-hint" className="text-sm text-gray-500 mt-1">
+              Type to search or use microphone for voice input
+            </p>
           </div>
 
           <div className="mb-4">
@@ -60,12 +85,12 @@ export default function LiteratureSearch() {
             {isLoading ? (
               <>
                 <i className="fas fa-spinner fa-spin mr-2"></i>
-                Searching...
+                {t('literatureSearch.searchButton')}...
               </>
             ) : (
               <>
                 <i className="fas fa-search mr-2"></i>
-                Search Literature
+                {t('literatureSearch.searchButton')}
               </>
             )}
           </button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
+import VoiceDictation from './VoiceDictation';
 
 interface DrugAutocompleteProps {
   value: string;
@@ -7,6 +8,7 @@ interface DrugAutocompleteProps {
   onSelect?: (drug: string) => void;
   placeholder?: string;
   className?: string;
+  enableVoice?: boolean;
 }
 
 export default function DrugAutocomplete({
@@ -14,7 +16,8 @@ export default function DrugAutocomplete({
   onChange,
   onSelect,
   placeholder = 'Enter medication name...',
-  className = ''
+  className = '',
+  enableVoice = true
 }: DrugAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -122,6 +125,12 @@ export default function DrugAutocomplete({
     }
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    const newValue = value + ' ' + transcript;
+    onChange(newValue);
+    fetchSuggestions(newValue);
+  };
+
   return (
     <div ref={wrapperRef} className="relative">
       {networkWarning && (
@@ -131,21 +140,30 @@ export default function DrugAutocomplete({
         </div>
       )}
 
-      <div className="relative">
-        <input
-          type="text"
-          value={value}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => value.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder}
-          className={`form-input ${className}`}
-          autoComplete="off"
-        />
-        {isLoading && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <i className="fas fa-spinner fa-spin text-gray-400"></i>
-          </div>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={value}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => value.length >= 2 && suggestions.length > 0 && setShowSuggestions(true)}
+            placeholder={placeholder}
+            className={`form-input ${className}`}
+            autoComplete="off"
+          />
+          {isLoading && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <i className="fas fa-spinner fa-spin text-gray-400"></i>
+            </div>
+          )}
+        </div>
+        {enableVoice && (
+          <VoiceDictation
+            onTranscript={handleVoiceTranscript}
+            medicalTerms={suggestions}
+            placeholder="Use voice to search medications"
+          />
         )}
       </div>
 

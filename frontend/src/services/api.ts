@@ -12,10 +12,12 @@ export const api = axios.create({
 
 // API Service Functions
 export const clinicalTrialsService = {
-  search: async (condition: string, maxStudies: number = 10) => {
-    const response = await api.get('/api/v1/clinical-trials/search', {
-      params: { condition, max_studies: maxStudies },
-    });
+  search: async (condition: string, maxStudies: number = 10, status?: string) => {
+    const params: any = { condition, max_studies: maxStudies };
+    if (status) {
+      params.status = status;
+    }
+    const response = await api.get('/api/v1/clinical-trials/search', { params });
     return response.data;
   },
 };

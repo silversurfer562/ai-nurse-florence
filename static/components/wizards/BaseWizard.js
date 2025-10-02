@@ -42,10 +42,16 @@ class BaseWizard {
                     <div class="flex justify-between mt-2">
                         ${this.steps.map((step, index) => `
                             <div class="flex flex-col items-center">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
-                                    ${index <= this.currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}">
+                                <button type="button"
+                                    onclick="window.wizardInstance.goToStep(${index})"
+                                    class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all
+                                    ${index <= this.currentStep
+                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        : 'bg-gray-300 text-gray-600 hover:bg-gray-400'}
+                                    ${index === this.currentStep ? 'ring-2 ring-blue-400 ring-offset-2' : ''}"
+                                    title="Go to step ${index + 1}: ${step.title}">
                                     ${index + 1}
-                                </div>
+                                </button>
                                 <span class="text-xs text-gray-600 mt-1">${step.title}</span>
                             </div>
                         `).join('')}
@@ -225,12 +231,48 @@ class BaseWizard {
 
     previousStep() {
         if (this.currentStep > 0) {
+            // Don't validate when going backwards
             this.collectStepData();
             this.currentStep--;
             this.render();
             this.attachEventListeners();
             this.onStepChange(this.currentStep, this.data);
+
+            // Restore any previously entered data to the form
+            this.restoreFormData();
         }
+    }
+
+    goToStep(stepIndex) {
+        // Allow jumping to any step
+        if (stepIndex >= 0 && stepIndex < this.steps.length) {
+            this.collectStepData();
+            this.currentStep = stepIndex;
+            this.render();
+            this.attachEventListeners();
+            this.onStepChange(this.currentStep, this.data);
+            this.restoreFormData();
+        }
+    }
+
+    restoreFormData() {
+        // Restore form values from this.data when navigating back
+        const stepContainer = this.container.querySelector('#step-content');
+        if (!stepContainer) return;
+
+        Object.keys(this.data).forEach(key => {
+            const field = stepContainer.querySelector(`[name="${key}"]`);
+            if (field && this.data[key]) {
+                if (field.type === 'checkbox') {
+                    field.checked = this.data[key] === 'true' || this.data[key] === true;
+                } else if (field.type === 'radio') {
+                    const radio = stepContainer.querySelector(`[name="${key}"][value="${this.data[key]}"]`);
+                    if (radio) radio.checked = true;
+                } else {
+                    field.value = this.data[key];
+                }
+            }
+        });
     }
 
     validateCurrentStep() {

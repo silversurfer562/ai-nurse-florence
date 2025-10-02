@@ -1,0 +1,158 @@
+<!-- Developer Settings Panel for Autocomplete Testing -->
+<!-- Saved from: frontend/src/pages/patient-education-wizard.html -->
+<!-- Date: 2025-10-02 -->
+<!--
+  This panel provides real-time autocomplete testing controls.
+  To use: Copy this HTML and the accompanying JavaScript into any page that uses AutocompleteDropdown.
+-->
+
+<!-- Developer Settings (collapsible) -->
+<div class="wizard-container mb-4">
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <button onclick="toggleDevSettings()" class="w-full px-6 py-3 text-left text-white hover:bg-gray-700 transition-colors flex items-center justify-between">
+            <span>
+                <i class="fas fa-cog mr-2"></i>
+                <span class="font-semibold">Developer Settings</span>
+                <span class="text-gray-400 text-sm ml-2">(Experimental)</span>
+            </span>
+            <i class="fas fa-chevron-down" id="dev-settings-icon"></i>
+        </button>
+        <div id="dev-settings-panel" class="hidden bg-gray-900 px-6 py-4 border-t border-gray-700">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-white text-sm font-medium mb-2">
+                        <i class="fas fa-clock mr-2"></i>
+                        Autocomplete Debounce Delay (ms)
+                    </label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="debounce-slider" min="0" max="1000" step="50" value="0"
+                            class="flex-1" oninput="updateDebounceValue(this.value)">
+                        <input type="number" id="debounce-value" min="0" max="2000" step="50" value="0"
+                            class="w-24 px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg"
+                            oninput="updateDebounceSlider(this.value)">
+                        <span class="text-gray-400 text-sm">ms</span>
+                    </div>
+                    <p class="text-gray-400 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Delay before search triggers. Lower = faster response, higher = fewer API calls.
+                        <br>
+                        <strong>Recommended:</strong> 0ms (instant) for best UX. <strong>Testing:</strong> Try 200ms vs 500ms vs 1000ms.
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-white text-sm font-medium mb-2">
+                        <i class="fas fa-list mr-2"></i>
+                        Minimum Query Length
+                    </label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="min-query-slider" min="1" max="5" step="1" value="3"
+                            class="flex-1" oninput="updateMinQueryValue(this.value)">
+                        <input type="number" id="min-query-value" min="1" max="10" step="1" value="3"
+                            class="w-24 px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg"
+                            oninput="updateMinQuerySlider(this.value)">
+                        <span class="text-gray-400 text-sm">chars</span>
+                    </div>
+                    <p class="text-gray-400 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Minimum characters before search starts. Lower = more suggestions, higher = more precise.
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-white text-sm font-medium mb-2">
+                        <i class="fas fa-hashtag mr-2"></i>
+                        Max Results
+                    </label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="max-results-slider" min="5" max="30" step="5" value="15"
+                            class="flex-1" oninput="updateMaxResultsValue(this.value)">
+                        <input type="number" id="max-results-value" min="5" max="50" step="5" value="15"
+                            class="w-24 px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg"
+                            oninput="updateMaxResultsSlider(this.value)">
+                        <span class="text-gray-400 text-sm">items</span>
+                    </div>
+                    <p class="text-gray-400 text-xs mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Maximum number of dropdown results. More = scrolling required, fewer = might miss items.
+                    </p>
+                </div>
+
+                <div class="pt-3 border-t border-gray-700">
+                    <button onclick="resetDevSettings()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors">
+                        <i class="fas fa-undo mr-2"></i>Reset to Defaults
+                    </button>
+                    <span class="text-gray-400 text-xs ml-3">Changes apply immediately to autocomplete dropdowns</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Developer Settings JavaScript -->
+<script>
+    // Global autocomplete settings
+    window.autocompleteSettings = {
+        debounceMs: 0,
+        minQueryLength: 3,
+        maxResults: 15
+    };
+
+    function toggleDevSettings() {
+        const panel = document.getElementById('dev-settings-panel');
+        const icon = document.getElementById('dev-settings-icon');
+        panel.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+    }
+
+    function updateDebounceValue(value) {
+        document.getElementById('debounce-value').value = value;
+        document.getElementById('debounce-slider').value = value;
+        window.autocompleteSettings.debounceMs = parseInt(value);
+        console.log(`Debounce updated to ${value}ms`);
+    }
+
+    function updateDebounceSlider(value) {
+        document.getElementById('debounce-slider').value = value;
+        document.getElementById('debounce-value').value = value;
+        window.autocompleteSettings.debounceMs = parseInt(value);
+        console.log(`Debounce updated to ${value}ms`);
+    }
+
+    function updateMinQueryValue(value) {
+        document.getElementById('min-query-value').value = value;
+        document.getElementById('min-query-slider').value = value;
+        window.autocompleteSettings.minQueryLength = parseInt(value);
+        console.log(`Min query length updated to ${value} characters`);
+    }
+
+    function updateMinQuerySlider(value) {
+        document.getElementById('min-query-slider').value = value;
+        document.getElementById('min-query-value').value = value;
+        window.autocompleteSettings.minQueryLength = parseInt(value);
+        console.log(`Min query length updated to ${value} characters`);
+    }
+
+    function updateMaxResultsValue(value) {
+        document.getElementById('max-results-value').value = value;
+        document.getElementById('max-results-slider').value = value;
+        window.autocompleteSettings.maxResults = parseInt(value);
+        console.log(`Max results updated to ${value} items`);
+    }
+
+    function updateMaxResultsSlider(value) {
+        document.getElementById('max-results-slider').value = value;
+        document.getElementById('max-results-value').value = value;
+        window.autocompleteSettings.maxResults = parseInt(value);
+        console.log(`Max results updated to ${value} items`);
+    }
+
+    function resetDevSettings() {
+        updateDebounceValue(0);
+        updateMinQueryValue(3);
+        updateMaxResultsValue(15);
+        console.log('Settings reset to defaults');
+        alert('Settings reset to defaults!\n\nDebounce: 0ms (instant)\nMin Query: 3 chars\nMax Results: 15 items');
+    }
+</script>

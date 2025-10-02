@@ -323,8 +323,13 @@ except Exception as e:
 # Serve main healthcare interface at root
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def serve_main_interface(request: Request):
-    """Serve the main AI Nurse Florence healthcare interface from static files."""
+    """Serve the React app."""
     try:
+        # Try React build first
+        if os.path.exists("frontend/dist/index.html"):
+            with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+        # Fallback to static HTML
         with open("static/index.html", "r", encoding="utf-8") as f:
             html_content = f.read()
         return HTMLResponse(content=html_content)
@@ -422,6 +427,12 @@ os.makedirs("templates", exist_ok=True)
 # Mount static files and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+
+# Mount React app build
+import os
+if os.path.exists("frontend/dist"):
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="react-assets")
+
 templates = Jinja2Templates(directory="templates")
 
 
@@ -524,3 +535,19 @@ async def dashboard_redirect():
 
 # Register API router with main app following Router Organization
 app.include_router(api_router)
+
+
+# Catch-all route for React Router (SPA) - must be last
+@app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
+async def serve_react_app(full_path: str):
+    """Catch-all route to serve React app for client-side routing."""
+    # Don't intercept API routes
+    if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("openapi"):
+        return HTMLResponse(content="<h1>Not Found</h1>", status_code=404)
+
+    # Serve React app for all other routes (SPA)
+    if os.path.exists("frontend/dist/index.html"):
+        with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+
+    return HTMLResponse(content="<h1>Not Found</h1>", status_code=404)

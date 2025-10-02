@@ -18,10 +18,7 @@ from pathlib import Path
 import json
 
 from sqlalchemy.orm import Session
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database import get_db
+from src.database import get_db
 from src.models.content_settings import DiagnosisContentMap
 from src.integrations.medlineplus import MedlinePlusClient
 from reportlab.lib.pagesizes import letter

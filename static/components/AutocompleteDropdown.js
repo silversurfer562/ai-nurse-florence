@@ -21,8 +21,8 @@ class AutocompleteDropdown {
         // Optional config
         this.renderItem = config.renderItem || this.defaultRenderItem.bind(this);
         this.getItemKey = config.getItemKey || ((item) => item.id || item);
-        this.minQueryLength = config.minQueryLength || 2;
-        this.debounceMs = config.debounceMs || 300;
+        this.minQueryLength = config.minQueryLength || 3;
+        this.debounceMs = config.debounceMs !== undefined ? config.debounceMs : 0;
         this.maxResults = config.maxResults || 15;
         this.selectedItems = config.selectedItems || [];
         this.placeholder = config.placeholder || 'No results found';

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { drugInteractionService } from '../services/api';
 import DrugAutocomplete from '../components/DrugAutocomplete';
 
 export default function DrugInteractions() {
+  const { t } = useTranslation();
   const [medications, setMedications] = useState<string[]>(['', '']);
   const [submittedMeds, setSubmittedMeds] = useState<string[]>([]);
   const queryClient = useQueryClient();
@@ -49,13 +51,13 @@ export default function DrugInteractions() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Drug Interaction Checker</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">{t('drugInteractions.title')}</h1>
 
       <div className="card mb-6">
         <form onSubmit={handleCheck}>
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">
-              Enter Medications
+              {t('drugInteractions.subtitle')}
             </label>
 
             {medications.map((med, index) => (
@@ -64,7 +66,7 @@ export default function DrugInteractions() {
                   <DrugAutocomplete
                     value={med}
                     onChange={(value) => updateMedication(index, value)}
-                    placeholder={`Medication ${index + 1} (start typing...)`}
+                    placeholder={t('drugInteractions.searchPlaceholder')}
                     className="w-full"
                   />
                 </div>
@@ -92,7 +94,7 @@ export default function DrugInteractions() {
 
           <button type="submit" className="btn-primary">
             <i className="fas fa-check-circle mr-2"></i>
-            Check Interactions
+            {t('drugInteractions.checkButton')}
           </button>
         </form>
       </div>

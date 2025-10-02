@@ -64,7 +64,7 @@ class ClinicalTrialsService:
                 self.use_live = False
     
     @cached(ttl_seconds=3600)
-    async def search_trials(self, query: str, limit: int = 10) -> Dict[str, Any]:
+    async def search_trials(self, query: str, limit: int = 10, status: Optional[str] = None) -> Dict[str, Any]:
         """
         Search clinical trials by condition or intervention using live ClinicalTrials.gov API v2.
 
@@ -72,9 +72,14 @@ class ClinicalTrialsService:
         - Business logic separation from routing
         - Educational disclaimers included
         - Live data only (no stubs)
+
+        Args:
+            query: Medical condition or intervention
+            limit: Maximum number of results
+            status: Trial status filter (RECRUITING, ACTIVE_NOT_RECRUITING, COMPLETED, etc.)
         """
         try:
-            return await self._search_live_trials(query, limit)
+            return await self._search_live_trials(query, limit, status)
         except Exception as e:
             logger.error(f"Clinical trials search error: {e}")
             return self._create_error_response(query, str(e))
@@ -87,7 +92,7 @@ class ClinicalTrialsService:
             logger.error(f"Trial details error for {nct_id}: {e}")
             return None
     
-    async def _search_live_trials(self, query: str, limit: int) -> Dict[str, Any]:
+    async def _search_live_trials(self, query: str, limit: int, status: Optional[str] = None) -> Dict[str, Any]:
         """Search live ClinicalTrials.gov API v2."""
         try:
             # ClinicalTrials.gov API v2 endpoint
@@ -98,6 +103,10 @@ class ClinicalTrialsService:
                 "pageSize": min(limit, 100),  # Max 100 per page
                 "format": "json"
             }
+
+            # Add status filter if provided
+            if status:
+                params["filter.overallStatus"] = status
 
             if _has_httpx:
                 async with httpx.AsyncClient(timeout=30.0) as client:
