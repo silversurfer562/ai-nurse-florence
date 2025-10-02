@@ -15,7 +15,7 @@ class PatientEducationWizard extends BaseWizard {
             steps: [
                 {
                     title: 'Patient Info',
-                    description: 'Basic patient information for personalization',
+                    description: 'Basic patient information for personalization.',
                     fields: [
                         {
                             id: 'patient_name',
@@ -23,7 +23,7 @@ class PatientEducationWizard extends BaseWizard {
                             label: 'Patient Name',
                             placeholder: 'Enter patient name',
                             required: true,
-                            help: 'Used for document header only - no PHI stored'
+                            help: 'Used for document header only - no PHI stored.'
                         },
                         {
                             id: 'preferred_language',
@@ -47,7 +47,7 @@ class PatientEducationWizard extends BaseWizard {
                                 { value: 'it', label: 'Italian (Italiano)' },
                                 { value: 'pl', label: 'Polish (Polski)' }
                             ],
-                            help: 'Educational materials will be provided in this language'
+                            help: 'Educational materials will be provided in this language.'
                         },
                         {
                             id: 'reading_level',
@@ -59,23 +59,23 @@ class PatientEducationWizard extends BaseWizard {
                                 { value: 'intermediate', label: 'Intermediate (Grade 6-8) - Recommended' },
                                 { value: 'advanced', label: 'Advanced (Grade 9+)' }
                             ],
-                            help: 'Most patients benefit from intermediate level'
+                            help: 'Most patients benefit from intermediate level.'
                         }
                     ]
                 },
                 {
                     title: 'Diagnosis',
-                    description: 'Select the condition to explain to the patient',
+                    description: 'Select the condition to explain to the patient.',
                     render: (data) => this.renderDiagnosisStep(data)
                 },
                 {
                     title: 'What to Include',
-                    description: 'Choose what information to include',
+                    description: 'Choose what information to include.',
                     render: (data) => this.renderContentSelectionStep(data)
                 },
                 {
                     title: 'Custom Instructions',
-                    description: 'Add personalized instructions for this patient',
+                    description: 'Add personalized instructions for this patient.',
                     fields: [
                         {
                             id: 'custom_instructions',
@@ -83,19 +83,19 @@ class PatientEducationWizard extends BaseWizard {
                             label: 'Additional Instructions (Optional)',
                             placeholder: 'e.g., "Check your blood sugar before meals and at bedtime"',
                             rows: 4,
-                            help: 'Any special instructions specific to this patient'
+                            help: 'Any special instructions specific to this patient.'
                         },
                         {
                             id: 'follow_up_date',
                             type: 'date',
                             label: 'Follow-up Appointment Date',
-                            help: 'Select the date for the patient\'s follow-up appointment'
+                            help: 'Select the date for the patient\'s follow-up appointment.'
                         }
                     ]
                 },
                 {
                     title: 'Review & Generate',
-                    description: 'Review your selections and generate the document',
+                    description: 'Review your selections and generate the document.',
                     render: (data) => this.renderReviewStep(data)
                 }
             ],
@@ -108,7 +108,7 @@ class PatientEducationWizard extends BaseWizard {
     }
 
     getDescription() {
-        return 'Create easy-to-understand education materials for your patient';
+        return 'Create easy-to-understand education materials for your patient.';
     }
 
     renderDiagnosisStep(data) {
@@ -299,14 +299,14 @@ class PatientEducationWizard extends BaseWizard {
         return `
             <div class="content-selection space-y-4">
                 <p class="text-gray-600 mb-4">
-                    Select what information to include in the patient education document:
+                    Select what information to include in the patient education document.
                 </p>
 
                 <label class="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                     <input type="checkbox" name="include_description" value="true" checked class="mt-1 mr-3">
                     <div>
                         <p class="font-medium text-gray-900">Condition Description</p>
-                        <p class="text-sm text-gray-600 mt-1">Easy-to-understand explanation of the condition</p>
+                        <p class="text-sm text-gray-600 mt-1">Easy-to-understand explanation of the condition.</p>
                     </div>
                 </label>
 
@@ -314,7 +314,7 @@ class PatientEducationWizard extends BaseWizard {
                     <input type="checkbox" name="include_warning_signs" value="true" checked class="mt-1 mr-3">
                     <div>
                         <p class="font-medium text-gray-900">Warning Signs</p>
-                        <p class="text-sm text-gray-600 mt-1">When to seek immediate medical attention</p>
+                        <p class="text-sm text-gray-600 mt-1">When to seek immediate medical attention.</p>
                     </div>
                 </label>
 
@@ -322,7 +322,7 @@ class PatientEducationWizard extends BaseWizard {
                     <input type="checkbox" name="include_medications" value="true" checked class="mt-1 mr-3">
                     <div>
                         <p class="font-medium text-gray-900">Medication Information</p>
-                        <p class="text-sm text-gray-600 mt-1">Standard medications and instructions</p>
+                        <p class="text-sm text-gray-600 mt-1">Standard medications and instructions.</p>
                     </div>
                 </label>
 
@@ -330,7 +330,7 @@ class PatientEducationWizard extends BaseWizard {
                     <input type="checkbox" name="include_diet" value="true" checked class="mt-1 mr-3">
                     <div>
                         <p class="font-medium text-gray-900">Diet & Lifestyle</p>
-                        <p class="text-sm text-gray-600 mt-1">Dietary recommendations and lifestyle changes</p>
+                        <p class="text-sm text-gray-600 mt-1">Dietary recommendations and lifestyle changes.</p>
                     </div>
                 </label>
 
@@ -338,7 +338,7 @@ class PatientEducationWizard extends BaseWizard {
                     <input type="checkbox" name="include_medlineplus" value="true" checked class="mt-1 mr-3">
                     <div>
                         <p class="font-medium text-gray-900">Educational Resources</p>
-                        <p class="text-sm text-gray-600 mt-1">Links to MedlinePlus and other trusted sources</p>
+                        <p class="text-sm text-gray-600 mt-1">Links to MedlinePlus and other trusted sources.</p>
                     </div>
                 </label>
 
@@ -346,7 +346,7 @@ class PatientEducationWizard extends BaseWizard {
                     <input type="checkbox" name="include_follow_up" value="true" checked class="mt-1 mr-3">
                     <div>
                         <p class="font-medium text-gray-900">Follow-up Instructions</p>
-                        <p class="text-sm text-gray-600 mt-1">When and how to follow up with healthcare provider</p>
+                        <p class="text-sm text-gray-600 mt-1">When and how to follow up with healthcare provider.</p>
                     </div>
                 </label>
             </div>
@@ -362,7 +362,7 @@ class PatientEducationWizard extends BaseWizard {
                         <div>
                             <p class="font-medium text-blue-800">Document Preview</p>
                             <p class="text-sm text-blue-700 mt-1">
-                                Review the information below before generating the document
+                                Review the information below before generating the document.
                             </p>
                         </div>
                     </div>
