@@ -112,6 +112,9 @@ class PatientEducationWizard extends BaseWizard {
     }
 
     renderDiagnosisStep(data) {
+        // Initialize autocomplete after DOM is rendered
+        setTimeout(() => this.initDiagnosisAutocomplete(), 0);
+
         return `
             <div class="diagnosis-selection">
                 <div class="mb-4">
@@ -119,7 +122,7 @@ class PatientEducationWizard extends BaseWizard {
                         Select Diagnosis <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <i class="fas fa-heartbeat absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <i class="fas fa-heartbeat absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"></i>
                         <input
                             type="text"
                             id="diagnosis_search"
@@ -127,10 +130,11 @@ class PatientEducationWizard extends BaseWizard {
                             placeholder="Type diagnosis name or ICD-10 code (e.g., diabetes, hypertension)..."
                             autocomplete="off"
                         >
-                        <div id="diagnosis_dropdown" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-80 overflow-y-auto"></div>
+                        <div id="diagnosis_dropdown" class="absolute z-20 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden max-h-80 overflow-y-auto"></div>
                     </div>
                     <p class="text-sm text-gray-500 mt-2">
-                        Start typing to see matching diagnoses from the database.
+                        <i class="fas fa-keyboard mr-1"></i>
+                        Use arrow keys to navigate, Enter to select, Escape to close.
                     </p>
                 </div>
 
@@ -142,7 +146,7 @@ class PatientEducationWizard extends BaseWizard {
                                 <p class="text-sm text-green-700 mt-1" id="selected_diagnosis_codes"></p>
                                 <p class="text-xs text-green-600 mt-2" id="selected_diagnosis_description"></p>
                             </div>
-                            <button onclick="clearDiagnosisSelection()" class="text-green-700 hover:text-green-900 ml-4">
+                            <button onclick="window.patientEducationWizard.clearDiagnosisSelection()" class="text-green-700 hover:text-green-900 ml-4">
                                 <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
@@ -153,145 +157,113 @@ class PatientEducationWizard extends BaseWizard {
                 <input type="hidden" id="selected_icd10_code" name="icd10_code">
                 <input type="hidden" id="selected_snomed_code" name="snomed_code">
             </div>
-
-            <script>
-                // Diagnosis autocomplete dropdown functionality
-                const diagnosisSearch = document.getElementById('diagnosis_search');
-                const dropdown = document.getElementById('diagnosis_dropdown');
-                const selectedDiagnosisDiv = document.getElementById('selected_diagnosis');
-
-                let searchTimeout;
-                let currentDiagnoses = [];
-
-                diagnosisSearch.addEventListener('input', function(e) {
-                    const query = e.target.value.trim();
-
-                    clearTimeout(searchTimeout);
-
-                    if (query.length < 2) {
-                        dropdown.classList.add('hidden');
-                        return;
-                    }
-
-                    searchTimeout = setTimeout(async () => {
-                        try {
-                            const response = await fetch(\`/api/v1/content-settings/diagnosis/search?q=\${encodeURIComponent(query)}&limit=15\`);
-
-                            if (!response.ok) {
-                                throw new Error(\`HTTP error! status: \${response.status}\`);
-                            }
-
-                            const data = await response.json();
-                            currentDiagnoses = data;
-
-                            if (Array.isArray(data) && data.length > 0) {
-                                dropdown.innerHTML = data.map((diagnosis, idx) => \`
-                                    <div class="diagnosis-option px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                                         data-index="\${idx}"
-                                         onclick="selectDiagnosisFromDropdown(\${idx})">
-                                        <div class="flex items-start justify-between">
-                                            <div class="flex-1">
-                                                <p class="font-medium text-gray-900">\${diagnosis.diagnosis_display}</p>
-                                                <p class="text-xs text-gray-600 mt-1">
-                                                    <span class="font-mono bg-gray-100 px-2 py-0.5 rounded">\${diagnosis.icd10_code}</span>
-                                                    \${diagnosis.snomed_code ? \`<span class="font-mono bg-blue-100 px-2 py-0.5 rounded ml-2">\${diagnosis.snomed_code}</span>\` : ''}
-                                                </p>
-                                                \${diagnosis.patient_friendly_description ? \`
-                                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">
-                                                        \${diagnosis.patient_friendly_description.substring(0, 100)}...
-                                                    </p>
-                                                \` : ''}
-                                            </div>
-                                            <div class="ml-3">
-                                                \${diagnosis.is_billable === false ? \`
-                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-red-100 text-red-800">
-                                                        <i class="fas fa-exclamation-triangle text-xs mr-1"></i>
-                                                        Non-billable
-                                                    </span>
-                                                \` : \`
-                                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-                                                        <i class="fas fa-check text-xs mr-1"></i>
-                                                        Billable
-                                                    </span>
-                                                \`}
-                                            </div>
-                                        </div>
-                                    </div>
-                                \`).join('');
-                                dropdown.classList.remove('hidden');
-                            } else {
-                                dropdown.innerHTML = \`
-                                    <div class="px-4 py-6 text-center text-gray-500">
-                                        <i class="fas fa-search-minus text-2xl mb-2"></i>
-                                        <p class="text-sm">No diagnoses found matching "\${query}"</p>
-                                        <p class="text-xs mt-1">Try different search terms</p>
-                                    </div>
-                                \`;
-                                dropdown.classList.remove('hidden');
-                            }
-                        } catch (error) {
-                            console.error('Diagnosis search error:', error);
-                            dropdown.innerHTML = \`
-                                <div class="px-4 py-6 text-center text-red-500">
-                                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                                    <p class="text-sm">Error loading diagnoses</p>
-                                    <p class="text-xs mt-1">\${error.message}</p>
-                                </div>
-                            \`;
-                            dropdown.classList.remove('hidden');
-                        }
-                    }, 300);
-                });
-
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!diagnosisSearch.contains(e.target) && !dropdown.contains(e.target)) {
-                        dropdown.classList.add('hidden');
-                    }
-                });
-
-                // Focus shows dropdown if there are results
-                diagnosisSearch.addEventListener('focus', function() {
-                    if (dropdown.innerHTML && diagnosisSearch.value.length >= 2) {
-                        dropdown.classList.remove('hidden');
-                    }
-                });
-
-                window.selectDiagnosisFromDropdown = function(index) {
-                    const diagnosis = currentDiagnoses[index];
-                    if (!diagnosis) return;
-
-                    document.getElementById('selected_diagnosis_id').value = diagnosis.id;
-                    document.getElementById('selected_icd10_code').value = diagnosis.icd10_code;
-                    document.getElementById('selected_snomed_code').value = diagnosis.snomed_code || '';
-
-                    document.getElementById('selected_diagnosis_name').textContent = diagnosis.diagnosis_display;
-                    document.getElementById('selected_diagnosis_codes').textContent =
-                        \`ICD-10: \${diagnosis.icd10_code}\${diagnosis.snomed_code ? \` | SNOMED: \${diagnosis.snomed_code}\` : ''}\`;
-
-                    const descEl = document.getElementById('selected_diagnosis_description');
-                    if (diagnosis.patient_friendly_description) {
-                        descEl.textContent = diagnosis.patient_friendly_description;
-                        descEl.classList.remove('hidden');
-                    } else {
-                        descEl.classList.add('hidden');
-                    }
-
-                    selectedDiagnosisDiv.classList.remove('hidden');
-                    diagnosisSearch.value = diagnosis.diagnosis_display;
-                    dropdown.classList.add('hidden');
-                };
-
-                window.clearDiagnosisSelection = function() {
-                    document.getElementById('selected_diagnosis_id').value = '';
-                    document.getElementById('selected_icd10_code').value = '';
-                    document.getElementById('selected_snomed_code').value = '';
-                    selectedDiagnosisDiv.classList.add('hidden');
-                    diagnosisSearch.value = '';
-                    dropdown.classList.add('hidden');
-                };
-            </script>
         `;
+    }
+
+    initDiagnosisAutocomplete() {
+        const inputElement = document.getElementById('diagnosis_search');
+        const dropdownElement = document.getElementById('diagnosis_dropdown');
+
+        if (!inputElement || !dropdownElement) {
+            console.warn('Diagnosis autocomplete elements not found');
+            return;
+        }
+
+        // Destroy existing autocomplete if any
+        if (this.diagnosisAutocomplete) {
+            this.diagnosisAutocomplete.destroy();
+        }
+
+        // Create autocomplete instance
+        this.diagnosisAutocomplete = new AutocompleteDropdown({
+            inputElement,
+            dropdownElement,
+            fetchResults: async (query) => {
+                const response = await fetch(`/api/v1/content-settings/diagnosis/search?q=${encodeURIComponent(query)}&limit=15`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            },
+            onSelect: (diagnosis, index) => {
+                this.selectDiagnosis(diagnosis);
+            },
+            renderItem: (diagnosis, index, isSelected) => {
+                return `
+                    <div class="autocomplete-item px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors ${isSelected ? 'opacity-50 bg-gray-50' : ''}"
+                         data-index="${index}"
+                         ${isSelected ? 'data-disabled="true"' : ''}>
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="font-medium ${isSelected ? 'text-gray-500' : 'text-gray-900'}">${diagnosis.diagnosis_display}</p>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    <span class="font-mono bg-gray-100 px-2 py-0.5 rounded">${diagnosis.icd10_code}</span>
+                                    ${diagnosis.snomed_code ? `<span class="font-mono bg-blue-100 px-2 py-0.5 rounded ml-2">${diagnosis.snomed_code}</span>` : ''}
+                                </p>
+                                ${diagnosis.patient_friendly_description ? `
+                                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">
+                                        ${diagnosis.patient_friendly_description.substring(0, 100)}...
+                                    </p>
+                                ` : ''}
+                            </div>
+                            <div class="ml-3">
+                                ${diagnosis.is_billable === false ? `
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-red-100 text-red-800">
+                                        <i class="fas fa-exclamation-triangle text-xs mr-1"></i>
+                                        Non-billable
+                                    </span>
+                                ` : `
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                                        <i class="fas fa-check text-xs mr-1"></i>
+                                        Billable
+                                    </span>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+            getItemKey: (diagnosis) => diagnosis.id,
+            minQueryLength: 2,
+            debounceMs: 300,
+            maxResults: 15,
+            placeholder: 'No diagnoses found. Try different search terms.'
+        });
+
+        // Store reference globally for the clear button
+        window.patientEducationWizard = window.patientEducationWizard || this;
+    }
+
+    selectDiagnosis(diagnosis) {
+        document.getElementById('selected_diagnosis_id').value = diagnosis.id;
+        document.getElementById('selected_icd10_code').value = diagnosis.icd10_code;
+        document.getElementById('selected_snomed_code').value = diagnosis.snomed_code || '';
+
+        document.getElementById('selected_diagnosis_name').textContent = diagnosis.diagnosis_display;
+        document.getElementById('selected_diagnosis_codes').textContent =
+            `ICD-10: ${diagnosis.icd10_code}${diagnosis.snomed_code ? ` | SNOMED: ${diagnosis.snomed_code}` : ''}`;
+
+        const descEl = document.getElementById('selected_diagnosis_description');
+        if (diagnosis.patient_friendly_description) {
+            descEl.textContent = diagnosis.patient_friendly_description;
+            descEl.classList.remove('hidden');
+        } else {
+            descEl.classList.add('hidden');
+        }
+
+        document.getElementById('selected_diagnosis').classList.remove('hidden');
+        document.getElementById('diagnosis_search').value = diagnosis.diagnosis_display;
+    }
+
+    clearDiagnosisSelection() {
+        document.getElementById('selected_diagnosis_id').value = '';
+        document.getElementById('selected_icd10_code').value = '';
+        document.getElementById('selected_snomed_code').value = '';
+        document.getElementById('selected_diagnosis').classList.add('hidden');
+
+        if (this.diagnosisAutocomplete) {
+            this.diagnosisAutocomplete.clear();
+        }
     }
 
     renderContentSelectionStep(data) {
