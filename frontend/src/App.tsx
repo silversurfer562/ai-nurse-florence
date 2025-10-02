@@ -15,9 +15,16 @@ import DischargeInstructions from './pages/DischargeInstructions'
 import MedicationGuide from './pages/MedicationGuide'
 import IncidentReport from './pages/IncidentReport'
 
+// Public Pages (No Auth Required)
+import PublicDrugInteractions from './pages/PublicDrugInteractions'
+
 function App() {
   return (
     <Routes>
+      {/* Public Routes (No Authentication Required) */}
+      <Route path="/public/drug-interactions" element={<PublicDrugInteractions />} />
+
+      {/* Authenticated Routes */}
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="clinical-trials" element={<ClinicalTrials />} />

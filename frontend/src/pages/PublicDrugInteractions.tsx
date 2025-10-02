@@ -1,0 +1,442 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { drugInteractionService } from '../services/api';
+import DrugAutocomplete from '../components/DrugAutocomplete';
+
+/**
+ * Public Drug Interaction Checker
+ *
+ * Free community service providing drug interaction checking to the public.
+ * This tool helps fill the gap left by the discontinued NIH Drug Interaction API.
+ *
+ * No authentication required - accessible to everyone.
+ */
+
+export default function PublicDrugInteractions() {
+  const [medications, setMedications] = useState<string[]>(['', '']);
+  const [submittedMeds, setSubmittedMeds] = useState<string[]>([]);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['drug-interactions', submittedMeds],
+    queryFn: () => drugInteractionService.check(submittedMeds),
+    enabled: false,
+  });
+
+  // Reset form and clear results when component mounts
+  useEffect(() => {
+    setMedications(['', '']);
+    setSubmittedMeds([]);
+    queryClient.removeQueries({ queryKey: ['drug-interactions'] });
+  }, [queryClient]);
+
+  const addMedication = () => {
+    setMedications([...medications, '']);
+  };
+
+  const removeMedication = (index: number) => {
+    const newMeds = medications.filter((_, i) => i !== index);
+    setMedications(newMeds);
+  };
+
+  const updateMedication = (index: number, value: string) => {
+    const newMeds = [...medications];
+    newMeds[index] = value;
+    setMedications(newMeds);
+  };
+
+  const handleCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validMeds = medications.filter(med => med.trim() !== '');
+    if (validMeds.length < 2) {
+      alert('Please enter at least 2 medications');
+      return;
+    }
+    setSubmittedMeds(validMeds);
+    refetch();
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+
+        {/* Hero Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+            <i className="fas fa-pills text-blue-600 mr-3"></i>
+            Free Drug Interaction Checker
+          </h1>
+          <p className="text-xl text-gray-600 mb-2">
+            A Public Service by AI Nurse Florence
+          </p>
+          <p className="text-gray-500">
+            Check medication interactions instantly - No login required
+          </p>
+        </div>
+
+        {/* Mission Statement */}
+        <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg mb-8">
+          <h2 className="text-lg font-semibold text-blue-900 mb-2">
+            <i className="fas fa-heart mr-2"></i>
+            Our Mission: Serving the Healthcare Community
+          </h2>
+          <p className="text-blue-800 mb-3">
+            When the NIH Drug Interaction API was discontinued, the healthcare community lost a valuable public resource.
+            We're providing this free tool to help fill that gap and serve patients, caregivers, and healthcare consumers.
+          </p>
+          <p className="text-sm text-blue-700">
+            This tool is offered as a free public service and demonstration of responsible use of medical data.
+            We hope it inspires others to contribute to accessible healthcare technology.
+          </p>
+        </div>
+
+        {/* Disclaimer */}
+        {showDisclaimer && (
+          <div className="bg-yellow-50 border border-yellow-400 rounded-lg p-6 mb-8">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-yellow-900 mb-2">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  Important Medical Disclaimer
+                </h3>
+                <div className="text-sm text-yellow-800 space-y-2">
+                  <p>
+                    <strong>This tool is for informational and educational purposes only.</strong> It is not a substitute for
+                    professional medical advice, diagnosis, or treatment.
+                  </p>
+                  <p>
+                    <strong>Always consult your healthcare provider</strong> about your medications, potential interactions,
+                    and any health concerns. Do not start, stop, or change medications without medical supervision.
+                  </p>
+                  <p>
+                    <strong>In case of emergency,</strong> call 911 or your local emergency services immediately.
+                  </p>
+                  <p className="text-xs mt-3">
+                    By using this tool, you acknowledge that you understand these limitations and will consult appropriate
+                    healthcare professionals for medical decisions.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="ml-4 text-yellow-600 hover:text-yellow-800"
+                aria-label="Dismiss disclaimer"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Tool Card */}
+        <div className="card mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Check Your Medications
+          </h2>
+
+          <form onSubmit={handleCheck}>
+            <div className="mb-4">
+              <label className="block text-gray-700 font-medium mb-3">
+                Enter at least 2 medications to check for interactions:
+              </label>
+
+              {medications.map((med, index) => (
+                <div key={index} className="flex space-x-2 mb-3">
+                  <div className="flex-1">
+                    <DrugAutocomplete
+                      value={med}
+                      onChange={(value) => updateMedication(index, value)}
+                      placeholder={`Medication ${index + 1} (e.g., Aspirin, Metformin, Lisinopril)`}
+                      className="w-full"
+                    />
+                  </div>
+                  {medications.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => removeMedication(index)}
+                      className="btn-secondary"
+                      aria-label={`Remove medication ${index + 1}`}
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addMedication}
+                className="btn-secondary mt-2"
+              >
+                <i className="fas fa-plus mr-2"></i>
+                Add Another Medication
+              </button>
+            </div>
+
+            <button type="submit" className="btn-primary" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Checking Interactions...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-check-circle mr-2"></i>
+                  Check for Interactions
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded-lg mb-6">
+            <i className="fas fa-spinner fa-spin mr-2"></i>
+            Checking drug interactions...
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded-lg mb-6">
+            <i className="fas fa-exclamation-circle mr-2"></i>
+            Error checking drug interactions. Please try again or contact support if the problem persists.
+          </div>
+        )}
+
+        {/* Results */}
+        {data && (
+          <>
+            {/* Drug Information Section */}
+            {data.data?.drug_information && data.data.drug_information.length > 0 && (
+              <div className="card mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                  <i className="fas fa-pills mr-2 text-blue-600"></i>
+                  Medication Information
+                </h2>
+                <div className="space-y-6">
+                  {data.data.drug_information.map((drug: any, index: number) => (
+                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
+                      <div className="font-semibold text-gray-800 text-lg">
+                        {drug.name}
+                        {drug.brand_names && drug.brand_names.length > 0 && (
+                          <span className="text-sm font-normal text-gray-600 ml-2">
+                            ({drug.brand_names.join(', ')})
+                          </span>
+                        )}
+                      </div>
+
+                      {drug.drug_class && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">Class:</span> {drug.drug_class}
+                        </div>
+                      )}
+
+                      {drug.indication && (
+                        <div className="text-sm text-gray-700 mt-2">
+                          <span className="font-medium">Used for:</span> {drug.indication}
+                        </div>
+                      )}
+
+                      {drug.common_side_effects && drug.common_side_effects.length > 0 && (
+                        <div className="mt-3">
+                          <div className="text-sm font-semibold text-gray-700">Common Side Effects:</div>
+                          <ul className="list-disc list-inside text-sm text-gray-600 ml-2">
+                            {drug.common_side_effects.map((effect: string, idx: number) => (
+                              <li key={idx}>{effect}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {drug.warnings && drug.warnings.length > 0 && (
+                        <div className="mt-3">
+                          <div className="text-sm font-semibold text-red-700">
+                            <i className="fas fa-exclamation-triangle mr-1"></i>
+                            Important Warnings:
+                          </div>
+                          <ul className="list-disc list-inside text-sm text-red-600 ml-2">
+                            {drug.warnings.map((warning: string, idx: number) => (
+                              <li key={idx}>{warning}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Drug Interactions Section */}
+            <div className="card mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                <i className="fas fa-flask mr-2 text-purple-600"></i>
+                Drug Interactions
+              </h2>
+
+              {data.data?.interactions && data.data.interactions.length > 0 ? (
+                <div className="space-y-4">
+                  {data.data.interactions.map((interaction: any, index: number) => {
+                    const severityColors = {
+                      high: 'bg-red-100 border-red-500 text-red-800',
+                      moderate: 'bg-yellow-100 border-yellow-500 text-yellow-800',
+                      low: 'bg-blue-100 border-blue-500 text-blue-800',
+                    };
+
+                    const severityColor = severityColors[interaction.severity?.toLowerCase() as keyof typeof severityColors]
+                      || 'bg-gray-100 border-gray-500 text-gray-800';
+
+                    return (
+                      <div key={index} className={`border-l-4 p-4 rounded-r-lg ${severityColor}`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="font-semibold text-lg">
+                            {interaction.drug1} + {interaction.drug2}
+                          </div>
+                          {interaction.severity && (
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              interaction.severity.toLowerCase() === 'high' ? 'bg-red-200 text-red-800' :
+                              interaction.severity.toLowerCase() === 'moderate' ? 'bg-yellow-200 text-yellow-800' :
+                              'bg-blue-200 text-blue-800'
+                            }`}>
+                              {interaction.severity} Severity
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-sm mt-2">
+                          <strong>Interaction:</strong> {interaction.description}
+                        </div>
+
+                        {interaction.clinical_effects && (
+                          <div className="text-sm mt-2">
+                            <strong>Clinical Effects:</strong> {interaction.clinical_effects}
+                          </div>
+                        )}
+
+                        {interaction.management && (
+                          <div className="text-sm mt-2">
+                            <strong>Management:</strong> {interaction.management}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                  <div className="flex items-center">
+                    <i className="fas fa-check-circle text-green-600 text-2xl mr-3"></i>
+                    <div>
+                      <div className="font-semibold text-green-800">No Known Interactions Found</div>
+                      <div className="text-sm text-green-700 mt-1">
+                        Based on available data, no significant interactions were identified between these medications.
+                        However, always consult your healthcare provider about your specific situation.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Data Attribution & About Section */}
+        <div className="bg-gray-50 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            <i className="fas fa-info-circle mr-2 text-blue-600"></i>
+            About This Tool
+          </h2>
+
+          <div className="space-y-4 text-gray-700">
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">Data Sources & Attribution</h3>
+              <p className="text-sm">
+                This tool synthesizes drug interaction data from multiple authoritative medical databases and resources,
+                including FDA databases, medical literature, and clinical pharmacology references. All information is
+                provided for educational purposes and should be verified with current clinical guidelines.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">How It Works</h3>
+              <p className="text-sm">
+                Our interaction checker analyzes the medications you enter against comprehensive drug interaction databases.
+                It identifies potential interactions, assesses their severity, and provides clinical context to help you
+                make informed decisions in consultation with your healthcare provider.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">Privacy & Security</h3>
+              <p className="text-sm">
+                <strong>Your privacy matters:</strong> No personal health information is stored. All searches are processed
+                in real-time and session data is automatically cleared. This tool is HIPAA-aware and designed with privacy
+                as a core principle.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">About AI Nurse Florence</h3>
+              <p className="text-sm">
+                AI Nurse Florence is a clinical decision support platform designed to help nurses work more efficiently
+                and deliver better patient care. This free public tool is part of our commitment to serving the healthcare
+                community and advancing accessible health technology.
+              </p>
+              <p className="text-sm mt-2">
+                <a href="/" className="text-blue-600 hover:text-blue-800 underline">
+                  Learn more about AI Nurse Florence →
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Help & Support */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            <i className="fas fa-question-circle mr-2 text-green-600"></i>
+            Need Help?
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">How to Use This Tool</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Enter at least 2 medications (generic or brand names)</li>
+                <li>• Use autocomplete suggestions for accuracy</li>
+                <li>• Add more medications as needed</li>
+                <li>• Review interaction results and severity levels</li>
+                <li>• Discuss findings with your healthcare provider</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">When to Seek Medical Help</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• You experience unexpected side effects</li>
+                <li>• High severity interactions are identified</li>
+                <li>• You're starting a new medication</li>
+                <li>• You have questions about your medications</li>
+                <li>• Medical emergency: Call 911 immediately</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 text-sm text-gray-500">
+          <p>
+            Free Public Service by AI Nurse Florence |
+            <a href="/" className="text-blue-600 hover:text-blue-800 ml-1">ainurseflorence.com</a>
+          </p>
+          <p className="mt-2">
+            Helping fill the gap left by discontinued public health tools | Inspiring accessible healthcare technology
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
