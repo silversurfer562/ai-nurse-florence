@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
+import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
 
 interface Medication {
   name: string;
@@ -192,18 +193,21 @@ export default function DischargeInstructions() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Primary Diagnosis <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <p className="text-sm text-gray-500 mb-2">
+                Start typing to search for a disease or condition. Autocomplete suggestions will appear instantly.
+              </p>
+              <DiseaseAutocomplete
                 value={data.primary_diagnosis}
-                onChange={(e) => updateData('primary_diagnosis', e.target.value)}
+                onChange={(value) => updateData('primary_diagnosis', value)}
+                onSelect={(disease) => updateData('primary_diagnosis', disease)}
                 placeholder={
                   careSetting === 'icu'
                     ? 'e.g., Acute respiratory failure, septic shock...'
                     : careSetting === 'emergency'
                     ? 'e.g., Acute appendicitis, closed head injury...'
-                    : 'e.g., Pneumonia, CHF exacerbation...'
+                    : 'e.g., Pneumonia, CHF exacerbation, Diabetes...'
                 }
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                enableVoice={true}
               />
             </div>
           </div>
