@@ -27,7 +27,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
 from reportlab.lib import colors
 
-router = APIRouter(prefix="/api/documents", tags=["Patient Education Documents"])
+router = APIRouter(prefix="/documents", tags=["Patient Education Documents"])
 
 
 class PatientEducationRequest(BaseModel):

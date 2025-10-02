@@ -455,7 +455,7 @@ class PatientEducationWizard extends BaseWizard {
             this.showAlert('Generating patient education document...', 'info');
 
             // Call API to generate document
-            const response = await fetch('/api/documents/patient-education', {
+            const response = await fetch('/api/v1/documents/patient-education', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
