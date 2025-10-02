@@ -18,6 +18,7 @@ from pathlib import Path
 import json
 
 from sqlalchemy.orm import Session
+from database import get_db
 from src.models.content_settings import DiagnosisContentMap
 from src.integrations.medlineplus import MedlinePlusClient
 from reportlab.lib.pagesizes import letter
@@ -416,18 +417,3 @@ async def download_document(filename: str):
         media_type="application/pdf",
         filename=filename
     )
-
-
-def get_db():
-    """Database dependency (stub - implement with your database session)"""
-    # TODO: Implement actual database session
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    engine = create_engine('sqlite:///ai_nurse_florence.db')
-    SessionLocal = sessionmaker(bind=engine)
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
