@@ -2,10 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Node.js for frontend build
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
@@ -24,6 +26,13 @@ RUN useradd --create-home --shell /bin/bash florence
 
 # Copy application files
 COPY . /app
+
+# Build frontend
+WORKDIR /app/frontend
+RUN npm ci && npm run build
+
+# Back to app directory
+WORKDIR /app
 RUN chown -R florence:florence /app
 
 # Make the startup script executable
