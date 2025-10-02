@@ -5,18 +5,18 @@
 # fastapi pinned to a compatible range so Starlette can be upgraded for monitoring libs
 # Use a modern FastAPI compatible with Starlette >=0.30
 fastapi==0.115.14
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
+uvicorn[standard]==0.37.0
+pydantic==2.11.9
+pydantic-settings==2.11.0
 
 # HTTP Client & External API Integration
-httpx==0.25.2
+httpx==0.28.1
 
 # Configuration Management
 python-dotenv>=1.0.0,<1.1.0
 
 # Form Data Processing
-python-multipart>=0.0.6
+python-multipart==0.0.20
 
 # Template Engine
 jinja2>=3.1.0
