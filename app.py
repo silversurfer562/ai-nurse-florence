@@ -587,6 +587,10 @@ app.include_router(api_router)
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def serve_react_app(full_path: str):
     """Catch-all route to serve React app for client-side routing."""
+    # Don't catch static file paths - let StaticFiles mounts handle them
+    if full_path.startswith(("locales/", "assets/", "static/", "api/")):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404)
     # Don't intercept API routes
     if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("openapi"):
         return HTMLResponse(content="<h1>Not Found</h1>", status_code=404)
