@@ -7,6 +7,7 @@ Tables:
 - WorkSettingPreset: Pre-configured content for specific work environments
 - PersonalContentLibrary: User's personal saved content and preferences
 - DiagnosisContentMap: System-wide diagnosis library with FHIR codes
+- MedlinePlusCache: Cached patient education content from MedlinePlus API
 """
 
 from sqlalchemy import Column, String, Integer, DateTime, Text, JSON, Boolean, ForeignKey
@@ -219,3 +220,35 @@ def search_diagnosis_by_name(session, search_term: str) -> List[DiagnosisContent
     return session.query(DiagnosisContentMap).filter(
         DiagnosisContentMap.diagnosis_display.ilike(search_pattern)
     ).limit(20).all()
+
+
+class MedlinePlusCache(Base):
+    """
+    Cache for MedlinePlus patient education content.
+
+    Stores fetched content from MedlinePlus Connect API to reduce API calls
+    and improve performance. Content refreshed every 24 hours.
+    """
+    __tablename__ = "medlineplus_cache"
+
+    icd10_code = Column(String(10), primary_key=True)
+    language = Column(String(10), primary_key=True, default="en")  # "en" or "es"
+
+    # Content from MedlinePlus
+    title = Column(String(500), nullable=False)
+    url = Column(String(1000), nullable=False)
+    summary = Column(Text)
+
+    # Metadata
+    cached_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            "icd10_code": self.icd10_code,
+            "language": self.language,
+            "title": self.title,
+            "url": self.url,
+            "summary": self.summary,
+            "cached_at": self.cached_at.isoformat() if self.cached_at else None
+        }
