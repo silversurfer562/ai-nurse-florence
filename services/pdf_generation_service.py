@@ -511,3 +511,208 @@ def generate_disease_education(data: Dict[str, Any]) -> BytesIO:
     """Helper function to generate disease education PDF"""
     pdf = DiseaseEducationPDF()
     return pdf.generate(data)
+
+
+# ============================================================================
+# Word (DOCX) and Text Generation Functions
+# ============================================================================
+
+from docx import Document
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
+
+def generate_discharge_instructions_docx(data: Dict[str, Any]) -> BytesIO:
+    """Generate discharge instructions as Word document"""
+    doc = Document()
+
+    # Title
+    title = doc.add_heading('Discharge Instructions', 0)
+    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+    # Patient info
+    if data.get('patient_name'):
+        p = doc.add_paragraph()
+        p.add_run(f"Patient: {data['patient_name']}").bold = True
+
+    if data.get('discharge_date'):
+        p = doc.add_paragraph()
+        p.add_run(f"Discharge Date: {data['discharge_date']}").bold = True
+
+    doc.add_paragraph()
+
+    # Primary Diagnosis
+    doc.add_heading('Primary Diagnosis', 1)
+    doc.add_paragraph(data.get('primary_diagnosis', 'Not specified'))
+
+    # Medications
+    if data.get('medications'):
+        doc.add_heading('Medications', 1)
+        for med in data['medications']:
+            p = doc.add_paragraph(style='List Bullet')
+            p.add_run(f"{med.get('name', '')} - {med.get('dosage', '')}").bold = True
+            p.add_run(f"\n  Frequency: {med.get('frequency', '')}")
+            if med.get('instructions'):
+                p.add_run(f"\n  Instructions: {med.get('instructions', '')}")
+
+    # Follow-up Appointments
+    if data.get('follow_up_appointments'):
+        doc.add_heading('Follow-Up Appointments', 1)
+        for appt in data['follow_up_appointments']:
+            doc.add_paragraph(appt, style='List Bullet')
+
+    # Activity Restrictions
+    if data.get('activity_restrictions'):
+        doc.add_heading('Activity Restrictions', 1)
+        for restriction in data['activity_restrictions']:
+            doc.add_paragraph(restriction, style='List Bullet')
+
+    # Diet Instructions
+    if data.get('diet_instructions'):
+        doc.add_heading('Diet Instructions', 1)
+        doc.add_paragraph(data['diet_instructions'])
+
+    # Warning Signs
+    if data.get('warning_signs'):
+        doc.add_heading('Warning Signs - Call Your Doctor If:', 1)
+        for sign in data['warning_signs']:
+            doc.add_paragraph(sign, style='List Bullet')
+
+    # Emergency Criteria
+    if data.get('emergency_criteria'):
+        doc.add_heading('⚠️ CALL 911 or Go to ER Immediately If:', 1)
+        for criteria in data['emergency_criteria']:
+            doc.add_paragraph(criteria, style='List Bullet')
+
+    # Wound Care
+    if data.get('wound_care'):
+        doc.add_heading('Wound Care Instructions', 1)
+        doc.add_paragraph(data['wound_care'])
+
+    # Equipment Needs
+    if data.get('equipment_needs'):
+        doc.add_heading('Equipment and Supplies', 1)
+        for equipment in data['equipment_needs']:
+            doc.add_paragraph(equipment, style='List Bullet')
+
+    # Home Care Services
+    if data.get('home_care_services'):
+        doc.add_heading('Home Care Services', 1)
+        doc.add_paragraph(data['home_care_services'])
+
+    # Disclaimer
+    doc.add_paragraph()
+    disclaimer = doc.add_paragraph()
+    disclaimer.add_run("This document is for informational purposes only and does not replace medical advice from your healthcare provider.").italic = True
+
+    # Save to buffer
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def generate_discharge_instructions_text(data: Dict[str, Any]) -> BytesIO:
+    """Generate discharge instructions as plain text"""
+    lines = []
+    lines.append("=" * 80)
+    lines.append("DISCHARGE INSTRUCTIONS")
+    lines.append("=" * 80)
+    lines.append("")
+
+    # Patient info
+    if data.get('patient_name'):
+        lines.append(f"Patient: {data['patient_name']}")
+    if data.get('discharge_date'):
+        lines.append(f"Discharge Date: {data['discharge_date']}")
+    lines.append("")
+
+    # Primary Diagnosis
+    lines.append("PRIMARY DIAGNOSIS")
+    lines.append("-" * 80)
+    lines.append(data.get('primary_diagnosis', 'Not specified'))
+    lines.append("")
+
+    # Medications
+    if data.get('medications'):
+        lines.append("MEDICATIONS")
+        lines.append("-" * 80)
+        for med in data['medications']:
+            lines.append(f"• {med.get('name', '')} - {med.get('dosage', '')}")
+            lines.append(f"  Frequency: {med.get('frequency', '')}")
+            if med.get('instructions'):
+                lines.append(f"  Instructions: {med.get('instructions', '')}")
+            lines.append("")
+
+    # Follow-up Appointments
+    if data.get('follow_up_appointments'):
+        lines.append("FOLLOW-UP APPOINTMENTS")
+        lines.append("-" * 80)
+        for appt in data['follow_up_appointments']:
+            lines.append(f"• {appt}")
+        lines.append("")
+
+    # Activity Restrictions
+    if data.get('activity_restrictions'):
+        lines.append("ACTIVITY RESTRICTIONS")
+        lines.append("-" * 80)
+        for restriction in data['activity_restrictions']:
+            lines.append(f"• {restriction}")
+        lines.append("")
+
+    # Diet Instructions
+    if data.get('diet_instructions'):
+        lines.append("DIET INSTRUCTIONS")
+        lines.append("-" * 80)
+        lines.append(data['diet_instructions'])
+        lines.append("")
+
+    # Warning Signs
+    if data.get('warning_signs'):
+        lines.append("WARNING SIGNS - CALL YOUR DOCTOR IF:")
+        lines.append("-" * 80)
+        for sign in data['warning_signs']:
+            lines.append(f"• {sign}")
+        lines.append("")
+
+    # Emergency Criteria
+    if data.get('emergency_criteria'):
+        lines.append("⚠️  CALL 911 OR GO TO ER IMMEDIATELY IF:")
+        lines.append("-" * 80)
+        for criteria in data['emergency_criteria']:
+            lines.append(f"• {criteria}")
+        lines.append("")
+
+    # Wound Care
+    if data.get('wound_care'):
+        lines.append("WOUND CARE INSTRUCTIONS")
+        lines.append("-" * 80)
+        lines.append(data['wound_care'])
+        lines.append("")
+
+    # Equipment Needs
+    if data.get('equipment_needs'):
+        lines.append("EQUIPMENT AND SUPPLIES")
+        lines.append("-" * 80)
+        for equipment in data['equipment_needs']:
+            lines.append(f"• {equipment}")
+        lines.append("")
+
+    # Home Care Services
+    if data.get('home_care_services'):
+        lines.append("HOME CARE SERVICES")
+        lines.append("-" * 80)
+        lines.append(data['home_care_services'])
+        lines.append("")
+
+    # Disclaimer
+    lines.append("=" * 80)
+    lines.append("This document is for informational purposes only and does not")
+    lines.append("replace medical advice from your healthcare provider.")
+    lines.append("=" * 80)
+
+    # Join lines and encode to bytes
+    text_content = "\n".join(lines)
+    buffer = BytesIO(text_content.encode('utf-8'))
+    buffer.seek(0)
+    return buffer

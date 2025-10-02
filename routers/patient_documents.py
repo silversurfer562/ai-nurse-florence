@@ -24,7 +24,9 @@ from src.models.patient_document_schemas import (
 from services.pdf_generation_service import (
     generate_discharge_instructions,
     generate_medication_guide,
-    generate_disease_education
+    generate_disease_education,
+    generate_discharge_instructions_docx,
+    generate_discharge_instructions_text
 )
 
 router = APIRouter(prefix="/api/v1/patient-documents", tags=["Patient Documents"])
@@ -75,8 +77,8 @@ async def create_discharge_instructions(request: DischargeInstructionsRequest):
     ```
     """
     try:
-        # Prepare data for PDF generation
-        pdf_data = {
+        # Prepare data for document generation
+        doc_data = {
             'patient_name': request.patient_name,
             'discharge_date': request.discharge_date,
             'primary_diagnosis': request.primary_diagnosis,
@@ -91,30 +93,46 @@ async def create_discharge_instructions(request: DischargeInstructionsRequest):
             'home_care_services': request.home_care_services
         }
 
-        # Generate PDF
-        pdf_buffer = generate_discharge_instructions(pdf_data)
-        pdf_bytes = pdf_buffer.getvalue()
-
         # Generate filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"discharge_instructions_{timestamp}.pdf"
 
-        # Return PDF as response
+        # Generate document based on format
         if request.format == DocumentFormat.PDF:
-            return StreamingResponse(
-                iter([pdf_bytes]),
-                media_type="application/pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename={filename}",
-                    "Content-Type": "application/pdf"
-                }
-            )
+            doc_buffer = generate_discharge_instructions(doc_data)
+            doc_bytes = doc_buffer.getvalue()
+            filename = f"discharge_instructions_{timestamp}.pdf"
+            media_type = "application/pdf"
+            content_type = "application/pdf"
+
+        elif request.format == DocumentFormat.DOCX:
+            doc_buffer = generate_discharge_instructions_docx(doc_data)
+            doc_bytes = doc_buffer.getvalue()
+            filename = f"discharge_instructions_{timestamp}.docx"
+            media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+        elif request.format == DocumentFormat.TEXT:
+            doc_buffer = generate_discharge_instructions_text(doc_data)
+            doc_bytes = doc_buffer.getvalue()
+            filename = f"discharge_instructions_{timestamp}.txt"
+            media_type = "text/plain"
+            content_type = "text/plain; charset=utf-8"
+
         else:
-            # For now, only PDF is supported
             raise HTTPException(
                 status_code=400,
-                detail=f"Format {request.format} not yet supported. Please use PDF."
+                detail=f"Format {request.format} not supported. Use 'pdf', 'docx', or 'txt'."
             )
+
+        # Return document as response
+        return StreamingResponse(
+            iter([doc_bytes]),
+            media_type=media_type,
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Type": content_type
+            }
+        )
 
     except Exception as e:
         raise HTTPException(

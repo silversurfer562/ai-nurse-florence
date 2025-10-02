@@ -126,7 +126,7 @@ export default function DischargeInstructions() {
     }
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (format: 'pdf' | 'docx' | 'txt' = 'pdf') => {
     setIsGenerating(true);
     try {
       const response = await fetch('/api/v1/patient-documents/discharge-instructions', {
@@ -135,7 +135,7 @@ export default function DischargeInstructions() {
         body: JSON.stringify({
           ...data,
           care_setting: careSetting || 'med-surg',
-          format: 'pdf'
+          format: format
         }),
       });
 
@@ -144,10 +144,11 @@ export default function DischargeInstructions() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `discharge-instructions-${data.patient_name || 'patient'}.pdf`;
+        const fileExtension = format === 'docx' ? 'docx' : format === 'txt' ? 'txt' : 'pdf';
+        a.download = `discharge-instructions-${data.patient_name || 'patient'}.${fileExtension}`;
         a.click();
         window.URL.revokeObjectURL(url);
-        alert('Discharge instructions generated successfully!');
+        alert(`Discharge instructions exported as ${format.toUpperCase()} successfully!`);
       } else {
         alert('Failed to generate discharge instructions. Please try again.');
       }
@@ -580,27 +581,47 @@ export default function DischargeInstructions() {
               <i className="fas fa-arrow-left mr-2"></i>Previous
             </button>
 
-            <button
-              onClick={nextStep}
-              disabled={isGenerating}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {currentStep === steps.length - 1 ? (
-                isGenerating ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i>Generating...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-file-pdf mr-2"></i>Generate PDF
-                  </>
-                )
-              ) : (
-                <>
-                  Next<i className="fas fa-arrow-right ml-2"></i>
-                </>
-              )}
-            </button>
+            {currentStep === steps.length - 1 ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleGenerate('pdf')}
+                  disabled={isGenerating}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i>Generating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-file-pdf mr-2"></i>Export PDF
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleGenerate('docx')}
+                  disabled={isGenerating}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <i className="fas fa-file-word mr-2"></i>Export Word
+                </button>
+                <button
+                  onClick={() => handleGenerate('txt')}
+                  disabled={isGenerating}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                >
+                  <i className="fas fa-file-alt mr-2"></i>Export Text
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={nextStep}
+                disabled={isGenerating}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                Next<i className="fas fa-arrow-right ml-2"></i>
+              </button>
+            )}
           </div>
         </div>
 
