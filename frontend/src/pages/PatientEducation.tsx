@@ -3,6 +3,7 @@ import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
+import LanguageAutocomplete from '../components/LanguageAutocomplete';
 
 interface WizardData {
   [key: string]: string | number;
@@ -17,7 +18,7 @@ interface WizardStep {
 
 interface WizardField {
   id: string;
-  type: 'text' | 'select' | 'textarea' | 'radio';
+  type: 'text' | 'select' | 'textarea' | 'radio' | 'language-autocomplete';
   label: string;
   placeholder?: string;
   required?: boolean;
@@ -102,28 +103,11 @@ export default function PatientEducation() {
         },
         {
           id: 'language',
-          type: 'select',
+          type: 'language-autocomplete',
           label: 'Language',
           required: true,
-          help: 'Select the patient\'s preferred language',
-          options: [
-            { value: 'en', label: 'English' },
-            { value: 'es', label: 'Spanish' },
-            { value: 'zh', label: 'Chinese (Mandarin)' },
-            { value: 'hi', label: 'Hindi' },
-            { value: 'ar', label: 'Arabic' },
-            { value: 'pt', label: 'Portuguese' },
-            { value: 'bn', label: 'Bengali' },
-            { value: 'ru', label: 'Russian' },
-            { value: 'ja', label: 'Japanese' },
-            { value: 'pa', label: 'Punjabi' },
-            { value: 'de', label: 'German' },
-            { value: 'ko', label: 'Korean' },
-            { value: 'fr', label: 'French' },
-            { value: 'vi', label: 'Vietnamese' },
-            { value: 'it', label: 'Italian' },
-            { value: 'tl', label: 'Tagalog' },
-          ],
+          placeholder: 'Search for a language...',
+          help: 'Type to search for the patient\'s preferred language',
         },
       ],
     },
@@ -323,6 +307,22 @@ export default function PatientEducation() {
                 </label>
               ))}
             </div>
+            {field.help && <p className="text-sm text-gray-500 mt-1">{field.help}</p>}
+          </div>
+        );
+
+      case 'language-autocomplete':
+        return (
+          <div className="mb-4" key={field.id}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {field.label} {field.required && <span className="text-red-500">*</span>}
+            </label>
+            <LanguageAutocomplete
+              value={data[field.id] as string || ''}
+              onChange={(code) => updateData(field.id, code)}
+              placeholder={field.placeholder}
+              required={field.required}
+            />
             {field.help && <p className="text-sm text-gray-500 mt-1">{field.help}</p>}
           </div>
         );
