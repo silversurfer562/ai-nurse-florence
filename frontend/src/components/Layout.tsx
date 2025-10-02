@@ -127,11 +127,18 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Footer */}
+      {/* Footer - Only show disclaimer on dashboard */}
       <footer role="contentinfo" className="bg-white border-t mt-12" aria-label="Footer information">
         <div className="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-600">
-          <p className="font-semibold text-blue-600 mb-1">{t('common.footer.disclaimer')}</p>
-          <p>{t('common.footer.subtext')}</p>
+          {isOnDashboard && (
+            <>
+              <p className="font-semibold text-blue-600 mb-1">{t('common.footer.disclaimer')}</p>
+              <p>{t('common.footer.subtext')}</p>
+            </>
+          )}
+          {!isOnDashboard && (
+            <p className="text-gray-500">&copy; {new Date().getFullYear()} AI Nurse Florence</p>
+          )}
         </div>
       </footer>
 

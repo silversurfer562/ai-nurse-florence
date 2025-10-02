@@ -41,19 +41,6 @@ export default function Dashboard() {
 
   return (
     <div>
-      {/* Compliance Notice */}
-      <div className="bg-blue-600 rounded-xl shadow-lg text-white p-6 mb-6">
-        <div className="flex items-start space-x-3">
-          <i className="fas fa-shield-alt text-blue-200 mt-1 text-xl"></i>
-          <div className="text-sm">
-            <p className="font-semibold text-blue-100 mb-1">{t('dashboard.complianceNotice.title')}</p>
-            <p className="text-blue-200">
-              {t('dashboard.complianceNotice.text')}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Quick Access Cards - 4 Primary Features */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {quickAccessCards.map((card) => (
@@ -133,45 +120,6 @@ export default function Dashboard() {
               </div>
             </div>
           </Link>
-        </div>
-      </div>
-
-      {/* Stats/Info Section */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center space-x-4">
-            <div className="bg-green-100 p-3 rounded-lg">
-              <i className="fas fa-database text-green-600 text-2xl"></i>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">{t('dashboard.stats.dataSources.label')}</p>
-              <p className="text-2xl font-bold text-gray-800">{t('dashboard.stats.dataSources.value')}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center space-x-4">
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <i className="fas fa-book-medical text-blue-600 text-2xl"></i>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">{t('dashboard.stats.pubmedArticles.label')}</p>
-              <p className="text-2xl font-bold text-gray-800">{t('dashboard.stats.pubmedArticles.value')}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center space-x-4">
-            <div className="bg-purple-100 p-3 rounded-lg">
-              <i className="fas fa-check-circle text-purple-600 text-2xl"></i>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">{t('dashboard.stats.systemStatus.label')}</p>
-              <p className="text-2xl font-bold text-green-600">{t('dashboard.stats.systemStatus.healthy')}</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
