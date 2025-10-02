@@ -265,6 +265,16 @@ except Exception as e:
     logger.warning(f"Failed to register content settings router: {e}")
     ROUTERS_LOADED["content_settings"] = False
 
+# Add patient education documents router (Patient-friendly education materials with PDF generation)
+try:
+    from routers.patient_education_documents import router as patient_education_docs_router
+    api_router.include_router(patient_education_docs_router)
+    ROUTERS_LOADED["patient_education_documents"] = True
+    logger.info("Patient education documents router registered successfully - Multi-language patient education enabled")
+except Exception as e:
+    logger.warning(f"Failed to register patient education documents router: {e}")
+    ROUTERS_LOADED["patient_education_documents"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 
