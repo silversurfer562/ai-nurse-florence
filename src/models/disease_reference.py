@@ -62,6 +62,10 @@ class DiseaseReference(Base):
     promoted_to_full_library = Column(Boolean, default=False)
     promotion_date = Column(DateTime, nullable=True)
 
+    # Billable code tracking (CMS guidelines)
+    is_billable = Column(Boolean, default=True)  # Can this code be billed?
+    billable_note = Column(String(200), nullable=True)  # Warning if not fully billable
+
     # Metadata
     data_source = Column(String(50), default="MONDO")  # Track where data came from
     imported_at = Column(DateTime, default=datetime.utcnow)
@@ -118,6 +122,10 @@ class DiseaseReference(Base):
             "disease_category": self.disease_category,
             "is_rare_disease": self.is_rare_disease,
             "estimated_prevalence": self.estimated_prevalence,
+            "billable_status": {
+                "is_billable": self.is_billable,
+                "note": self.billable_note
+            },
             "external_resources": {
                 "medlineplus": self.medlineplus_url,
                 "pubmed": self.pubmed_search_url,
