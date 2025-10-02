@@ -75,6 +75,67 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Clinical Documentation Section */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <i className="fas fa-clipboard-list text-blue-600 mr-2"></i>
+          Clinical Documentation
+        </h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/sbar-report"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-blue-500"
+          >
+            <div className="flex items-center space-x-3">
+              <i className="fas fa-comments text-blue-600 text-xl"></i>
+              <div>
+                <h3 className="font-semibold text-gray-800">SBAR Report</h3>
+                <p className="text-xs text-gray-500">Situation-Background-Assessment-Recommendation</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            to="/discharge-instructions"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-green-500"
+          >
+            <div className="flex items-center space-x-3">
+              <i className="fas fa-sign-out-alt text-green-600 text-xl"></i>
+              <div>
+                <h3 className="font-semibold text-gray-800">Discharge Instructions</h3>
+                <p className="text-xs text-gray-500">Patient discharge planning and instructions</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            to="/medication-guide"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-purple-500"
+          >
+            <div className="flex items-center space-x-3">
+              <i className="fas fa-prescription-bottle text-purple-600 text-xl"></i>
+              <div>
+                <h3 className="font-semibold text-gray-800">Medication Guide</h3>
+                <p className="text-xs text-gray-500">Patient medication information sheets</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            to="/incident-report"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-red-500"
+          >
+            <div className="flex items-center space-x-3">
+              <i className="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+              <div>
+                <h3 className="font-semibold text-gray-800">Incident Report</h3>
+                <p className="text-xs text-gray-500">Safety event documentation</p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
       {/* Stats/Info Section */}
       <div className="grid md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-lg p-6">
