@@ -284,6 +284,16 @@ except Exception as e:
     logger.warning(f"Failed to register genes router: {e}")
     ROUTERS_LOADED["genes"] = False
 
+# Add webhook router (Railway deployment notifications and health checks)
+try:
+    from routers.webhooks import router as webhooks_router
+    api_router.include_router(webhooks_router)
+    ROUTERS_LOADED["webhooks"] = True
+    logger.info("Webhooks router registered successfully - Railway deployment notifications and automated health checks enabled")
+except Exception as e:
+    logger.warning(f"Failed to register webhooks router: {e}")
+    ROUTERS_LOADED["webhooks"] = False
+
 try:
     from src.routers import get_available_routers, get_router_status
 
