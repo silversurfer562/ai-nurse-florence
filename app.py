@@ -87,6 +87,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️ Disease cache updater service not available: {e}")
 
+    # Initialize diagnosis content library (auto-seed if empty)
+    try:
+        from src.database import SessionLocal
+        from src.models.content_settings import DiagnosisContentMap
+        db = SessionLocal()
+        count = db.query(DiagnosisContentMap).count()
+        db.close()
+
+        if count == 0:
+            logger.info("📚 Diagnosis library empty, seeding initial data...")
+            from scripts.populate_diagnosis_library import populate_diagnoses
+            populate_diagnoses()
+            logger.info("✅ Diagnosis library seeded")
+        else:
+            logger.info(f"✅ Diagnosis library ready ({count} diagnoses)")
+    except Exception as e:
+        logger.warning(f"⚠️ Diagnosis library initialization skipped: {e}")
+
     # Log effective base URL for observability and populate OpenAPI servers
     effective_base = None
     try:
