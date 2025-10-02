@@ -32,7 +32,7 @@ except Exception as e:
     # Fallback configuration
     class FallbackSettings:
         APP_NAME = "AI Nurse Florence"
-        APP_VERSION = "2.1.0"
+        APP_VERSION = "2.3.0"
         ALLOWED_ORIGINS = ["http://localhost:3000"]
         EDUCATIONAL_BANNER = "Educational purposes only"
 
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
     # Startup logging and OpenAPI population (moved from deprecated on_event)
     logger.info("=== AI NURSE FLORENCE STARTUP ===")
     logger.info(f"App: {getattr(settings, 'APP_NAME', 'AI Nurse Florence')}")
-    logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.1.0')}")
+    logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.3.0')}")
     logger.info(
         f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}"
     )
