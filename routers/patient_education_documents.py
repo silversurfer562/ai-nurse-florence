@@ -125,7 +125,7 @@ async def generate_patient_education_document(
 
     return PatientEducationResponse(
         document_id=document_id,
-        pdf_url=f"/api/documents/download/{pdf_path.name}",
+        pdf_url=f"/api/v1/documents/download/{pdf_path.name}",
         html_preview_url=None,  # TODO: Implement HTML preview
         language=request.preferred_language,
         reading_level=request.reading_level,
