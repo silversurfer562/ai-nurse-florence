@@ -174,12 +174,19 @@ class PatientEducationWizard extends BaseWizard {
             this.diagnosisAutocomplete.destroy();
         }
 
+        // Get settings from global config (if available) or use defaults
+        const settings = window.autocompleteSettings || {};
+        const debounceMs = settings.debounceMs || 300;
+        const minQueryLength = settings.minQueryLength || 2;
+        const maxResults = settings.maxResults || 15;
+
         // Create autocomplete instance
         this.diagnosisAutocomplete = new AutocompleteDropdown({
             inputElement,
             dropdownElement,
             fetchResults: async (query) => {
-                const response = await fetch(`/api/v1/content-settings/diagnosis/search?q=${encodeURIComponent(query)}&limit=15`);
+                const currentMaxResults = window.autocompleteSettings?.maxResults || maxResults;
+                const response = await fetch(`/api/v1/content-settings/diagnosis/search?q=${encodeURIComponent(query)}&limit=${currentMaxResults}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -224,9 +231,9 @@ class PatientEducationWizard extends BaseWizard {
                 `;
             },
             getItemKey: (diagnosis) => diagnosis.id,
-            minQueryLength: 2,
-            debounceMs: 300,
-            maxResults: 15,
+            minQueryLength: minQueryLength,
+            debounceMs: debounceMs,
+            maxResults: maxResults,
             placeholder: 'No diagnoses found. Try different search terms.'
         });
 

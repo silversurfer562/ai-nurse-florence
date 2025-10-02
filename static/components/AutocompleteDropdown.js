@@ -70,14 +70,18 @@ class AutocompleteDropdown {
     handleInput(query) {
         clearTimeout(this.debounceTimer);
 
-        if (query.length < this.minQueryLength) {
+        // Check for real-time settings updates from global config
+        const currentMinLength = window.autocompleteSettings?.minQueryLength || this.minQueryLength;
+        const currentDebounce = window.autocompleteSettings?.debounceMs || this.debounceMs;
+
+        if (query.length < currentMinLength) {
             this.hide();
             return;
         }
 
         this.debounceTimer = setTimeout(async () => {
             await this.search(query);
-        }, this.debounceMs);
+        }, currentDebounce);
     }
 
     async search(query) {
@@ -86,7 +90,8 @@ class AutocompleteDropdown {
 
         try {
             const results = await this.fetchResults(query);
-            this.currentResults = results.slice(0, this.maxResults);
+            const currentMaxResults = window.autocompleteSettings?.maxResults || this.maxResults;
+            this.currentResults = results.slice(0, currentMaxResults);
             this.selectedIndex = -1;
             this.render();
             this.show();
