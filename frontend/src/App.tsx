@@ -9,6 +9,12 @@ import PatientEducation from './pages/PatientEducation'
 import MedicalGlossary from './pages/MedicalGlossary'
 import Settings from './pages/Settings'
 
+// Wizards
+import SbarReport from './pages/SbarReport'
+import DischargeInstructions from './pages/DischargeInstructions'
+import MedicationGuide from './pages/MedicationGuide'
+import IncidentReport from './pages/IncidentReport'
+
 function App() {
   return (
     <Routes>
@@ -21,6 +27,12 @@ function App() {
         <Route path="patient-education" element={<PatientEducation />} />
         <Route path="medical-glossary" element={<MedicalGlossary />} />
         <Route path="settings" element={<Settings />} />
+
+        {/* Clinical Wizards */}
+        <Route path="sbar-report" element={<SbarReport />} />
+        <Route path="discharge-instructions" element={<DischargeInstructions />} />
+        <Route path="medication-guide" element={<MedicationGuide />} />
+        <Route path="incident-report" element={<IncidentReport />} />
       </Route>
     </Routes>
   )
