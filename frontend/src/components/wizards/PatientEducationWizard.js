@@ -190,11 +190,11 @@ class PatientEducationWizard extends BaseWizard {
 
                     searchTimeout = setTimeout(async () => {
                         try {
-                            const response = await fetch(\`/api/diagnosis/search?q=\${encodeURIComponent(query)}\`);
+                            const response = await fetch(\`/api/v1/content-settings/diagnosis/search?q=\${encodeURIComponent(query)}&limit=20\`);
                             const data = await response.json();
 
-                            if (data.results && data.results.length > 0) {
-                                resultsContainer.innerHTML = data.results.map(diagnosis => \`
+                            if (Array.isArray(data) && data.length > 0) {
+                                resultsContainer.innerHTML = data.map(diagnosis => \`
                                     <div class="diagnosis-result p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                                          onclick="selectDiagnosis('\${diagnosis.id}', '\${diagnosis.diagnosis_display}', '\${diagnosis.icd10_code}', '\${diagnosis.snomed_code || ''}')">
                                         <div class="flex justify-between items-start">

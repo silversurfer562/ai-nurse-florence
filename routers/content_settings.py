@@ -31,7 +31,7 @@ from src.models.content_settings import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/content-settings", tags=["Content Settings"])
+router = APIRouter(prefix="/content-settings", tags=["Content Settings"])
 
 
 # ============================================================================

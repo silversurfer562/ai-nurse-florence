@@ -239,6 +239,11 @@ class BaseWizard {
         let isValid = true;
 
         requiredFields.forEach(field => {
+            // Skip validation for hidden fields (type="hidden")
+            if (field.type === 'hidden') {
+                return;
+            }
+
             if (!field.value.trim()) {
                 field.classList.add('border-red-500');
                 isValid = false;
