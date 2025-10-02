@@ -585,17 +585,21 @@ app.include_router(api_router)
 
 # Catch-all route for React Router (SPA) - must be last
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
-async def serve_react_app(full_path: str):
+async def serve_react_app(full_path: str, request: Request):
     """Catch-all route to serve React app for client-side routing."""
-    # Don't catch static file paths - let StaticFiles mounts handle them
-    if full_path.startswith(("locales/", "assets/", "static/", "api/")):
+    # For file extensions, let them 404 naturally (don't serve React app)
+    if "." in full_path.split("/")[-1]:
+        # This looks like a file request (e.g., .json, .js, .css)
+        # Don't serve React app for these
         from fastapi import HTTPException
         raise HTTPException(status_code=404)
-    # Don't intercept API routes
-    if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("openapi"):
-        return HTMLResponse(content="<h1>Not Found</h1>", status_code=404)
 
-    # Serve React app for all other routes (SPA)
+    # Don't intercept API routes or docs
+    if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404)
+
+    # Serve React app for all other routes (SPA client-side routing)
     if os.path.exists("frontend/dist/index.html"):
         with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
