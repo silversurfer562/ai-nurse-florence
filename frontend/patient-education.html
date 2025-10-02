@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Education Document Generator - AI Nurse Florence</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .wizard-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">
+                <i class="fas fa-book-medical mr-3"></i>
+                AI Nurse Florence
+            </h1>
+            <p class="text-white text-lg">Patient Education Document Generator</p>
+        </div>
+
+        <!-- Wizard Container -->
+        <div id="patient-education-wizard" class="wizard-container"></div>
+
+        <!-- Features Section -->
+        <div class="mt-12 text-white text-center max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Why Use This Tool?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-6">
+                    <i class="fas fa-language text-4xl mb-4"></i>
+                    <h3 class="font-semibold mb-2">Multi-Language</h3>
+                    <p class="text-sm">Support for English, Spanish, and Chinese</p>
+                </div>
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-6">
+                    <i class="fas fa-book-open text-4xl mb-4"></i>
+                    <h3 class="font-semibold mb-2">Easy to Read</h3>
+                    <p class="text-sm">Grade 6-8 reading level for patient understanding</p>
+                </div>
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-6">
+                    <i class="fas fa-shield-alt text-4xl mb-4"></i>
+                    <h3 class="font-semibold mb-2">FHIR Compliant</h3>
+                    <p class="text-sm">Epic/EHR ready with proper medical coding</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-6">
+                    <i class="fas fa-check-circle text-4xl mb-4"></i>
+                    <h3 class="font-semibold mb-2">Billable Codes</h3>
+                    <p class="text-sm">Automatically checks CMS billing validity</p>
+                </div>
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-6">
+                    <i class="fas fa-link text-4xl mb-4"></i>
+                    <h3 class="font-semibold mb-2">MedlinePlus</h3>
+                    <p class="text-sm">Integrated patient education resources</p>
+                </div>
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-6">
+                    <i class="fas fa-file-pdf text-4xl mb-4"></i>
+                    <h3 class="font-semibold mb-2">PDF Export</h3>
+                    <p class="text-sm">Print or email professional documents</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 text-center text-white text-sm">
+            <p>&copy; 2025 AI Nurse Florence. Powered by Claude AI.</p>
+            <p class="mt-2">
+                <a href="/" class="hover:underline"><i class="fas fa-home mr-1"></i> Home</a> |
+                <a href="/docs" class="hover:underline ml-4"><i class="fas fa-book mr-1"></i> Documentation</a> |
+                <a href="https://github.com/anthropics/ai-nurse-florence" class="hover:underline ml-4">
+                    <i class="fab fa-github mr-1"></i> GitHub
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Include Base Wizard -->
+    <script src="/static/components/wizards/BaseWizard.js"></script>
+
+    <!-- Include Patient Education Wizard -->
+    <script src="/static/components/wizards/PatientEducationWizard.js"></script>
+
+    <!-- Initialize Wizard -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const wizard = new PatientEducationWizard('patient-education-wizard');
+
+            // Check if there's a saved draft
+            if (wizard.loadDraft()) {
+                console.log('Loaded saved draft');
+            }
+        });
+    </script>
+</body>
+</html>
