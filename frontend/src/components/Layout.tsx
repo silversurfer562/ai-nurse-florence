@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { healthService } from '../services/api';
 import LanguageSelector from './LanguageSelector';
 import { SkipLink } from './ScreenReaderOnly';
+import { useCareSettings } from '../hooks/useCareSettings';
+import CareSettingModal, { CareSettingBadge } from './CareSettingModal';
 
 export default function Layout() {
   const location = useLocation();
@@ -13,6 +16,10 @@ export default function Layout() {
     queryFn: healthService.checkHealth,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
+
+  // Care Setting Context
+  const { careSetting, setCareSetting, isSettingSelected } = useCareSettings();
+  const [showCareSettingModal, setShowCareSettingModal] = useState(false);
 
   const isOnDashboard = location.pathname === '/';
 
@@ -42,6 +49,12 @@ export default function Layout() {
 
             {/* Right Side Icons */}
             <nav id="primary-navigation" className="flex items-center space-x-3" aria-label="Primary navigation" role="navigation">
+              {/* Care Setting Badge */}
+              <CareSettingBadge
+                currentSetting={careSetting}
+                onClick={() => setShowCareSettingModal(true)}
+              />
+
               {/* Home Icon - Show when not on dashboard */}
               {!isOnDashboard && (
                 <Link
@@ -56,6 +69,15 @@ export default function Layout() {
 
               {/* Language Selector */}
               <LanguageSelector />
+
+              {/* Settings Icon */}
+              <Link
+                to="/settings"
+                className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                aria-label="Open settings"
+              >
+                <i className="fas fa-cog text-xl" aria-hidden="true"></i>
+              </Link>
 
               {/* Help Icon */}
               <button
@@ -112,6 +134,17 @@ export default function Layout() {
           <p>{t('common.footer.subtext')}</p>
         </div>
       </footer>
+
+      {/* Care Setting Modal */}
+      <CareSettingModal
+        isOpen={showCareSettingModal}
+        onSelect={(setting) => {
+          setCareSetting(setting);
+          setShowCareSettingModal(false);
+        }}
+        onClose={() => setShowCareSettingModal(false)}
+        canDismiss={isSettingSelected}
+      />
     </div>
   );
 }

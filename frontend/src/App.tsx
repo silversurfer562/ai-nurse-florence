@@ -7,6 +7,7 @@ import LiteratureSearch from './pages/LiteratureSearch'
 import DrugInteractions from './pages/DrugInteractions'
 import PatientEducation from './pages/PatientEducation'
 import MedicalGlossary from './pages/MedicalGlossary'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="drug-interactions" element={<DrugInteractions />} />
         <Route path="patient-education" element={<PatientEducation />} />
         <Route path="medical-glossary" element={<MedicalGlossary />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   )
