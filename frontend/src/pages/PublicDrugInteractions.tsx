@@ -15,7 +15,6 @@ import DrugAutocomplete from '../components/DrugAutocomplete';
 export default function PublicDrugInteractions() {
   const [medications, setMedications] = useState<string[]>(['', '']);
   const [submittedMeds, setSubmittedMeds] = useState<string[]>([]);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
   const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -75,59 +74,6 @@ export default function PublicDrugInteractions() {
           </p>
         </div>
 
-        {/* Mission Statement */}
-        <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg mb-8">
-          <h2 className="text-lg font-semibold text-blue-900 mb-2">
-            <i className="fas fa-heart mr-2"></i>
-            Our Mission: Serving the Healthcare Community
-          </h2>
-          <p className="text-blue-800 mb-3">
-            When the NIH Drug Interaction API was discontinued, the healthcare community lost a valuable public resource.
-            We're providing this free tool to help fill that gap and serve patients, caregivers, and healthcare consumers.
-          </p>
-          <p className="text-sm text-blue-700">
-            This tool is offered as a free public service and demonstration of responsible use of medical data.
-            We hope it inspires others to contribute to accessible healthcare technology.
-          </p>
-        </div>
-
-        {/* Disclaimer */}
-        {showDisclaimer && (
-          <div className="bg-yellow-50 border border-yellow-400 rounded-lg p-6 mb-8">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-yellow-900 mb-2">
-                  <i className="fas fa-exclamation-triangle mr-2"></i>
-                  Important Medical Disclaimer
-                </h3>
-                <div className="text-sm text-yellow-800 space-y-2">
-                  <p>
-                    <strong>This tool is for informational and educational purposes only.</strong> It is not a substitute for
-                    professional medical advice, diagnosis, or treatment.
-                  </p>
-                  <p>
-                    <strong>Always consult your healthcare provider</strong> about your medications, potential interactions,
-                    and any health concerns. Do not start, stop, or change medications without medical supervision.
-                  </p>
-                  <p>
-                    <strong>In case of emergency,</strong> call 911 or your local emergency services immediately.
-                  </p>
-                  <p className="text-xs mt-3">
-                    By using this tool, you acknowledge that you understand these limitations and will consult appropriate
-                    healthcare professionals for medical decisions.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowDisclaimer(false)}
-                className="ml-4 text-yellow-600 hover:text-yellow-800"
-                aria-label="Dismiss disclaimer"
-              >
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Main Tool Card */}
         <div className="card mb-6">
@@ -340,6 +286,57 @@ export default function PublicDrugInteractions() {
                 </div>
               )}
             </div>
+
+            {/* Important Medical Disclaimer - shown after results */}
+            <div className="bg-yellow-50 border-l-4 border-yellow-600 p-6 rounded-r-lg mt-6">
+              <h3 className="text-lg font-semibold text-yellow-900 mb-3">
+                <i className="fas fa-exclamation-triangle mr-2"></i>
+                Important Medical Disclaimer
+              </h3>
+              <div className="text-sm text-yellow-800 space-y-2">
+                <p>
+                  <strong>This tool is for informational and educational purposes only.</strong> It is not a substitute for
+                  professional medical advice, diagnosis, or treatment.
+                </p>
+                <p>
+                  <strong>Always consult your healthcare provider</strong> about your medications, potential interactions,
+                  and any health concerns. Do not start, stop, or change medications without medical supervision.
+                </p>
+                <p>
+                  <strong>In case of emergency,</strong> call 911 or your local emergency services immediately.
+                </p>
+                <p className="text-xs mt-3 font-medium">
+                  By using this tool, you acknowledge that you understand these limitations and will consult appropriate
+                  healthcare professionals for medical decisions.
+                </p>
+              </div>
+            </div>
+
+            {/* Mission Statement - shown after results */}
+            <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg mt-6">
+              <h3 className="text-lg font-semibold text-blue-900 mb-3">
+                <i className="fas fa-heart mr-2"></i>
+                Our Mission: Serving the Healthcare Community
+              </h3>
+              <div className="text-sm text-blue-800 space-y-2">
+                <p>
+                  When the NIH Drug Interaction API was discontinued, the healthcare community lost a valuable public resource.
+                  We're providing this free tool to help fill that gap and serve patients, caregivers, and healthcare consumers.
+                </p>
+                <p>
+                  AI Nurse Florence is a clinical decision support platform designed to help nurses work more efficiently
+                  and deliver better patient care. This free public tool is part of our commitment to serving the healthcare
+                  community and advancing accessible health technology.
+                </p>
+                {/* Uncomment link once SSL is fixed
+                <p className="mt-3">
+                  <a href="https://ainurseflorence.com" className="text-blue-600 hover:text-blue-800 underline font-medium">
+                    Learn more about AI Nurse Florence →
+                  </a>
+                </p>
+                */}
+              </div>
+            </div>
           </>
         )}
 
@@ -378,19 +375,6 @@ export default function PublicDrugInteractions() {
               </p>
             </div>
 
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-2">About AI Nurse Florence</h3>
-              <p className="text-sm">
-                AI Nurse Florence is a clinical decision support platform designed to help nurses work more efficiently
-                and deliver better patient care. This free public tool is part of our commitment to serving the healthcare
-                community and advancing accessible health technology.
-              </p>
-              <p className="text-sm mt-2">
-                <a href="/" className="text-blue-600 hover:text-blue-800 underline">
-                  Learn more about AI Nurse Florence →
-                </a>
-              </p>
-            </div>
           </div>
         </div>
 
