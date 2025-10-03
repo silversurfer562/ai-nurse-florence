@@ -592,14 +592,14 @@ async def dashboard_redirect():
 app.include_router(api_router)
 
 
-# Root route to serve React app
+# Root route to serve simple HTML landing page
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def serve_root():
-    """Serve React app at root path."""
-    if os.path.exists("frontend/dist/index.html"):
-        with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+    """Serve static HTML landing page at root."""
+    if os.path.exists("index.html"):
+        with open("index.html", "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Frontend not found</h1>", status_code=404)
+    return HTMLResponse(content="<h1>Landing page not found</h1>", status_code=404)
 
 
 # Catch-all route for React Router (SPA) - must be last
