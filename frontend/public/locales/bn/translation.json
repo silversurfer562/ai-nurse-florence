@@ -1,16 +1,16 @@
 {
   "common": {
     "appName": "AI Nurse Florence",
-    "appTagline": "Your Clinical Assistant",
+    "appTagline": "Clinical Decision Support System",
     "connected": "Connected",
     "connecting": "Connecting...",
     "home": "Home",
     "help": "Help",
     "version": "v{{version}}",
     "footer": {
-      "disclaimer": "Educational tool - not medical advice",
-      "subtext": "Always follow institutional protocols and verify clinical decisions with appropriate healthcare professionals.",
-      "copyright": "AI Nurse Florence"
+      "disclaimer": "Clinical Decision Support Tool - Educational Purposes Only",
+      "subtext": "Draft for clinician review — not medical advice. No PHI stored.",
+      "copyright": "© 2025 AI Nurse Florence"
     }
   },
   "navigation": {
@@ -29,12 +29,12 @@
     "patientEducation": {
       "title": "Patient Education",
       "description": "Generate customized patient education materials",
-      "action": "Create Document"
+      "action": "Explore"
     },
     "drugInteractions": {
       "title": "Drug Interactions",
       "description": "Check medication interactions and safety",
-      "action": "Check Now"
+      "action": "Explore"
     },
     "stats": {
       "dataSources": {

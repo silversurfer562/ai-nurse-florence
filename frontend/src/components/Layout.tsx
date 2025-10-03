@@ -7,6 +7,7 @@ import LanguageSelector from './LanguageSelector';
 import { SkipLink } from './ScreenReaderOnly';
 import { useCareSettings } from '../hooks/useCareSettings';
 import CareSettingModal, { CareSettingBadge } from './CareSettingModal';
+import { HelpSystem } from './Help';
 
 export default function Layout() {
   const location = useLocation();
@@ -79,7 +80,7 @@ export default function Layout() {
                 <i className="fas fa-cog text-xl" aria-hidden="true"></i>
               </Link>
 
-              {/* Help Icon */}
+              {/* Help Button */}
               <button
                 onClick={() => {
                   const helpButton = document.querySelector('.help-system-button') as HTMLButtonElement;
@@ -87,10 +88,11 @@ export default function Layout() {
                     helpButton.click();
                   }
                 }}
-                className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 aria-label={`Open ${t('common.help')} menu`}
               >
-                <i className="fas fa-question-circle text-xl" aria-hidden="true"></i>
+                <i className="fas fa-question-circle" aria-hidden="true"></i>
+                <span className="font-medium">{t('common.help')}</span>
               </button>
 
               {/* Connection Status */}
@@ -152,6 +154,9 @@ export default function Layout() {
         onClose={() => setShowCareSettingModal(false)}
         canDismiss={isSettingSelected}
       />
+
+      {/* Help System - Floating button in bottom-right corner */}
+      <HelpSystem />
     </div>
   );
 }

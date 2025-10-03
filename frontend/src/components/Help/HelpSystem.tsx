@@ -27,14 +27,12 @@ export function HelpSystem({ }: HelpSystemProps) {
 
   return (
     <>
-      {/* Floating Help Button */}
+      {/* Hidden trigger button for header help button to click */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 z-50"
-        aria-label="Open Help"
-      >
-        <i className={`fas ${isOpen ? 'fa-times' : 'fa-question'} text-xl`}></i>
-      </button>
+        className="help-system-button hidden"
+        aria-label="Toggle Help"
+      />
 
       {/* Help Drawer */}
       {isOpen && (
@@ -57,6 +55,7 @@ export function HelpSystem({ }: HelpSystemProps) {
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-white hover:bg-blue-600 rounded-full p-2 transition-colors"
+                  aria-label="Close Help"
                 >
                   <i className="fas fa-times text-xl"></i>
                 </button>
@@ -120,31 +119,40 @@ export function HelpSystem({ }: HelpSystemProps) {
               {activeTab === 'quickstart' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                      {helpContent.quickStart.title}
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      {helpContent.quickStart.welcome}
-                    </p>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Welcome to AI Nurse Florence</h3>
+                    <p className="text-gray-600 mb-4">{helpContent.quick_start.introduction}</p>
                   </div>
 
-                  {helpContent.quickStart.steps.map((step, index) => (
-                    <div key={index} className="flex space-x-4">
-                      <div className="flex-shrink-0 w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">{step.title}</h4>
-                        <p className="text-gray-600 text-sm">{step.description}</p>
-                      </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-3">Getting Started</h4>
+                    <div className="space-y-3">
+                      {helpContent.quick_start.steps.map((step, index) => (
+                        <div key={index} className="flex gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-800">{step.title}</h5>
+                            <p className="text-sm text-gray-600">{step.description}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
 
-                  <div className="mt-8 bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-                    <p className="text-sm text-blue-900">
+                  <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r">
+                    <h4 className="font-semibold text-blue-900 mb-2">
                       <i className="fas fa-lightbulb mr-2"></i>
-                      <strong>Tip:</strong> Click on the "Tasks" tab to see step-by-step guides for specific workflows.
-                    </p>
+                      Quick Tips
+                    </h4>
+                    <ul className="space-y-1 text-sm text-blue-800">
+                      {helpContent.quick_start.tips.map((tip, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <i className="fas fa-check text-blue-600 mt-1"></i>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               )}
@@ -152,107 +160,108 @@ export function HelpSystem({ }: HelpSystemProps) {
               {/* Tasks Tab */}
               {activeTab === 'tasks' && (
                 <div className="space-y-4">
-                  {selectedTaskData ? (
-                    // Task Detail View
+                  {selectedTask ? (
+                    // Task Details View
                     <div>
                       <button
                         onClick={() => setSelectedTask(null)}
-                        className="text-blue-600 hover:text-blue-700 mb-4 flex items-center"
+                        className="text-blue-600 hover:text-blue-800 mb-4 flex items-center gap-2"
                       >
-                        <i className="fas fa-arrow-left mr-2"></i>
-                        Back to tasks
+                        <i className="fas fa-arrow-left"></i>
+                        Back to all tasks
                       </button>
 
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                        {selectedTaskData.title}
-                      </h3>
-                      <p className="text-gray-600 mb-6">{selectedTaskData.description}</p>
+                      {selectedTaskData && (
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2">{selectedTaskData.title}</h3>
+                            <p className="text-gray-600">{selectedTaskData.description}</p>
+                          </div>
 
-                      {/* Steps */}
-                      <div className="space-y-6 mb-8">
-                        <h4 className="font-semibold text-gray-900 text-lg">Step-by-Step Guide</h4>
-                        {selectedTaskData.steps.map((step) => (
-                          <div key={step.step} className="border-l-4 border-blue-600 pl-4">
-                            <div className="flex items-start space-x-3 mb-2">
-                              <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                                {step.step}
-                              </div>
-                              <div className="flex-1">
-                                <h5 className="font-semibold text-gray-900">{step.title}</h5>
-                                <p className="text-gray-700 text-sm mt-1">{step.instruction}</p>
-                                {step.tip && (
-                                  <div className="mt-2 bg-yellow-50 border-l-2 border-yellow-400 p-2 rounded text-xs">
-                                    <i className="fas fa-lightbulb text-yellow-600 mr-1"></i>
-                                    <strong>Tip:</strong> {step.tip}
+                          <div>
+                            <h4 className="font-semibold text-gray-800 mb-3">Steps</h4>
+                            <div className="space-y-3">
+                              {selectedTaskData.steps.map((step, index) => (
+                                <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+                                      {index + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                      <h5 className="font-medium text-gray-800 mb-1">{step.action}</h5>
+                                      <p className="text-sm text-gray-600 mb-2">{step.details}</p>
+                                      {step.tip && (
+                                        <div className="bg-blue-50 border-l-2 border-blue-400 pl-3 py-1 text-sm text-blue-800">
+                                          <i className="fas fa-lightbulb mr-1"></i>
+                                          <strong>Tip:</strong> {step.tip}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
-                              </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
-                      </div>
 
-                      {/* Benefits */}
-                      <div className="mb-8">
-                        <h4 className="font-semibold text-gray-900 text-lg mb-3">Benefits</h4>
-                        <ul className="space-y-2">
-                          {selectedTaskData.benefits.map((benefit, index) => (
-                            <li key={index} className="flex items-start space-x-2 text-sm text-gray-700">
-                              <i className="fas fa-check-circle text-green-600 mt-0.5"></i>
-                              <span>{benefit}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                          {selectedTaskData.benefits && (
+                            <div className="bg-green-50 border-l-4 border-green-600 p-4 rounded-r">
+                              <h4 className="font-semibold text-green-900 mb-2">
+                                <i className="fas fa-check-circle mr-2"></i>
+                                Benefits
+                              </h4>
+                              <ul className="space-y-1 text-sm text-green-800">
+                                {selectedTaskData.benefits.map((benefit, index) => (
+                                  <li key={index}>• {benefit}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
 
-                      {/* Troubleshooting */}
-                      {selectedTaskData.troubleshooting && selectedTaskData.troubleshooting.length > 0 && (
-                        <div>
-                          <h4 className="font-semibold text-gray-900 text-lg mb-3">Troubleshooting</h4>
-                          <div className="space-y-3">
-                            {selectedTaskData.troubleshooting.map((item, index) => (
-                              <div key={index} className="bg-gray-50 p-3 rounded">
-                                <p className="font-medium text-gray-900 text-sm mb-1">
-                                  <i className="fas fa-exclamation-triangle text-orange-500 mr-2"></i>
-                                  {item.problem}
-                                </p>
-                                <p className="text-gray-700 text-sm ml-6">{item.solution}</p>
-                              </div>
-                            ))}
-                          </div>
+                          {selectedTaskData.troubleshooting && (
+                            <div className="bg-yellow-50 border-l-4 border-yellow-600 p-4 rounded-r">
+                              <h4 className="font-semibold text-yellow-900 mb-2">
+                                <i className="fas fa-wrench mr-2"></i>
+                                Troubleshooting
+                              </h4>
+                              <ul className="space-y-1 text-sm text-yellow-800">
+                                {selectedTaskData.troubleshooting.map((item, index) => (
+                                  <li key={index}>• {item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   ) : (
                     // Task List View
                     <>
-                      {searchQuery && (
-                        <p className="text-sm text-gray-600 mb-4">
-                          Found {filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}
-                        </p>
-                      )}
-                      {filteredTasks.map((task) => (
-                        <button
-                          key={task.id}
-                          onClick={() => setSelectedTask(task.id)}
-                          className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition-all"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 mb-1">{task.title}</h4>
-                              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                              <span className="inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
-                                {task.category}
-                              </span>
-                            </div>
-                            <i className="fas fa-chevron-right text-gray-400 ml-4"></i>
-                          </div>
-                        </button>
-                      ))}
-                      {filteredTasks.length === 0 && searchQuery && (
-                        <p className="text-gray-500 text-center py-8">
-                          No tasks found matching "{searchQuery}"
-                        </p>
+                      <h3 className="text-xl font-bold text-gray-800 mb-4">How-To Guides</h3>
+                      {filteredTasks.length === 0 ? (
+                        <p className="text-gray-500 text-center py-8">No tasks match your search.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {filteredTasks.map((task) => (
+                            <button
+                              key={task.id}
+                              onClick={() => setSelectedTask(task.id)}
+                              className="w-full text-left bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-400 hover:shadow-md transition-all group"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-800 group-hover:text-blue-600 mb-1">
+                                    {task.title}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                  <span className="inline-block text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    {task.category}
+                                  </span>
+                                </div>
+                                <i className="fas fa-chevron-right text-gray-400 group-hover:text-blue-600 mt-1"></i>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </>
                   )}
@@ -262,44 +271,51 @@ export function HelpSystem({ }: HelpSystemProps) {
               {/* FAQ Tab */}
               {activeTab === 'faq' && (
                 <div className="space-y-4">
-                  {searchQuery && (
-                    <p className="text-sm text-gray-600 mb-4">
-                      Found {filteredFAQs.length} question{filteredFAQs.length !== 1 ? 's' : ''}
-                    </p>
-                  )}
-                  {filteredFAQs.map((faq) => (
-                    <details key={faq.id} className="bg-white border border-gray-200 rounded-lg group">
-                      <summary className="cursor-pointer p-4 hover:bg-gray-50 transition-colors flex items-start justify-between">
-                        <div className="flex-1 pr-4">
-                          <h4 className="font-semibold text-gray-900 mb-1">{faq.question}</h4>
-                          <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
-                            {faq.category}
-                          </span>
-                        </div>
-                        <i className="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
-                      </summary>
-                      <div className="px-4 pb-4 text-sm text-gray-700 border-t border-gray-100 pt-3">
-                        {faq.answer}
-                      </div>
-                    </details>
-                  ))}
-                  {filteredFAQs.length === 0 && searchQuery && (
-                    <p className="text-gray-500 text-center py-8">
-                      No FAQs found matching "{searchQuery}"
-                    </p>
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Frequently Asked Questions</h3>
+                  {filteredFAQs.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">No FAQs match your search.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredFAQs.map((faq, index) => (
+                        <details
+                          key={index}
+                          className="bg-white border border-gray-200 rounded-lg overflow-hidden group"
+                        >
+                          <summary className="px-4 py-3 cursor-pointer hover:bg-gray-50 flex items-start justify-between group">
+                            <span className="font-medium text-gray-800 pr-4">{faq.question}</span>
+                            <i className="fas fa-chevron-down text-gray-400 group-hover:text-blue-600 mt-1"></i>
+                          </summary>
+                          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                            <p className="text-sm text-gray-700">{faq.answer}</p>
+                            {faq.related_tasks && faq.related_tasks.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <p className="text-xs text-gray-600 mb-2">Related guides:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {faq.related_tasks.map((taskId, i) => {
+                                    const task = helpContent.tasks.find(t => t.id === taskId);
+                                    return task ? (
+                                      <button
+                                        key={i}
+                                        onClick={() => {
+                                          setActiveTab('tasks');
+                                          setSelectedTask(taskId);
+                                        }}
+                                        className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                                      >
+                                        {task.title}
+                                      </button>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </details>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-600">
-              <p>
-                Need more help?{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Contact Support
-                </a>
-              </p>
             </div>
           </div>
         </>
@@ -307,5 +323,3 @@ export function HelpSystem({ }: HelpSystemProps) {
     </>
   );
 }
-
-export default HelpSystem;

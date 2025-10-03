@@ -855,19 +855,20 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
                 if symptoms:
                     logger.info(f"✅ Using HPO symptoms ({len(symptoms)} found)")
 
-        # 3. Final fallback: if no real symptoms found, provide clinical guidance
+        # 3. Final fallback: if no real symptoms found, provide helpful clinical guidance
         if not symptoms or (len(symptoms) == 1 and "Clinical course" in symptoms[0]):
-            logger.warning(f"⚠️ No symptoms found from any source for {disease_name}, using fallback text")
-            base_symptoms = [
-                "Detailed symptom information is not available in the database",
+            logger.info(f"📚 No detailed symptoms in database for {disease_name}, providing resource links")
+            # Provide helpful guidance instead of negative messaging
+            guidance_symptoms = [
+                f"Comprehensive clinical information available through external resources (see links below)",
                 "Clinical manifestations may vary between individuals",
-                "Consult medical literature and clinical practice guidelines for comprehensive symptom assessment"
+                "Consult current medical literature and clinical practice guidelines for detailed symptom assessment"
             ]
             # Keep clinical course if we have it
             if symptoms and "Clinical course" in symptoms[0]:
-                symptoms.extend(base_symptoms)
+                symptoms.extend(guidance_symptoms)
             else:
-                symptoms = base_symptoms
+                symptoms = guidance_symptoms
 
         # Build comprehensive summary
         summary_parts = []
@@ -896,6 +897,21 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
         # Fetch related PubMed articles (top 3 most cited)
         related_articles = await _fetch_related_pubmed_articles(disease_name)
 
+        # Build external resources links
+        external_resources = {}
+
+        # MedlinePlus link (normalize disease name for URL)
+        medlineplus_query = disease_name.lower().replace(" ", "")
+        external_resources["medlineplus"] = f"https://medlineplus.gov/{medlineplus_query}.html"
+
+        # PubMed search link
+        pubmed_query = disease_name.replace(" ", "+")
+        external_resources["pubmed"] = f"https://pubmed.ncbi.nlm.nih.gov/?term={pubmed_query}+symptoms"
+
+        # MONDO link (if we have MONDO ID)
+        if mondo.get("mondo"):
+            external_resources["mondo"] = f"https://monarchinitiative.org/disease/{mondo['mondo']}"
+
         return {
             "summary": summary,
             "description": description,
@@ -905,9 +921,15 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
             "mondo_id": mondo.get("mondo", ""),
             "sources": sources,
             "related_articles": related_articles,
+            "external_resources": external_resources,
         }
     else:
         logger.warning(f"⚠️ No results found for query: {query}")
+
+        # Build helpful resource links even when disease not found
+        pubmed_query = query.replace(" ", "+")
+        medlineplus_search = query.replace(" ", "+")
+
         return {
             "summary": f"No specific information found for '{query}'. Consider rephrasing your search or consulting medical literature.",
             "description": "Disease information not available in database. Try using standard medical terminology or alternative disease names.",
@@ -917,7 +939,11 @@ async def _lookup_disease_live(query: str) -> Dict[str, Any]:
                 "Try using medical terminology (e.g., 'diabetes mellitus' instead of 'sugar disease')",
                 "Check spelling and try alternative names",
                 "Consider broader or more specific terms"
-            ]
+            ],
+            "external_resources": {
+                "medlineplus": f"https://medlineplus.gov/search.html?query={medlineplus_search}",
+                "pubmed": f"https://pubmed.ncbi.nlm.nih.gov/?term={pubmed_query}"
+            }
         }
 
 def _create_disease_stub_response(query: str, banner: str) -> Dict[str, Any]:

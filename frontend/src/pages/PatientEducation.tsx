@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
+import { useDocumentLanguage } from '../hooks/useDocumentLanguage';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
-import LanguageAutocomplete from '../components/LanguageAutocomplete';
 
 interface WizardData {
   [key: string]: string | number;
@@ -18,7 +18,7 @@ interface WizardStep {
 
 interface WizardField {
   id: string;
-  type: 'text' | 'select' | 'textarea' | 'radio' | 'language-autocomplete';
+  type: 'text' | 'select' | 'textarea' | 'radio';
   label: string;
   placeholder?: string;
   required?: boolean;
@@ -43,6 +43,9 @@ export default function PatientEducation() {
   const { careSetting } = useCareSettings();
   const { getTemplateDefaults } = useCareSettingTemplates();
 
+  // Document language from settings
+  const { documentLanguage } = useDocumentLanguage();
+
   // Load care setting template defaults when setting changes
   useEffect(() => {
     if (careSetting) {
@@ -50,10 +53,17 @@ export default function PatientEducation() {
       setData((prev) => ({
         ...prev,
         reading_level: defaults.readingLevel || prev.reading_level || 'middle',
-        language: prev.language || 'en',
       }));
     }
   }, [careSetting, getTemplateDefaults]);
+
+  // Auto-set language from document language setting
+  useEffect(() => {
+    setData((prev) => ({
+      ...prev,
+      language: documentLanguage,
+    }));
+  }, [documentLanguage]);
 
   const steps: WizardStep[] = [
     {
@@ -100,14 +110,6 @@ export default function PatientEducation() {
             { value: 'middle', label: 'Middle School (Grades 6-8) - Recommended' },
             { value: 'high', label: 'High School (Grades 9-12)' },
           ],
-        },
-        {
-          id: 'language',
-          type: 'language-autocomplete',
-          label: 'Language',
-          required: true,
-          placeholder: 'Search for a language...',
-          help: 'Type to search for the patient\'s preferred language',
         },
       ],
     },
@@ -311,22 +313,6 @@ export default function PatientEducation() {
           </div>
         );
 
-      case 'language-autocomplete':
-        return (
-          <div className="mb-4" key={field.id}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
-            </label>
-            <LanguageAutocomplete
-              value={data[field.id] as string || ''}
-              onChange={(code) => updateData(field.id, code)}
-              placeholder={field.placeholder}
-              required={field.required}
-            />
-            {field.help && <p className="text-sm text-gray-500 mt-1">{field.help}</p>}
-          </div>
-        );
-
       default:
         return null;
     }
@@ -357,8 +343,18 @@ export default function PatientEducation() {
             <p className="text-gray-700 capitalize">{data.reading_level}</p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Language</h4>
+            <h4 className="font-semibold text-gray-900 mb-2 flex items-center justify-between">
+              <span>Language</span>
+              <a href="/settings" className="text-sm text-blue-600 hover:text-blue-800">
+                <i className="fas fa-cog mr-1"></i>
+                Change in Settings
+              </a>
+            </h4>
             <p className="text-gray-700">{data.language}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              <i className="fas fa-info-circle mr-1"></i>
+              Document language is managed in Settings → Language
+            </p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-semibold text-gray-900 mb-2">Download Format</h4>

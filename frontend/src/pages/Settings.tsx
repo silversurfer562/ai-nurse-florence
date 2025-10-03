@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCareSettings } from '../hooks/useCareSettings';
+import { useDocumentLanguage } from '../hooks/useDocumentLanguage';
 import CareSettingSelector from '../components/CareSettingSelector';
 import type { CareSetting } from '../components/CareSettingSelector';
 import LanguageSelector from '../components/LanguageSelector';
+import LanguageAutocomplete from '../components/LanguageAutocomplete';
 
 /**
  * Settings Page
@@ -18,6 +20,7 @@ import LanguageSelector from '../components/LanguageSelector';
 export default function Settings() {
   const { i18n } = useTranslation();
   const { careSetting, setCareSetting, clearCareSetting } = useCareSettings();
+  const { documentLanguage, setDocumentLanguage, resetToUILanguage } = useDocumentLanguage();
   const [activeTab, setActiveTab] = useState<'general' | 'care-setting' | 'language' | 'accessibility'>('general');
 
   const handleCareSettingChange = (setting: CareSetting) => {
@@ -88,7 +91,7 @@ export default function Settings() {
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex justify-between">
                       <span>Version:</span>
-                      <span className="font-mono">2.1.0</span>
+                      <span className="font-mono">2.3.0</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Build:</span>
@@ -96,7 +99,7 @@ export default function Settings() {
                     </div>
                     <div className="flex justify-between">
                       <span>Last Updated:</span>
-                      <span>October 2, 2025</span>
+                      <span>October 3, 2025</span>
                     </div>
                   </div>
                 </div>
@@ -220,19 +223,63 @@ export default function Settings() {
             <div id="language-panel" role="tabpanel">
               <h2 className="text-xl font-bold text-gray-800 mb-2">Language Preferences</h2>
               <p className="text-gray-600 mb-6">
-                Select your preferred language for the application interface. Patient education materials can be generated in multiple languages.
+                Configure language settings for the application interface and patient documents.
               </p>
 
-              {/* Current Language */}
-              <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-600 rounded-r-lg">
-                <p className="text-sm text-green-800 font-medium mb-1">Current Language</p>
-                <p className="text-lg font-bold text-green-900">{i18n.language.toUpperCase()}</p>
+              {/* UI Language Section */}
+              <div className="card mb-6">
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  <i className="fas fa-display mr-2 text-blue-600"></i>
+                  Interface Language
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Language for menus, buttons, and all application text.
+                </p>
+
+                {/* Current UI Language */}
+                <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-600 rounded-r-lg">
+                  <p className="text-sm text-green-800 font-medium mb-1">Current Interface Language</p>
+                  <p className="text-lg font-bold text-green-900">{i18n.language.toUpperCase()}</p>
+                </div>
+
+                <LanguageSelector />
               </div>
 
-              {/* Language Selector */}
+              {/* Document Language Section */}
               <div className="card mb-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Select Language</h3>
-                <LanguageSelector />
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  <i className="fas fa-file-medical mr-2 text-purple-600"></i>
+                  Patient Document Language
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Default language for generated patient documents (education materials, discharge instructions, etc.).
+                  This is separate from the interface language.
+                </p>
+
+                {/* Current Document Language */}
+                <div className="mb-4 p-3 bg-purple-50 border-l-4 border-purple-600 rounded-r-lg">
+                  <p className="text-sm text-purple-800 font-medium mb-1">Current Document Language</p>
+                  <p className="text-lg font-bold text-purple-900">{documentLanguage.toUpperCase()}</p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Document Language
+                  </label>
+                  <LanguageAutocomplete
+                    value={documentLanguage}
+                    onChange={setDocumentLanguage}
+                    placeholder="Search for a language..."
+                  />
+                </div>
+
+                <button
+                  onClick={resetToUILanguage}
+                  className="btn-secondary text-sm"
+                >
+                  <i className="fas fa-sync mr-2"></i>
+                  Use Same as Interface Language
+                </button>
               </div>
 
               {/* Supported Languages Info */}
@@ -411,14 +458,27 @@ export default function Settings() {
           For questions or support, please refer to our documentation or contact your system administrator.
         </p>
         <div className="flex justify-center gap-4">
-          <button className="btn-secondary text-sm">
-            <i className="fas fa-book mr-2"></i>
-            View Documentation
-          </button>
-          <button className="btn-secondary text-sm">
+          <button
+            onClick={() => {
+              const helpButton = document.querySelector('.help-system-button') as HTMLButtonElement;
+              if (helpButton) {
+                helpButton.click();
+              }
+            }}
+            className="btn-secondary text-sm"
+          >
             <i className="fas fa-question-circle mr-2"></i>
             Help Center
           </button>
+          <a
+            href="https://github.com/anthropics/ai-nurse-florence"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary text-sm inline-flex items-center"
+          >
+            <i className="fas fa-book mr-2"></i>
+            View Documentation
+          </a>
         </div>
       </div>
     </div>
