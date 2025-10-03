@@ -18,7 +18,7 @@ class TestConfiguration:
         
         # Verify basic settings
         assert settings.APP_NAME == "AI Nurse Florence"
-        assert settings.APP_VERSION == "2.1.0"
+        assert settings.APP_VERSION == "2.3.1"
         assert isinstance(settings.ALLOWED_ORIGINS, list)
         
     def test_educational_banner(self):

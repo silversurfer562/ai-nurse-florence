@@ -5,8 +5,9 @@ Enables reliable disease lookups regardless of how users phrase the name.
 
 import logging
 import uuid
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, cast
 from datetime import datetime
+import hashlib
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,13 +35,13 @@ class DiseaseAliasService:
                     .order_by(CachedDiseaseList.updated_at.desc())
                     .limit(1)
                 )
-                cached_list = result.scalar_one_or_none()
+                cached_list = result.scalars().first()
 
                 if not cached_list:
                     logger.warning("No cached disease list found")
                     return 0
 
-                diseases = cached_list.disease_names
+                diseases = cast(List[str], cached_list.disease_names or [])
                 alias_count = 0
                 skipped_count = 0
 
@@ -52,11 +53,14 @@ class DiseaseAliasService:
                         skipped_count += 1
                         continue
 
+                    # Create a stable, short placeholder mondo_id that fits VARCHAR(100)
+                    placeholder_mondo_id = DiseaseAliasService._make_placeholder_mondo_id(disease_name)
+
                     # Create primary alias (the disease name itself)
                     await DiseaseAliasService._create_alias(
                         session=session,
                         alias=disease_name,
-                        mondo_id=f"SEARCH:{disease_name}",  # Temporary until we link to real MONDO IDs
+                        mondo_id=placeholder_mondo_id,  # Temporary until we link to real MONDO IDs
                         canonical_name=disease_name,
                         alias_type="primary",
                         is_preferred=True,
@@ -71,7 +75,7 @@ class DiseaseAliasService:
                             await DiseaseAliasService._create_alias(
                                 session=session,
                                 alias=variation,
-                                mondo_id=f"SEARCH:{disease_name}",
+                                mondo_id=placeholder_mondo_id,
                                 canonical_name=disease_name,
                                 alias_type="variation",
                                 is_preferred=False,
@@ -80,7 +84,9 @@ class DiseaseAliasService:
                             alias_count += 1
 
                 await session.commit()
-                logger.info(f"✅ Created {alias_count} disease aliases (skipped {skipped_count} technical entries)")
+                logger.info(
+                    f"✅ Created {alias_count} disease aliases (skipped {skipped_count} technical entries)"
+                )
                 return alias_count
 
         except Exception as e:
@@ -99,6 +105,10 @@ class DiseaseAliasService:
     ):
         """Create a single disease alias entry."""
         alias_normalized = alias.lower().strip()
+
+        # Ensure mondo_id length fits DB constraint (VARCHAR(100))
+        if len(mondo_id) > 100:
+            mondo_id = mondo_id[:100]
 
         # Check if alias already exists
         result = await session.execute(
@@ -212,6 +222,18 @@ class DiseaseAliasService:
         return list(variations)
 
     @staticmethod
+    def _make_placeholder_mondo_id(disease_name: str) -> str:
+        """Create a deterministic, short placeholder mondo_id for a disease name.
+
+        We cannot exceed VARCHAR(100) for the mondo_id column. Use a stable hash
+        so repeated runs generate the same ID until a real MONDO ID is linked.
+        Format example: "SEARCH:sha1:<40-hex>" (max length 48).
+        """
+        name = disease_name.strip().lower()
+        digest = hashlib.sha1(name.encode("utf-8")).hexdigest()
+        return f"SEARCH:sha1:{digest}"
+
+    @staticmethod
     async def lookup_mondo_id(query: str) -> Optional[Dict]:
         """
         Look up a disease query and return the canonical MONDO ID and name.
@@ -259,6 +281,9 @@ class DiseaseAliasService:
             logger.error(f"Alias lookup failed for '{query}': {e}")
             return None
 
+        # Default: no alias found
+        return None
+
     @staticmethod
     async def autocomplete(query: str, limit: int = 20) -> List[str]:
         """
@@ -282,7 +307,7 @@ class DiseaseAliasService:
                     .limit(limit)
                 )
 
-                suggestions = []
+                suggestions: List[str] = []
                 seen = set()
 
                 for alias_display, canonical_name in result:
@@ -297,6 +322,9 @@ class DiseaseAliasService:
         except Exception as e:
             logger.error(f"Autocomplete failed for '{query}': {e}")
             return []
+
+        # Default empty suggestions if no session yielded results
+        return []
 
 
 # Singleton instance
