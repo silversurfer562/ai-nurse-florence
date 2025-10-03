@@ -606,6 +606,11 @@ async def serve_root():
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def serve_react_app(full_path: str, request: Request):
     """Catch-all route to serve React app for client-side routing."""
+    # Don't intercept root path (handled by explicit root route above)
+    if not full_path or full_path == "":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404)
+
     # For file extensions, let them 404 naturally (don't serve React app)
     if "." in full_path.split("/")[-1]:
         # This looks like a file request (e.g., .json, .js, .css)
