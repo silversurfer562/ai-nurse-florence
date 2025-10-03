@@ -9,8 +9,8 @@
     "version": "v{{version}}",
     "footer": {
       "disclaimer": "Educational tool - not medical advice",
-      "subtext": "",
-      "copyright": ""
+      "subtext": "Always follow institutional protocols and verify clinical decisions with appropriate healthcare professionals.",
+      "copyright": "AI Nurse Florence"
     }
   },
   "navigation": {
@@ -29,12 +29,12 @@
     "patientEducation": {
       "title": "Patient Education",
       "description": "Generate customized patient education materials",
-      "action": ""
+      "action": "Create Document"
     },
     "drugInteractions": {
       "title": "Drug Interactions",
       "description": "Check medication interactions and safety",
-      "action": ""
+      "action": "Check Now"
     },
     "stats": {
       "dataSources": {

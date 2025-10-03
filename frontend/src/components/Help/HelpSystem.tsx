@@ -119,14 +119,14 @@ export function HelpSystem({ }: HelpSystemProps) {
               {activeTab === 'quickstart' && (
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-3">Welcome to AI Nurse Florence</h3>
-                    <p className="text-gray-600 mb-4">{helpContent.quick_start.introduction}</p>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">{helpContent.quickStart.title}</h3>
+                    <p className="text-gray-600 mb-4">{helpContent.quickStart.welcome}</p>
                   </div>
 
                   <div>
                     <h4 className="font-semibold text-gray-800 mb-3">Getting Started</h4>
                     <div className="space-y-3">
-                      {helpContent.quick_start.steps.map((step, index) => (
+                      {helpContent.quickStart.steps.map((step: any, index: number) => (
                         <div key={index} className="flex gap-3">
                           <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
                             {index + 1}
@@ -138,21 +138,6 @@ export function HelpSystem({ }: HelpSystemProps) {
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r">
-                    <h4 className="font-semibold text-blue-900 mb-2">
-                      <i className="fas fa-lightbulb mr-2"></i>
-                      Quick Tips
-                    </h4>
-                    <ul className="space-y-1 text-sm text-blue-800">
-                      {helpContent.quick_start.tips.map((tip, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <i className="fas fa-check text-blue-600 mt-1"></i>
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               )}
@@ -181,15 +166,15 @@ export function HelpSystem({ }: HelpSystemProps) {
                           <div>
                             <h4 className="font-semibold text-gray-800 mb-3">Steps</h4>
                             <div className="space-y-3">
-                              {selectedTaskData.steps.map((step, index) => (
+                              {selectedTaskData.steps.map((step: any, index: number) => (
                                 <div key={index} className="bg-gray-50 p-4 rounded-lg">
                                   <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
                                       {index + 1}
                                     </div>
                                     <div className="flex-1">
-                                      <h5 className="font-medium text-gray-800 mb-1">{step.action}</h5>
-                                      <p className="text-sm text-gray-600 mb-2">{step.details}</p>
+                                      <h5 className="font-medium text-gray-800 mb-1">{step.title}</h5>
+                                      <p className="text-sm text-gray-600 mb-2">{step.instruction}</p>
                                       {step.tip && (
                                         <div className="bg-blue-50 border-l-2 border-blue-400 pl-3 py-1 text-sm text-blue-800">
                                           <i className="fas fa-lightbulb mr-1"></i>
@@ -210,7 +195,7 @@ export function HelpSystem({ }: HelpSystemProps) {
                                 Benefits
                               </h4>
                               <ul className="space-y-1 text-sm text-green-800">
-                                {selectedTaskData.benefits.map((benefit, index) => (
+                                {selectedTaskData.benefits.map((benefit: string, index: number) => (
                                   <li key={index}>• {benefit}</li>
                                 ))}
                               </ul>
@@ -224,8 +209,8 @@ export function HelpSystem({ }: HelpSystemProps) {
                                 Troubleshooting
                               </h4>
                               <ul className="space-y-1 text-sm text-yellow-800">
-                                {selectedTaskData.troubleshooting.map((item, index) => (
-                                  <li key={index}>• {item}</li>
+                                {selectedTaskData.troubleshooting.map((item: any, index: number) => (
+                                  <li key={index}>• {typeof item === 'string' ? item : `${item.problem}: ${item.solution}`}</li>
                                 ))}
                               </ul>
                             </div>
@@ -287,11 +272,11 @@ export function HelpSystem({ }: HelpSystemProps) {
                           </summary>
                           <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
                             <p className="text-sm text-gray-700">{faq.answer}</p>
-                            {faq.related_tasks && faq.related_tasks.length > 0 && (
+                            {(faq as any).related_tasks && (faq as any).related_tasks.length > 0 && (
                               <div className="mt-3 pt-3 border-t border-gray-200">
                                 <p className="text-xs text-gray-600 mb-2">Related guides:</p>
                                 <div className="flex flex-wrap gap-2">
-                                  {faq.related_tasks.map((taskId, i) => {
+                                  {(faq as any).related_tasks.map((taskId: string, i: number) => {
                                     const task = helpContent.tasks.find(t => t.id === taskId);
                                     return task ? (
                                       <button
