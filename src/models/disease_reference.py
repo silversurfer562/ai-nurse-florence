@@ -20,6 +20,13 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
     Base = declarative_base()
 
+# Bind to sync database engine for use with get_db()
+try:
+    from src.database import engine
+    Base.metadata.bind = engine
+except ImportError:
+    pass
+
 
 class DiseaseReference(Base):
     """
