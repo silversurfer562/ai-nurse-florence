@@ -592,6 +592,16 @@ async def dashboard_redirect():
 app.include_router(api_router)
 
 
+# Root route to serve React app
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_root():
+    """Serve React app at root path."""
+    if os.path.exists("frontend/dist/index.html"):
+        with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>Frontend not found</h1>", status_code=404)
+
+
 # Catch-all route for React Router (SPA) - must be last
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def serve_react_app(full_path: str, request: Request):
