@@ -91,7 +91,7 @@ export default function Settings() {
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex justify-between">
                       <span>Version:</span>
-                      <span className="font-mono">2.3.0</span>
+                      <span className="font-mono">2.3.1</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Build:</span>
