@@ -602,12 +602,21 @@ async def serve_root():
     return HTMLResponse(content="<h1>Landing page not found</h1>", status_code=404)
 
 
+# Serve drug-checker route (React app)
+@app.get("/drug-checker", response_class=HTMLResponse, include_in_schema=False)
+async def serve_drug_checker():
+    """Serve React drug interaction app."""
+    if os.path.exists("frontend/dist/index.html"):
+        with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>Drug checker not found</h1>", status_code=404)
+
 # Catch-all route for React Router (SPA) - must be last
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def serve_react_app(full_path: str, request: Request):
     """Catch-all route to serve React app for client-side routing."""
-    # Don't intercept root path (handled by explicit root route above)
-    if not full_path or full_path == "":
+    # Skip if no path (root handled above)
+    if not full_path:
         from fastapi import HTTPException
         raise HTTPException(status_code=404)
 
