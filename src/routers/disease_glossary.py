@@ -17,17 +17,25 @@ import logging
 import json
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
+
 try:
     from src.models.disease_reference import DiseaseReference
     from src.database import get_db
     _has_models = True
-except ImportError:
+    logger.info("✅ Disease glossary models loaded successfully")
+except ImportError as e:
+    logger.error(f"❌ Failed to import disease glossary models: {e}")
     _has_models = False
     DiseaseReference = None  # type: ignore
     def get_db():  # type: ignore
         return None
-
-logger = logging.getLogger(__name__)
+except Exception as e:
+    logger.error(f"❌ Unexpected error loading disease glossary models: {e}")
+    _has_models = False
+    DiseaseReference = None  # type: ignore
+    def get_db():  # type: ignore
+        return None
 
 router = APIRouter(prefix="/disease-glossary", tags=["Disease Glossary"])
 
