@@ -10,10 +10,15 @@ that don't warrant full clinical content, but users may need to search for.
 """
 
 from sqlalchemy import Column, String, Text, Boolean, DateTime, JSON, Index
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime, timedelta
 
-Base = declarative_base()
+# Import shared Base from main database module
+try:
+    from src.models.database import Base
+except ImportError:
+    # Fallback for standalone usage
+    from sqlalchemy.ext.declarative import declarative_base
+    Base = declarative_base()
 
 
 class DiseaseReference(Base):

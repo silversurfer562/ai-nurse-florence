@@ -1,19 +1,26 @@
 """
-Database session management for synchronous SQLite operations
+Database session management for synchronous database operations
 Used by routers that need SQLAlchemy ORM access
 """
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
+import os
 
-# SQLite database for content settings
-DATABASE_URL = "sqlite:///ai_nurse_florence.db"
+# Use DATABASE_URL from environment (PostgreSQL) or fall back to SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ai_nurse_florence.db")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}  # Required for SQLite
-)
+# For PostgreSQL, replace postgresql:// with postgresql+psycopg2://
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+# Create engine with appropriate connection args based on database type
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}  # Required for SQLite
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
