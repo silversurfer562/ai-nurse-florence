@@ -583,12 +583,18 @@ async def get_drug_names(
                 medications = result.scalars().all()
                 drug_list = [med for med in medications]
 
-                return JSONResponse(
-                    content=create_success_response(
-                        {"drugs": drug_list, "count": len(drug_list), "source": "database"},
-                        f"Retrieved {len(drug_list)} drug names from database"
+                # If database returns results, use them
+                if drug_list:
+                    return JSONResponse(
+                        content=create_success_response(
+                            {"drugs": drug_list, "count": len(drug_list), "source": "database"},
+                            f"Retrieved {len(drug_list)} drug names from database"
+                        )
                     )
-                )
+
+                # If database is empty, fall through to use comprehensive fallback list
+                logger.info("Database medication table is empty, using comprehensive fallback list")
+
             except Exception as db_error:
                 logger.warning(f"Database query failed, falling back to hardcoded list: {db_error}")
                 # Fall through to fallback hardcoded list
