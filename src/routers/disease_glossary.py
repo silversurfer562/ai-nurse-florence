@@ -19,7 +19,7 @@ from datetime import datetime
 
 try:
     from src.models.disease_reference import DiseaseReference
-    from src.utils.database import get_db
+    from src.database import get_db
     _has_models = True
 except ImportError:
     _has_models = False
