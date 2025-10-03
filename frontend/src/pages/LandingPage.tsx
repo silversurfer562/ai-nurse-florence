@@ -16,12 +16,6 @@ export default function LandingPage() {
               <h1 className="text-2xl font-bold text-indigo-900">AI Nurse Florence</h1>
               <p className="text-sm text-gray-600 mt-1">Clinical Intelligence for Healthcare Professionals</p>
             </div>
-            <Link
-              to="/login"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Sign In
-            </Link>
           </div>
         </div>
       </header>
@@ -383,7 +377,6 @@ export default function LandingPage() {
                 <li><a href="/public/drug-interactions" className="hover:text-white">Drug Interaction Checker</a></li>
                 <li><a href="#resources" className="hover:text-white">Open Data</a></li>
                 <li><a href="https://github.com/silversurfer562/ai-nurse-florence" className="hover:text-white">GitHub</a></li>
-                <li><Link to="/login" className="hover:text-white">Sign In</Link></li>
               </ul>
             </div>
             <div>

@@ -196,29 +196,116 @@ export default function DrugInteractions() {
 
             {data.data?.interactions && data.data.interactions.length > 0 ? (
               <div className="space-y-4">
-                {data.data.interactions.map((interaction: any, index: number) => (
-                  <div key={index} className="border-l-4 border-yellow-500 pl-4 py-2">
-                    <div className="font-semibold text-gray-800">
-                      {interaction.drug1} + {interaction.drug2}
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      Severity: <span className="font-medium">{interaction.severity || 'Unknown'}</span>
-                    </div>
-                    {interaction.description && (
-                      <div className="text-sm text-gray-700 mt-2">{interaction.description}</div>
-                    )}
-                    {interaction.recommendations && interaction.recommendations.length > 0 && (
-                      <div className="mt-2">
-                        <div className="text-sm font-semibold text-gray-700">Recommendations:</div>
-                        <ul className="list-disc list-inside text-sm text-gray-600">
-                          {interaction.recommendations.map((rec: string, idx: number) => (
-                            <li key={idx}>{rec}</li>
-                          ))}
-                        </ul>
+                {data.data.interactions.map((interaction: any, index: number) => {
+                  // Determine severity colors and styles
+                  const severity = (interaction.severity || 'unknown').toLowerCase();
+                  let borderColor = 'border-gray-400';
+                  let bgColor = 'bg-gray-50';
+                  let textColor = 'text-gray-800';
+                  let badgeBg = 'bg-gray-100';
+                  let badgeText = 'text-gray-800';
+                  let icon = 'fa-info-circle';
+
+                  if (severity === 'contraindicated') {
+                    borderColor = 'border-red-600';
+                    bgColor = 'bg-red-50';
+                    textColor = 'text-red-900';
+                    badgeBg = 'bg-red-600';
+                    badgeText = 'text-white';
+                    icon = 'fa-ban';
+                  } else if (severity === 'major') {
+                    borderColor = 'border-red-500';
+                    bgColor = 'bg-red-50';
+                    textColor = 'text-red-800';
+                    badgeBg = 'bg-red-500';
+                    badgeText = 'text-white';
+                    icon = 'fa-exclamation-triangle';
+                  } else if (severity === 'moderate') {
+                    borderColor = 'border-orange-500';
+                    bgColor = 'bg-orange-50';
+                    textColor = 'text-orange-800';
+                    badgeBg = 'bg-orange-500';
+                    badgeText = 'text-white';
+                    icon = 'fa-exclamation-circle';
+                  } else if (severity === 'minor') {
+                    borderColor = 'border-yellow-500';
+                    bgColor = 'bg-yellow-50';
+                    textColor = 'text-yellow-800';
+                    badgeBg = 'bg-yellow-500';
+                    badgeText = 'text-white';
+                    icon = 'fa-info-circle';
+                  }
+
+                  return (
+                    <div key={index} className={`border-l-4 ${borderColor} ${bgColor} rounded-r-lg p-4`}>
+                      {/* Header with drug names and severity badge */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="font-semibold text-lg text-gray-900">
+                          <i className={`fas ${icon} mr-2 ${textColor}`}></i>
+                          {interaction.drug1} + {interaction.drug2}
+                        </div>
+                        <span className={`${badgeBg} ${badgeText} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide`}>
+                          {interaction.severity || 'Unknown'}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Interaction description */}
+                      {interaction.description && (
+                        <div className="text-sm text-gray-800 mb-3 leading-relaxed">
+                          <span className="font-semibold">Interaction:</span> {interaction.description}
+                        </div>
+                      )}
+
+                      {/* Clinical significance */}
+                      {interaction.clinical_significance && (
+                        <div className="text-sm text-gray-700 mb-3">
+                          <span className="font-semibold">Clinical Significance:</span> {interaction.clinical_significance}
+                        </div>
+                      )}
+
+                      {/* Mechanism */}
+                      {interaction.mechanism && (
+                        <div className="text-sm text-gray-700 mb-3">
+                          <span className="font-semibold">Mechanism:</span> {interaction.mechanism}
+                        </div>
+                      )}
+
+                      {/* Recommendations */}
+                      {interaction.recommendations && interaction.recommendations.length > 0 && (
+                        <div className="mt-3 bg-white bg-opacity-50 rounded-lg p-3">
+                          <div className="text-sm font-semibold text-gray-900 mb-2">
+                            <i className="fas fa-stethoscope mr-2"></i>
+                            Clinical Recommendations:
+                          </div>
+                          <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                            {interaction.recommendations.map((rec: string, idx: number) => (
+                              <li key={idx}>{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Evidence level and onset if available */}
+                      <div className="flex gap-4 mt-3 text-xs text-gray-600">
+                        {interaction.evidence_level && (
+                          <div>
+                            <span className="font-semibold">Evidence:</span> {interaction.evidence_level}
+                          </div>
+                        )}
+                        {interaction.onset && (
+                          <div>
+                            <span className="font-semibold">Onset:</span> {interaction.onset}
+                          </div>
+                        )}
+                        {interaction.documentation && (
+                          <div>
+                            <span className="font-semibold">Documentation:</span> {interaction.documentation}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="space-y-3">
