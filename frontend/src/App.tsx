@@ -23,8 +23,8 @@ function App() {
   return (
     <Routes>
       {/* Public Routes (No Authentication Required) */}
-      <Route path="/" element={<PublicDrugInteractions />} />
-      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/drug-checker" element={<PublicDrugInteractions />} />
 
       {/* Authenticated Routes */}
       <Route path="/app" element={<Layout />}>
