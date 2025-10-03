@@ -411,14 +411,25 @@ export default function PublicDrugInteractions() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>
-            Free Public Service by AI Nurse Florence |
-            <a href="/" className="text-blue-600 hover:text-blue-800 ml-1">ainurseflorence.com</a>
-          </p>
-          <p className="mt-2">
-            Helping fill the gap left by discontinued public health tools | Inspiring accessible healthcare technology
-          </p>
+        <div className="text-center mt-8">
+          <div className="mb-4">
+            <a
+              href="/app"
+              className="inline-block px-4 py-2 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-500 rounded-lg transition-colors"
+            >
+              <i className="fas fa-laptop-medical mr-2"></i>
+              Access Full Clinical Platform (Beta) →
+            </a>
+          </div>
+          <div className="text-sm text-gray-500">
+            <p>
+              Free Public Service by AI Nurse Florence |
+              <a href="/" className="text-blue-600 hover:text-blue-800 ml-1">ainurseflorence.com</a>
+            </p>
+            <p className="mt-2">
+              Helping fill the gap left by discontinued public health tools | Inspiring accessible healthcare technology
+            </p>
+          </div>
         </div>
       </div>
     </div>
