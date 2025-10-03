@@ -2,42 +2,15 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import translations directly (bundled approach - more reliable than HTTP)
+// Only bundle English and Spanish - most common languages
+// Other languages will lazy load on demand
 import enTranslations from '../public/locales/en/translation.json';
 import esTranslations from '../public/locales/es/translation.json';
-import zhTranslations from '../public/locales/zh/translation.json';
-import hiTranslations from '../public/locales/hi/translation.json';
-import arTranslations from '../public/locales/ar/translation.json';
-import ptTranslations from '../public/locales/pt/translation.json';
-import bnTranslations from '../public/locales/bn/translation.json';
-import ruTranslations from '../public/locales/ru/translation.json';
-import jaTranslations from '../public/locales/ja/translation.json';
-import paTranslations from '../public/locales/pa/translation.json';
-import deTranslations from '../public/locales/de/translation.json';
-import koTranslations from '../public/locales/ko/translation.json';
-import frTranslations from '../public/locales/fr/translation.json';
-import viTranslations from '../public/locales/vi/translation.json';
-import itTranslations from '../public/locales/it/translation.json';
-import tlTranslations from '../public/locales/tl/translation.json';
 
-// Define resources
+// Define initial resources (en, es bundled)
 const resources = {
   en: { translation: enTranslations },
   es: { translation: esTranslations },
-  zh: { translation: zhTranslations },
-  hi: { translation: hiTranslations },
-  ar: { translation: arTranslations },
-  pt: { translation: ptTranslations },
-  bn: { translation: bnTranslations },
-  ru: { translation: ruTranslations },
-  ja: { translation: jaTranslations },
-  pa: { translation: paTranslations },
-  de: { translation: deTranslations },
-  ko: { translation: koTranslations },
-  fr: { translation: frTranslations },
-  vi: { translation: viTranslations },
-  it: { translation: itTranslations },
-  tl: { translation: tlTranslations },
 };
 
 i18n
@@ -51,7 +24,7 @@ i18n
     fallbackLng: 'en',
     debug: false,
 
-    // Supported languages
+    // Supported languages (en/es bundled, others lazy loaded)
     supportedLngs: [
       'en', 'es', 'zh', 'hi', 'ar', 'pt', 'bn', 'ru',
       'ja', 'pa', 'de', 'ko', 'fr', 'vi', 'it', 'tl',
@@ -70,8 +43,34 @@ i18n
     },
 
     react: {
-      useSuspense: false, // Changed to false to avoid suspense issues
+      useSuspense: false,
     },
   });
+
+// Lazy load other languages on demand
+const languageLoader: Record<string, () => Promise<any>> = {
+  zh: () => import('../public/locales/zh/translation.json'),
+  hi: () => import('../public/locales/hi/translation.json'),
+  ar: () => import('../public/locales/ar/translation.json'),
+  pt: () => import('../public/locales/pt/translation.json'),
+  bn: () => import('../public/locales/bn/translation.json'),
+  ru: () => import('../public/locales/ru/translation.json'),
+  ja: () => import('../public/locales/ja/translation.json'),
+  pa: () => import('../public/locales/pa/translation.json'),
+  de: () => import('../public/locales/de/translation.json'),
+  ko: () => import('../public/locales/ko/translation.json'),
+  fr: () => import('../public/locales/fr/translation.json'),
+  vi: () => import('../public/locales/vi/translation.json'),
+  it: () => import('../public/locales/it/translation.json'),
+  tl: () => import('../public/locales/tl/translation.json'),
+};
+
+// Load language on demand when user switches
+i18n.on('languageChanged', async (lng) => {
+  if (!i18n.hasResourceBundle(lng, 'translation') && languageLoader[lng]) {
+    const translations = await languageLoader[lng]();
+    i18n.addResourceBundle(lng, 'translation', translations.default || translations);
+  }
+});
 
 export default i18n;
