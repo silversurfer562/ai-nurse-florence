@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
@@ -630,9 +629,6 @@ export default function DischargeInstructions() {
           <p>&copy; 2025 AI Nurse Florence</p>
         </div>
       </div>
-
-      {/* Help System */}
-      <HelpSystem />
     </div>
   );
 }

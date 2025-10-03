@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import { useDocumentLanguage } from '../hooks/useDocumentLanguage';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
@@ -472,9 +471,6 @@ export default function PatientEducation() {
           <p>&copy; 2025 AI Nurse Florence</p>
         </div>
       </div>
-
-      {/* Help System */}
-      <HelpSystem />
     </div>
   );
 }

@@ -87,8 +87,8 @@ export default function DiseaseInfo() {
           <div className="card">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  {data.disease_name || data.name || data.query}
+                <h2 className="text-3xl font-bold text-gray-900 mb-2 capitalize">
+                  {(data.disease_name || data.name || data.query).toLowerCase()}
                 </h2>
                 {data.disease_category && (
                   <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
@@ -152,16 +152,16 @@ export default function DiseaseInfo() {
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
                   <i className="fas fa-heartbeat mr-2 text-red-600"></i>
-                  Clinical Symptoms
+                  Clinical Symptoms ({data.symptoms.length})
                 </h3>
-                <ul className="grid md:grid-cols-2 gap-2">
+                <div className="grid md:grid-cols-2 gap-3">
                   {data.symptoms.map((symptom: string, index: number) => (
-                    <li key={index} className="flex items-start text-gray-700">
-                      <i className="fas fa-check-circle text-green-600 mt-1 mr-2"></i>
-                      <span>{symptom}</span>
-                    </li>
+                    <div key={index} className="flex items-start p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <i className="fas fa-check-circle text-green-600 mt-1 mr-3 flex-shrink-0"></i>
+                      <span className="text-gray-800">{symptom}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </div>

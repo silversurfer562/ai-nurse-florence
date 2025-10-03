@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 
@@ -625,8 +624,6 @@ Generated: ${new Date().toLocaleString()}
           <p>&copy; 2025 AI Nurse Florence</p>
         </div>
       </div>
-
-      <HelpSystem />
     </div>
   );
 }

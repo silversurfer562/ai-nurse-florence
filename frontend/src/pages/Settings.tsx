@@ -99,7 +99,7 @@ export default function Settings() {
                     </div>
                     <div className="flex justify-between">
                       <span>Last Updated:</span>
-                      <span>October 3, 2025</span>
+                      <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { HelpSystem } from '../components/Help/HelpSystem';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 
@@ -269,9 +268,6 @@ export default function SbarReport() {
             </a>
           </div>
         </div>
-
-        {/* Help System */}
-        <HelpSystem />
       </div>
     );
   }
@@ -398,9 +394,6 @@ export default function SbarReport() {
           <p>&copy; 2025 AI Nurse Florence</p>
         </div>
       </div>
-
-      {/* Help System */}
-      <HelpSystem />
     </div>
   );
 }
