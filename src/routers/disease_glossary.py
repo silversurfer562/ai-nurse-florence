@@ -283,6 +283,8 @@ async def get_glossary_stats():
 
     db = next(get_db())
     try:
+        # Test database connection and table existence
+        logger.info("Testing disease_reference table access...")
         # Total count
         total_diseases = db.query(DiseaseReference).count()
 
@@ -331,3 +333,4 @@ async def get_glossary_stats():
 
     finally:
         db.close()
+# Force redeploy
