@@ -12,20 +12,9 @@ that don't warrant full clinical content, but users may need to search for.
 from sqlalchemy import Column, String, Text, Boolean, DateTime, JSON, Index
 from datetime import datetime, timedelta
 
-# Import shared Base from main database module
-try:
-    from src.models.database import Base
-except ImportError:
-    # Fallback for standalone usage
-    from sqlalchemy.ext.declarative import declarative_base
-    Base = declarative_base()
-
-# Bind to sync database engine for use with get_db()
-try:
-    from src.database import engine
-    Base.metadata.bind = engine
-except ImportError:
-    pass
+# Create a sync Base for disease reference (separate from async Base in src.models.database)
+from sqlalchemy.ext.declarative import declarative_base
+Base = declarative_base()
 
 
 class DiseaseReference(Base):
