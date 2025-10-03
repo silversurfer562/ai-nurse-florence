@@ -27,9 +27,9 @@ RUN useradd --create-home --shell /bin/bash florence
 # Copy application files
 COPY . /app
 
-# Build frontend
-WORKDIR /app/frontend
-RUN npm ci && npm run build
+# Skip frontend build - using pre-built dist/ from git
+# WORKDIR /app/frontend
+# RUN npm ci && npm run build
 
 # Back to app directory
 WORKDIR /app
