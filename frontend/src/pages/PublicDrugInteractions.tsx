@@ -17,6 +17,12 @@ export default function PublicDrugInteractions() {
   const [submittedMeds, setSubmittedMeds] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
+  // Helper function to capitalize drug names properly
+  const capitalizeDrugName = (name: string): string => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  };
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['drug-interactions', submittedMeds],
     queryFn: () => drugInteractionService.check(submittedMeds),
@@ -166,7 +172,7 @@ export default function PublicDrugInteractions() {
                   {data.data.drug_information.map((drug: any, index: number) => (
                     <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50 rounded-r-lg">
                       <div className="font-semibold text-gray-800 text-lg">
-                        {drug.name}
+                        {capitalizeDrugName(drug.name)}
                         {drug.brand_names && drug.brand_names.length > 0 && (
                           <span className="text-sm font-normal text-gray-600 ml-2">
                             ({drug.brand_names.join(', ')})
@@ -239,7 +245,7 @@ export default function PublicDrugInteractions() {
                       <div key={index} className={`border-l-4 p-4 rounded-r-lg ${severityColor}`}>
                         <div className="flex items-start justify-between mb-2">
                           <div className="font-semibold text-lg">
-                            {interaction.drug1} + {interaction.drug2}
+                            {capitalizeDrugName(interaction.drug1)} + {capitalizeDrugName(interaction.drug2)}
                           </div>
                           {interaction.severity && (
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
