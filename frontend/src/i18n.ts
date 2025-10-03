@@ -43,7 +43,7 @@ i18n
     },
 
     react: {
-      useSuspense: false,
+      useSuspense: true, // Enable suspense so translations load before render
     },
   });
 
