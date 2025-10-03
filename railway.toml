@@ -10,3 +10,6 @@ restartPolicyType = "always"
 
 [environments.production]
 variables = { }
+
+[environments.development]
+variables = { }
