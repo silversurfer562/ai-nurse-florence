@@ -308,6 +308,16 @@ except Exception as e:
     logger.warning(f"Failed to register genes router: {e}")
     ROUTERS_LOADED["genes"] = False
 
+# Add disease glossary router (Comprehensive disease reference and export)
+try:
+    from src.routers.disease_glossary import router as disease_glossary_router
+    api_router.include_router(disease_glossary_router)
+    ROUTERS_LOADED["disease_glossary"] = True
+    logger.info("Disease glossary router registered successfully - 12,000+ diseases with search and export enabled")
+except Exception as e:
+    logger.warning(f"Failed to register disease glossary router: {e}")
+    ROUTERS_LOADED["disease_glossary"] = False
+
 # Add webhook router (Railway deployment notifications and health checks)
 try:
     from routers.webhooks import router as webhooks_router
