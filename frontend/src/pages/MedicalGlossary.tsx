@@ -3,79 +3,89 @@ import VoiceDictation from '../components/VoiceDictation';
 import { LiveRegion } from '../components/ScreenReaderOnly';
 
 interface GlossaryTerm {
-  disease_id: number;
+  mondo_id: string;
   disease_name: string;
-  category: string;
-  aliases?: string[];
+  synonyms: string[];
+  icd10_codes: string[];
+  snomed_code?: string;
+  umls_code?: string;
+  description?: string;
+  category?: string;
+  is_rare: boolean;
+  prevalence?: string;
+}
+
+interface GlossaryResponse {
+  total: number;
+  returned: number;
+  offset: number;
+  diseases: GlossaryTerm[];
+  categories?: string[];
 }
 
 export default function MedicalGlossary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
-  const [filteredTerms, setFilteredTerms] = useState<GlossaryTerm[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [rareOnly, setRareOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [announceMessage, setAnnounceMessage] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const limit = 100;
 
   useEffect(() => {
-    // Load all terms on mount
-    loadAllTerms();
-  }, []);
+    loadTerms();
+  }, [searchQuery, selectedCategory, rareOnly, currentOffset]);
 
-  useEffect(() => {
-    // Filter terms based on search and category
-    filterTerms();
-  }, [searchQuery, selectedCategory, terms]);
-
-  const loadAllTerms = async () => {
+  const loadTerms = async () => {
     setIsLoading(true);
     try {
-      // Load comprehensive disease list
-      const response = await fetch('/api/v1/content-settings/diagnosis/search?q=&limit=1000');
-      const data = await response.json();
-      setTerms(data);
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: currentOffset.toString(),
+        include_categories: currentOffset === 0 ? 'true' : 'false'
+      });
 
-      // Extract unique categories
-      const uniqueCategories = [...new Set(data.map((term: GlossaryTerm) => term.category))].sort() as string[];
-      setCategories(uniqueCategories);
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+      if (selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+      if (rareOnly) {
+        params.append('rare_only', 'true');
+      }
+
+      const response = await fetch(`/api/v1/disease-glossary/?${params}`);
+      const data: GlossaryResponse = await response.json();
+
+      setTerms(data.diseases || []);
+      setTotalCount(data.total || 0);
+
+      // Load categories only on first load
+      if (data.categories) {
+        setCategories(data.categories);
+      }
+
+      // Announce results to screen readers
+      if (searchQuery.trim()) {
+        setAnnounceMessage(`Found ${data.total} diseases matching "${searchQuery}"`);
+      } else {
+        setAnnounceMessage(`Showing ${data.returned} of ${data.total} diseases`);
+      }
     } catch (error) {
       console.error('Failed to load glossary terms:', error);
+      setAnnounceMessage('Error loading disease glossary');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filterTerms = () => {
-    let filtered = terms;
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(term => term.category === selectedCategory);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(term =>
-        term.disease_name.toLowerCase().includes(query) ||
-        term.category.toLowerCase().includes(query) ||
-        term.aliases?.some(alias => alias.toLowerCase().includes(query))
-      );
-    }
-
-    setFilteredTerms(filtered);
-
-    // Announce results to screen readers
-    if (searchQuery.trim()) {
-      setAnnounceMessage(`Found ${filtered.length} medical terms matching "${searchQuery}"`);
-    } else {
-      setAnnounceMessage(`Showing all ${filtered.length} medical terms`);
-    }
-  };
-
   const handleVoiceTranscript = (transcript: string) => {
     setSearchQuery(prev => prev + ' ' + transcript);
+    setCurrentOffset(0); // Reset to first page on new search
   };
 
   const highlightMatch = (text: string, query: string) => {
@@ -95,50 +105,41 @@ export default function MedicalGlossary() {
     );
   };
 
-  const downloadDictionary = () => {
-    // Generate dictionary file for download
-    const dictContent = terms
-      .map(term => {
-        const lines = [term.disease_name];
-        if (term.aliases) {
-          lines.push(...term.aliases);
-        }
-        return lines.join('\n');
-      })
-      .join('\n');
+  const downloadGlossary = async (format: 'json' | 'csv') => {
+    try {
+      const params = new URLSearchParams({ format });
+      if (selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+      if (rareOnly) {
+        params.append('rare_only', 'true');
+      }
 
-    const blob = new Blob([dictContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'medical-dictionary.txt';
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const response = await fetch(`/api/v1/disease-glossary/export?${params}`);
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // Extract filename from Content-Disposition header if available
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
+      a.download = filenameMatch ? filenameMatch[1] : `disease_glossary.${format}`;
+
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download glossary:', error);
+    }
   };
 
-  const exportToWord = () => {
-    // Generate AutoCorrect entries for Word
-    let autocorrectXML = '<?xml version="1.0" encoding="UTF-8"?>\n<AutoCorrect>\n';
+  const loadNextPage = () => {
+    setCurrentOffset(prev => prev + limit);
+  };
 
-    terms.forEach(term => {
-      if (term.aliases) {
-        term.aliases.forEach(alias => {
-          if (alias.toLowerCase() !== term.disease_name.toLowerCase()) {
-            autocorrectXML += `  <Entry from="${alias}" to="${term.disease_name}"/>\n`;
-          }
-        });
-      }
-    });
-
-    autocorrectXML += '</AutoCorrect>';
-
-    const blob = new Blob([autocorrectXML], { type: 'application/xml' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'medical-autocorrect.xml';
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const loadPreviousPage = () => {
+    setCurrentOffset(prev => Math.max(0, prev - limit));
   };
 
   return (
@@ -147,28 +148,34 @@ export default function MedicalGlossary() {
       <LiveRegion>{announceMessage}</LiveRegion>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Medical Glossary</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <i className="fas fa-book-medical mr-3 text-blue-600"></i>
+          Disease Glossary
+        </h1>
         <p className="text-gray-600">
-          Searchable database of medical terms, diseases, and conditions with aliases and categories
+          Comprehensive database of {totalCount.toLocaleString()}+ diseases with MONDO IDs, ICD-10 codes, SNOMED codes, and clinical descriptions
         </p>
       </div>
 
       {/* Search and Filter Section */}
-      <div className="card mb-6" role="search" aria-label="Medical glossary search">
+      <div className="card mb-6" role="search" aria-label="Disease glossary search">
         <div className="grid md:grid-cols-2 gap-4 mb-4">
           {/* Search Box with Voice Input */}
           <div>
             <label htmlFor="glossary-search" className="block text-gray-700 font-medium mb-2">
               <i className="fas fa-search mr-2" aria-hidden="true"></i>
-              Search Terms
+              Search Diseases
             </label>
             <div className="flex gap-2">
               <input
                 id="glossary-search"
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by disease name, alias, or category..."
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentOffset(0);
+                }}
+                placeholder="Search by disease name or synonym..."
                 className="input-field flex-1"
                 aria-describedby="search-hint"
               />
@@ -187,36 +194,52 @@ export default function MedicalGlossary() {
           <div>
             <label className="block text-gray-700 font-medium mb-2">
               <i className="fas fa-filter mr-2"></i>
-              Filter by Category
+              Filter Options
             </label>
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="input-field w-full"
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setCurrentOffset(0);
+              }}
+              className="input-field w-full mb-2"
             >
-              <option value="all">All Categories ({terms.length} terms)</option>
+              <option value="all">All Categories</option>
               {categories.map(category => (
                 <option key={category} value={category}>
                   {category}
                 </option>
               ))}
             </select>
+            <label className="flex items-center text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={rareOnly}
+                onChange={(e) => {
+                  setRareOnly(e.target.checked);
+                  setCurrentOffset(0);
+                }}
+                className="mr-2"
+              />
+              <i className="fas fa-star text-purple-500 mr-1"></i>
+              Show only rare diseases
+            </label>
           </div>
         </div>
 
         {/* Download Options */}
         <div className="flex flex-wrap gap-3 pt-4 border-t">
-          <button onClick={downloadDictionary} className="btn-secondary">
+          <button onClick={() => downloadGlossary('json')} className="btn-secondary">
             <i className="fas fa-download mr-2"></i>
-            Download Dictionary (.txt)
+            Download JSON
           </button>
-          <button onClick={exportToWord} className="btn-secondary">
-            <i className="fas fa-file-word mr-2"></i>
-            Export AutoCorrect (XML)
+          <button onClick={() => downloadGlossary('csv')} className="btn-secondary">
+            <i className="fas fa-file-csv mr-2"></i>
+            Download CSV
           </button>
           <div className="text-sm text-gray-600 flex items-center ml-auto">
             <i className="fas fa-info-circle mr-2"></i>
-            {filteredTerms.length} of {terms.length} terms shown
+            {totalCount.toLocaleString()} diseases total
           </div>
         </div>
       </div>
@@ -225,81 +248,136 @@ export default function MedicalGlossary() {
       {isLoading ? (
         <div className="text-center py-12">
           <i className="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
-          <p className="text-gray-600">Loading medical glossary...</p>
+          <p className="text-gray-600">Loading disease glossary...</p>
         </div>
-      ) : filteredTerms.length === 0 ? (
+      ) : terms.length === 0 ? (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
           <i className="fas fa-search mr-2"></i>
-          No terms found matching your search criteria.
+          No diseases found matching your search criteria.
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTerms.slice(0, 100).map((term) => (
-            <div key={term.disease_id} className="card hover:shadow-lg transition-shadow">
-              <div className="mb-2">
-                <h3 className="font-bold text-gray-800 text-lg">
-                  {highlightMatch(term.disease_name, searchQuery)}
-                </h3>
-                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mt-1">
-                  {term.category}
-                </span>
-              </div>
-
-              {term.aliases && term.aliases.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-600 font-semibold mb-1">Also known as:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {term.aliases.slice(0, 3).map((alias, idx) => (
-                      <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                        {alias}
+        <>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {terms.map((term) => (
+              <div key={term.mondo_id} className="card hover:shadow-lg transition-shadow">
+                <div className="mb-2">
+                  <h3 className="font-bold text-gray-800 text-lg">
+                    {highlightMatch(term.disease_name, searchQuery)}
+                  </h3>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    {term.category && (
+                      <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                        {term.category}
                       </span>
-                    ))}
-                    {term.aliases.length > 3 && (
-                      <span className="text-xs text-gray-500 px-2 py-1">
-                        +{term.aliases.length - 3} more
+                    )}
+                    {term.is_rare && (
+                      <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                        <i className="fas fa-star mr-1"></i>
+                        Rare Disease
                       </span>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
-      {filteredTerms.length > 100 && (
-        <div className="mt-6 bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-lg text-center">
-          <i className="fas fa-info-circle mr-2"></i>
-          Showing first 100 results. Refine your search to see more specific terms.
-        </div>
+                {term.description && (
+                  <p className="text-sm text-gray-600 mt-2">{term.description}</p>
+                )}
+
+                <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                  <div className="text-xs text-gray-500">
+                    <strong>MONDO:</strong> {term.mondo_id}
+                  </div>
+                  {term.icd10_codes && term.icd10_codes.length > 0 && (
+                    <div className="text-xs text-gray-500">
+                      <strong>ICD-10:</strong> {term.icd10_codes.join(', ')}
+                    </div>
+                  )}
+                  {term.snomed_code && (
+                    <div className="text-xs text-gray-500">
+                      <strong>SNOMED:</strong> {term.snomed_code}
+                    </div>
+                  )}
+                  {term.prevalence && (
+                    <div className="text-xs text-gray-500">
+                      <strong>Prevalence:</strong> {term.prevalence}
+                    </div>
+                  )}
+                </div>
+
+                {term.synonyms && term.synonyms.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-600 font-semibold mb-1">Also known as:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {term.synonyms.slice(0, 3).map((synonym, idx) => (
+                        <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                          {synonym}
+                        </span>
+                      ))}
+                      {term.synonyms.length > 3 && (
+                        <span className="text-xs text-gray-500 px-2 py-1">
+                          +{term.synonyms.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalCount > limit && (
+            <div className="mt-6 flex justify-between items-center">
+              <button
+                onClick={loadPreviousPage}
+                disabled={currentOffset === 0}
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i className="fas fa-chevron-left mr-2"></i>
+                Previous
+              </button>
+              <span className="text-gray-600">
+                Showing {currentOffset + 1} - {Math.min(currentOffset + limit, totalCount)} of {totalCount.toLocaleString()}
+              </span>
+              <button
+                onClick={loadNextPage}
+                disabled={currentOffset + limit >= totalCount}
+                className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+                <i className="fas fa-chevron-right ml-2"></i>
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Usage Instructions */}
       <div className="card mt-6 bg-blue-50 border-blue-200">
         <h3 className="font-bold text-gray-800 mb-3">
           <i className="fas fa-lightbulb text-yellow-500 mr-2"></i>
-          How to Use Dictionary Files
+          About This Glossary
         </h3>
         <div className="space-y-3 text-sm text-gray-700">
           <div>
-            <strong>Microsoft Word (.txt):</strong>
-            <ol className="list-decimal list-inside ml-4 mt-1">
-              <li>Click "Download Dictionary"</li>
-              <li>In Word: File → Options → Proofing → Custom Dictionaries</li>
-              <li>Click "Add" and select the downloaded .txt file</li>
-            </ol>
+            <strong>Data Sources:</strong>
+            <ul className="list-disc list-inside ml-4 mt-1">
+              <li>MONDO (Monarch Disease Ontology) - Primary disease classification</li>
+              <li>ICD-10 - International Classification of Diseases codes</li>
+              <li>SNOMED CT - Clinical terminology</li>
+              <li>UMLS - Unified Medical Language System</li>
+            </ul>
           </div>
           <div>
-            <strong>AutoCorrect (XML):</strong>
-            <ol className="list-decimal list-inside ml-4 mt-1">
-              <li>Click "Export AutoCorrect"</li>
-              <li>In Word: File → Options → Proofing → AutoCorrect Options</li>
-              <li>Manually add corrections or use macro to import XML</li>
-            </ol>
+            <strong>Export Options:</strong>
+            <ul className="list-disc list-inside ml-4 mt-1">
+              <li><strong>JSON:</strong> Complete structured data with metadata and CC-BY-4.0 license</li>
+              <li><strong>CSV:</strong> Spreadsheet-friendly format for analysis and import</li>
+            </ul>
           </div>
           <div className="pt-2 border-t border-blue-300">
-            <i className="fas fa-shield-alt text-blue-600 mr-2"></i>
-            <strong>Note:</strong> These dictionaries help ensure consistent medical terminology in your documents.
+            <i className="fas fa-creative-commons text-blue-600 mr-2"></i>
+            <strong>License:</strong> Open data available under CC-BY-4.0. Attribution: AI Nurse Florence
           </div>
         </div>
       </div>
