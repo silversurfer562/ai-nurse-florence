@@ -474,10 +474,19 @@ app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 # Mount React app build
 import os
 if os.path.exists("frontend/dist"):
+    logger.info("✅ frontend/dist exists, mounting assets")
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="react-assets")
     # Mount translation files
     if os.path.exists("frontend/dist/locales"):
+        logger.info(f"✅ frontend/dist/locales exists, mounting /locales route")
+        # List locales to verify
+        locales_dirs = os.listdir("frontend/dist/locales")
+        logger.info(f"📁 Available locales: {locales_dirs}")
         app.mount("/locales", StaticFiles(directory="frontend/dist/locales"), name="locales")
+    else:
+        logger.warning("⚠️ frontend/dist/locales NOT FOUND - translation files will 404")
+else:
+    logger.warning("⚠️ frontend/dist NOT FOUND - React app not available")
 
 templates = Jinja2Templates(directory="templates")
 
