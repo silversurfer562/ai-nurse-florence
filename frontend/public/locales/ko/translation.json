@@ -6,6 +6,7 @@
     "connecting": "Connecting...",
     "home": "Home",
     "help": "Help",
+    "currentLanguage": "한국어",
     "version": "v{{version}}",
     "footer": {
       "disclaimer": "Clinical Decision Support Tool - Educational Purposes Only",

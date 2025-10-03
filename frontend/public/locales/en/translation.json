@@ -6,6 +6,7 @@
     "connecting": "Connecting...",
     "home": "Home",
     "help": "Help",
+    "currentLanguage": "English",
     "version": "v{{version}}",
     "footer": {
       "disclaimer": "Educational tool - not medical advice",

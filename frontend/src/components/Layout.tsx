@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { healthService } from '../services/api';
-import LanguageSelector from './LanguageSelector';
+// Language selector moved to Settings page only
 import { SkipLink } from './ScreenReaderOnly';
 import { useCareSettings } from '../hooks/useCareSettings';
 import CareSettingModal, { CareSettingBadge } from './CareSettingModal';
@@ -68,8 +68,16 @@ export default function Layout() {
                 </Link>
               )}
 
-              {/* Language Selector */}
-              <LanguageSelector />
+              {/* Current Language Indicator - Click to go to Settings */}
+              <Link
+                to="/settings"
+                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                title="Change language in Settings"
+                aria-label="Current language - click to change in Settings"
+              >
+                <i className="fas fa-globe"></i>
+                <span className="text-sm font-medium hidden sm:inline">{t('common.currentLanguage')}</span>
+              </Link>
 
               {/* Settings Icon */}
               <Link
