@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     
     # App Configuration
     APP_NAME: str = Field(default="AI Nurse Florence", description="Application name")
-    APP_VERSION: str = Field(default="2.3.1", description="Application version")
+    APP_VERSION: str = Field(default="2.4.0-dev", description="Application version")
     DEBUG: bool = Field(default=False, description="Debug mode")
     
     # Environment Configuration
