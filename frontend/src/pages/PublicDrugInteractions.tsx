@@ -247,7 +247,7 @@ export default function PublicDrugInteractions() {
                               interaction.severity.toLowerCase() === 'moderate' ? 'bg-yellow-200 text-yellow-800' :
                               'bg-blue-200 text-blue-800'
                             }`}>
-                              {interaction.severity} Severity
+                              {interaction.severity.charAt(0).toUpperCase() + interaction.severity.slice(1).toLowerCase()} Severity
                             </span>
                           )}
                         </div>
