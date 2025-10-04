@@ -148,13 +148,25 @@ export default function MedicalGlossary() {
       <LiveRegion>{announceMessage}</LiveRegion>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          <i className="fas fa-book-medical mr-3 text-blue-600"></i>
-          Disease Glossary
-        </h1>
-        <p className="text-gray-600">
-          Comprehensive database of {totalCount.toLocaleString()}+ diseases with MONDO IDs, ICD-10 codes, SNOMED codes, and clinical descriptions
-        </p>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              <i className="fas fa-book-medical mr-3 text-blue-600"></i>
+              Disease Glossary
+            </h1>
+            <p className="text-gray-600">
+              Comprehensive database of {totalCount.toLocaleString()}+ diseases with MONDO IDs, ICD-10 codes, SNOMED codes, and clinical descriptions
+            </p>
+          </div>
+          <a
+            href="/"
+            className="btn-primary flex items-center gap-2 whitespace-nowrap"
+            title="Check drug interactions"
+          >
+            <i className="fas fa-pills"></i>
+            Drug Checker
+          </a>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
