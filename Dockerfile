@@ -24,7 +24,7 @@ RUN pip install --upgrade pip && \
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash florence
 
-# Copy application files (bust cache: 2025-10-04-10:20)
+# Copy application files (bust cache: 2025-10-04-11:00-frontend-rebuild)
 COPY . /app
 
 # Skip frontend build - using pre-built dist/ from git
