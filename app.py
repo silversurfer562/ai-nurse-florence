@@ -7,11 +7,10 @@ Build: 2025-10-04 11:05
 import logging
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -33,7 +32,7 @@ except Exception as e:
     # Fallback configuration
     class FallbackSettings:
         APP_NAME = "AI Nurse Florence"
-        APP_VERSION = "2.3.0"
+        APP_VERSION = "2.4.0"
         ALLOWED_ORIGINS = ["http://localhost:3000"]
         EDUCATIONAL_BANNER = "Educational purposes only"
 
@@ -49,261 +48,186 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"🏥 Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     logger.info("Healthcare AI assistant - Educational use only, no PHI stored")
-    # Startup logging and OpenAPI population (moved from deprecated on_event)
-    logger.info("=== AI NURSE FLORENCE STARTUP ===")
-    logger.info(f"App: {getattr(settings, 'APP_NAME', 'AI Nurse Florence')}")
-    logger.info(f"Version: {getattr(settings, 'APP_VERSION', '2.3.0')}")
-    logger.info(
-        f"Environment: {'Railway' if os.getenv('RAILWAY_ENVIRONMENT') else 'Development'}"
-    )
-    logger.info(f"Routers loaded: {len(ROUTERS_LOADED)}")
-    logger.info(
-        f"Educational banner: {getattr(settings, 'EDUCATIONAL_BANNER', 'Educational purposes only')[:50]}..."
-    )
-    logger.info("Healthcare AI assistant ready - Educational use only")
-
-    # Initialize session cleanup service (Phase 3.4.4)
-    try:
-        from src.services.session_cleanup import start_session_cleanup
-
-        await start_session_cleanup()
-        logger.info("✅ Session cleanup service started")
-    except Exception as e:
-        logger.warning(f"⚠️ Session cleanup service not available: {e}")
-
-    # Cache updater services disabled to prevent startup hang
-    logger.info("⚠️ Cache updater services disabled - enable after fixing startup")
-
-    # Initialize diagnosis content library (auto-seed if empty)
-    # Temporarily disabled to fix Railway startup hang - database initialization moved to separate migration
-    logger.info(
-        "⚠️ Database initialization skipped - run migrations separately if needed"
-    )
-
-    # Log effective base URL for observability
-    try:
-        from src.utils.config import get_base_url
-
-        effective_base = get_base_url()
-        logger.info(f"Effective BASE_URL: {effective_base}")
-    except Exception:
-        logger.debug("Could not determine effective BASE_URL at startup")
-
-    # OpenAPI schema population disabled to prevent startup hang
-    logger.debug("OpenAPI schema will be generated on first /docs request")
-
-    logger.info("🚀 Application startup complete")
-
-    try:
-        yield
-    finally:
-        # Shutdown
-        # Stop session cleanup service (Phase 3.4.4)
-        try:
-            from src.services.session_cleanup import stop_session_cleanup
-
-            await stop_session_cleanup()
-            logger.info("✅ Session cleanup service stopped")
-        except Exception as e:
-            logger.warning(f"⚠️ Error stopping session cleanup service: {e}")
-
-        # Stop drug cache updater service (Phase 4.2)
-        try:
-            from src.services.drug_cache_updater import get_drug_cache_updater
-
-            drug_cache_updater = get_drug_cache_updater()
-            await drug_cache_updater.stop()
-            logger.info("✅ Drug cache updater service stopped")
-        except Exception as e:
-            logger.warning(f"⚠️ Error stopping drug cache updater service: {e}")
-
-        # Stop disease cache updater service (Phase 4.2)
-        try:
-            from src.services.disease_cache_updater import get_disease_cache_updater
-
-            disease_cache_updater = get_disease_cache_updater()
-            await disease_cache_updater.stop()
-            logger.info("✅ Disease cache updater service stopped")
-        except Exception as e:
-            logger.warning(f"⚠️ Error stopping disease cache updater service: {e}")
-
-        logger.info("Application shutdown complete")
+    yield
+    # Shutdown
+    logger.info(f"Shutting down {settings.APP_NAME}")
 
 
 # Create FastAPI app following coding instructions
 app = FastAPI(
-    title="AI Nurse Florence",
-    description="Healthcare AI assistant providing evidence-based medical information for nurses and healthcare professionals. **Educational use only - not medical advice. No PHI stored.**",
-    version="2.1.0",
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
     lifespan=lifespan,
-    # servers list will be populated at startup with the effective base URL
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json",
 )
 
-# Create API router following Router Organization pattern
-api_router = APIRouter(prefix="/api/v1")
-
-
-# CORS Configuration following Security & Middleware Stack
+# CORS middleware - Following security pattern from coding instructions
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=getattr(settings, "ALLOWED_ORIGINS", ["http://localhost:3000"]),
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Rate Limiting Middleware - conditionally loaded
+# Rate limiting middleware
 try:
-    from src.utils.rate_limit import RateLimiter
+    from src.utils.rate_limit import RateLimitMiddleware
 
-    if getattr(settings, "RATE_LIMIT_ENABLED", True):
-        # Define paths that are exempt from rate limiting
-        exempt_paths = [
-            "/docs",
-            "/redoc",
-            "/openapi.json",
-            "/api/v1/health",
-            "/metrics",
-        ]
-
-        # Get rate limit value from settings
-        rate_limit = getattr(settings, "RATE_LIMIT_REQUESTS", 60)
-
-        # Add RateLimiter middleware
-        app.add_middleware(
-            RateLimiter, requests_per_minute=rate_limit, exempt_paths=exempt_paths
-        )
-        logger.info(f"Rate limiting enabled: {rate_limit} requests per minute")
-except ImportError:
-    logger.warning("Rate limiting middleware not available")
-
-# Add admin router first (from local routers directory)
-try:
-    from routers.admin import router as admin_router
-
-    api_router.include_router(admin_router)
-    ROUTERS_LOADED["admin"] = True
-    logger.info("Admin router registered successfully")
+    app.add_middleware(RateLimitMiddleware)
+    logger.info("Rate limiting enabled: 60 requests per minute")
 except Exception as e:
-    logger.warning(f"Failed to register admin router: {e}")
-    ROUTERS_LOADED["admin"] = False
+    logger.warning(f"Rate limiting unavailable: {e}")
 
-# Add cache monitoring router (Phase 4.1 - Enhanced Redis Caching)
+# Load routers following Router Organization pattern
+try:
+    from src.routers import load_routers
+
+    logger.info("🔄 Loading routers with conditional imports...")
+    api_router = load_routers()
+    ROUTERS_LOADED = getattr(load_routers, "routers_loaded", {})
+except Exception as e:
+    logger.error(f"Failed to load routers: {e}")
+    api_router = APIRouter()
+
+# Phase 3: Enhanced Auth Routes (2024-12-26)
+try:
+    from src.routers.enhanced_auth import router as enhanced_auth_router
+
+    api_router.include_router(enhanced_auth_router)
+    ROUTERS_LOADED["enhanced_auth"] = True
+except Exception as e:
+    logger.warning(f"Enhanced auth router unavailable: {e}")
+    ROUTERS_LOADED["enhanced_auth"] = False
+
+# Phase 3.1: Session Monitoring Routes (2024-12-27)
+try:
+    from src.routers.session_monitoring import router as session_monitoring_router
+
+    api_router.include_router(session_monitoring_router)
+    ROUTERS_LOADED["session_monitoring"] = True
+except Exception as e:
+    logger.warning(f"Session monitoring router unavailable: {e}")
+    ROUTERS_LOADED["session_monitoring"] = False
+
+# Phase 4.1: Cache Monitoring Routes (2025-01-06)
 try:
     from src.routers.cache_monitoring import router as cache_monitoring_router
 
     api_router.include_router(cache_monitoring_router)
-    ROUTERS_LOADED["cache_monitoring"] = True
     logger.info(
         "Cache monitoring router registered successfully - Phase 4.1 Enhanced Caching"
     )
+    ROUTERS_LOADED["cache_monitoring"] = True
 except Exception as e:
-    logger.warning(f"Failed to register cache monitoring router: {e}")
+    logger.warning(f"Cache monitoring router unavailable: {e}")
     ROUTERS_LOADED["cache_monitoring"] = False
 
-# Add enhanced literature router (Phase 4.2 - Additional Medical Services)
+# Phase 4.2: Enhanced Literature Service Routes (2025-01-10)
 try:
     from src.routers.enhanced_literature import router as enhanced_literature_router
 
     api_router.include_router(enhanced_literature_router)
-    ROUTERS_LOADED["enhanced_literature"] = True
     logger.info(
         "Enhanced literature router registered successfully - Phase 4.2 Additional Medical Services"
     )
+    ROUTERS_LOADED["enhanced_literature"] = True
 except Exception as e:
-    logger.warning(f"Failed to register enhanced literature router: {e}")
+    logger.warning(f"Enhanced literature router unavailable: {e}")
     ROUTERS_LOADED["enhanced_literature"] = False
 
-# Add drug interactions router (Phase 4.2 - Additional Medical Services)
+# Phase 4.2: Drug Interactions Routes (2025-01-10)
 try:
     from src.routers.drug_interactions import router as drug_interactions_router
 
     api_router.include_router(drug_interactions_router)
-    ROUTERS_LOADED["drug_interactions"] = True
     logger.info(
         "Drug interactions router registered successfully - Phase 4.2 Additional Medical Services"
     )
+    ROUTERS_LOADED["drug_interactions"] = True
 except Exception as e:
-    logger.warning(f"Failed to register drug interactions router: {e}")
+    logger.warning(f"Drug interactions router unavailable: {e}")
     ROUTERS_LOADED["drug_interactions"] = False
 
-# Add patient documents router (PDF generation for patient education)
+# Patient documents router (PDF generation)
 try:
-    from routers.patient_documents import router as patient_documents_router
+    from routers.patient_education_documents import router as patient_docs_router
 
-    api_router.include_router(patient_documents_router)
-    ROUTERS_LOADED["patient_documents"] = True
+    api_router.include_router(patient_docs_router)
     logger.info(
         "Patient documents router registered successfully - PDF generation enabled"
     )
+    ROUTERS_LOADED["patient_docs"] = True
 except Exception as e:
-    logger.warning(f"Failed to register patient documents router: {e}")
-    ROUTERS_LOADED["patient_documents"] = False
+    logger.warning(f"Patient documents router unavailable: {e}")
+    ROUTERS_LOADED["patient_docs"] = False
 
-# Add user profile router (Personalization and work settings)
+# User profile router
 try:
     from routers.user_profile import router as user_profile_router
 
     api_router.include_router(user_profile_router)
-    ROUTERS_LOADED["user_profile"] = True
     logger.info("User profile router registered successfully - Personalization enabled")
+    ROUTERS_LOADED["user_profile"] = True
 except Exception as e:
-    logger.warning(f"Failed to register user profile router: {e}")
+    logger.warning(f"User profile router unavailable: {e}")
     ROUTERS_LOADED["user_profile"] = False
 
-# Add webhook router (Railway deployment notifications)
+# Admin router - protected routes for admin functions
+try:
+    from routers.admin import admin_router
+
+    api_router.include_router(admin_router)
+    logger.info("Admin router registered successfully")
+    ROUTERS_LOADED["admin"] = True
+except Exception as e:
+    logger.warning(f"Admin router unavailable: {e}")
+    ROUTERS_LOADED["admin"] = False
+
+# Webhooks router - Railway deployment notifications
 try:
     from routers.webhooks import router as webhooks_router
 
-    api_router.include_router(webhooks_router)
-    ROUTERS_LOADED["webhooks"] = True
+    app.include_router(webhooks_router)
     logger.info(
         "✅ Webhooks router registered successfully - Railway deployment notifications enabled"
     )
+    ROUTERS_LOADED["webhooks"] = True
 except Exception as e:
     logger.warning(f"Failed to register webhooks router: {e}")
     ROUTERS_LOADED["webhooks"] = False
 
 
-# Diagnosis Search Endpoint - Simplified version without database dependency
+# Diagnosis Search Endpoint - Proxy to existing disease search
 @app.get("/api/v1/content-settings/diagnosis/search")
-async def search_diagnoses_simple(q: str, limit: int = 20):
+async def search_diagnoses_proxy(q: str, limit: int = 20):
     """
-    Search diagnoses using the disease service (no database required).
-    Fallback for clinical trials page when database is not initialized.
+    Proxy diagnosis search to existing disease endpoint.
+    Used by clinical trials page.
     """
     try:
-        from src.services.disease_service import disease_service
+        # Call the existing disease search endpoint internally
+        from src.services import get_service
 
-        # Use the existing disease search
-        results = await disease_service.search_diseases(q, limit=limit)
-        # Convert to expected format
-        return [
-            {
-                "disease_id": idx,
-                "disease_name": result.get("name", result.get("disease_name", q)),
-                "category": result.get("category", "General"),
-            }
-            for idx, result in enumerate(results[:limit])
-        ]
+        disease_service = get_service("disease")
+        if disease_service:
+            # Search using the disease service
+            results = disease_service.search_disease_names(q, limit=limit)
+            # Format for clinical trials page
+            return [
+                {"disease_id": idx, "disease_name": name, "category": "General"}
+                for idx, name in enumerate(results)
+            ]
     except Exception as e:
-        logger.error(f"Diagnosis search failed: {e}")
-        # Return at least one result with the search query
-        return [{"disease_id": 0, "disease_name": q, "category": "General"}]
+        logger.error(f"Diagnosis search error: {e}")
 
+    # Fallback: return search query as single result
+    return [{"disease_id": 0, "disease_name": q, "category": "General"}]
 
-# Content Settings Router - Disabled (requires database initialization)
-# Using simplified diagnosis search endpoint above instead
-logger.info("ℹ️ Using simplified diagnosis search (database-free fallback)")
-ROUTERS_LOADED["content_settings"] = False
 
 # Additional routers temporarily disabled (genes, disease_glossary)
-logger.info(
-    "⚠️ Some routers still disabled during startup troubleshooting (genes, disease_glossary)"
-)
+logger.info("ℹ️ Using simplified diagnosis search (proxy to disease service)")
 
 
 # Serve main healthcare interface at root
@@ -325,96 +249,66 @@ async def serve_main_interface(request: Request):
 
 
 # API status endpoint
-@app.get("/status")
-async def api_status():
-    """API status endpoint with application information."""
+@app.get("/status", response_class=JSONResponse, include_in_schema=False)
+async def status():
+    """Status endpoint for monitoring."""
     return {
-        "service": "ai-nurse-florence",
-        "version": getattr(settings, "APP_VERSION", "2.1.0"),
-        "description": "Healthcare AI assistant - Educational use only",
-        "banner": getattr(settings, "EDUCATIONAL_BANNER", "Educational purposes only"),
-        "docs": "/docs",
-        "health": "/api/v1/health",
-        "routers_loaded": len(ROUTERS_LOADED),
-        "timestamp": datetime.now().isoformat(),
+        "status": "operational",
+        "app": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "routers_loaded": len([k for k, v in ROUTERS_LOADED.items() if v]),
+        "total_routers": len(ROUTERS_LOADED),
     }
 
 
-# Simple health endpoint for Railway health checks
+# Health check endpoint
 @app.get("/health")
-async def root_health():
-    """Simple health check for Railway."""
+async def health_check():
+    """Health check endpoint for monitoring and load balancers."""
     return {"status": "healthy", "service": "ai-nurse-florence"}
 
 
-# Enhanced health endpoint at root level
-@app.get("/api/v1/health")
-async def health_check():
-    """Enhanced health check with router status."""
-
-    # Count routes by category
-    total_routes = len([r for r in app.routes if hasattr(r, "path")])
-
-    # Categorize routes
-    wizard_routes = len([r for r in app.routes if "wizard" in getattr(r, "path", "")])
-    medical_routes = len(
-        [
-            r
-            for r in app.routes
-            if any(
-                term in getattr(r, "path", "")
-                for term in ["disease", "literature", "clinical"]
-            )
-        ]
-    )
-
-    # Service status
+# Wizards hub
+@app.get("/wizards", response_class=HTMLResponse, include_in_schema=False)
+async def serve_wizard_hub():
+    """Serve the wizard hub interface."""
     try:
-        from src.services import get_available_services
-
-        services = get_available_services()
-    except Exception:
-        services = {"error": "Service registry unavailable"}
-
-    health_data = {
-        "status": "healthy",
-        "service": "ai-nurse-florence",
-        "version": getattr(settings, "APP_VERSION", "2.1.0"),
-        "banner": getattr(settings, "EDUCATIONAL_BANNER", "Educational purposes only"),
-        "environment": "railway" if os.getenv("RAILWAY_ENVIRONMENT") else "development",
-        "routes": {
-            "total": total_routes,
-            "wizards": wizard_routes,
-            "medical": medical_routes,
-            "routers_loaded": ROUTERS_LOADED,
-        },
-        "services": services,
-        "configuration": {
-            "live_services": getattr(settings, "USE_LIVE_SERVICES", False),
-            "educational_mode": True,
-        },
-        "timestamp": datetime.now().isoformat(),
-    }
-
-    return health_data
+        with open("frontend/src/pages/wizard-hub.html", "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        return HTMLResponse(
+            content="""
+        <!DOCTYPE html>
+        <html><head><title>Clinical Wizards</title></head>
+        <body>
+            <h1>Clinical Wizards</h1>
+            <ul>
+                <li><a href="/wizards/sbar">SBAR Report Generator</a></li>
+                <li><a href="/wizards/treatment-plan">Treatment Plan Wizard</a></li>
+                <li><a href="/wizards/patient-education">Patient Education</a></li>
+            </ul>
+        </body></html>
+        """
+        )
 
 
-if __name__ == "__main__":
-    import os
+# Education router (now using v1/patient-education)
+try:
+    from routers.education import router as education_router
 
-    import uvicorn
+    app.include_router(education_router, prefix="/api")
+    logger.info("✅ Education router loaded successfully")
+    ROUTERS_LOADED["education"] = True
+except Exception as e:
+    logger.warning(f"⚠️ Education router unavailable: {e}")
+    ROUTERS_LOADED["education"] = False
 
-    # Use Railway's PORT if available, otherwise default to 8080 (Railway default)
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True, log_level="info")
+# Include the main API router
+app.include_router(api_router)
 
-# NOTE: Router registration is handled above by including routers onto `api_router`.
-# The previous duplicate registration block was removed to avoid double-including routers
-# which caused duplicate OpenAPI operation IDs. If a fallback import path is needed,
-# the registry in `src.routers` should be updated instead of registering routers twice here.
-
-# Create directories if they don't exist
-os.makedirs("static/css", exist_ok=True)
+# Mount static files and frontend
+os.makedirs("static", exist_ok=True)
 os.makedirs("static/js", exist_ok=True)
 os.makedirs("templates", exist_ok=True)
 
@@ -445,151 +339,48 @@ else:
 templates = Jinja2Templates(directory="templates")
 
 
-# Wizard-specific routes
-@app.get("/wizards", response_class=HTMLResponse, include_in_schema=False)
-async def serve_wizard_hub():
-    """Serve the wizard hub interface."""
+@app.on_event("startup")
+async def startup_event():
+    """Startup event handler."""
+    logger.info("=== AI NURSE FLORENCE STARTUP ===")
+    logger.info(f"App: {settings.APP_NAME}")
+    logger.info(f"Version: {settings.APP_VERSION}")
+    logger.info("Environment: Railway" if os.getenv("RAILWAY_ENVIRONMENT") else "Local")
+    logger.info(f"Routers loaded: {len([k for k, v in ROUTERS_LOADED.items() if v])}")
+    logger.info(f"Educational banner: {settings.EDUCATIONAL_BANNER[:50]}...")
+    logger.info("Healthcare AI assistant ready - Educational use only")
+
+    # Session cleanup service
     try:
-        with open("frontend/src/pages/wizard-hub.html", "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(
-            content="""
-        <!DOCTYPE html>
-        <html><head><title>Clinical Wizards</title></head>
-        <body>
-            <h1>Clinical Wizards</h1>
-            <ul>
-                <li><a href="/wizards/sbar">SBAR Report Generator</a></li>
-                <li><a href="/wizards/treatment-plan">Treatment Plan Wizard</a></li>
-                <li><a href="/wizards/patient-education">Patient Education</a></li>
-            </ul>
-        </body></html>
-        """,
-            status_code=200,
-        )
+        from src.services.session_cleanup import start_cleanup_service
+
+        await start_cleanup_service()
+        logger.info("✅ Session cleanup service started")
+    except Exception as e:
+        logger.warning(f"Session cleanup service unavailable: {e}")
+
+    # Cache updater services - Disabled temporarily
+    logger.info("⚠️ Cache updater services disabled - enable after fixing startup")
+
+    # Database initialization - Skip for now
+    logger.info(
+        "⚠️ Database initialization skipped - run migrations separately if needed"
+    )
+
+    # Log effective BASE_URL
+    base_url = os.getenv("BASE_URL", "http://0.0.0.0:8080")
+    logger.info(f"Effective BASE_URL: {base_url}")
+
+    logger.info("🚀 Application startup complete")
 
 
-@app.get("/wizards/{wizard_name}", response_class=HTMLResponse, include_in_schema=False)
-async def serve_wizard_interface(wizard_name: str):
-    """Serve individual wizard interfaces."""
-    wizard_map = {
-        "sbar": "sbar-wizard.html",
-        "treatment-plan": "treatment-plan-wizard.html",
-        "patient-education": "patient-education-wizard.html",
-    }
-
-    if wizard_name in wizard_map:
-        try:
-            with open(
-                f"frontend/src/pages/{wizard_map[wizard_name]}", "r", encoding="utf-8"
-            ) as f:
-                html_content = f.read()
-            return HTMLResponse(content=html_content)
-        except FileNotFoundError:
-            # Fallback to generic wizard template
-            return HTMLResponse(
-                content=f"""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>{wizard_name.title()} Wizard</title>
-                <link rel="stylesheet" href="/frontend/src/styles/wizard.css">
-            </head>
-            <body>
-                <div id="wizard-app"></div>
-                <script type="module">
-                    import SbarWizard from '/frontend/src/components/wizards/SbarWizard.js';
-                    new SbarWizard('wizard-app');
-                </script>
-            </body>
-            </html>
-            """
-            )
-
-    return HTMLResponse(content="<h1>Wizard not found</h1>", status_code=404)
-
-
-# Additional static HTML routes
-@app.get("/chat", response_class=HTMLResponse, include_in_schema=False)
-async def serve_chat():
-    """Serve the chat interface."""
-    try:
-        with open("static/chat.html", "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(
-            content="<h1>Chat interface not found</h1>", status_code=404
-        )
-
-
-@app.get("/clinical-workspace", response_class=HTMLResponse, include_in_schema=False)
-async def serve_clinical_workspace():
-    """Serve the clinical workspace interface."""
-    try:
-        with open("static/clinical-workspace.html", "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(
-            content="<h1>Clinical workspace not found</h1>", status_code=404
-        )
-
-
-@app.get("/clinical-assessment", response_class=HTMLResponse, include_in_schema=False)
-async def serve_clinical_assessment():
-    """Serve the clinical assessment optimizer."""
-    try:
-        with open(
-            "static/clinical-assessment-optimizer.html", "r", encoding="utf-8"
-        ) as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(
-            content="<h1>Clinical assessment not found</h1>", status_code=404
-        )
-
-
-# Health dashboard redirect
-@app.get("/dashboard", include_in_schema=False)
-async def dashboard_redirect():
-    """Redirect to main interface."""
-    from fastapi.responses import RedirectResponse
-
-    return RedirectResponse(url="/")
-
-
-# Register API router with main app following Router Organization
-app.include_router(api_router)
-
-
-# Root route to serve simple HTML landing page
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def serve_root():
-    """Serve static HTML landing page at root."""
-    if os.path.exists("index.html"):
-        with open("index.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Landing page not found</h1>", status_code=404)
-
-
-# Serve drug-checker route (React app)
-@app.get("/drug-checker", response_class=HTMLResponse, include_in_schema=False)
-async def serve_drug_checker():
-    """Serve React drug interaction app."""
-    if os.path.exists("frontend/dist/index.html"):
-        with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Drug checker not found</h1>", status_code=404)
-
-
-# Catch-all route for React Router (SPA) - must be last
+# Catchall route for React Router (SPA client-side routing)
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
-async def serve_react_app(full_path: str, request: Request):
-    """Catch-all route to serve React app for client-side routing."""
+async def catch_all(full_path: str):
+    """
+    Catchall route for React Router client-side routing.
+    Serves index.html for all non-API, non-static routes.
+    """
     # Skip if no path (root handled above)
     if not full_path:
         from fastapi import HTTPException
