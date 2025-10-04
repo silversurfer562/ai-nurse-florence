@@ -75,9 +75,17 @@ export default function PublicDrugInteractions() {
           <p className="text-xl text-gray-600 mb-2">
             A Public Service by AI Nurse Florence
           </p>
-          <p className="text-gray-500">
+          <p className="text-gray-500 mb-4">
             Check medication interactions instantly - No login required
           </p>
+
+          {/* FDA Data Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <i className="fas fa-shield-alt text-blue-600" aria-hidden="true"></i>
+            <span className="text-sm font-semibold text-blue-900">Powered by FDA Data</span>
+            <span className="text-xs text-blue-700">|</span>
+            <span className="text-xs text-blue-700">U.S. Food & Drug Administration</span>
+          </div>
         </div>
 
 
