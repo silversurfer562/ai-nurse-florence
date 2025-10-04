@@ -11,7 +11,7 @@ echo "Binding to: 0.0.0.0:${PORT}"
 echo "========================================="
 
 # Check if drug database exists, build if missing
-DB_PATH="/app/ai_nurse_florence.db"
+DB_PATH="/app/data/drugs.db"
 if [ ! -f "$DB_PATH" ]; then
     echo "========================================="
     echo "Drug database not found at $DB_PATH"

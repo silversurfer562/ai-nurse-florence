@@ -10,8 +10,9 @@ restartPolicyType = "on_failure"
 # 1. On first deployment (when volume is empty)
 # 2. Monthly via cron job
 # This eliminates the 2-minute database rebuild on every deployment
+# IMPORTANT: Mount at /app/data NOT /app to avoid overwriting frontend build
 [[deploy.volumes]]
-mountPath = "/app"
+mountPath = "/app/data"
 
 [environments.development]
 variables = { PORT = "8080" }
