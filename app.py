@@ -70,25 +70,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"⚠️ Session cleanup service not available: {e}")
 
-    # Initialize drug cache updater service (Phase 4.2)
-    try:
-        from src.services.drug_cache_updater import get_drug_cache_updater
-
-        drug_cache_updater = get_drug_cache_updater()
-        await drug_cache_updater.start()
-        logger.info("✅ Drug cache updater service started")
-    except Exception as e:
-        logger.warning(f"⚠️ Drug cache updater service not available: {e}")
-
-    # Initialize disease cache updater service (Phase 4.2)
-    try:
-        from src.services.disease_cache_updater import get_disease_cache_updater
-
-        disease_cache_updater = get_disease_cache_updater()
-        await disease_cache_updater.start()
-        logger.info("✅ Disease cache updater service started")
-    except Exception as e:
-        logger.warning(f"⚠️ Disease cache updater service not available: {e}")
+    # Cache updater services disabled to prevent startup hang
+    logger.info("⚠️ Cache updater services disabled - enable after fixing startup")
 
     # Initialize diagnosis content library (auto-seed if empty)
     # Temporarily disabled to fix Railway startup hang - database initialization moved to separate migration
@@ -107,6 +90,8 @@ async def lifespan(app: FastAPI):
 
     # OpenAPI schema population disabled to prevent startup hang
     logger.debug("OpenAPI schema will be generated on first /docs request")
+
+    logger.info("🚀 Application startup complete")
 
     try:
         yield
