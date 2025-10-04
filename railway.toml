@@ -5,6 +5,14 @@ dockerfilePath = "Dockerfile"
 [deploy]
 restartPolicyType = "on_failure"
 
+# Persistent volume for drug database
+# Database persists across deployments and is only rebuilt:
+# 1. On first deployment (when volume is empty)
+# 2. Monthly via cron job
+# This eliminates the 2-minute database rebuild on every deployment
+[[deploy.volumes]]
+mountPath = "/app"
+
 [environments.production]
 variables = { PORT = "8080" }
 

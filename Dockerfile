@@ -34,10 +34,10 @@ RUN npm ci && npm run build
 # Back to app directory
 WORKDIR /app
 
-# Build drug database from FDA (production data)
-RUN python3 scripts/build_drug_database.py --max-records 25000 || echo "Drug database build failed, will use FDA API fallback"
-
-RUN chown -R florence:florence /app
+# Create data directory for persistent database storage
+# Note: Railway volume will be mounted here, so we don't build DB in Dockerfile
+# Database will be built on first run via start-railway.sh if not present
+RUN mkdir -p /app/data && chown -R florence:florence /app
 
 # Make the startup script executable
 RUN chmod +x /app/start-railway.sh
