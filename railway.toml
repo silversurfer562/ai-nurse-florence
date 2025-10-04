@@ -3,7 +3,7 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "/app/start-railway.sh"
+startCommand = "gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --bind 0.0.0.0:8080 --timeout 120 app:app"
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"
