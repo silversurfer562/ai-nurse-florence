@@ -24,7 +24,7 @@ RUN pip install --upgrade pip && \
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash florence
 
-# Copy application files (bust cache: 2025-10-04-23:05-translation-fix)
+# Copy application files (bust cache: 2025-10-04-23:27-fix-deploy)
 COPY . /app
 
 # Build frontend on Railway
