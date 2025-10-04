@@ -1,8 +1,8 @@
 #!/bin/bash
 # Railway startup script that properly handles the PORT environment variable
 
-# Use Railway's PORT if available, otherwise default to 8000
-PORT=${PORT:-8000}
+# Use Railway's PORT if available, otherwise default to 8080 (Railway default)
+PORT=${PORT:-8080}
 
 echo "========================================="
 echo "Starting AI Nurse Florence"

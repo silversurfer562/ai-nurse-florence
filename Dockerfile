@@ -40,8 +40,8 @@ RUN chmod +x /app/start-railway.sh
 
 USER florence
 
-# Expose application port
-EXPOSE 8000
+# Expose application port - Railway uses 8080 by default
+EXPOSE 8080
 
 # Default command: use our startup script that handles PORT properly
-CMD ["/app/start-railway.sh"]# Force rebuild - Thu Oct  2 18:25:05 EDT 2025
+CMD ["/app/start-railway.sh"]
