@@ -18,6 +18,7 @@ import IncidentReport from './pages/IncidentReport'
 // Public Pages (No Auth Required)
 import LandingPage from './pages/LandingPage'
 import PublicDrugInteractions from './pages/PublicDrugInteractions'
+import DrugInteractionDemo from './pages/DrugInteractionDemo'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       {/* Public Routes (No Authentication Required) */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/drug-checker" element={<PublicDrugInteractions />} />
+      <Route path="/demo-interactions" element={<DrugInteractionDemo />} />
 
       {/* Authenticated Routes */}
       <Route path="/app" element={<Layout />}>
