@@ -3,10 +3,12 @@ Clinical Trials Service - AI Nurse Florence
 Following Service Layer Architecture with ClinicalTrials.gov integration
 """
 
-import logging
 import asyncio
-from typing import Optional, Dict, Any
-from src.utils.config import get_settings, get_educational_banner
+import logging
+from typing import Any, Dict, Optional
+
+from src.utils.config import get_educational_banner, get_settings
+from src.utils.exceptions import ExternalServiceException
 from src.utils.redis_cache import cached
 
 logger = logging.getLogger(__name__)
@@ -14,18 +16,23 @@ logger = logging.getLogger(__name__)
 # Conditional imports following Conditional Imports Pattern
 try:
     from src.services.prompt_enhancement import enhance_prompt
+
     _has_prompt_enhancement = True
 except Exception:
     _has_prompt_enhancement = False
+
     # Provide a lightweight fallback to satisfy static analysis and runtime when missing
     def enhance_prompt(prompt: str, purpose: str):
         return prompt, False, None
 
+
 try:
     import requests
+
     _has_requests = True
 except Exception:
     _has_requests = False
+
     # Fallback helper to raise a clear error if live API is attempted without requests
     class _RequestsStub:
         @staticmethod
@@ -37,34 +44,42 @@ except Exception:
 # Backwards compatibility: prefer httpx when available for async calls
 try:
     import httpx
+
     _has_httpx = True
 except Exception:
     _has_httpx = False
     httpx = None
+
 
 class ClinicalTrialsService:
     """
     Clinical trials service following Service Layer Architecture.
     Implements Conditional Imports Pattern for graceful degradation.
     """
-    
+
     def __init__(self):
         self.settings = get_settings()
         self.use_live = self.settings.effective_use_live_services
         self.banner = get_educational_banner()
-        
+
         # Try to initialize live service connection
         self._client = None
         if self.use_live:
             try:
                 # In production, would initialize ClinicalTrials.gov API client
-                logger.info("Clinical trials service: Using live ClinicalTrials.gov data")
+                logger.info(
+                    "Clinical trials service: Using live ClinicalTrials.gov data"
+                )
             except Exception as e:
-                logger.warning(f"Clinical trials service: Failed to connect to live service: {e}")
+                logger.warning(
+                    f"Clinical trials service: Failed to connect to live service: {e}"
+                )
                 self.use_live = False
-    
+
     @cached(ttl_seconds=3600)
-    async def search_trials(self, query: str, limit: int = 10, status: Optional[str] = None) -> Dict[str, Any]:
+    async def search_trials(
+        self, query: str, limit: int = 10, status: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Search clinical trials by condition or intervention using live ClinicalTrials.gov API v2.
 
@@ -83,7 +98,7 @@ class ClinicalTrialsService:
         except Exception as e:
             logger.error(f"Clinical trials search error: {e}")
             return self._create_error_response(query, str(e))
-    
+
     async def get_trial_details(self, nct_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed trial information by NCT ID using live API."""
         try:
@@ -91,8 +106,10 @@ class ClinicalTrialsService:
         except Exception as e:
             logger.error(f"Trial details error for {nct_id}: {e}")
             return None
-    
-    async def _search_live_trials(self, query: str, limit: int, status: Optional[str] = None) -> Dict[str, Any]:
+
+    async def _search_live_trials(
+        self, query: str, limit: int, status: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Search live ClinicalTrials.gov API v2."""
         try:
             # ClinicalTrials.gov API v2 endpoint
@@ -101,7 +118,7 @@ class ClinicalTrialsService:
             params = {
                 "query.cond": query,
                 "pageSize": min(limit, 100),  # Max 100 per page
-                "format": "json"
+                "format": "json",
             }
 
             # Add status filter if provided
@@ -119,7 +136,9 @@ class ClinicalTrialsService:
                 response.raise_for_status()
                 data = response.json()
             else:
-                raise RuntimeError("No HTTP client available (httpx or requests required)")
+                raise RuntimeError(
+                    "No HTTP client available (httpx or requests required)"
+                )
 
             # Parse the response
             studies = data.get("studies", [])
@@ -135,12 +154,22 @@ class ClinicalTrialsService:
                 trial = {
                     "nct_id": identification.get("nctId", "Unknown"),
                     "title": identification.get("briefTitle", "No title available"),
-                    "phase": design_module.get("phases", ["N/A"])[0] if design_module.get("phases") else "N/A",
+                    "phase": (
+                        design_module.get("phases", ["N/A"])[0]
+                        if design_module.get("phases")
+                        else "N/A"
+                    ),
                     "status": status_module.get("overallStatus", "Unknown"),
                     "study_type": design_module.get("studyType", "Unknown"),
-                    "condition": ", ".join(conditions_module.get("conditions", [query])),
-                    "brief_summary": protocol.get("descriptionModule", {}).get("briefSummary", ""),
-                    "locations": self._extract_locations(protocol.get("contactsLocationsModule", {}))
+                    "condition": ", ".join(
+                        conditions_module.get("conditions", [query])
+                    ),
+                    "brief_summary": protocol.get("descriptionModule", {}).get(
+                        "briefSummary", ""
+                    ),
+                    "locations": self._extract_locations(
+                        protocol.get("contactsLocationsModule", {})
+                    ),
                 }
                 trials.append(trial)
 
@@ -152,22 +181,24 @@ class ClinicalTrialsService:
                 "studies_summary": f"Found {len(trials)} clinical trials for '{query}' from ClinicalTrials.gov",
                 "trials": trials,
                 "sources": ["ClinicalTrials.gov API v2"],
-                "needs_clarification": False
+                "needs_clarification": False,
             }
 
         except Exception as e:
             logger.error(f"Live ClinicalTrials.gov API error: {e}")
             raise
-    
+
     def _extract_locations(self, contacts_locations: Dict[str, Any]) -> list:
         """Extract location information from trial data."""
         locations = []
-        for location in contacts_locations.get("locations", [])[:5]:  # Limit to 5 locations
+        for location in contacts_locations.get("locations", [])[
+            :5
+        ]:  # Limit to 5 locations
             loc_info = {
                 "facility": location.get("facility", "Unknown"),
                 "city": location.get("city", ""),
                 "state": location.get("state", ""),
-                "country": location.get("country", "")
+                "country": location.get("country", ""),
             }
             locations.append(loc_info)
         return locations
@@ -204,28 +235,40 @@ class ClinicalTrialsService:
                 "title": identification.get("briefTitle", ""),
                 "official_title": identification.get("officialTitle", ""),
                 "brief_summary": description_module.get("briefSummary", ""),
-                "detailed_description": description_module.get("detailedDescription", ""),
+                "detailed_description": description_module.get(
+                    "detailedDescription", ""
+                ),
                 "conditions": conditions_module.get("conditions", []),
-                "phase": design_module.get("phases", ["N/A"])[0] if design_module.get("phases") else "N/A",
+                "phase": (
+                    design_module.get("phases", ["N/A"])[0]
+                    if design_module.get("phases")
+                    else "N/A"
+                ),
                 "status": status_module.get("overallStatus", "Unknown"),
                 "study_type": design_module.get("studyType", "Unknown"),
-                "enrollment": status_module.get("enrollmentInfo", {}).get("count", "Unknown"),
-                "interventions": [i.get("name", "") for i in arms_module.get("interventions", [])],
-                "locations": self._extract_locations(protocol.get("contactsLocationsModule", {})),
-                "source": "ClinicalTrials.gov API v2"
+                "enrollment": status_module.get("enrollmentInfo", {}).get(
+                    "count", "Unknown"
+                ),
+                "interventions": [
+                    i.get("name", "") for i in arms_module.get("interventions", [])
+                ],
+                "locations": self._extract_locations(
+                    protocol.get("contactsLocationsModule", {})
+                ),
+                "source": "ClinicalTrials.gov API v2",
             }
 
         except Exception as e:
             logger.error(f"Live trial details error for {nct_id}: {e}")
             raise
-    
+
     def _create_stub_trials_response(self, query: str, limit: int) -> Dict[str, Any]:
         """Create educational stub response following API Design Standards."""
-        
+
         # Educational stub trials based on common conditions
         stub_trials = []
-        
-        if any(term in query.lower() for term in ['diabetes', 'glucose', 'insulin']):
+
+        if any(term in query.lower() for term in ["diabetes", "glucose", "insulin"]):
             stub_trials = [
                 {
                     "nct_id": "NCT12345678",
@@ -234,29 +277,43 @@ class ClinicalTrialsService:
                     "phase": "Phase 3",
                     "status": "Recruiting",
                     "conditions": ["Diabetes Mellitus, Type 2"],
-                    "interventions": ["Lifestyle intervention", "Medication management"],
-                    "primary_outcomes": ["HbA1c reduction", "Quality of life improvement"],
+                    "interventions": [
+                        "Lifestyle intervention",
+                        "Medication management",
+                    ],
+                    "primary_outcomes": [
+                        "HbA1c reduction",
+                        "Quality of life improvement",
+                    ],
                     "enrollment": 500,
-                    "sponsor": "Educational Medical Center"
+                    "sponsor": "Educational Medical Center",
                 }
             ]
-        
-        elif any(term in query.lower() for term in ['hypertension', 'blood pressure', 'bp']):
+
+        elif any(
+            term in query.lower() for term in ["hypertension", "blood pressure", "bp"]
+        ):
             stub_trials = [
                 {
-                    "nct_id": "NCT87654321", 
+                    "nct_id": "NCT87654321",
                     "title": f"Educational Example: Hypertension Treatment Study - Query: {query}",
                     "brief_summary": "Educational stub: This represents a typical hypertension intervention study for learning purposes.",
                     "phase": "Phase 2/3",
                     "status": "Active",
                     "conditions": ["Hypertension", "Cardiovascular Disease"],
-                    "interventions": ["Antihypertensive therapy", "Lifestyle counseling"],
-                    "primary_outcomes": ["Blood pressure reduction", "Cardiovascular events"],
+                    "interventions": [
+                        "Antihypertensive therapy",
+                        "Lifestyle counseling",
+                    ],
+                    "primary_outcomes": [
+                        "Blood pressure reduction",
+                        "Cardiovascular events",
+                    ],
                     "enrollment": 750,
-                    "sponsor": "Educational Cardiovascular Institute"
+                    "sponsor": "Educational Cardiovascular Institute",
                 }
             ]
-        
+
         else:
             # Generic educational stub
             stub_trials = [
@@ -265,27 +322,33 @@ class ClinicalTrialsService:
                     "title": f"Educational Example: Clinical Study for {query}",
                     "brief_summary": f"Educational stub: This represents a typical clinical study design for {query} research purposes.",
                     "phase": "Phase 2",
-                    "status": "Not yet recruiting", 
+                    "status": "Not yet recruiting",
                     "conditions": [query.title()],
-                    "interventions": ["Investigational intervention", "Standard care comparison"],
-                    "primary_outcomes": ["Primary endpoint measurement", "Safety assessment"],
+                    "interventions": [
+                        "Investigational intervention",
+                        "Standard care comparison",
+                    ],
+                    "primary_outcomes": [
+                        "Primary endpoint measurement",
+                        "Safety assessment",
+                    ],
                     "enrollment": 300,
-                    "sponsor": "Educational Research Center"
+                    "sponsor": "Educational Research Center",
                 }
             ]
-        
+
         return {
             "banner": self.banner,
             "query": query,
             "trials": stub_trials[:limit],
             "total_results": len(stub_trials),
             "service_note": "Educational stub data - not actual clinical trials. For real trial information, consult ClinicalTrials.gov directly.",
-            "disclaimer": "This is educational content for learning clinical research concepts. Always verify trial information through official sources."
+            "disclaimer": "This is educational content for learning clinical research concepts. Always verify trial information through official sources.",
         }
-    
+
     def _create_stub_trial_details(self, nct_id: str) -> Dict[str, Any]:
         """Create detailed stub trial information."""
-        
+
         return {
             "banner": self.banner,
             "nct_id": nct_id,
@@ -297,24 +360,24 @@ class ClinicalTrialsService:
             "conditions": ["Educational Condition Example"],
             "interventions": [
                 "Educational intervention A: Represents experimental treatment",
-                "Educational intervention B: Represents control or comparison treatment"
+                "Educational intervention B: Represents control or comparison treatment",
             ],
             "primary_outcomes": [
                 "Primary efficacy endpoint (educational example)",
-                "Safety and tolerability assessment"
+                "Safety and tolerability assessment",
             ],
             "secondary_outcomes": [
                 "Quality of life measures",
-                "Long-term follow-up assessments"
+                "Long-term follow-up assessments",
             ],
             "enrollment": 400,
             "eligibility_criteria": "Educational example: Age 18-65, diagnosed condition, informed consent",
             "sponsor": "Educational Medical Research Institute",
             "location": "Educational Medical Centers (Multiple locations)",
             "contact_information": "For educational purposes only - contact real trials through ClinicalTrials.gov",
-            "educational_note": "This is stub data for learning purposes. Real clinical trial information is available at ClinicalTrials.gov"
+            "educational_note": "This is stub data for learning purposes. Real clinical trial information is available at ClinicalTrials.gov",
         }
-    
+
     def _create_error_response(self, query: str, error: str) -> Dict[str, Any]:
         """Create standardized error response."""
         return {
@@ -323,8 +386,9 @@ class ClinicalTrialsService:
             "trials": [],
             "total_results": 0,
             "error": f"Clinical trials service temporarily unavailable: {error}",
-            "fallback_note": "Service experiencing issues. Please try again later or visit ClinicalTrials.gov directly."
+            "fallback_note": "Service experiencing issues. Please try again later or visit ClinicalTrials.gov directly.",
         }
+
 
 # Service factory function following Conditional Imports Pattern
 def create_clinical_trials_service() -> Optional[ClinicalTrialsService]:
@@ -338,38 +402,43 @@ def create_clinical_trials_service() -> Optional[ClinicalTrialsService]:
         logger.warning(f"Clinical trials service unavailable: {e}")
         return None
 
-async def search_clinical_trials(condition: str, max_studies: int = 10) -> Dict[str, Any]:
+
+async def search_clinical_trials(
+    condition: str, max_studies: int = 10, status: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Search clinical trials following External Service Integration pattern.
-    
+
     Args:
         condition: Medical condition for clinical trials search
         max_studies: Maximum number of studies to return
-        
+        status: Optional trial status filter (recruiting, completed, etc.)
+
     Returns:
         Dict containing clinical trials search results with educational banner
     """
-    settings = get_settings()
     banner = get_educational_banner()
-    
+
     try:
         # Enhance prompt for better search results
         if _has_prompt_enhancement:
-            effective_condition, needs_clarification, clarification_question = enhance_prompt(condition, "clinical_trials")
-            
+            effective_condition, needs_clarification, clarification_question = (
+                enhance_prompt(condition, "clinical_trials")
+            )
+
             if needs_clarification:
                 return {
                     "banner": banner,
                     "query": condition,
                     "condition": condition,
                     "needs_clarification": True,
-                    "clarification_question": clarification_question
+                    "clarification_question": clarification_question,
                 }
         else:
             effective_condition = condition
-        
+
         # Use live ClinicalTrials.gov API v2
-        result = await _search_trials_live(effective_condition, max_studies)
+        result = await _search_trials_live(effective_condition, max_studies, status)
         result["banner"] = banner
         result["query"] = condition
         result["condition"] = condition
@@ -377,9 +446,14 @@ async def search_clinical_trials(condition: str, max_studies: int = 10) -> Dict[
 
     except Exception as e:
         logger.error(f"Clinical trials search failed: {e}")
-        raise ExternalServiceException(f"ClinicalTrials.gov API error: {str(e)}", "clinical_trials")
+        raise ExternalServiceException(
+            f"ClinicalTrials.gov API error: {str(e)}", "clinical_trials"
+        )
 
-async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any]:
+
+async def _search_trials_live(
+    condition: str, max_studies: int, status: Optional[str] = None
+) -> Dict[str, Any]:
     """Search ClinicalTrials.gov using live API v2 following External Service Integration."""
 
     # ClinicalTrials.gov API v2 endpoint
@@ -388,8 +462,12 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
     params = {
         "query.cond": condition,
         "pageSize": min(max_studies, 100),
-        "format": "json"
+        "format": "json",
     }
+
+    # Add status filter if provided
+    if status:
+        params["filter.overallStatus"] = status.upper().replace("-", "_")
 
     if _has_httpx:
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
@@ -399,14 +477,13 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
     else:
         # Synchronous fallback for environments without httpx
         # Use asyncio.to_thread to avoid blocking the event loop
-        response = await asyncio.to_thread(requests.get, base_url, {
-            "params": params,
-            "timeout": 15
-        })
+        response = await asyncio.to_thread(
+            requests.get, base_url, {"params": params, "timeout": 15}
+        )
         # If the requests stub raises, it will surface here
         response.raise_for_status()
         data = response.json()
-    
+
     # Parse API v2 response
     studies = data.get("studies", [])
     total_studies = data.get("totalCount", len(studies))
@@ -419,25 +496,36 @@ async def _search_trials_live(condition: str, max_studies: int) -> Dict[str, Any
         design_module = protocol.get("designModule", {})
         conditions_module = protocol.get("conditionsModule", {})
 
-        trials.append({
-            "nct_id": identification.get("nctId", "Unknown"),
-            "title": identification.get("briefTitle", "No title available"),
-            "phase": design_module.get("phases", ["N/A"])[0] if design_module.get("phases") else "N/A",
-            "status": status_module.get("overallStatus", "Unknown"),
-            "study_type": design_module.get("studyType", "Unknown"),
-            "condition": ", ".join(conditions_module.get("conditions", [condition]))
-        })
+        trials.append(
+            {
+                "nct_id": identification.get("nctId", "Unknown"),
+                "title": identification.get("briefTitle", "No title available"),
+                "phase": (
+                    design_module.get("phases", ["N/A"])[0]
+                    if design_module.get("phases")
+                    else "N/A"
+                ),
+                "status": status_module.get("overallStatus", "Unknown"),
+                "study_type": design_module.get("studyType", "Unknown"),
+                "condition": ", ".join(
+                    conditions_module.get("conditions", [condition])
+                ),
+            }
+        )
 
     return {
         "total_studies": total_studies,
         "studies_summary": f"Found {len(trials)} clinical trials related to '{condition}' from ClinicalTrials.gov API v2",
         "trials": trials,
-        "sources": ["ClinicalTrials.gov API v2"]
+        "sources": ["ClinicalTrials.gov API v2"],
     }
 
-def _create_trials_stub_response(condition: str, banner: str, max_studies: int) -> Dict[str, Any]:
+
+def _create_trials_stub_response(
+    condition: str, banner: str, max_studies: int
+) -> Dict[str, Any]:
     """Create stub response for clinical trials search following Conditional Imports Pattern."""
-    
+
     return {
         "banner": banner,
         "query": condition,
@@ -451,7 +539,7 @@ def _create_trials_stub_response(condition: str, banner: str, max_studies: int) 
                 "phase": "Phase 3",
                 "status": "Recruiting",
                 "study_type": "Interventional",
-                "condition": condition
+                "condition": condition,
             },
             {
                 "nct_id": "NCT87654321",
@@ -459,9 +547,9 @@ def _create_trials_stub_response(condition: str, banner: str, max_studies: int) 
                 "phase": "N/A",
                 "status": "Active, not recruiting",
                 "study_type": "Observational",
-                "condition": condition
-            }
+                "condition": condition,
+            },
         ],
         "sources": ["ClinicalTrials.gov (Educational stub data)"],
-        "needs_clarification": False
+        "needs_clarification": False,
     }
