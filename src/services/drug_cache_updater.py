@@ -242,6 +242,12 @@ class DrugCacheUpdaterService:
         """
         Update the drug cache with fresh FDA data.
         """
+        # Temporarily disabled to prevent blocking Railway startup
+        logger.info(
+            "Drug cache update skipped - disabled during startup troubleshooting"
+        )
+        return
+
         try:
             if not self.cache_manager:
                 logger.warning(

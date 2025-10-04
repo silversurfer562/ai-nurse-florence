@@ -533,6 +533,12 @@ class DiseaseCacheUpdaterService:
         """
         Update the disease cache with fresh MONDO data and populate aliases.
         """
+        # Temporarily disabled to prevent blocking Railway startup
+        logger.info(
+            "Disease cache update skipped - disabled during startup troubleshooting"
+        )
+        return
+
         try:
             if not self.cache_manager:
                 logger.warning(
