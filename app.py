@@ -199,21 +199,19 @@ except Exception as e:
     ROUTERS_LOADED["webhooks"] = False
 
 
-# Diagnosis Search Endpoint - Uses MeSH terms for disease autocomplete
+# Diagnosis Search Endpoint - Simple disease name suggestions
 @app.get("/api/v1/content-settings/diagnosis/search")
 async def search_diagnoses_proxy(q: str, limit: int = 20):
     """
-    Search for disease/diagnosis names using MeSH terms.
+    Search for disease/diagnosis names.
     Used by clinical trials page autocomplete.
     """
+    # Try MeSH first if available
     try:
         from src.services.mesh_service import map_to_mesh
 
-        # Use MeSH to find disease terms
         mesh_results = map_to_mesh(q, top_k=limit)
-
         if mesh_results:
-            # Format MeSH results for autocomplete
             return [
                 {
                     "disease_id": result.get("mesh_id", idx),
@@ -222,14 +220,51 @@ async def search_diagnoses_proxy(q: str, limit: int = 20):
                 }
                 for idx, result in enumerate(mesh_results)
             ]
-        else:
-            # MeSH returned no results, return search query
-            logger.debug(f"No MeSH results for query: {q}")
-            return [{"disease_id": 0, "disease_name": q, "category": "General"}]
     except Exception as e:
-        logger.warning(f"MeSH search unavailable for '{q}': {e}")
-        # Fallback: return search query as single result
-        return [{"disease_id": 0, "disease_name": q, "category": "General"}]
+        logger.debug(f"MeSH unavailable: {e}")
+
+    # Fallback: Common disease suggestions based on query prefix
+    common_diseases = {
+        "dia": [
+            "Diabetes Mellitus",
+            "Diabetic Neuropathy",
+            "Diarrhea",
+            "Diabetic Retinopathy",
+        ],
+        "hyper": ["Hypertension", "Hyperthyroidism", "Hyperlipidemia", "Hyperglycemia"],
+        "asth": ["Asthma", "Asthenia"],
+        "canc": ["Cancer", "Lung Cancer", "Breast Cancer", "Colon Cancer"],
+        "heart": ["Heart Disease", "Heart Failure", "Heart Attack"],
+        "stroke": ["Stroke", "Ischemic Stroke", "Hemorrhagic Stroke"],
+        "arthri": ["Arthritis", "Rheumatoid Arthritis", "Osteoarthritis"],
+        "depress": ["Depression", "Major Depressive Disorder"],
+        "anxi": ["Anxiety", "Anxiety Disorder", "Generalized Anxiety Disorder"],
+    }
+
+    q_lower = q.lower()
+    suggestions = []
+
+    # Find matching suggestions
+    for prefix, diseases in common_diseases.items():
+        if q_lower.startswith(prefix):
+            suggestions = [d for d in diseases if q_lower in d.lower()]
+            break
+
+    # If no prefix match, search all diseases containing the query
+    if not suggestions:
+        for diseases in common_diseases.values():
+            for disease in diseases:
+                if q_lower in disease.lower() and disease not in suggestions:
+                    suggestions.append(disease)
+
+    # Return suggestions or echo query
+    if suggestions:
+        return [
+            {"disease_id": idx, "disease_name": name, "category": "Common"}
+            for idx, name in enumerate(suggestions[:limit])
+        ]
+
+    return [{"disease_id": 0, "disease_name": q, "category": "General"}]
 
 
 # Additional routers temporarily disabled (genes, disease_glossary)
