@@ -71,7 +71,7 @@ export default function DiseaseAutocomplete({
     }
   };
 
-  // Debounced input handler
+  // Instant search handler (0ms - feels more responsive for disease lookup)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
@@ -82,10 +82,10 @@ export default function DiseaseAutocomplete({
       clearTimeout(debounceRef.current);
     }
 
-    // Set new debounce timer
+    // Set new debounce timer (0ms for instant feel)
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(newValue);
-    }, 300); // 300ms debounce
+    }, 0); // 0ms debounce - instant suggestions
   };
 
   // Handle suggestion selection
