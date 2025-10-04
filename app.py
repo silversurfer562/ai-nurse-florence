@@ -558,11 +558,13 @@ async def serve_react_app(full_path: str, request: Request):
 
         raise HTTPException(status_code=404)
 
-    # Don't intercept API routes or docs
+    # Don't intercept API routes, docs, or health endpoints
     if (
         full_path.startswith("api")
         or full_path.startswith("docs")
         or full_path.startswith("openapi")
+        or full_path == "health"
+        or full_path == "status"
     ):
         from fastapi import HTTPException
 
