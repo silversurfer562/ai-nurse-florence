@@ -33,6 +33,10 @@ RUN npm ci && npm run build
 
 # Back to app directory
 WORKDIR /app
+
+# Build drug database from FDA (production data)
+RUN python3 scripts/build_drug_database.py --max-records 25000 || echo "Drug database build failed, will use FDA API fallback"
+
 RUN chown -R florence:florence /app
 
 # Make the startup script executable
