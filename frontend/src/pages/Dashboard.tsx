@@ -11,7 +11,7 @@ export default function Dashboard() {
       action: t('dashboard.patientEducation.action'),
       icon: 'fa-file-medical',
       color: 'blue',
-      path: '/patient-education',
+      path: '/app/patient-education',
     },
     {
       title: t('dashboard.drugInteractions.title'),
@@ -19,7 +19,7 @@ export default function Dashboard() {
       action: t('dashboard.drugInteractions.action'),
       icon: 'fa-pills',
       color: 'red',
-      path: '/drug-interactions',
+      path: '/app/drug-interactions',
     },
     {
       title: t('clinicalTrials.title'),
@@ -27,7 +27,7 @@ export default function Dashboard() {
       action: t('clinicalTrials.searchSection.searchButton'),
       icon: 'fa-flask',
       color: 'purple',
-      path: '/clinical-trials',
+      path: '/app/clinical-trials',
     },
     {
       title: t('diseaseInfo.title'),
@@ -35,7 +35,7 @@ export default function Dashboard() {
       action: t('diseaseInfo.searchButton'),
       icon: 'fa-stethoscope',
       color: 'green',
-      path: '/disease-info',
+      path: '/app/disease-info',
     },
   ];
 
@@ -70,7 +70,7 @@ export default function Dashboard() {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
-            to="/sbar-report"
+            to="/app/sbar-report"
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-blue-500"
           >
             <div className="flex items-center space-x-3">
@@ -83,7 +83,7 @@ export default function Dashboard() {
           </Link>
 
           <Link
-            to="/discharge-instructions"
+            to="/app/discharge-instructions"
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-green-500"
           >
             <div className="flex items-center space-x-3">
@@ -96,7 +96,7 @@ export default function Dashboard() {
           </Link>
 
           <Link
-            to="/medication-guide"
+            to="/app/medication-guide"
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-purple-500"
           >
             <div className="flex items-center space-x-3">
@@ -109,7 +109,7 @@ export default function Dashboard() {
           </Link>
 
           <Link
-            to="/incident-report"
+            to="/app/incident-report"
             className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-red-500"
           >
             <div className="flex items-center space-x-3">
