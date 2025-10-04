@@ -22,7 +22,7 @@ export default function Layout() {
   const { careSetting, setCareSetting, isSettingSelected } = useCareSettings();
   const [showCareSettingModal, setShowCareSettingModal] = useState(false);
 
-  const isOnDashboard = location.pathname === '/';
+  const isOnDashboard = location.pathname === '/app' || location.pathname === '/app/';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -35,7 +35,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link
-              to="/"
+              to="/app"
               className="flex items-center space-x-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg p-2 -m-2"
               aria-label={`${t('common.appName')} - ${t('common.appTagline')}`}
             >
@@ -59,7 +59,7 @@ export default function Layout() {
               {/* Home Icon - Show when not on dashboard */}
               {!isOnDashboard && (
                 <Link
-                  to="/"
+                  to="/app"
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                   aria-label={`Return to ${t('common.home')}`}
                 >
@@ -70,7 +70,7 @@ export default function Layout() {
 
               {/* Current Language Indicator - Click to go to Settings */}
               <Link
-                to="/settings"
+                to="/app/settings"
                 className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 title="Change language in Settings"
                 aria-label="Current language - click to change in Settings"
@@ -81,7 +81,7 @@ export default function Layout() {
 
               {/* Settings Icon */}
               <Link
-                to="/settings"
+                to="/app/settings"
                 className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 aria-label="Open settings"
               >
