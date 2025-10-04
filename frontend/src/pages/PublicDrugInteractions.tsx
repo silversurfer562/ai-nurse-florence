@@ -188,6 +188,59 @@ export default function PublicDrugInteractions() {
                       defaultExpanded={index === 0}
                     >
                       <div className="space-y-4">
+                        {/* Public-Friendly Badges */}
+                        <div className="flex flex-wrap gap-2 pb-3 border-b border-gray-200">
+                          {/* OTC vs Prescription Badge */}
+                          {drug.product_type && (
+                            <>
+                              {drug.product_type.includes('OTC') ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                  <i className="fas fa-shopping-cart"></i>
+                                  Over-the-Counter (OTC)
+                                </span>
+                              ) : drug.product_type.includes('PRESCRIPTION') ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
+                                  <i className="fas fa-prescription"></i>
+                                  Prescription Required
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+
+                          {/* Dosage Form Badge */}
+                          {drug.dosage_form && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
+                              <i className="fas fa-pills"></i>
+                              {drug.dosage_form}
+                            </span>
+                          )}
+
+                          {/* Route Badge */}
+                          {drug.route && drug.route !== 'Unknown' && (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">
+                              <i className="fas fa-arrow-right"></i>
+                              {drug.route}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* What is this for? - Simple explanation */}
+                        {drug.indication && (
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-l-4 border-blue-500">
+                            <div className="flex items-start gap-3">
+                              <i className="fas fa-question-circle text-blue-600 text-xl mt-0.5"></i>
+                              <div>
+                                <div className="text-sm font-bold text-blue-900 mb-1">What is this medication for?</div>
+                                <div className="text-sm text-gray-700 leading-relaxed">
+                                  {drug.indication.length > 200
+                                    ? drug.indication.substring(0, 200) + '...'
+                                    : drug.indication}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Basic Info */}
                         <div className="grid md:grid-cols-2 gap-4">
                           {drug.drug_class && (

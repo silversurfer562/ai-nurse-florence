@@ -609,6 +609,9 @@ REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated 
                     "brand_names": [brand_name] if brand_name else [],
                     "drug_class": db_drug.get("pharm_class", "Unknown"),
                     "route": db_drug.get("route", "Unknown"),
+                    "product_type": db_drug.get("product_type"),
+                    "dosage_form": db_drug.get("dosage_form"),
+                    "labeler_name": db_drug.get("labeler_name"),
                 }
 
                 # Check if this drug is in our hardcoded interaction rules
