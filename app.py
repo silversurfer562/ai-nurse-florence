@@ -96,8 +96,7 @@ async def lifespan(app: FastAPI):
         "⚠️ Database initialization skipped - run migrations separately if needed"
     )
 
-    # Log effective base URL for observability and populate OpenAPI servers
-    effective_base = None
+    # Log effective base URL for observability
     try:
         from src.utils.config import get_base_url
 
@@ -106,20 +105,8 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.debug("Could not determine effective BASE_URL at startup")
 
-    try:
-        if hasattr(app, "openapi_schema") and app.openapi_schema is not None:
-            if effective_base:
-                app.openapi_schema.setdefault("servers", [])
-                app.openapi_schema["servers"].append({"url": effective_base})
-        else:
-            # Force generation of openapi schema then set servers
-            schema = app.openapi()
-            if effective_base:
-                schema.setdefault("servers", [])
-                schema["servers"].append({"url": effective_base})
-            app.openapi_schema = schema
-    except Exception:
-        logger.debug("Failed to populate OpenAPI servers with BASE_URL")
+    # OpenAPI schema population disabled to prevent startup hang
+    logger.debug("OpenAPI schema will be generated on first /docs request")
 
     try:
         yield
