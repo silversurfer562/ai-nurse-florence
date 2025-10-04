@@ -27,9 +27,9 @@ RUN useradd --create-home --shell /bin/bash florence
 # Copy application files (bust cache: 2025-10-04-11:00-frontend-rebuild)
 COPY . /app
 
-# Skip frontend build - using pre-built dist/ from git
-# WORKDIR /app/frontend
-# RUN npm ci && npm run build
+# Build frontend on Railway
+WORKDIR /app/frontend
+RUN npm ci && npm run build
 
 # Back to app directory
 WORKDIR /app
