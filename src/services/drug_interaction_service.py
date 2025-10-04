@@ -612,6 +612,7 @@ REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated 
                     "product_type": db_drug.get("product_type"),
                     "dosage_form": db_drug.get("dosage_form"),
                     "labeler_name": db_drug.get("labeler_name"),
+                    "dea_schedule": db_drug.get("dea_schedule"),
                 }
 
                 # Check if this drug is in our hardcoded interaction rules

@@ -134,6 +134,95 @@ export default function DrugInteractions() {
                     defaultExpanded={index === 0}
                   >
                     <div className="space-y-4">
+                      {/* HIGH-ALERT MEDICATION WARNINGS (for nurses) */}
+                      {(() => {
+                        const drugNameLower = drug.name?.toLowerCase() || '';
+                        const isControlled = drug.dea_schedule;
+                        const isInsulin = drugNameLower.includes('insulin');
+                        const isWarfarin = drugNameLower.includes('warfarin');
+                        const isHeparin = drugNameLower.includes('heparin');
+                        const isHighAlert = isControlled || isInsulin || isWarfarin || isHeparin;
+
+                        if (!isHighAlert) return null;
+
+                        return (
+                          <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4">
+                            <div className="flex items-start gap-3">
+                              <i className="fas fa-exclamation-triangle text-red-600 text-2xl mt-0.5"></i>
+                              <div className="flex-1">
+                                <div className="font-bold text-red-900 text-lg mb-2">
+                                  ⚠️ HIGH-ALERT MEDICATION
+                                </div>
+                                <div className="space-y-2">
+                                  {isControlled && (
+                                    <div className="bg-red-100 rounded px-3 py-2">
+                                      <span className="font-semibold text-red-900">DEA Schedule {drug.dea_schedule}</span>
+                                      <p className="text-sm text-red-800 mt-1">
+                                        • Requires controlled substance protocols<br/>
+                                        • Document waste with witness<br/>
+                                        • Secure storage required
+                                      </p>
+                                    </div>
+                                  )}
+                                  {isInsulin && (
+                                    <div className="bg-orange-100 rounded px-3 py-2">
+                                      <span className="font-semibold text-orange-900">Insulin - High Alert</span>
+                                      <p className="text-sm text-orange-800 mt-1">
+                                        • Independent double-check required<br/>
+                                        • Verify correct type and dose<br/>
+                                        • Monitor blood glucose closely
+                                      </p>
+                                    </div>
+                                  )}
+                                  {(isWarfarin || isHeparin) && (
+                                    <div className="bg-orange-100 rounded px-3 py-2">
+                                      <span className="font-semibold text-orange-900">Anticoagulant - High Alert</span>
+                                      <p className="text-sm text-orange-800 mt-1">
+                                        • Monitor for bleeding signs<br/>
+                                        • Check labs (INR/PTT/anti-Xa)<br/>
+                                        • Fall precautions in place
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* ROUTE SAFETY WARNINGS */}
+                      {drug.route && (() => {
+                        const route = drug.route.toUpperCase();
+                        if (route.includes('INTRAVENOUS') || route.includes('IV')) {
+                          return (
+                            <div className="bg-purple-50 border-l-4 border-purple-600 p-4 rounded-r-lg">
+                              <div className="flex items-center gap-2">
+                                <i className="fas fa-syringe text-purple-600"></i>
+                                <span className="font-bold text-purple-900">IV ADMINISTRATION ONLY</span>
+                              </div>
+                              <p className="text-sm text-purple-800 mt-1">
+                                ⚠️ Do NOT administer by any other route
+                              </p>
+                            </div>
+                          );
+                        }
+                        if (route.includes('TOPICAL')) {
+                          return (
+                            <div className="bg-yellow-50 border-l-4 border-yellow-600 p-4 rounded-r-lg">
+                              <div className="flex items-center gap-2">
+                                <i className="fas fa-hand-sparkles text-yellow-600"></i>
+                                <span className="font-bold text-yellow-900">TOPICAL USE ONLY</span>
+                              </div>
+                              <p className="text-sm text-yellow-800 mt-1">
+                                ⚠️ For external use only - DO NOT SWALLOW
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+
                       {/* Basic Info */}
                       <div className="grid md:grid-cols-2 gap-4">
                         {drug.drug_class && (
