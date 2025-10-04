@@ -8,13 +8,15 @@ Runs hourly to keep drug list fresh and ready for users.
 
 import asyncio
 import logging
-import httpx
 import uuid
 from datetime import datetime
 from typing import List, Optional
 
+import httpx
+
 # Configure logging
 logger = logging.getLogger(__name__)
+
 
 class DrugCacheUpdaterService:
     """
@@ -38,6 +40,7 @@ class DrugCacheUpdaterService:
         # Initialize cache manager
         try:
             from src.utils.smart_cache import SmartCacheManager
+
             self.cache_manager = SmartCacheManager()
             logger.info("Drug cache updater initialized with smart cache")
         except Exception as e:
@@ -45,7 +48,7 @@ class DrugCacheUpdaterService:
 
         # Check database availability
         try:
-            from src.models.database import init_database
+
             self.db_available = True
             logger.info("Drug cache updater: Database available for fallback storage")
         except Exception as e:
@@ -64,8 +67,9 @@ class DrugCacheUpdaterService:
             return
 
         try:
-            from src.models.database import get_db_session, CachedDrugList
-            from sqlalchemy import select, delete
+            from sqlalchemy import delete
+
+            from src.models.database import CachedDrugList, get_db_session
 
             async for session in get_db_session():
                 try:
@@ -80,12 +84,14 @@ class DrugCacheUpdaterService:
                         source=source,
                         count=len(drug_list),
                         created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
+                        updated_at=datetime.utcnow(),
                     )
 
                     session.add(cached_list)
                     await session.commit()
-                    logger.info(f"✅ Saved {len(drug_list)} drugs to database backup (source: {source})")
+                    logger.info(
+                        f"✅ Saved {len(drug_list)} drugs to database backup (source: {source})"
+                    )
 
                 except Exception as e:
                     await session.rollback()
@@ -105,8 +111,9 @@ class DrugCacheUpdaterService:
             return None
 
         try:
-            from src.models.database import get_db_session, CachedDrugList
             from sqlalchemy import select
+
+            from src.models.database import CachedDrugList, get_db_session
 
             async for session in get_db_session():
                 try:
@@ -118,7 +125,9 @@ class DrugCacheUpdaterService:
                     cached_list = result.scalar_one_or_none()
 
                     if cached_list:
-                        logger.info(f"Retrieved {cached_list.count} drugs from database (source: {cached_list.source})")
+                        logger.info(
+                            f"Retrieved {cached_list.count} drugs from database (source: {cached_list.source})"
+                        )
                         return cached_list.drug_names
 
                     return None
@@ -148,9 +157,7 @@ class DrugCacheUpdaterService:
         """
         try:
             fda_url = "https://api.fda.gov/drug/ndc.json"
-            params = {
-                "limit": 1000  # Fetch large sample for comprehensive list
-            }
+            params = {"limit": 1000}  # Fetch large sample for comprehensive list
 
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(fda_url, params=params)
@@ -199,12 +206,36 @@ class DrugCacheUpdaterService:
             List of common drug names
         """
         return [
-            "Acetaminophen", "Amoxicillin", "Aspirin", "Atorvastatin", "Azithromycin",
-            "Ciprofloxacin", "Clopidogrel", "Doxycycline", "Furosemide", "Gabapentin",
-            "Hydrochlorothiazide", "Ibuprofen", "Levothyroxine", "Lisinopril", "Losartan",
-            "Metformin", "Metoprolol", "Omeprazole", "Prednisone", "Simvastatin",
-            "Warfarin", "Amlodipine", "Albuterol", "Insulin", "Methotrexate",
-            "Naproxen", "Pantoprazole", "Sertraline", "Tramadol", "Zolpidem"
+            "Acetaminophen",
+            "Amoxicillin",
+            "Aspirin",
+            "Atorvastatin",
+            "Azithromycin",
+            "Ciprofloxacin",
+            "Clopidogrel",
+            "Doxycycline",
+            "Furosemide",
+            "Gabapentin",
+            "Hydrochlorothiazide",
+            "Ibuprofen",
+            "Levothyroxine",
+            "Lisinopril",
+            "Losartan",
+            "Metformin",
+            "Metoprolol",
+            "Omeprazole",
+            "Prednisone",
+            "Simvastatin",
+            "Warfarin",
+            "Amlodipine",
+            "Albuterol",
+            "Insulin",
+            "Methotrexate",
+            "Naproxen",
+            "Pantoprazole",
+            "Sertraline",
+            "Tramadol",
+            "Zolpidem",
         ]
 
     async def update_drug_cache(self):
@@ -213,7 +244,9 @@ class DrugCacheUpdaterService:
         """
         try:
             if not self.cache_manager:
-                logger.warning("Cache manager not available, skipping drug cache update")
+                logger.warning(
+                    "Cache manager not available, skipping drug cache update"
+                )
                 return
 
             logger.info("Starting drug cache update...")
@@ -223,10 +256,14 @@ class DrugCacheUpdaterService:
 
             # Cache the full drug list (no query filter)
             cache_key = "drug_names_all_1000"
-            await self.cache_manager.set(cache_key, drug_list, ttl_seconds=7200)  # 2 hours TTL
+            await self.cache_manager.set(
+                cache_key, drug_list, ttl_seconds=7200
+            )  # 2 hours TTL
 
             self.last_update = datetime.now()
-            logger.info(f"Drug cache updated successfully with {len(drug_list)} drugs at {self.last_update}")
+            logger.info(
+                f"Drug cache updated successfully with {len(drug_list)} drugs at {self.last_update}"
+            )
 
         except Exception as e:
             logger.error(f"Error updating drug cache: {e}")
@@ -235,10 +272,12 @@ class DrugCacheUpdaterService:
         """
         Background task that updates drug cache hourly.
         """
-        logger.info(f"Starting background drug cache updates with {self.update_interval_seconds/3600}h interval")
+        logger.info(
+            f"Starting background drug cache updates with {self.update_interval_seconds/3600}h interval"
+        )
 
-        # Do initial update immediately
-        await self.update_drug_cache()
+        # Skip initial update to prevent blocking startup - will update on first interval
+        logger.info("Skipping initial drug cache update - will run on schedule")
 
         while self.is_running:
             try:
@@ -299,11 +338,13 @@ class DrugCacheUpdaterService:
             "update_interval_hours": self.update_interval_seconds / 3600,
             "cache_available": self.cache_manager is not None,
             "last_fetch_source": self.last_fetch_source,
-            "network_warning": self.last_fetch_source in ["database", "hardcoded"]
+            "network_warning": self.last_fetch_source in ["database", "hardcoded"],
         }
+
 
 # Global instance
 _drug_cache_updater: Optional[DrugCacheUpdaterService] = None
+
 
 def get_drug_cache_updater() -> DrugCacheUpdaterService:
     """
