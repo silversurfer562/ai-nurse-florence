@@ -559,6 +559,19 @@ REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated 
             logger.error(f"OpenAI API call failed: {e}")
             raise
 
+    def _get_drug_from_database(self, drug_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get drug information from database (SQLite) or FDA API.
+        This replaces the hardcoded drug lookup.
+        """
+        try:
+            from src.services.drug_database_service import drug_db_service
+
+            return drug_db_service.get_drug_info(drug_name)
+        except Exception as e:
+            logger.warning(f"Failed to get drug info for {drug_name}: {e}")
+            return None
+
     def _get_fda_drug_data(self, drug_name: str) -> Optional[Dict[str, Any]]:
         """Fetch FDA drug label data if available."""
         try:
@@ -583,41 +596,47 @@ REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated 
         # Normalize drug names
         normalized_drugs = [d.lower().strip() for d in drugs]
 
-        # Get drug information for all drugs
+        # Get drug information for all drugs using new database service
         for drug_name in normalized_drugs:
-            # Start with basic info from database if available
-            if drug_name in self.drugs_db:
-                drug = self.drugs_db[drug_name]
+            # Try to get drug from SQLite database or FDA API
+            db_drug = self._get_drug_from_database(drug_name)
+
+            if db_drug:
+                # Found in database or FDA API
+                brand_name = db_drug.get("brand_name", "")
                 drug_data = {
-                    "name": drug.generic_name,
-                    "brand_names": drug.brand_names,
-                    "drug_class": drug.drug_class,
-                    "route": drug.route,
+                    "name": db_drug.get("generic_name", drug_name),
+                    "brand_names": [brand_name] if brand_name else [],
+                    "drug_class": db_drug.get("pharm_class", "Unknown"),
+                    "route": db_drug.get("route", "Unknown"),
                 }
+
+                # Check if this drug is in our hardcoded interaction rules
+                if drug_name in self.drugs_db:
+                    logger.info(
+                        f"✓ {drug_name} found in both database AND interaction rules"
+                    )
             else:
-                # Drug not in our database - use basic info
+                # Drug not found anywhere - use basic placeholder
                 drug_data = {
                     "name": drug_name,
                     "brand_names": [],
                     "drug_class": "Unknown",
                     "route": "Unknown",
                 }
-                logger.info(f"⚠️ {drug_name} not in local database, will try FDA")
+                logger.warning(
+                    f"⚠️ {drug_name} not found in database or FDA - using placeholder"
+                )
 
-            # Always try to enrich with FDA data
+            # Always try to enrich with detailed FDA label data
             fda_data = self._get_fda_drug_data(drug_name)
             if fda_data:
-                logger.info(f"✓ FDA data found for {drug_name}")
-                # Update basic info from FDA if we didn't have it
+                logger.info(f"✓ FDA label data found for {drug_name}")
+                # Update basic info from FDA label if needed
                 if not drug_data.get("brand_names"):
                     drug_data["brand_names"] = fda_data.get("brand_names", [])
-                if drug_data.get("drug_class") == "Unknown":
-                    drug_data["drug_class"] = fda_data.get("product_type", "Unknown")
-                if drug_data.get("route") == "Unknown":
-                    routes = fda_data.get("route", [])
-                    drug_data["route"] = routes[0] if routes else "Unknown"
 
-                # Add FDA-specific fields
+                # Add comprehensive FDA label fields
                 drug_data.update(
                     {
                         "fda_data_available": True,
@@ -637,7 +656,7 @@ REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated 
                 )
             else:
                 drug_data["fda_data_available"] = False
-                logger.info(f"✗ No FDA data for {drug_name}")
+                logger.info(f"✗ No FDA label data for {drug_name}")
 
             drug_info.append(drug_data)
 
