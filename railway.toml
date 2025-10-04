@@ -6,7 +6,7 @@ dockerfilePath = "Dockerfile"
 restartPolicyType = "on_failure"
 
 [environments.production]
-variables = { }
+variables = { PORT = "8080" }
 
 [environments.development]
 variables = { }
