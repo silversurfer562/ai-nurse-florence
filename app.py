@@ -199,25 +199,28 @@ except Exception as e:
     ROUTERS_LOADED["webhooks"] = False
 
 
-# Diagnosis Search Endpoint - Proxy to existing disease search
+# Diagnosis Search Endpoint - Uses MeSH terms for disease autocomplete
 @app.get("/api/v1/content-settings/diagnosis/search")
 async def search_diagnoses_proxy(q: str, limit: int = 20):
     """
-    Proxy diagnosis search to existing disease endpoint.
-    Used by clinical trials page.
+    Search for disease/diagnosis names using MeSH terms.
+    Used by clinical trials page autocomplete.
     """
     try:
-        # Call the existing disease search endpoint internally
-        from src.services import get_service
+        from src.services.mesh_service import map_to_mesh
 
-        disease_service = get_service("disease")
-        if disease_service:
-            # Search using the disease service
-            results = disease_service.search_disease_names(q, limit=limit)
-            # Format for clinical trials page
+        # Use MeSH to find disease terms
+        mesh_results = map_to_mesh(q, top_k=limit)
+
+        if mesh_results:
+            # Format MeSH results for autocomplete
             return [
-                {"disease_id": idx, "disease_name": name, "category": "General"}
-                for idx, name in enumerate(results)
+                {
+                    "disease_id": result.get("mesh_id", idx),
+                    "disease_name": result.get("term", q),
+                    "category": "MeSH Term",
+                }
+                for idx, result in enumerate(mesh_results)
             ]
     except Exception as e:
         logger.error(f"Diagnosis search error: {e}")

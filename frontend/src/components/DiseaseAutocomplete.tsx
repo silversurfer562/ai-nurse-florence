@@ -48,19 +48,16 @@ export default function DiseaseAutocomplete({
 
     setIsLoading(true);
     try {
-      const response = await api.get('/api/v1/disease/disease-names', {
-        params: { query, limit: 10 }
+      const response = await api.get('/api/v1/content-settings/diagnosis/search', {
+        params: { q: query, limit: 10 }
       });
 
-      if (response.data?.success && response.data?.data?.diseases) {
-        setSuggestions(response.data.data.diseases);
+      // Response is an array of { disease_id, disease_name, category }
+      if (response.data && Array.isArray(response.data)) {
+        const diseaseNames = response.data.map((item: any) => item.disease_name);
+        setSuggestions(diseaseNames);
         setShowSuggestions(true);
-        // Check for network warning
-        if (response.data.data.network_warning) {
-          setNetworkWarning(response.data.data.network_warning);
-        } else {
-          setNetworkWarning(null);
-        }
+        setNetworkWarning(null);
       }
     } catch (error) {
       console.error('Failed to fetch disease suggestions:', error);
