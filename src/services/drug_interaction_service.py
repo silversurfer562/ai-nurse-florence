@@ -585,46 +585,61 @@ REMEMBER: Provide COMPREHENSIVE, DETAILED information - not minimal abbreviated 
 
         # Get drug information for all drugs
         for drug_name in normalized_drugs:
+            # Start with basic info from database if available
             if drug_name in self.drugs_db:
                 drug = self.drugs_db[drug_name]
-
-                # Start with basic database info
                 drug_data = {
                     "name": drug.generic_name,
                     "brand_names": drug.brand_names,
                     "drug_class": drug.drug_class,
                     "route": drug.route,
                 }
+            else:
+                # Drug not in our database - use basic info
+                drug_data = {
+                    "name": drug_name,
+                    "brand_names": [],
+                    "drug_class": "Unknown",
+                    "route": "Unknown",
+                }
+                logger.info(f"⚠️ {drug_name} not in local database, will try FDA")
 
-                # Enrich with FDA data if available
-                fda_data = self._get_fda_drug_data(drug_name)
-                if fda_data:
-                    logger.info(f"✓ FDA data found for {drug_name}")
-                    # Add FDA-specific fields
-                    drug_data.update(
-                        {
-                            "fda_data_available": True,
-                            "indication": fda_data.get("indications_and_usage"),
-                            "contraindications_fda": fda_data.get("contraindications"),
-                            "warnings_fda": fda_data.get("warnings_and_cautions"),
-                            "boxed_warning": fda_data.get("boxed_warning"),
-                            "adverse_reactions_fda": fda_data.get("adverse_reactions"),
-                            "drug_interactions_fda": fda_data.get("drug_interactions"),
-                            "special_populations": fda_data.get(
-                                "use_in_specific_populations"
-                            ),
-                            "mechanism_of_action": fda_data.get("mechanism_of_action"),
-                            "clinical_pharmacology": fda_data.get(
-                                "clinical_pharmacology"
-                            ),
-                            "manufacturer": fda_data.get("manufacturer"),
-                        }
-                    )
-                else:
-                    drug_data["fda_data_available"] = False
-                    logger.info(f"✗ No FDA data for {drug_name}")
+            # Always try to enrich with FDA data
+            fda_data = self._get_fda_drug_data(drug_name)
+            if fda_data:
+                logger.info(f"✓ FDA data found for {drug_name}")
+                # Update basic info from FDA if we didn't have it
+                if not drug_data.get("brand_names"):
+                    drug_data["brand_names"] = fda_data.get("brand_names", [])
+                if drug_data.get("drug_class") == "Unknown":
+                    drug_data["drug_class"] = fda_data.get("product_type", "Unknown")
+                if drug_data.get("route") == "Unknown":
+                    routes = fda_data.get("route", [])
+                    drug_data["route"] = routes[0] if routes else "Unknown"
 
-                drug_info.append(drug_data)
+                # Add FDA-specific fields
+                drug_data.update(
+                    {
+                        "fda_data_available": True,
+                        "indication": fda_data.get("indications_and_usage"),
+                        "contraindications_fda": fda_data.get("contraindications"),
+                        "warnings_fda": fda_data.get("warnings_and_cautions"),
+                        "boxed_warning": fda_data.get("boxed_warning"),
+                        "adverse_reactions_fda": fda_data.get("adverse_reactions"),
+                        "drug_interactions_fda": fda_data.get("drug_interactions"),
+                        "special_populations": fda_data.get(
+                            "use_in_specific_populations"
+                        ),
+                        "mechanism_of_action": fda_data.get("mechanism_of_action"),
+                        "clinical_pharmacology": fda_data.get("clinical_pharmacology"),
+                        "manufacturer": fda_data.get("manufacturer"),
+                    }
+                )
+            else:
+                drug_data["fda_data_available"] = False
+                logger.info(f"✗ No FDA data for {drug_name}")
+
+            drug_info.append(drug_data)
 
         # Check each pair of drugs against interaction rules
         for i, drug1 in enumerate(normalized_drugs):
