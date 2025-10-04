@@ -267,9 +267,20 @@ except Exception as e:
     logger.warning(f"Failed to register webhooks router: {e}")
     ROUTERS_LOADED["webhooks"] = False
 
-# Additional routers temporarily disabled (content_settings, genes, disease_glossary)
+# Content Settings Router - Enable for clinical trials page
+try:
+    from routers.content_settings import router as content_settings_router
+
+    app.include_router(content_settings_router, prefix="/api/v1")
+    logger.info("✅ Content settings router registered successfully")
+    ROUTERS_LOADED["content_settings"] = True
+except Exception as e:
+    logger.warning(f"⚠️ Content settings router unavailable: {e}")
+    ROUTERS_LOADED["content_settings"] = False
+
+# Additional routers temporarily disabled (genes, disease_glossary)
 logger.info(
-    "⚠️ Some routers disabled during startup troubleshooting (content_settings, genes, disease_glossary)"
+    "⚠️ Some routers still disabled during startup troubleshooting (genes, disease_glossary)"
 )
 
 
