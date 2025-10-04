@@ -495,11 +495,32 @@ async def _search_trials_live(
         status_module = protocol.get("statusModule", {})
         design_module = protocol.get("designModule", {})
         conditions_module = protocol.get("conditionsModule", {})
+        description_module = protocol.get("descriptionModule", {})
+        sponsor_module = protocol.get("sponsorCollaboratorsModule", {})
+        contacts_module = protocol.get("contactsLocationsModule", {})
+        eligibility_module = protocol.get("eligibilityModule", {})
+
+        # Get NCT ID for URL
+        nct_id = identification.get("nctId", "Unknown")
+
+        # Extract contact information
+        central_contacts = contacts_module.get("centralContacts", [])
+        contact_info = None
+        if central_contacts:
+            contact = central_contacts[0]
+            contact_info = {
+                "name": contact.get("name", "Not provided"),
+                "email": contact.get("email"),
+                "phone": contact.get("phone"),
+            }
 
         trials.append(
             {
-                "nct_id": identification.get("nctId", "Unknown"),
+                "nct_id": nct_id,
                 "title": identification.get("briefTitle", "No title available"),
+                "summary": description_module.get(
+                    "briefSummary", "No summary available"
+                ),
                 "phase": (
                     design_module.get("phases", ["N/A"])[0]
                     if design_module.get("phases")
@@ -510,6 +531,12 @@ async def _search_trials_live(
                 "condition": ", ".join(
                     conditions_module.get("conditions", [condition])
                 ),
+                "sponsor": sponsor_module.get("leadSponsor", {}).get(
+                    "name", "Not provided"
+                ),
+                "enrollment": eligibility_module.get("maximumAge", "Not specified"),
+                "contact": contact_info,
+                "url": f"https://clinicaltrials.gov/study/{nct_id}",
             }
         )
 

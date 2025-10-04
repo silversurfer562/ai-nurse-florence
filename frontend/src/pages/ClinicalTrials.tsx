@@ -183,16 +183,38 @@ export default function ClinicalTrials() {
                   )}
                 </div>
 
+                {study.contact && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm">
+                    <p className="font-semibold text-gray-700 mb-1">
+                      <i className="fas fa-address-book mr-2"></i>
+                      Contact Information:
+                    </p>
+                    <p className="text-gray-600">{study.contact.name}</p>
+                    {study.contact.email && (
+                      <p className="text-gray-600">
+                        <i className="fas fa-envelope mr-2"></i>
+                        {study.contact.email}
+                      </p>
+                    )}
+                    {study.contact.phone && (
+                      <p className="text-gray-600">
+                        <i className="fas fa-phone mr-2"></i>
+                        {study.contact.phone}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {study.url && (
                   <div className="mt-4 pt-3 border-t border-gray-200">
                     <a
                       href={study.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"
                     >
                       <i className="fas fa-external-link-alt mr-2"></i>
-                      {t('clinicalTrials.results.viewDetails')}
+                      View Full Details on ClinicalTrials.gov
                     </a>
                   </div>
                 )}
