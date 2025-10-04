@@ -42,7 +42,7 @@ export const literatureService = {
 
 export const healthService = {
   checkHealth: async () => {
-    const response = await api.get('/api/v1/health');
+    const response = await api.get('/api/v1/health/');
     return response.data;
   },
 };
