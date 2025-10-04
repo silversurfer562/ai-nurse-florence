@@ -13,8 +13,8 @@ restartPolicyType = "on_failure"
 [[deploy.volumes]]
 mountPath = "/app"
 
-[environments.production]
+[environments.development]
 variables = { PORT = "8080" }
 
-[environments.development]
-variables = { }
+[environments.production]
+variables = { PORT = "8080" }
