@@ -64,6 +64,7 @@ async def lifespan(app: FastAPI):
     # Initialize session cleanup service (Phase 3.4.4)
     try:
         from src.services.session_cleanup import start_session_cleanup
+
         await start_session_cleanup()
         logger.info("✅ Session cleanup service started")
     except Exception as e:
@@ -72,6 +73,7 @@ async def lifespan(app: FastAPI):
     # Initialize drug cache updater service (Phase 4.2)
     try:
         from src.services.drug_cache_updater import get_drug_cache_updater
+
         drug_cache_updater = get_drug_cache_updater()
         await drug_cache_updater.start()
         logger.info("✅ Drug cache updater service started")
@@ -81,6 +83,7 @@ async def lifespan(app: FastAPI):
     # Initialize disease cache updater service (Phase 4.2)
     try:
         from src.services.disease_cache_updater import get_disease_cache_updater
+
         disease_cache_updater = get_disease_cache_updater()
         await disease_cache_updater.start()
         logger.info("✅ Disease cache updater service started")
@@ -88,28 +91,10 @@ async def lifespan(app: FastAPI):
         logger.warning(f"⚠️ Disease cache updater service not available: {e}")
 
     # Initialize diagnosis content library (auto-seed if empty)
-    try:
-        from src.database import SessionLocal, engine
-        from src.models.content_settings import Base, DiagnosisContentMap
-
-        # Create all tables if they don't exist
-        Base.metadata.create_all(bind=engine)
-        logger.info("✅ Database tables initialized")
-
-        # Check if seeding is needed
-        db = SessionLocal()
-        count = db.query(DiagnosisContentMap).count()
-        db.close()
-
-        if count == 0:
-            logger.info("📚 Diagnosis library empty, seeding initial data...")
-            from scripts.populate_diagnosis_library import populate_diagnoses
-            populate_diagnoses()
-            logger.info("✅ Diagnosis library seeded with 34 diagnoses")
-        else:
-            logger.info(f"✅ Diagnosis library ready ({count} diagnoses)")
-    except Exception as e:
-        logger.warning(f"⚠️ Diagnosis library initialization skipped: {e}")
+    # Temporarily disabled to fix Railway startup hang - database initialization moved to separate migration
+    logger.info(
+        "⚠️ Database initialization skipped - run migrations separately if needed"
+    )
 
     # Log effective base URL for observability and populate OpenAPI servers
     effective_base = None
@@ -143,6 +128,7 @@ async def lifespan(app: FastAPI):
         # Stop session cleanup service (Phase 3.4.4)
         try:
             from src.services.session_cleanup import stop_session_cleanup
+
             await stop_session_cleanup()
             logger.info("✅ Session cleanup service stopped")
         except Exception as e:
@@ -151,6 +137,7 @@ async def lifespan(app: FastAPI):
         # Stop drug cache updater service (Phase 4.2)
         try:
             from src.services.drug_cache_updater import get_drug_cache_updater
+
             drug_cache_updater = get_drug_cache_updater()
             await drug_cache_updater.stop()
             logger.info("✅ Drug cache updater service stopped")
@@ -160,6 +147,7 @@ async def lifespan(app: FastAPI):
         # Stop disease cache updater service (Phase 4.2)
         try:
             from src.services.disease_cache_updater import get_disease_cache_updater
+
             disease_cache_updater = get_disease_cache_updater()
             await disease_cache_updater.stop()
             logger.info("✅ Disease cache updater service stopped")
@@ -222,6 +210,7 @@ except ImportError:
 # Add admin router first (from local routers directory)
 try:
     from routers.admin import router as admin_router
+
     api_router.include_router(admin_router)
     ROUTERS_LOADED["admin"] = True
     logger.info("Admin router registered successfully")
@@ -232,9 +221,12 @@ except Exception as e:
 # Add cache monitoring router (Phase 4.1 - Enhanced Redis Caching)
 try:
     from src.routers.cache_monitoring import router as cache_monitoring_router
+
     api_router.include_router(cache_monitoring_router)
     ROUTERS_LOADED["cache_monitoring"] = True
-    logger.info("Cache monitoring router registered successfully - Phase 4.1 Enhanced Caching")
+    logger.info(
+        "Cache monitoring router registered successfully - Phase 4.1 Enhanced Caching"
+    )
 except Exception as e:
     logger.warning(f"Failed to register cache monitoring router: {e}")
     ROUTERS_LOADED["cache_monitoring"] = False
@@ -242,9 +234,12 @@ except Exception as e:
 # Add enhanced literature router (Phase 4.2 - Additional Medical Services)
 try:
     from src.routers.enhanced_literature import router as enhanced_literature_router
+
     api_router.include_router(enhanced_literature_router)
     ROUTERS_LOADED["enhanced_literature"] = True
-    logger.info("Enhanced literature router registered successfully - Phase 4.2 Additional Medical Services")
+    logger.info(
+        "Enhanced literature router registered successfully - Phase 4.2 Additional Medical Services"
+    )
 except Exception as e:
     logger.warning(f"Failed to register enhanced literature router: {e}")
     ROUTERS_LOADED["enhanced_literature"] = False
@@ -252,9 +247,12 @@ except Exception as e:
 # Add drug interactions router (Phase 4.2 - Additional Medical Services)
 try:
     from src.routers.drug_interactions import router as drug_interactions_router
+
     api_router.include_router(drug_interactions_router)
     ROUTERS_LOADED["drug_interactions"] = True
-    logger.info("Drug interactions router registered successfully - Phase 4.2 Additional Medical Services")
+    logger.info(
+        "Drug interactions router registered successfully - Phase 4.2 Additional Medical Services"
+    )
 except Exception as e:
     logger.warning(f"Failed to register drug interactions router: {e}")
     ROUTERS_LOADED["drug_interactions"] = False
@@ -262,9 +260,12 @@ except Exception as e:
 # Add patient documents router (PDF generation for patient education)
 try:
     from routers.patient_documents import router as patient_documents_router
+
     api_router.include_router(patient_documents_router)
     ROUTERS_LOADED["patient_documents"] = True
-    logger.info("Patient documents router registered successfully - PDF generation enabled")
+    logger.info(
+        "Patient documents router registered successfully - PDF generation enabled"
+    )
 except Exception as e:
     logger.warning(f"Failed to register patient documents router: {e}")
     ROUTERS_LOADED["patient_documents"] = False
@@ -272,6 +273,7 @@ except Exception as e:
 # Add user profile router (Personalization and work settings)
 try:
     from routers.user_profile import router as user_profile_router
+
     api_router.include_router(user_profile_router)
     ROUTERS_LOADED["user_profile"] = True
     logger.info("User profile router registered successfully - Personalization enabled")
@@ -282,28 +284,39 @@ except Exception as e:
 # Add content settings router (Settings infrastructure for document creation)
 try:
     from routers.content_settings import router as content_settings_router
+
     api_router.include_router(content_settings_router)
     ROUTERS_LOADED["content_settings"] = True
-    logger.info("Content settings router registered successfully - Settings infrastructure enabled")
+    logger.info(
+        "Content settings router registered successfully - Settings infrastructure enabled"
+    )
 except Exception as e:
     logger.warning(f"Failed to register content settings router: {e}")
     ROUTERS_LOADED["content_settings"] = False
 
 # Add patient education documents router (Patient-friendly education materials with PDF generation)
 try:
-    from routers.patient_education_documents import router as patient_education_docs_router
+    from routers.patient_education_documents import (
+        router as patient_education_docs_router,
+    )
+
     api_router.include_router(patient_education_docs_router)
     ROUTERS_LOADED["patient_education_documents"] = True
-    logger.info("Patient education documents router registered successfully - Multi-language patient education enabled")
+    logger.info(
+        "Patient education documents router registered successfully - Multi-language patient education enabled"
+    )
 except Exception as e:
     logger.warning(f"Failed to register patient education documents router: {e}")
     ROUTERS_LOADED["patient_education_documents"] = False
 
 try:
     from routers.genes import router as genes_router
+
     api_router.include_router(genes_router)
     ROUTERS_LOADED["genes"] = True
-    logger.info("Genes router registered successfully - Gene information and disease-gene associations enabled")
+    logger.info(
+        "Genes router registered successfully - Gene information and disease-gene associations enabled"
+    )
 except Exception as e:
     logger.warning(f"Failed to register genes router: {e}")
     ROUTERS_LOADED["genes"] = False
@@ -311,9 +324,12 @@ except Exception as e:
 # Add disease glossary router (Comprehensive disease reference and export)
 try:
     from src.routers.disease_glossary import router as disease_glossary_router
+
     api_router.include_router(disease_glossary_router)
     ROUTERS_LOADED["disease_glossary"] = True
-    logger.info("Disease glossary router registered successfully - 12,000+ diseases with search and export enabled")
+    logger.info(
+        "Disease glossary router registered successfully - 12,000+ diseases with search and export enabled"
+    )
 except Exception as e:
     logger.warning(f"Failed to register disease glossary router: {e}")
     ROUTERS_LOADED["disease_glossary"] = False
@@ -321,9 +337,12 @@ except Exception as e:
 # Add webhook router (Railway deployment notifications and health checks)
 try:
     from routers.webhooks import router as webhooks_router
+
     api_router.include_router(webhooks_router)
     ROUTERS_LOADED["webhooks"] = True
-    logger.info("Webhooks router registered successfully - Railway deployment notifications and automated health checks enabled")
+    logger.info(
+        "Webhooks router registered successfully - Railway deployment notifications and automated health checks enabled"
+    )
 except Exception as e:
     logger.warning(f"Failed to register webhooks router: {e}")
     ROUTERS_LOADED["webhooks"] = False
@@ -389,6 +408,7 @@ async def serve_main_interface(request: Request):
     except FileNotFoundError:
         # Fallback to template if static file doesn't exist
         return templates.TemplateResponse("index.html", {"request": request})
+
 
 # API status endpoint
 @app.get("/status")
@@ -482,17 +502,20 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
 # Mount React app build
-import os
 if os.path.exists("frontend/dist"):
     logger.info("✅ frontend/dist exists, mounting assets")
-    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="react-assets")
+    app.mount(
+        "/assets", StaticFiles(directory="frontend/dist/assets"), name="react-assets"
+    )
     # Mount translation files
     if os.path.exists("frontend/dist/locales"):
-        logger.info(f"✅ frontend/dist/locales exists, mounting /locales route")
+        logger.info("✅ frontend/dist/locales exists, mounting /locales route")
         # List locales to verify
         locales_dirs = os.listdir("frontend/dist/locales")
         logger.info(f"📁 Available locales: {locales_dirs}")
-        app.mount("/locales", StaticFiles(directory="frontend/dist/locales"), name="locales")
+        app.mount(
+            "/locales", StaticFiles(directory="frontend/dist/locales"), name="locales"
+        )
     else:
         logger.warning("⚠️ frontend/dist/locales NOT FOUND - translation files will 404")
 else:
@@ -510,7 +533,8 @@ async def serve_wizard_hub():
             html_content = f.read()
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
-        return HTMLResponse(content="""
+        return HTMLResponse(
+            content="""
         <!DOCTYPE html>
         <html><head><title>Clinical Wizards</title></head>
         <body>
@@ -521,7 +545,10 @@ async def serve_wizard_hub():
                 <li><a href="/wizards/patient-education">Patient Education</a></li>
             </ul>
         </body></html>
-        """, status_code=200)
+        """,
+            status_code=200,
+        )
+
 
 @app.get("/wizards/{wizard_name}", response_class=HTMLResponse, include_in_schema=False)
 async def serve_wizard_interface(wizard_name: str):
@@ -529,17 +556,20 @@ async def serve_wizard_interface(wizard_name: str):
     wizard_map = {
         "sbar": "sbar-wizard.html",
         "treatment-plan": "treatment-plan-wizard.html",
-        "patient-education": "patient-education-wizard.html"
+        "patient-education": "patient-education-wizard.html",
     }
 
     if wizard_name in wizard_map:
         try:
-            with open(f"frontend/src/pages/{wizard_map[wizard_name]}", "r", encoding="utf-8") as f:
+            with open(
+                f"frontend/src/pages/{wizard_map[wizard_name]}", "r", encoding="utf-8"
+            ) as f:
                 html_content = f.read()
             return HTMLResponse(content=html_content)
         except FileNotFoundError:
             # Fallback to generic wizard template
-            return HTMLResponse(content=f"""
+            return HTMLResponse(
+                content=f"""
             <!DOCTYPE html>
             <html>
             <head>
@@ -554,9 +584,11 @@ async def serve_wizard_interface(wizard_name: str):
                 </script>
             </body>
             </html>
-            """)
+            """
+            )
 
     return HTMLResponse(content="<h1>Wizard not found</h1>", status_code=404)
+
 
 # Additional static HTML routes
 @app.get("/chat", response_class=HTMLResponse, include_in_schema=False)
@@ -567,7 +599,10 @@ async def serve_chat():
             html_content = f.read()
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
-        return HTMLResponse(content="<h1>Chat interface not found</h1>", status_code=404)
+        return HTMLResponse(
+            content="<h1>Chat interface not found</h1>", status_code=404
+        )
+
 
 @app.get("/clinical-workspace", response_class=HTMLResponse, include_in_schema=False)
 async def serve_clinical_workspace():
@@ -577,17 +612,25 @@ async def serve_clinical_workspace():
             html_content = f.read()
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
-        return HTMLResponse(content="<h1>Clinical workspace not found</h1>", status_code=404)
+        return HTMLResponse(
+            content="<h1>Clinical workspace not found</h1>", status_code=404
+        )
+
 
 @app.get("/clinical-assessment", response_class=HTMLResponse, include_in_schema=False)
 async def serve_clinical_assessment():
     """Serve the clinical assessment optimizer."""
     try:
-        with open("static/clinical-assessment-optimizer.html", "r", encoding="utf-8") as f:
+        with open(
+            "static/clinical-assessment-optimizer.html", "r", encoding="utf-8"
+        ) as f:
             html_content = f.read()
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
-        return HTMLResponse(content="<h1>Clinical assessment not found</h1>", status_code=404)
+        return HTMLResponse(
+            content="<h1>Clinical assessment not found</h1>", status_code=404
+        )
+
 
 # Health dashboard redirect
 @app.get("/dashboard", include_in_schema=False)
@@ -621,6 +664,7 @@ async def serve_drug_checker():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Drug checker not found</h1>", status_code=404)
 
+
 # Catch-all route for React Router (SPA) - must be last
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def serve_react_app(full_path: str, request: Request):
@@ -628,6 +672,7 @@ async def serve_react_app(full_path: str, request: Request):
     # Skip if no path (root handled above)
     if not full_path:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404)
 
     # For file extensions, let them 404 naturally (don't serve React app)
@@ -635,11 +680,17 @@ async def serve_react_app(full_path: str, request: Request):
         # This looks like a file request (e.g., .json, .js, .css)
         # Don't serve React app for these
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404)
 
     # Don't intercept API routes or docs
-    if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi"):
+    if (
+        full_path.startswith("api")
+        or full_path.startswith("docs")
+        or full_path.startswith("openapi")
+    ):
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404)
 
     # Serve React app for all other routes (SPA client-side routing)
