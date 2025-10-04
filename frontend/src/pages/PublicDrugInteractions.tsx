@@ -178,7 +178,7 @@ export default function PublicDrugInteractions() {
                   <i className="fas fa-pills text-blue-600 mr-2"></i>
                   Medication Information
                 </h2>
-                <div className="space-y-4">
+                <div className="grid lg:grid-cols-2 gap-4">
                   {data.data.drug_information.map((drug: any, index: number) => (
                     <ExpandableSection
                       key={index}
