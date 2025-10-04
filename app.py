@@ -293,6 +293,13 @@ async def api_status():
     }
 
 
+# Simple health endpoint for Railway health checks
+@app.get("/health")
+async def root_health():
+    """Simple health check for Railway."""
+    return {"status": "healthy", "service": "ai-nurse-florence"}
+
+
 # Enhanced health endpoint at root level
 @app.get("/api/v1/health")
 async def health_check():
