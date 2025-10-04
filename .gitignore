@@ -354,3 +354,21 @@ security-reports/
 # Compliance artifacts
 compliance/
 audit-reports/
+
+# ================================
+# CLEANUP: Prevent problematic files
+# ================================
+# Files with special characters that cause issues
+*=*,*
+nul
+*.tmp.*
+*#*debugging*
+*\\*
+.rebuild-*
+
+# Command artifacts and temporary files
+*.save
+temp_*
+*_temp*
+*_backup*
+

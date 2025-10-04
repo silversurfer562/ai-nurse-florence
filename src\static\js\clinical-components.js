@@ -1,1 +1,0 @@
-// Clinical Components JS Stub
