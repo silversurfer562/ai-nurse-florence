@@ -463,8 +463,8 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    # Use Railway's PORT if available, otherwise default to 8000 for local development
-    port = int(os.environ.get("PORT", 8000))
+    # Use Railway's PORT if available, otherwise default to 8080 (Railway default)
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True, log_level="info")
 
 # NOTE: Router registration is handled above by including routers onto `api_router`.

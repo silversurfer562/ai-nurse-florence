@@ -298,7 +298,7 @@ if __name__ == "__main__":
     import uvicorn
     
     # Get port from environment variable (Railway sets this automatically)
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 8080))
     
     # Run the application
     uvicorn.run(
