@@ -189,6 +189,110 @@ export default function DrugInteractions() {
                           </ul>
                         </WarningBox>
                       )}
+
+                      {/* FDA Black Box Warning (MOST CRITICAL) */}
+                      {drug.boxed_warning && (
+                        <WarningBox severity="critical" title="⚠️ FDA BLACK BOX WARNING">
+                          <div className="text-sm whitespace-pre-wrap">{drug.boxed_warning}</div>
+                        </WarningBox>
+                      )}
+
+                      {/* FDA Contraindications */}
+                      {drug.contraindications_fda && (
+                        <ExpandableSection
+                          title="FDA Contraindications"
+                          icon="fa-ban"
+                          variant="critical"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.contraindications_fda}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Warnings and Cautions */}
+                      {drug.warnings_fda && (
+                        <ExpandableSection
+                          title="FDA Warnings and Cautions"
+                          icon="fa-exclamation-triangle"
+                          variant="warning"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.warnings_fda}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Adverse Reactions */}
+                      {drug.adverse_reactions_fda && (
+                        <ExpandableSection
+                          title="FDA Adverse Reactions"
+                          icon="fa-heartbeat"
+                          variant="warning"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.adverse_reactions_fda}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Drug Interactions */}
+                      {drug.drug_interactions_fda && (
+                        <ExpandableSection
+                          title="FDA Drug Interactions"
+                          icon="fa-flask"
+                          variant="info"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.drug_interactions_fda}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Special Populations */}
+                      {drug.special_populations && (
+                        <ExpandableSection
+                          title="Use in Special Populations"
+                          icon="fa-users"
+                          variant="info"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.special_populations}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Mechanism of Action */}
+                      {drug.mechanism_of_action && (
+                        <ExpandableSection
+                          title="Mechanism of Action"
+                          icon="fa-atom"
+                          variant="default"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.mechanism_of_action}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Clinical Pharmacology */}
+                      {drug.clinical_pharmacology && (
+                        <ExpandableSection
+                          title="Clinical Pharmacology"
+                          icon="fa-microscope"
+                          variant="default"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.clinical_pharmacology}</div>
+                        </ExpandableSection>
+                      )}
+
+                      {/* FDA Data Badge */}
+                      {drug.fda_data_available && (
+                        <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r">
+                          <div className="flex items-center gap-2 text-sm text-blue-900">
+                            <i className="fas fa-shield-alt text-blue-600"></i>
+                            <span className="font-semibold">Enhanced with FDA Data</span>
+                            {drug.manufacturer && (
+                              <span className="text-blue-700">• {drug.manufacturer}</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </ExpandableSection>
                 ))}
