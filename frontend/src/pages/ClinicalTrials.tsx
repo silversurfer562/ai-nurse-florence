@@ -124,20 +124,20 @@ export default function ClinicalTrials() {
       )}
 
       {/* Results */}
-      {data && data.studies && (
+      {data && data.trials && (
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            {t('clinicalTrials.results.title')} ({data.studies.length})
+            {t('clinicalTrials.results.title')} ({data.trials.length})
           </h2>
 
-          {data.studies.length === 0 ? (
+          {data.trials.length === 0 ? (
             <div className="card text-center py-12">
               <i className="fas fa-search text-gray-300 text-5xl mb-4"></i>
               <p className="text-gray-600 text-lg">{t('clinicalTrials.results.noResults')}</p>
               <p className="text-gray-500 text-sm mt-2">{t('clinicalTrials.results.tryDifferent')}</p>
             </div>
           ) : (
-            data.studies.map((study: any, index: number) => (
+            data.trials.map((study: any, index: number) => (
               <div key={index} className="card hover:shadow-lg transition-shadow">
                 <h3 className="text-xl font-bold text-blue-700 mb-2">{study.title || 'Untitled Study'}</h3>
 
