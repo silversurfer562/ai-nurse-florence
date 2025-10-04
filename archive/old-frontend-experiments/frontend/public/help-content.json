@@ -1,0 +1,218 @@
+{
+  "tasks": [
+    {
+      "id": "generate-patient-education",
+      "title": "Generate Patient Education Document",
+      "category": "Patient Education",
+      "description": "Create patient-friendly education materials in multiple languages",
+      "steps": [
+        {
+          "step": 1,
+          "title": "Select the diagnosis",
+          "instruction": "Start typing the disease name (at least 3 characters). The dropdown will show matching conditions as you type.",
+          "tip": "The autocomplete refines results instantly - keep typing to narrow down matches."
+        },
+        {
+          "step": 2,
+          "title": "Choose patient language",
+          "instruction": "Select the language your patient speaks best. Available in 15 languages including Spanish, Chinese, and Arabic.",
+          "tip": "Documents are automatically translated with medical accuracy preserved."
+        },
+        {
+          "step": 3,
+          "title": "Set reading level",
+          "instruction": "Choose Grade 6-8 for most patients. Use simpler levels for patients with limited health literacy.",
+          "tip": "Lower grade levels use shorter sentences and simpler words while maintaining accuracy."
+        },
+        {
+          "step": 4,
+          "title": "Select content sections",
+          "instruction": "Check which sections to include: overview, symptoms, treatment, medications, lifestyle, follow-up.",
+          "tip": "Include all relevant sections - patients appreciate comprehensive information they can reference later."
+        },
+        {
+          "step": 5,
+          "title": "Review and generate",
+          "instruction": "Review your selections, then click 'Generate Document'. The PDF will open in a new tab.",
+          "tip": "Save the PDF to your patient's chart or print it to give them during the visit."
+        }
+      ],
+      "benefits": [
+        "Saves 10-15 minutes per patient education session",
+        "Ensures consistent, evidence-based information",
+        "Improves patient comprehension and compliance",
+        "Reduces callback questions",
+        "Meets meaningful use requirements"
+      ],
+      "troubleshooting": [
+        {
+          "problem": "Can't find the diagnosis I'm looking for",
+          "solution": "Try different search terms (e.g., 'high blood pressure' vs 'hypertension'). The system searches both common names and medical terms."
+        },
+        {
+          "problem": "Document generation is slow",
+          "solution": "First-time generation may take 30-60 seconds as the AI customizes content. Subsequent generations are faster."
+        }
+      ]
+    },
+    {
+      "id": "check-drug-interactions",
+      "title": "Check Drug Interactions",
+      "category": "Medication Safety",
+      "description": "Verify medication safety and identify potential interactions",
+      "steps": [
+        {
+          "step": 1,
+          "title": "Add medications",
+          "instruction": "Type each medication name (at least 3 characters) and select from the dropdown. Add all medications the patient is taking.",
+          "tip": "Include over-the-counter medications and supplements - they can interact too."
+        },
+        {
+          "step": 2,
+          "title": "Review interactions",
+          "instruction": "The system automatically checks for interactions as you add medications. Red warnings indicate severe interactions.",
+          "tip": "Click on any interaction to see detailed information and clinical recommendations."
+        },
+        {
+          "step": 3,
+          "title": "Check severity levels",
+          "instruction": "Severe (red) = contraindicated, Moderate (orange) = use with caution, Mild (yellow) = monitor patient.",
+          "tip": "Document your clinical decision if proceeding despite warnings."
+        }
+      ],
+      "benefits": [
+        "Prevents medication errors",
+        "Catches interactions before prescribing",
+        "Reduces adverse drug events",
+        "Improves patient safety",
+        "Provides evidence-based recommendations"
+      ],
+      "troubleshooting": [
+        {
+          "problem": "Medication not found in database",
+          "solution": "Try the generic name instead of brand name. If still not found, check spelling or contact support to add it."
+        }
+      ]
+    },
+    {
+      "id": "create-sbar-report",
+      "title": "Create SBAR Handoff Report",
+      "category": "Clinical Communication",
+      "description": "Generate structured handoff reports using the SBAR format",
+      "steps": [
+        {
+          "step": 1,
+          "title": "Enter situation",
+          "instruction": "Brief patient identifiers and chief complaint. Keep it to 1-2 sentences.",
+          "tip": "Example: '72yo male with chest pain x 2 hours, admitted to rule out MI.'"
+        },
+        {
+          "step": 2,
+          "title": "Document background",
+          "instruction": "Relevant medical history, medications, allergies. Focus on what's pertinent to current situation.",
+          "tip": "Include recent labs, vitals trends, and any significant changes."
+        },
+        {
+          "step": 3,
+          "title": "State assessment",
+          "instruction": "Your clinical assessment of the patient's current condition and stability.",
+          "tip": "Be clear about acuity level and any concerns."
+        },
+        {
+          "step": 4,
+          "title": "Make recommendations",
+          "instruction": "Specific actions needed or questions for the receiving provider.",
+          "tip": "Be explicit - 'Need cardiology consult' not 'maybe should see cards.'"
+        }
+      ],
+      "benefits": [
+        "Standardizes handoff communication",
+        "Reduces information loss during transitions",
+        "Improves patient safety",
+        "Meets Joint Commission requirements",
+        "Saves time with structured format"
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "id": "what-is-ai-nurse-florence",
+      "question": "What is AI Nurse Florence?",
+      "answer": "AI Nurse Florence is a clinical decision support tool that helps nurses and healthcare providers with patient education, medication checking, clinical documentation, and evidence-based practice. It uses AI to save time while maintaining high-quality patient care.",
+      "category": "General"
+    },
+    {
+      "id": "is-phi-stored",
+      "question": "Does the system store patient health information (PHI)?",
+      "answer": "No. AI Nurse Florence is designed for educational use only and does not store any patient identifiable information. All patient-specific data you enter is used only to generate documents and is not retained.",
+      "category": "Privacy & Security"
+    },
+    {
+      "id": "can-i-trust-the-information",
+      "question": "Can I trust the medical information provided?",
+      "answer": "The system uses evidence-based sources including FDA data, NIH MedlinePlus, PubMed research, and clinical guidelines. However, always verify information and follow your institution's protocols. This is a decision support tool, not a replacement for clinical judgment.",
+      "category": "Clinical Use"
+    },
+    {
+      "id": "what-languages-supported",
+      "question": "What languages are supported for patient education?",
+      "answer": "Patient education documents can be generated in 15 languages: English, Spanish, Chinese (Simplified & Traditional), Arabic, Vietnamese, Korean, Tagalog, Russian, French, German, Portuguese, Italian, Japanese, and Hindi.",
+      "category": "Patient Education"
+    },
+    {
+      "id": "how-accurate-drug-interactions",
+      "question": "How accurate is the drug interaction checker?",
+      "answer": "The drug interaction checker uses FDA National Drug Code (NDC) data and is updated regularly. It identifies severe, moderate, and mild interactions. Always consult pharmacy or use your institution's formulary for final verification.",
+      "category": "Medication Safety"
+    },
+    {
+      "id": "can-i-save-documents",
+      "question": "Can I save the documents I generate?",
+      "answer": "Yes. All generated documents (PDFs) can be downloaded, saved to your computer, printed, or uploaded to your patient's electronic health record according to your facility's procedures.",
+      "category": "Documents"
+    },
+    {
+      "id": "system-slow",
+      "question": "Why is the system slow sometimes?",
+      "answer": "First-time document generation uses AI to customize content and may take 30-60 seconds. The system also fetches live data from external medical databases. If consistently slow, check your internet connection or contact IT support.",
+      "category": "Troubleshooting"
+    },
+    {
+      "id": "how-to-report-error",
+      "question": "How do I report an error or suggest an improvement?",
+      "answer": "Contact your system administrator or use the feedback link in the footer. Include details about what you were trying to do and what happened instead.",
+      "category": "Support"
+    }
+  ],
+  "tooltips": {
+    "diagnosis-search": "Type at least 3 characters of the disease name. Results update instantly as you type.",
+    "language-selection": "Choose the language your patient understands best. Medical accuracy is preserved in all translations.",
+    "reading-level": "Grade 6-8 is recommended for most patients. Lower levels use simpler language.",
+    "content-sections": "Select all sections relevant to your patient's needs. More information helps patient understanding.",
+    "debounce-setting": "Controls how quickly search results appear. 0ms = instant, higher values reduce server load.",
+    "medication-search": "Include generic and brand names. Also add supplements and OTC medications.",
+    "interaction-severity": "Red = severe/contraindicated, Orange = moderate caution, Yellow = mild/monitor"
+  },
+  "quickStart": {
+    "title": "Quick Start Guide",
+    "welcome": "Welcome to AI Nurse Florence! This clinical assistant helps you save time while providing excellent patient care.",
+    "steps": [
+      {
+        "title": "Choose a tool",
+        "description": "From the home screen, select what you need: Patient Education, Drug Interactions, SBAR Reports, or Clinical Trials."
+      },
+      {
+        "title": "Follow the wizard",
+        "description": "Each tool guides you step-by-step. Fill in the required information (marked with *)."
+      },
+      {
+        "title": "Review before generating",
+        "description": "Check your entries in the review screen. Make sure everything is correct."
+      },
+      {
+        "title": "Generate and save",
+        "description": "Click 'Generate' to create your document. Download the PDF and save it to your patient's chart."
+      }
+    ]
+  }
+}

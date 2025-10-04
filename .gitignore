@@ -33,3 +33,16 @@ pytest_cache/
 ai-nurse-florence-plan-for dev.txt
 OPENAI_API_KEY.env
 .DS_Store
+
+# Local environment files
+.env.local
+.env.secrets.local
+.vercel/
+
+# Database files
+*.db
+
+# Backup files
+*.bak
+*.backup
+
