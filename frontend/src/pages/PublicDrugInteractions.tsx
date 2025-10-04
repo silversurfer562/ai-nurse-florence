@@ -178,7 +178,7 @@ export default function PublicDrugInteractions() {
                   <i className="fas fa-pills text-blue-600 mr-2"></i>
                   Medication Information
                 </h2>
-                <div className="grid lg:grid-cols-2 gap-4">
+                <div className="grid lg:grid-cols-2 gap-4 lg:items-start">
                   {data.data.drug_information.map((drug: any, index: number) => (
                     <ExpandableSection
                       key={index}
@@ -186,6 +186,7 @@ export default function PublicDrugInteractions() {
                       icon="fa-prescription-bottle"
                       variant="info"
                       defaultExpanded={index === 0}
+                      className="h-full"
                     >
                       <div className="space-y-4">
                         {/* Public-Friendly Badges */}
