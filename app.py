@@ -254,9 +254,22 @@ except Exception as e:
     logger.warning(f"Failed to register user profile router: {e}")
     ROUTERS_LOADED["user_profile"] = False
 
-# Additional routers temporarily disabled to fix startup hang
+# Add webhook router (Railway deployment notifications)
+try:
+    from routers.webhooks import router as webhooks_router
+
+    api_router.include_router(webhooks_router)
+    ROUTERS_LOADED["webhooks"] = True
+    logger.info(
+        "✅ Webhooks router registered successfully - Railway deployment notifications enabled"
+    )
+except Exception as e:
+    logger.warning(f"Failed to register webhooks router: {e}")
+    ROUTERS_LOADED["webhooks"] = False
+
+# Additional routers temporarily disabled (content_settings, genes, disease_glossary)
 logger.info(
-    "⚠️ Additional routers (content_settings, genes, disease_glossary, webhooks) disabled during startup troubleshooting"
+    "⚠️ Some routers disabled during startup troubleshooting (content_settings, genes, disease_glossary)"
 )
 
 
