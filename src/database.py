@@ -3,10 +3,11 @@ Database session management for synchronous database operations
 Used by routers that need SQLAlchemy ORM access
 """
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from typing import Generator
 import os
+from typing import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 # Use DATABASE_URL from environment (PostgreSQL) or fall back to SQLite
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///ai_nurse_florence.db")
@@ -19,8 +20,18 @@ if DATABASE_URL.startswith("postgresql://"):
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}  # Required for SQLite
+elif DATABASE_URL.startswith("postgresql"):
+    connect_args = {
+        "connect_timeout": 5,  # 5 second connection timeout
+        "options": "-c statement_timeout=10000",  # 10 second query timeout
+    }
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    pool_pre_ping=True,  # Verify connections before using
+    pool_recycle=300,  # Recycle connections after 5 minutes
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -41,4 +52,4 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-__all__ = ['get_db', 'engine', 'SessionLocal']
+__all__ = ["get_db", "engine", "SessionLocal"]
