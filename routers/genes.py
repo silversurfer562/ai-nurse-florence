@@ -4,18 +4,19 @@ Gene Information API Endpoints
 Provides gene lookup and disease-gene association data.
 """
 
-from fastapi import APIRouter, Query, HTTPException
-from typing import List, Dict, Any
+from typing import Dict, List
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from services.gene_service import get_genes_for_disease, get_gene_details
+from services.gene_service import get_gene_details, get_genes_for_disease
 
-
-router = APIRouter(prefix="/api/v1/genes", tags=["Genes"])
+router = APIRouter(prefix="/genes", tags=["Genes"])
 
 
 class GeneInfo(BaseModel):
     """Gene information response"""
+
     symbol: str
     name: str
     entrez_id: int | None
@@ -32,6 +33,7 @@ class GeneInfo(BaseModel):
 
 class GeneDetailsResponse(BaseModel):
     """Detailed gene information"""
+
     symbol: str
     name: str
     entrez_id: int | None
@@ -51,7 +53,7 @@ class GeneDetailsResponse(BaseModel):
 @router.get("/disease/{disease_name}", response_model=List[GeneInfo])
 async def get_disease_genes(
     disease_name: str,
-    limit: int = Query(5, ge=1, le=20, description="Maximum number of genes to return")
+    limit: int = Query(5, ge=1, le=20, description="Maximum number of genes to return"),
 ):
     """
     Get genes associated with a disease.
@@ -88,18 +90,14 @@ async def get_gene_info(gene_id: str):
     gene = get_gene_details(gene_id)
 
     if not gene:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Gene not found: {gene_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Gene not found: {gene_id}")
 
     return gene
 
 
 @router.get("/search/{query}", response_model=List[GeneInfo])
 async def search_genes(
-    query: str,
-    limit: int = Query(10, ge=1, le=50, description="Maximum results")
+    query: str, limit: int = Query(10, ge=1, le=50, description="Maximum results")
 ):
     """
     Search for genes by name or symbol.
@@ -112,21 +110,28 @@ async def search_genes(
     """
     try:
         import live_mygene
+
         results = live_mygene.search_genes(query, limit=limit)
 
         formatted = []
         for gene in results:
-            formatted.append({
-                "symbol": gene.get("symbol"),
-                "name": gene.get("name"),
-                "entrez_id": gene.get("entrez_id"),
-                "summary": gene.get("summary", ""),
-                "type": gene.get("type", "protein-coding"),
-                "chromosome": None,
-                "pharmgkb_id": None,
-                "ncbi_url": f"https://www.ncbi.nlm.nih.gov/gene/{gene.get('entrez_id')}" if gene.get("entrez_id") else None,
-                "relevance_score": gene.get("score")
-            })
+            formatted.append(
+                {
+                    "symbol": gene.get("symbol"),
+                    "name": gene.get("name"),
+                    "entrez_id": gene.get("entrez_id"),
+                    "summary": gene.get("summary", ""),
+                    "type": gene.get("type", "protein-coding"),
+                    "chromosome": None,
+                    "pharmgkb_id": None,
+                    "ncbi_url": (
+                        f"https://www.ncbi.nlm.nih.gov/gene/{gene.get('entrez_id')}"
+                        if gene.get("entrez_id")
+                        else None
+                    ),
+                    "relevance_score": gene.get("score"),
+                }
+            )
 
         return formatted
     except Exception as e:

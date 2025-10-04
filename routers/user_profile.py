@@ -3,27 +3,25 @@ User Profile API Router
 Manages nurse user profiles, work settings, and document preferences
 """
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
-from typing import Optional
 import base64
-import os
 from pathlib import Path
 
+from fastapi import APIRouter, HTTPException
+
 from src.models.user_profile_schemas import (
-    UserProfileCreate,
-    UserProfileUpdate,
-    UserProfileResponse,
-    SignatureUploadRequest,
     DocumentPermissions,
-    WorkSetting,
     NurseCredential,
-    get_smart_defaults,
-    get_permission_level,
+    SignatureUploadRequest,
+    UserProfileCreate,
+    UserProfileResponse,
+    UserProfileUpdate,
+    WorkSetting,
     get_document_permissions,
-    WORK_SETTING_DEFAULTS
+    get_permission_level,
+    get_smart_defaults,
 )
 
-router = APIRouter(prefix="/api/v1/user-profile", tags=["User Profile"])
+router = APIRouter(prefix="/user-profile", tags=["User Profile"])
 
 
 # Mock database for now - replace with actual database
@@ -62,8 +60,7 @@ async def create_or_update_profile(profile: UserProfileCreate):
     # If user didn't explicitly set reading level, use smart default
     if profile.default_patient_reading_level is None:
         profile.default_patient_reading_level = smart_defaults.get(
-            "recommended_reading_level",
-            "intermediate"
+            "recommended_reading_level", "intermediate"
         )
 
     # Determine permission level
@@ -73,6 +70,7 @@ async def create_or_update_profile(profile: UserProfileCreate):
     license_status = "active"
     if profile.license_expiry:
         from datetime import datetime
+
         if profile.license_expiry < datetime.now():
             license_status = "expired"
         elif (profile.license_expiry - datetime.now()).days < 30:
@@ -103,7 +101,7 @@ async def create_or_update_profile(profile: UserProfileCreate):
         "documents_generated": 0,
         "last_document_at": None,
         "created_at": None,
-        "updated_at": None
+        "updated_at": None,
     }
 
     # Store in mock database
@@ -125,8 +123,7 @@ async def get_profile():
 
     if _current_user_id not in _user_profiles:
         raise HTTPException(
-            status_code=404,
-            detail="Profile not found. Please create a profile first."
+            status_code=404, detail="Profile not found. Please create a profile first."
         )
 
     return UserProfileResponse(**_user_profiles[_current_user_id])
@@ -145,8 +142,7 @@ async def update_profile(updates: UserProfileUpdate):
 
     if _current_user_id not in _user_profiles:
         raise HTTPException(
-            status_code=404,
-            detail="Profile not found. Please create a profile first."
+            status_code=404, detail="Profile not found. Please create a profile first."
         )
 
     profile = _user_profiles[_current_user_id]
@@ -161,13 +157,14 @@ async def update_profile(updates: UserProfileUpdate):
     if "work_setting" in update_data:
         smart_defaults = get_smart_defaults(profile["work_setting"])
         profile["default_patient_reading_level"] = smart_defaults.get(
-            "recommended_reading_level",
-            "intermediate"
+            "recommended_reading_level", "intermediate"
         )
 
     # Re-calculate permissions if credentials changed
     if "primary_credential" in update_data:
-        profile["permission_level"] = get_permission_level(profile["primary_credential"])
+        profile["permission_level"] = get_permission_level(
+            profile["primary_credential"]
+        )
 
     return UserProfileResponse(**profile)
 
@@ -194,8 +191,7 @@ async def upload_signature(signature: SignatureUploadRequest):
 
     if _current_user_id not in _user_profiles:
         raise HTTPException(
-            status_code=404,
-            detail="Profile not found. Please create a profile first."
+            status_code=404, detail="Profile not found. Please create a profile first."
         )
 
     # Decode base64 signature
@@ -226,13 +222,12 @@ async def upload_signature(signature: SignatureUploadRequest):
         return {
             "success": True,
             "message": "Signature uploaded successfully",
-            "signature_url": profile["signature_url"]
+            "signature_url": profile["signature_url"],
         }
 
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Failed to upload signature: {str(e)}"
+            status_code=400, detail=f"Failed to upload signature: {str(e)}"
         )
 
 
@@ -256,8 +251,7 @@ async def get_my_permissions():
 
     if _current_user_id not in _user_profiles:
         raise HTTPException(
-            status_code=404,
-            detail="Profile not found. Please create a profile first."
+            status_code=404, detail="Profile not found. Please create a profile first."
         )
 
     profile = _user_profiles[_current_user_id]
@@ -286,19 +280,18 @@ async def get_work_settings_info():
 
     for setting in WorkSetting:
         defaults = get_smart_defaults(setting)
-        settings_info.append({
-            "value": setting.value,
-            "name": setting.value.replace("_", " ").title(),
-            "recommended_reading_level": defaults.get("recommended_reading_level"),
-            "reason": defaults.get("reason"),
-            "recommended_languages": defaults.get("recommended_languages"),
-            "common_documents": defaults.get("common_documents")
-        })
+        settings_info.append(
+            {
+                "value": setting.value,
+                "name": setting.value.replace("_", " ").title(),
+                "recommended_reading_level": defaults.get("recommended_reading_level"),
+                "reason": defaults.get("reason"),
+                "recommended_languages": defaults.get("recommended_languages"),
+                "common_documents": defaults.get("common_documents"),
+            }
+        )
 
-    return {
-        "work_settings": settings_info,
-        "total": len(settings_info)
-    }
+    return {"work_settings": settings_info, "total": len(settings_info)}
 
 
 @router.get("/credentials")
@@ -317,17 +310,16 @@ async def get_available_credentials():
     for credential in NurseCredential:
         permission_level = get_permission_level(credential)
 
-        credentials_info.append({
-            "value": credential.value,
-            "name": credential.value,
-            "permission_level": permission_level.value,
-            "description": _get_credential_description(credential)
-        })
+        credentials_info.append(
+            {
+                "value": credential.value,
+                "name": credential.value,
+                "permission_level": permission_level.value,
+                "description": _get_credential_description(credential),
+            }
+        )
 
-    return {
-        "credentials": credentials_info,
-        "total": len(credentials_info)
-    }
+    return {"credentials": credentials_info, "total": len(credentials_info)}
 
 
 def _get_credential_description(credential: NurseCredential) -> str:
@@ -344,7 +336,7 @@ def _get_credential_description(credential: NurseCredential) -> str:
         NurseCredential.CRNA: "Certified Registered Nurse Anesthetist - All documents + anesthesia",
         NurseCredential.CNM: "Certified Nurse Midwife - All documents + obstetric care",
         NurseCredential.DNP: "Doctor of Nursing Practice - All documents + research",
-        NurseCredential.PhD: "PhD in Nursing - All documents + research"
+        NurseCredential.PhD: "PhD in Nursing - All documents + research",
     }
     return descriptions.get(credential, "Nursing credential")
 
@@ -367,10 +359,7 @@ async def get_smart_defaults_for_setting(work_setting: WorkSetting):
 
     defaults = get_smart_defaults(work_setting)
 
-    return {
-        "work_setting": work_setting.value,
-        "smart_defaults": defaults
-    }
+    return {"work_setting": work_setting.value, "smart_defaults": defaults}
 
 
 @router.get("/statistics")
@@ -387,10 +376,7 @@ async def get_user_statistics():
     """
 
     if _current_user_id not in _user_profiles:
-        raise HTTPException(
-            status_code=404,
-            detail="Profile not found"
-        )
+        raise HTTPException(status_code=404, detail="Profile not found")
 
     profile = _user_profiles[_current_user_id]
 
@@ -400,5 +386,5 @@ async def get_user_statistics():
         "last_document_at": profile.get("last_document_at"),
         "work_setting": profile.get("work_setting"),
         "most_used_reading_level": profile.get("default_patient_reading_level"),
-        "most_used_language": profile.get("default_patient_language")
+        "most_used_language": profile.get("default_patient_language"),
     }

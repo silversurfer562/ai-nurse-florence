@@ -3,33 +3,32 @@ Patient Documents API - PDF Generation for Patient Education Materials
 Generates discharge instructions, medication guides, and disease education materials
 """
 
-from fastapi import APIRouter, HTTPException, Response
-from fastapi.responses import StreamingResponse
-from typing import Optional
-import httpx
 from datetime import datetime
 
-from src.models.patient_document_schemas import (
-    DischargeInstructionsRequest,
-    DischargeInstructionsResponse,
-    MedicationGuideRequest,
-    MedicationGuideResponse,
-    DiseaseEducationRequest,
-    DiseaseEducationResponse,
-    BatchDocumentRequest,
-    BatchDocumentResponse,
-    DocumentFormat
-)
+import httpx
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
 from services.pdf_generation_service import (
     generate_discharge_instructions,
-    generate_medication_guide,
-    generate_disease_education,
     generate_discharge_instructions_docx,
-    generate_discharge_instructions_text
+    generate_discharge_instructions_text,
+    generate_disease_education,
+    generate_medication_guide,
+)
+from src.models.patient_document_schemas import (
+    BatchDocumentRequest,
+    BatchDocumentResponse,
+    DischargeInstructionsRequest,
+    DischargeInstructionsResponse,
+    DiseaseEducationRequest,
+    DiseaseEducationResponse,
+    DocumentFormat,
+    MedicationGuideRequest,
+    MedicationGuideResponse,
 )
 
-router = APIRouter(prefix="/api/v1/patient-documents", tags=["Patient Documents"])
+router = APIRouter(prefix="/patient-documents", tags=["Patient Documents"])
 
 
 @router.post("/discharge-instructions", response_model=DischargeInstructionsResponse)
@@ -79,18 +78,18 @@ async def create_discharge_instructions(request: DischargeInstructionsRequest):
     try:
         # Prepare data for document generation
         doc_data = {
-            'patient_name': request.patient_name,
-            'discharge_date': request.discharge_date,
-            'primary_diagnosis': request.primary_diagnosis,
-            'medications': request.medications,
-            'follow_up_appointments': request.follow_up_appointments,
-            'activity_restrictions': request.activity_restrictions,
-            'diet_instructions': request.diet_instructions,
-            'warning_signs': request.warning_signs,
-            'emergency_criteria': request.emergency_criteria,
-            'wound_care': request.wound_care,
-            'equipment_needs': request.equipment_needs,
-            'home_care_services': request.home_care_services
+            "patient_name": request.patient_name,
+            "discharge_date": request.discharge_date,
+            "primary_diagnosis": request.primary_diagnosis,
+            "medications": request.medications,
+            "follow_up_appointments": request.follow_up_appointments,
+            "activity_restrictions": request.activity_restrictions,
+            "diet_instructions": request.diet_instructions,
+            "warning_signs": request.warning_signs,
+            "emergency_criteria": request.emergency_criteria,
+            "wound_care": request.wound_care,
+            "equipment_needs": request.equipment_needs,
+            "home_care_services": request.home_care_services,
         }
 
         # Generate filename
@@ -121,7 +120,7 @@ async def create_discharge_instructions(request: DischargeInstructionsRequest):
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Format {request.format} not supported. Use 'pdf', 'docx', or 'txt'."
+                detail=f"Format {request.format} not supported. Use 'pdf', 'docx', or 'txt'.",
             )
 
         # Return document as response
@@ -130,14 +129,14 @@ async def create_discharge_instructions(request: DischargeInstructionsRequest):
             media_type=media_type,
             headers={
                 "Content-Disposition": f"attachment; filename={filename}",
-                "Content-Type": content_type
-            }
+                "Content-Type": content_type,
+            },
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate discharge instructions: {str(e)}"
+            detail=f"Failed to generate discharge instructions: {str(e)}",
         )
 
 
@@ -190,20 +189,20 @@ async def create_medication_guide(request: MedicationGuideRequest):
 
         # Prepare data for PDF generation
         pdf_data = {
-            'medication_name': request.medication_name,
-            'dosage': request.dosage,
-            'frequency': request.frequency,
-            'route': request.route,
-            'special_instructions': request.special_instructions,
-            'purpose': request.purpose,
-            'how_it_works': request.how_it_works,
-            'common_side_effects': request.common_side_effects,
-            'serious_side_effects': request.serious_side_effects,
-            'food_interactions': request.food_interactions,
-            'drug_interactions': request.drug_interactions,
-            'storage_instructions': request.storage_instructions,
-            'missed_dose_instructions': request.missed_dose_instructions,
-            'data_sources': data_sources
+            "medication_name": request.medication_name,
+            "dosage": request.dosage,
+            "frequency": request.frequency,
+            "route": request.route,
+            "special_instructions": request.special_instructions,
+            "purpose": request.purpose,
+            "how_it_works": request.how_it_works,
+            "common_side_effects": request.common_side_effects,
+            "serious_side_effects": request.serious_side_effects,
+            "food_interactions": request.food_interactions,
+            "drug_interactions": request.drug_interactions,
+            "storage_instructions": request.storage_instructions,
+            "missed_dose_instructions": request.missed_dose_instructions,
+            "data_sources": data_sources,
         }
 
         # Generate PDF
@@ -211,7 +210,7 @@ async def create_medication_guide(request: MedicationGuideRequest):
         pdf_bytes = pdf_buffer.getvalue()
 
         # Generate filename
-        med_name_safe = request.medication_name.replace(' ', '_').lower()
+        med_name_safe = request.medication_name.replace(" ", "_").lower()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"medication_guide_{med_name_safe}_{timestamp}.pdf"
 
@@ -222,19 +221,18 @@ async def create_medication_guide(request: MedicationGuideRequest):
                 media_type="application/pdf",
                 headers={
                     "Content-Disposition": f"attachment; filename={filename}",
-                    "Content-Type": "application/pdf"
-                }
+                    "Content-Type": "application/pdf",
+                },
             )
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Format {request.format} not yet supported. Please use PDF."
+                detail=f"Format {request.format} not yet supported. Please use PDF.",
             )
 
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate medication guide: {str(e)}"
+            status_code=500, detail=f"Failed to generate medication guide: {str(e)}"
         )
 
 
@@ -301,10 +299,10 @@ async def create_disease_education(request: DiseaseEducationRequest):
                         data_sources.append("MedlinePlus (NIH)")
 
                         # Merge MedlinePlus data with request data
-                        if not request.what_it_is and medline_data.get('summary'):
-                            request.what_it_is = medline_data['summary']
+                        if not request.what_it_is and medline_data.get("summary"):
+                            request.what_it_is = medline_data["summary"]
 
-                        if not request.symptoms and medline_data.get('also_called'):
+                        if not request.symptoms and medline_data.get("also_called"):
                             # MedlinePlus doesn't always have symptoms, but has related info
                             pass
 
@@ -315,22 +313,24 @@ async def create_disease_education(request: DiseaseEducationRequest):
 
         # Prepare data for PDF generation
         pdf_data = {
-            'disease_name': request.disease_name,
-            'what_it_is': request.what_it_is,
-            'causes': request.causes,
-            'symptoms': request.symptoms,
-            'treatment_options': request.treatment_options,
-            'self_care_tips': request.self_care_tips,
-            'medications_overview': request.medications_overview,
-            'lifestyle_modifications': request.lifestyle_modifications,
-            'diet_recommendations': request.diet_recommendations,
-            'exercise_recommendations': request.exercise_recommendations,
-            'warning_signs': request.warning_signs,
-            'emergency_symptoms': request.emergency_symptoms,
-            'support_groups': request.support_groups,
-            'additional_resources': request.additional_resources,
-            'questions_to_ask': request.questions_to_ask,
-            'data_sources': data_sources if data_sources else ["User-provided information"]
+            "disease_name": request.disease_name,
+            "what_it_is": request.what_it_is,
+            "causes": request.causes,
+            "symptoms": request.symptoms,
+            "treatment_options": request.treatment_options,
+            "self_care_tips": request.self_care_tips,
+            "medications_overview": request.medications_overview,
+            "lifestyle_modifications": request.lifestyle_modifications,
+            "diet_recommendations": request.diet_recommendations,
+            "exercise_recommendations": request.exercise_recommendations,
+            "warning_signs": request.warning_signs,
+            "emergency_symptoms": request.emergency_symptoms,
+            "support_groups": request.support_groups,
+            "additional_resources": request.additional_resources,
+            "questions_to_ask": request.questions_to_ask,
+            "data_sources": (
+                data_sources if data_sources else ["User-provided information"]
+            ),
         }
 
         # Generate PDF
@@ -338,7 +338,7 @@ async def create_disease_education(request: DiseaseEducationRequest):
         pdf_bytes = pdf_buffer.getvalue()
 
         # Generate filename
-        disease_name_safe = request.disease_name.replace(' ', '_').lower()
+        disease_name_safe = request.disease_name.replace(" ", "_").lower()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"disease_education_{disease_name_safe}_{timestamp}.pdf"
 
@@ -349,19 +349,19 @@ async def create_disease_education(request: DiseaseEducationRequest):
                 media_type="application/pdf",
                 headers={
                     "Content-Disposition": f"attachment; filename={filename}",
-                    "Content-Type": "application/pdf"
-                }
+                    "Content-Type": "application/pdf",
+                },
             )
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Format {request.format} not yet supported. Please use PDF."
+                detail=f"Format {request.format} not yet supported. Please use PDF.",
             )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to generate disease education material: {str(e)}"
+            detail=f"Failed to generate disease education material: {str(e)}",
         )
 
 
@@ -411,25 +411,24 @@ async def batch_generate_documents(request: BatchDocumentRequest):
             discharge_req.reading_level = request.reading_level
 
             pdf_data = {
-                'patient_name': discharge_req.patient_name or request.patient_name,
-                'discharge_date': discharge_req.discharge_date,
-                'primary_diagnosis': discharge_req.primary_diagnosis,
-                'medications': discharge_req.medications,
-                'follow_up_appointments': discharge_req.follow_up_appointments,
-                'activity_restrictions': discharge_req.activity_restrictions,
-                'diet_instructions': discharge_req.diet_instructions,
-                'warning_signs': discharge_req.warning_signs,
-                'emergency_criteria': discharge_req.emergency_criteria,
-                'wound_care': discharge_req.wound_care,
-                'equipment_needs': discharge_req.equipment_needs,
-                'home_care_services': discharge_req.home_care_services
+                "patient_name": discharge_req.patient_name or request.patient_name,
+                "discharge_date": discharge_req.discharge_date,
+                "primary_diagnosis": discharge_req.primary_diagnosis,
+                "medications": discharge_req.medications,
+                "follow_up_appointments": discharge_req.follow_up_appointments,
+                "activity_restrictions": discharge_req.activity_restrictions,
+                "diet_instructions": discharge_req.diet_instructions,
+                "warning_signs": discharge_req.warning_signs,
+                "emergency_criteria": discharge_req.emergency_criteria,
+                "wound_care": discharge_req.wound_care,
+                "equipment_needs": discharge_req.equipment_needs,
+                "home_care_services": discharge_req.home_care_services,
             }
 
             pdf_buffer = generate_discharge_instructions(pdf_data)
-            individual_pdfs.append({
-                'type': 'discharge_instructions',
-                'buffer': pdf_buffer
-            })
+            individual_pdfs.append(
+                {"type": "discharge_instructions", "buffer": pdf_buffer}
+            )
             documents_generated += 1
 
         # Generate medication guides
@@ -438,28 +437,30 @@ async def batch_generate_documents(request: BatchDocumentRequest):
             med_req.reading_level = request.reading_level
 
             pdf_data = {
-                'medication_name': med_req.medication_name,
-                'dosage': med_req.dosage,
-                'frequency': med_req.frequency,
-                'route': med_req.route,
-                'special_instructions': med_req.special_instructions,
-                'purpose': med_req.purpose,
-                'how_it_works': med_req.how_it_works,
-                'common_side_effects': med_req.common_side_effects,
-                'serious_side_effects': med_req.serious_side_effects,
-                'food_interactions': med_req.food_interactions,
-                'drug_interactions': med_req.drug_interactions,
-                'storage_instructions': med_req.storage_instructions,
-                'missed_dose_instructions': med_req.missed_dose_instructions,
-                'data_sources': []
+                "medication_name": med_req.medication_name,
+                "dosage": med_req.dosage,
+                "frequency": med_req.frequency,
+                "route": med_req.route,
+                "special_instructions": med_req.special_instructions,
+                "purpose": med_req.purpose,
+                "how_it_works": med_req.how_it_works,
+                "common_side_effects": med_req.common_side_effects,
+                "serious_side_effects": med_req.serious_side_effects,
+                "food_interactions": med_req.food_interactions,
+                "drug_interactions": med_req.drug_interactions,
+                "storage_instructions": med_req.storage_instructions,
+                "missed_dose_instructions": med_req.missed_dose_instructions,
+                "data_sources": [],
             }
 
             pdf_buffer = generate_medication_guide(pdf_data)
-            individual_pdfs.append({
-                'type': 'medication_guide',
-                'name': med_req.medication_name,
-                'buffer': pdf_buffer
-            })
+            individual_pdfs.append(
+                {
+                    "type": "medication_guide",
+                    "name": med_req.medication_name,
+                    "buffer": pdf_buffer,
+                }
+            )
             documents_generated += 1
 
         # Generate disease education materials
@@ -468,76 +469,81 @@ async def batch_generate_documents(request: BatchDocumentRequest):
             disease_req.reading_level = request.reading_level
 
             pdf_data = {
-                'disease_name': disease_req.disease_name,
-                'what_it_is': disease_req.what_it_is,
-                'causes': disease_req.causes,
-                'symptoms': disease_req.symptoms,
-                'treatment_options': disease_req.treatment_options,
-                'self_care_tips': disease_req.self_care_tips,
-                'medications_overview': disease_req.medications_overview,
-                'lifestyle_modifications': disease_req.lifestyle_modifications,
-                'diet_recommendations': disease_req.diet_recommendations,
-                'exercise_recommendations': disease_req.exercise_recommendations,
-                'warning_signs': disease_req.warning_signs,
-                'emergency_symptoms': disease_req.emergency_symptoms,
-                'support_groups': disease_req.support_groups,
-                'additional_resources': disease_req.additional_resources,
-                'questions_to_ask': disease_req.questions_to_ask,
-                'data_sources': []
+                "disease_name": disease_req.disease_name,
+                "what_it_is": disease_req.what_it_is,
+                "causes": disease_req.causes,
+                "symptoms": disease_req.symptoms,
+                "treatment_options": disease_req.treatment_options,
+                "self_care_tips": disease_req.self_care_tips,
+                "medications_overview": disease_req.medications_overview,
+                "lifestyle_modifications": disease_req.lifestyle_modifications,
+                "diet_recommendations": disease_req.diet_recommendations,
+                "exercise_recommendations": disease_req.exercise_recommendations,
+                "warning_signs": disease_req.warning_signs,
+                "emergency_symptoms": disease_req.emergency_symptoms,
+                "support_groups": disease_req.support_groups,
+                "additional_resources": disease_req.additional_resources,
+                "questions_to_ask": disease_req.questions_to_ask,
+                "data_sources": [],
             }
 
             pdf_buffer = generate_disease_education(pdf_data)
-            individual_pdfs.append({
-                'type': 'disease_education',
-                'name': disease_req.disease_name,
-                'buffer': pdf_buffer
-            })
+            individual_pdfs.append(
+                {
+                    "type": "disease_education",
+                    "name": disease_req.disease_name,
+                    "buffer": pdf_buffer,
+                }
+            )
             documents_generated += 1
 
         if documents_generated == 0:
             raise HTTPException(
                 status_code=400,
-                detail="No documents requested. Please provide at least one document type."
+                detail="No documents requested. Please provide at least one document type.",
             )
 
         # Generate filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        patient_name_safe = request.patient_name.replace(' ', '_').lower() if request.patient_name else "patient"
+        patient_name_safe = (
+            request.patient_name.replace(" ", "_").lower()
+            if request.patient_name
+            else "patient"
+        )
 
         if request.combine_into_packet:
             # TODO: Implement PDF merging using PyPDF2 or similar
             # For now, return the first PDF
             filename = f"patient_packet_{patient_name_safe}_{timestamp}.pdf"
-            pdf_bytes = individual_pdfs[0]['buffer'].getvalue()
+            pdf_bytes = individual_pdfs[0]["buffer"].getvalue()
 
             return StreamingResponse(
                 iter([pdf_bytes]),
                 media_type="application/pdf",
                 headers={
                     "Content-Disposition": f"attachment; filename={filename}",
-                    "Content-Type": "application/pdf"
-                }
+                    "Content-Type": "application/pdf",
+                },
             )
         else:
             # Return first PDF (in future, could return as ZIP)
             filename = f"patient_documents_{patient_name_safe}_{timestamp}.pdf"
-            pdf_bytes = individual_pdfs[0]['buffer'].getvalue()
+            pdf_bytes = individual_pdfs[0]["buffer"].getvalue()
 
             return StreamingResponse(
                 iter([pdf_bytes]),
                 media_type="application/pdf",
                 headers={
                     "Content-Disposition": f"attachment; filename={filename}",
-                    "Content-Type": "application/pdf"
-                }
+                    "Content-Type": "application/pdf",
+                },
             )
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate batch documents: {str(e)}"
+            status_code=500, detail=f"Failed to generate batch documents: {str(e)}"
         )
 
 
@@ -557,14 +563,23 @@ async def list_document_templates():
                 "type": "discharge_instructions",
                 "name": "Discharge Instructions",
                 "description": "Comprehensive discharge instructions for hospital or ED patients",
-                "required_fields": ["primary_diagnosis", "warning_signs", "emergency_criteria"],
+                "required_fields": [
+                    "primary_diagnosis",
+                    "warning_signs",
+                    "emergency_criteria",
+                ],
                 "optional_fields": [
-                    "patient_name", "medications", "follow_up_appointments",
-                    "activity_restrictions", "diet_instructions", "wound_care",
-                    "equipment_needs", "home_care_services"
+                    "patient_name",
+                    "medications",
+                    "follow_up_appointments",
+                    "activity_restrictions",
+                    "diet_instructions",
+                    "wound_care",
+                    "equipment_needs",
+                    "home_care_services",
                 ],
                 "supports_multi_language": True,
-                "supports_reading_levels": True
+                "supports_reading_levels": True,
             },
             {
                 "type": "medication_guide",
@@ -572,14 +587,19 @@ async def list_document_templates():
                 "description": "Patient-friendly medication information and instructions",
                 "required_fields": ["medication_name", "dosage", "frequency"],
                 "optional_fields": [
-                    "purpose", "how_it_works", "special_instructions",
-                    "common_side_effects", "serious_side_effects",
-                    "food_interactions", "drug_interactions",
-                    "storage_instructions", "missed_dose_instructions"
+                    "purpose",
+                    "how_it_works",
+                    "special_instructions",
+                    "common_side_effects",
+                    "serious_side_effects",
+                    "food_interactions",
+                    "drug_interactions",
+                    "storage_instructions",
+                    "missed_dose_instructions",
                 ],
                 "supports_auto_populate": True,
                 "supports_multi_language": True,
-                "supports_reading_levels": True
+                "supports_reading_levels": True,
             },
             {
                 "type": "disease_education",
@@ -587,18 +607,26 @@ async def list_document_templates():
                 "description": "Educational material about diseases and conditions",
                 "required_fields": ["disease_name"],
                 "optional_fields": [
-                    "what_it_is", "causes", "symptoms", "treatment_options",
-                    "self_care_tips", "lifestyle_modifications",
-                    "diet_recommendations", "exercise_recommendations",
-                    "warning_signs", "emergency_symptoms", "support_groups",
-                    "additional_resources", "questions_to_ask"
+                    "what_it_is",
+                    "causes",
+                    "symptoms",
+                    "treatment_options",
+                    "self_care_tips",
+                    "lifestyle_modifications",
+                    "diet_recommendations",
+                    "exercise_recommendations",
+                    "warning_signs",
+                    "emergency_symptoms",
+                    "support_groups",
+                    "additional_resources",
+                    "questions_to_ask",
                 ],
                 "supports_auto_populate": True,
                 "supports_multi_language": True,
-                "supports_reading_levels": True
-            }
+                "supports_reading_levels": True,
+            },
         ],
         "supported_languages": ["en", "es", "zh-CN", "zh-TW"],
         "supported_reading_levels": ["basic", "intermediate", "advanced"],
-        "supported_formats": ["pdf"]
+        "supported_formats": ["pdf"],
     }

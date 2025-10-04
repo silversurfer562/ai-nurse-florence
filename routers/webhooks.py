@@ -7,19 +7,21 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Header, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
+router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
 class RailwayWebhookPayload(BaseModel):
     """Railway webhook payload structure based on Railway documentation."""
 
     type: str = Field(..., description="Event type (e.g., DEPLOY)")
-    status: str = Field(..., description="Deployment status: SUCCESS, FAILED, BUILDING, etc.")
+    status: str = Field(
+        ..., description="Deployment status: SUCCESS, FAILED, BUILDING, etc."
+    )
     timestamp: Optional[str] = Field(None, description="Event timestamp")
     project: Optional[dict] = Field(None, description="Project information")
     environment: Optional[dict] = Field(None, description="Environment information")
@@ -51,7 +53,9 @@ async def trigger_health_checks(deployment_info: dict):
     """
     from services.webhook_health_check import run_post_deployment_health_checks
 
-    logger.info(f"🔍 Triggering health checks for deployment: {deployment_info.get('id', 'unknown')}")
+    logger.info(
+        f"🔍 Triggering health checks for deployment: {deployment_info.get('id', 'unknown')}"
+    )
 
     try:
         results = await run_post_deployment_health_checks()
@@ -71,7 +75,9 @@ async def send_notifications(event: WebhookEvent):
     """
     from services.webhook_notifications import send_deployment_notification
 
-    logger.info(f"📢 Sending notifications for event: {event.event_type} - {event.status}")
+    logger.info(
+        f"📢 Sending notifications for event: {event.event_type} - {event.status}"
+    )
 
     try:
         await send_deployment_notification(event)
@@ -83,7 +89,7 @@ async def send_notifications(event: WebhookEvent):
 async def railway_webhook_handler(
     request: Request,
     background_tasks: BackgroundTasks,
-    x_webhook_signature: Optional[str] = Header(None)
+    x_webhook_signature: Optional[str] = Header(None),
 ):
     """
     Handle incoming webhooks from Railway.
@@ -119,7 +125,7 @@ async def railway_webhook_handler(
             event_type=payload.get("type", "UNKNOWN"),
             status=payload.get("status", "UNKNOWN"),
             timestamp=datetime.utcnow(),
-            metadata=payload
+            metadata=payload,
         )
 
         # Store event (in production, save to database)
@@ -130,11 +136,15 @@ async def railway_webhook_handler(
 
         if status == "SUCCESS":
             logger.info("✅ Deployment succeeded - triggering health checks")
-            background_tasks.add_task(trigger_health_checks, payload.get("deployment", {}))
+            background_tasks.add_task(
+                trigger_health_checks, payload.get("deployment", {})
+            )
             background_tasks.add_task(send_notifications, event)
 
         elif status in ["FAILED", "CRASHED"]:
-            logger.error(f"❌ Deployment {status.lower()} - sending failure notifications")
+            logger.error(
+                f"❌ Deployment {status.lower()} - sending failure notifications"
+            )
             background_tasks.add_task(send_notifications, event)
 
         elif status == "BUILDING":
@@ -148,12 +158,14 @@ async def railway_webhook_handler(
             "event_id": event.id,
             "event_type": event.event_type,
             "timestamp": event.timestamp.isoformat(),
-            "message": f"Webhook processed: {status}"
+            "message": f"Webhook processed: {status}",
         }
 
     except Exception as e:
         logger.error(f"❌ Error processing Railway webhook: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Webhook processing failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Webhook processing failed: {str(e)}"
+        )
 
 
 @router.get("/events")
@@ -177,10 +189,10 @@ async def get_webhook_events(limit: int = 50):
                 "type": event.event_type,
                 "status": event.status,
                 "timestamp": event.timestamp.isoformat(),
-                "source": event.source
+                "source": event.source,
             }
             for event in reversed(recent_events)
-        ]
+        ],
     }
 
 
@@ -206,7 +218,7 @@ async def get_webhook_event_details(event_id: str):
         "status": event.status,
         "timestamp": event.timestamp.isoformat(),
         "source": event.source,
-        "metadata": event.metadata
+        "metadata": event.metadata,
     }
 
 
@@ -223,7 +235,7 @@ async def test_webhook_endpoint(background_tasks: BackgroundTasks):
         "status": "SUCCESS",
         "timestamp": datetime.utcnow().isoformat(),
         "project": {"id": "test", "name": "ai-nurse-florence"},
-        "deployment": {"id": "test-deployment", "url": "http://localhost:8000"}
+        "deployment": {"id": "test-deployment", "url": "http://localhost:8000"},
     }
 
     logger.info("🧪 Testing webhook with simulated Railway event")
@@ -236,5 +248,5 @@ async def test_webhook_endpoint(background_tasks: BackgroundTasks):
     return await railway_webhook_handler(
         request=MockRequest(),
         background_tasks=background_tasks,
-        x_webhook_signature=None
+        x_webhook_signature=None,
     )

@@ -5,22 +5,23 @@ Provides MedlinePlus patient education content for diagnoses.
 Includes caching, multi-language support, and fallback URLs.
 """
 
-from fastapi import APIRouter, HTTPException, Query, Depends
-from sqlalchemy.orm import Session
 from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.integrations.medlineplus import MedlinePlusClient, MedlinePlusContentEnricher
 from src.models.content_settings import DiagnosisContentMap, MedlinePlusCache
 
-
-router = APIRouter(prefix="/api/v1/medlineplus", tags=["MedlinePlus"])
+router = APIRouter(prefix="/medlineplus", tags=["MedlinePlus"])
 
 
 # Response models
 class MedlinePlusContentResponse(BaseModel):
     """MedlinePlus patient education content"""
+
     icd10_code: str
     disease_name: str
     title: str
@@ -36,7 +37,7 @@ async def get_medlineplus_by_icd10(
     icd10_code: str,
     language: str = Query("en", regex="^(en|es)$", description="Language: en or es"),
     force_refresh: bool = Query(False, description="Force refresh from API"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get MedlinePlus patient education content for an ICD-10 code.
@@ -56,11 +57,13 @@ async def get_medlineplus_by_icd10(
         icd10_code=icd10_code,
         disease_name=disease_name,
         language=language,
-        force_refresh=force_refresh
+        force_refresh=force_refresh,
     )
 
     if not content:
-        raise HTTPException(status_code=404, detail=f"No content found for {icd10_code}")
+        raise HTTPException(
+            status_code=404, detail=f"No content found for {icd10_code}"
+        )
 
     return {
         "icd10_code": icd10_code,
@@ -70,7 +73,7 @@ async def get_medlineplus_by_icd10(
         "summary": content.get("summary", ""),
         "language": language,
         "source": content.get("source", "MedlinePlus"),
-        "cached": "cached" in content.get("source", "").lower()
+        "cached": "cached" in content.get("source", "").lower(),
     }
 
 
@@ -80,14 +83,15 @@ async def get_cache_stats(db: Session = Depends(get_db)):
     from sqlalchemy import func
 
     total = db.query(MedlinePlusCache).count()
-    by_language = db.query(
-        MedlinePlusCache.language,
-        func.count(MedlinePlusCache.icd10_code)
-    ).group_by(MedlinePlusCache.language).all()
+    by_language = (
+        db.query(MedlinePlusCache.language, func.count(MedlinePlusCache.icd10_code))
+        .group_by(MedlinePlusCache.language)
+        .all()
+    )
 
     return {
         "total_cached": total,
-        "by_language": {lang: count for lang, count in by_language}
+        "by_language": {lang: count for lang, count in by_language},
     }
 
 
@@ -98,11 +102,7 @@ async def health_check():
     try:
         test_content = client.fetch_content("E11.9", "en")
         api_status = "operational" if test_content else "degraded"
-    except:
+    except Exception:
         api_status = "unavailable"
 
-    return {
-        "status": "healthy",
-        "medlineplus_api": api_status,
-        "cache_enabled": True
-    }
+    return {"status": "healthy", "medlineplus_api": api_status, "cache_enabled": True}
