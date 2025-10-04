@@ -146,9 +146,12 @@
         "notYetRecruiting": "Not Yet Recruiting",
         "suspended": "Suspended",
         "terminated": "Terminated",
-        "withdrawn": "Withdrawn"
+        "withdrawn": "Withdrawn",
+        "all": "All Statuses"
       },
-      "searchButton": "Search Trials"
+      "searchButton": "Search Trials",
+      "statusHint": "Filter trials by their current recruitment status",
+      "maxResultsLabel": "Maximum Results"
     },
     "results": {
       "title": "Search Results",
