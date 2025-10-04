@@ -125,7 +125,7 @@ export default function ClinicalTrials() {
 
       {/* Results */}
       {data && data.trials && (
-        <div className="space-y-4">
+        <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             {t('clinicalTrials.results.title')} ({data.trials.length})
           </h2>
@@ -137,8 +137,9 @@ export default function ClinicalTrials() {
               <p className="text-gray-500 text-sm mt-2">{t('clinicalTrials.results.tryDifferent')}</p>
             </div>
           ) : (
-            data.trials.map((study: any, index: number) => (
-              <div key={index} className="card hover:shadow-lg transition-shadow">
+            <div className="grid lg:grid-cols-2 gap-4 lg:items-start">
+              {data.trials.map((study: any, index: number) => (
+                <div key={index} className="card hover:shadow-lg transition-shadow h-full">
                 <h3 className="text-xl font-bold text-blue-700 mb-2">{study.title || 'Untitled Study'}</h3>
 
                 {study.status && (
@@ -219,7 +220,8 @@ export default function ClinicalTrials() {
                   </div>
                 )}
               </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}
