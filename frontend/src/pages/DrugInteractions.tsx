@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { drugInteractionService } from '../services/api';
 import DrugAutocomplete from '../components/DrugAutocomplete';
+import ExpandableSection from '../components/ExpandableSection';
+import { WarningBox, FDAAttribution } from '../components/FDAWarnings';
 
 export default function DrugInteractions() {
   const { t } = useTranslation();
@@ -117,71 +119,78 @@ export default function DrugInteractions() {
         <>
           {/* Drug Information Section */}
           {data.data?.drug_information && data.data.drug_information.length > 0 && (
-            <div className="card">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                <i className="fas fa-pills mr-2"></i>
+            <div className="card mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+                <i className="fas fa-pills text-blue-600 mr-2"></i>
                 Medication Information
               </h2>
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {data.data.drug_information.map((drug: any, index: number) => (
-                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
-                    <div className="font-semibold text-gray-800 text-lg">
-                      {drug.name}
-                      {drug.brand_names && drug.brand_names.length > 0 && (
-                        <span className="text-sm font-normal text-gray-600 ml-2">
-                          ({drug.brand_names.join(', ')})
-                        </span>
+                  <ExpandableSection
+                    key={index}
+                    title={`${drug.name}${drug.brand_names && drug.brand_names.length > 0 ? ` (${drug.brand_names.join(', ')})` : ''}`}
+                    icon="fa-prescription-bottle"
+                    variant="info"
+                    defaultExpanded={index === 0}
+                  >
+                    <div className="space-y-4">
+                      {/* Basic Info */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {drug.drug_class && (
+                          <div className="p-3 bg-blue-50 rounded-lg">
+                            <div className="text-xs font-semibold text-blue-700 mb-1">Drug Class</div>
+                            <div className="text-sm text-gray-800">{drug.drug_class}</div>
+                          </div>
+                        )}
+
+                        {drug.indication && (
+                          <div className="p-3 bg-green-50 rounded-lg">
+                            <div className="text-xs font-semibold text-green-700 mb-1">Primary Use</div>
+                            <div className="text-sm text-gray-800">{drug.indication}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Nursing Considerations */}
+                      {drug.nursing_considerations && drug.nursing_considerations.length > 0 && (
+                        <WarningBox severity="info" title="Nursing Considerations">
+                          <ul className="list-disc list-inside space-y-1">
+                            {drug.nursing_considerations.map((consideration: string, idx: number) => (
+                              <li key={idx} className="text-sm">{consideration}</li>
+                            ))}
+                          </ul>
+                        </WarningBox>
+                      )}
+
+                      {/* Side Effects */}
+                      {drug.common_side_effects && drug.common_side_effects.length > 0 && (
+                        <WarningBox severity="moderate" title="Common Side Effects">
+                          <ul className="grid md:grid-cols-2 gap-2">
+                            {drug.common_side_effects.map((effect: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                <i className="fas fa-circle text-yellow-600 text-xs mt-1.5 flex-shrink-0"></i>
+                                <span>{effect}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </WarningBox>
+                      )}
+
+                      {/* Warnings */}
+                      {drug.warnings && drug.warnings.length > 0 && (
+                        <WarningBox severity="major" title="Important Warnings">
+                          <ul className="space-y-2">
+                            {drug.warnings.map((warning: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                <i className="fas fa-exclamation-triangle text-orange-600 mt-1 flex-shrink-0"></i>
+                                <span>{warning}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </WarningBox>
                       )}
                     </div>
-
-                    {drug.drug_class && (
-                      <div className="text-sm text-gray-600 mt-1">
-                        <span className="font-medium">Class:</span> {drug.drug_class}
-                      </div>
-                    )}
-
-                    {drug.indication && (
-                      <div className="text-sm text-gray-700 mt-2">
-                        <span className="font-medium">Used for:</span> {drug.indication}
-                      </div>
-                    )}
-
-                    {drug.nursing_considerations && drug.nursing_considerations.length > 0 && (
-                      <div className="mt-2">
-                        <div className="text-sm font-semibold text-gray-700">Nursing Considerations:</div>
-                        <ul className="list-disc list-inside text-sm text-gray-600">
-                          {drug.nursing_considerations.map((consideration: string, idx: number) => (
-                            <li key={idx}>{consideration}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {drug.common_side_effects && drug.common_side_effects.length > 0 && (
-                      <div className="mt-2">
-                        <div className="text-sm font-semibold text-gray-700">Common Side Effects:</div>
-                        <ul className="list-disc list-inside text-sm text-gray-600">
-                          {drug.common_side_effects.map((effect: string, idx: number) => (
-                            <li key={idx}>{effect}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {drug.warnings && drug.warnings.length > 0 && (
-                      <div className="mt-2">
-                        <div className="text-sm font-semibold text-red-700">
-                          <i className="fas fa-exclamation-triangle mr-1"></i>
-                          Warnings:
-                        </div>
-                        <ul className="list-disc list-inside text-sm text-red-600">
-                          {drug.warnings.map((warning: string, idx: number) => (
-                            <li key={idx}>{warning}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                  </ExpandableSection>
                 ))}
               </div>
             </div>
@@ -342,6 +351,13 @@ export default function DrugInteractions() {
         <div className="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded-lg">
           <i className="fas fa-shield-alt mr-2"></i>
           This feature checks for drug-drug interactions using FDA databases and authoritative medical sources.
+        </div>
+      )}
+
+      {/* FDA Attribution - show after results */}
+      {data && (
+        <div className="mt-6">
+          <FDAAttribution />
         </div>
       )}
     </div>
