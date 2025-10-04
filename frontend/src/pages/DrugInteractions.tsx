@@ -340,8 +340,8 @@ export default function DrugInteractions() {
 
       {!data && !isLoading && (
         <div className="bg-blue-100 border border-blue-400 text-blue-800 px-4 py-3 rounded-lg">
-          <i className="fas fa-info-circle mr-2"></i>
-          This feature checks for drug-drug interactions using live medical databases.
+          <i className="fas fa-shield-alt mr-2"></i>
+          This feature checks for drug-drug interactions using FDA databases and authoritative medical sources.
         </div>
       )}
     </div>

@@ -363,18 +363,21 @@ export default function PublicDrugInteractions() {
 
           <div className="space-y-4 text-gray-700">
             <div>
-              <h3 className="font-semibold text-gray-800 mb-2">Data Sources & Attribution</h3>
+              <h3 className="font-semibold text-gray-800 mb-2">
+                <i className="fas fa-shield-alt text-blue-600 mr-2"></i>
+                Data Sources & Attribution
+              </h3>
               <p className="text-sm">
-                This tool synthesizes drug interaction data from multiple authoritative medical databases and resources,
-                including FDA databases, medical literature, and clinical pharmacology references. All information is
-                provided for educational purposes and should be verified with current clinical guidelines.
+                <strong>Powered by FDA Data:</strong> This tool uses authoritative drug information from the U.S. Food & Drug Administration (FDA)
+                databases, combined with clinical pharmacology references and medical literature. All FDA data is sourced directly
+                from official government databases, ensuring you receive the most reliable drug interaction information available.
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold text-gray-800 mb-2">How It Works</h3>
               <p className="text-sm">
-                Our interaction checker analyzes the medications you enter against comprehensive drug interaction databases.
+                Our interaction checker analyzes the medications you enter against comprehensive FDA drug databases.
                 It identifies potential interactions, assesses their severity, and provides clinical context to help you
                 make informed decisions in consultation with your healthcare provider.
               </p>
