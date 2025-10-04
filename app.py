@@ -222,11 +222,14 @@ async def search_diagnoses_proxy(q: str, limit: int = 20):
                 }
                 for idx, result in enumerate(mesh_results)
             ]
+        else:
+            # MeSH returned no results, return search query
+            logger.debug(f"No MeSH results for query: {q}")
+            return [{"disease_id": 0, "disease_name": q, "category": "General"}]
     except Exception as e:
-        logger.error(f"Diagnosis search error: {e}")
-
-    # Fallback: return search query as single result
-    return [{"disease_id": 0, "disease_name": q, "category": "General"}]
+        logger.warning(f"MeSH search unavailable for '{q}': {e}")
+        # Fallback: return search query as single result
+        return [{"disease_id": 0, "disease_name": q, "category": "General"}]
 
 
 # Additional routers temporarily disabled (genes, disease_glossary)

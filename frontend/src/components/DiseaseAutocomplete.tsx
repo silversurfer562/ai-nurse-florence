@@ -165,21 +165,21 @@ export default function DiseaseAutocomplete({
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-80 overflow-y-auto">
           {suggestions.map((disease, index) => (
             <div
               key={disease}
               onClick={() => handleSelect(disease)}
               onMouseEnter={() => setSelectedIndex(index)}
-              className={`px-4 py-2 cursor-pointer transition-colors ${
+              className={`px-5 py-3 cursor-pointer transition-colors ${
                 index === selectedIndex
                   ? 'bg-blue-500 text-white'
                   : 'hover:bg-gray-100'
               }`}
             >
               <div className="flex items-center">
-                <i className="fas fa-heartbeat text-sm mr-2 opacity-60"></i>
-                <span>{disease}</span>
+                <i className="fas fa-heartbeat text-base mr-3 opacity-60"></i>
+                <span className="text-base">{disease}</span>
               </div>
             </div>
           ))}
