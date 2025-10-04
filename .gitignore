@@ -354,3 +354,4 @@ security-reports/
 # Compliance artifacts
 compliance/
 audit-reports/
+# Force rebuild
