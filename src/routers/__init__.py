@@ -140,6 +140,7 @@ def _load_wizard_routers():
         "care_plan",
         "medication_reconciliation",
         "sbar_report",
+        "shift_handoff_wizard",
         "patient_education",
         "quality_improvement",
         "dosage_calculation",
