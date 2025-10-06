@@ -312,7 +312,7 @@ class BaseService(ABC, Generic[T]):
             }
 
         raise ExternalServiceException(
-            f"{self.service_name} temporarily unavailable",
-            self.service_name,
-            fallback_available=False,
+            service_name=self.service_name,
+            message="temporarily unavailable",
+            original_error=error,
         )
