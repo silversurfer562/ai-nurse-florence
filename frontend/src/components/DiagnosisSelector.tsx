@@ -8,14 +8,12 @@ interface DiagnosisOption {
 }
 
 interface DiagnosisSelectorProps {
-  value: string;
   onChange: (diagnosis: DiagnosisOption | null) => void;
   placeholder?: string;
   className?: string;
 }
 
 export default function DiagnosisSelector({
-  value,
   onChange,
   placeholder = 'Search for diagnosis...',
   className = '',

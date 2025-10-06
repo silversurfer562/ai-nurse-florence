@@ -74,7 +74,6 @@ export default function PatientEducation() {
             Search for Diagnosis <span className="text-red-500">*</span>
           </label>
           <DiagnosisSelector
-            value={selectedDiagnosis?.label || ''}
             onChange={(diagnosis) => {
               setSelectedDiagnosis(diagnosis);
               if (diagnosis) {
@@ -393,7 +392,7 @@ export default function PatientEducation() {
         <div className="space-y-4">
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-semibold text-gray-900 mb-2">Selected Diagnosis</h4>
-            <p className="text-gray-700">{selectedDiagnosis?.disease_name || data.diagnosis_name}</p>
+            <p className="text-gray-700">{selectedDiagnosis?.label || data.diagnosis_name}</p>
           </div>
           <div className="bg-gray-50 p-4 rounded-lg">
             <h4 className="font-semibold text-gray-900 mb-2">Reading Level</h4>
