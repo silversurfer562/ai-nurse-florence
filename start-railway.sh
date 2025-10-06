@@ -14,19 +14,29 @@ echo "========================================="
 mkdir -p /app/data/generated_documents
 echo "Created /app/data/generated_documents for PDF storage"
 
-# Check if drug database exists, build if missing
+# Check if drug database exists, build if missing or outdated
 DB_PATH="/app/data/drugs.db"
+DB_AGE_DAYS=30  # Rebuild if database is older than 30 days (FDA updates monthly)
+
 if [ ! -f "$DB_PATH" ]; then
     echo "========================================="
     echo "Drug database not found at $DB_PATH"
     echo "Building database from FDA data..."
-    echo "This is a one-time setup (unless volume is cleared)"
+    echo "This is first-time setup or volume was cleared"
+    echo "========================================="
+    python3 scripts/build_drug_database.py --max-records 25000 || echo "Warning: Drug database build failed, will use FDA API fallback"
+elif [ $(find "$DB_PATH" -mtime +$DB_AGE_DAYS 2>/dev/null | wc -l) -gt 0 ]; then
+    echo "========================================="
+    echo "Drug database is older than $DB_AGE_DAYS days"
+    echo "Rebuilding to get latest FDA updates..."
     echo "========================================="
     python3 scripts/build_drug_database.py --max-records 25000 || echo "Warning: Drug database build failed, will use FDA API fallback"
 else
+    DB_AGE=$((($(date +%s) - $(stat -f %m "$DB_PATH" 2>/dev/null || stat -c %Y "$DB_PATH")) / 86400))
     echo "========================================="
-    echo "Drug database found at $DB_PATH"
-    echo "Skipping rebuild (use cron job to update monthly)"
+    echo "Drug database found at $DB_PATH (${DB_AGE} days old)"
+    echo "Skipping rebuild (database is fresh)"
+    echo "Next rebuild in $((DB_AGE_DAYS - DB_AGE)) days or when FDA updates"
     echo "========================================="
 fi
 
