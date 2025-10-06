@@ -180,7 +180,11 @@ async def _build_document_content(
                     },
                     language=request.preferred_language,
                 )
-                description = ai_content.get("response", diagnosis.diagnosis_display)
+                # Use AI response if available and not empty, otherwise fallback
+                ai_response = ai_content.get("response", "")
+                description = (
+                    ai_response if ai_response else diagnosis.diagnosis_display
+                )
             except Exception:
                 # Fallback to diagnosis display name if AI fails
                 description = diagnosis.diagnosis_display
