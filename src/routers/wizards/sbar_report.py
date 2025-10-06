@@ -5,6 +5,7 @@ This multi-step wizard guides users through creating a structured SBAR report,
 which is a standard communication tool in healthcare settings.
 """
 
+from datetime import datetime
 from typing import Dict
 
 from fastapi import APIRouter, status
@@ -194,6 +195,33 @@ async def generate_sbar_report_direct(input_data: DirectSbarInput):
 
     try:
         client = get_client()
+        if not client:
+            # Fallback: Generate basic SBAR report without AI enhancement
+            logger.warning(
+                "OpenAI client not available - generating basic SBAR report without AI formatting"
+            )
+            sbar_report = f"""SBAR Report - Patient ID: {input_data.patient_id}
+Care Setting: {care_setting_context.upper()}
+
+SITUATION
+{input_data.situation}
+
+BACKGROUND
+{input_data.background}
+
+ASSESSMENT
+{input_data.assessment}
+
+RECOMMENDATION
+{input_data.recommendation}
+
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Note: This report was generated without AI enhancement. Configure OPENAI_API_KEY for enhanced formatting.
+"""
+            return create_success_response(
+                {"sbar_report": sbar_report, "care_setting": input_data.care_setting}
+            )
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -264,6 +292,35 @@ async def generate_sbar_report_wizard(step_input: GenerateSbarInput):
 
     try:
         client = get_client()
+        if not client:
+            # Fallback: Generate basic SBAR report without AI enhancement
+            logger.warning(
+                f"OpenAI client not available for session {wizard_id} - generating basic SBAR report"
+            )
+            sbar_report = f"""SBAR Report
+
+SITUATION
+{session_data['situation']}
+
+BACKGROUND
+{session_data['background']}
+
+ASSESSMENT
+{session_data['assessment']}
+
+RECOMMENDATION
+{session_data['recommendation']}
+
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Note: This report was generated without AI enhancement. Configure OPENAI_API_KEY for enhanced formatting.
+"""
+            # Clean up the session
+            del wizard_sessions[wizard_id]
+
+            return create_success_response(
+                {"wizard_id": wizard_id, "sbar_report": sbar_report}
+            )
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
