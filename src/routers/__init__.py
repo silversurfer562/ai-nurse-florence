@@ -141,6 +141,7 @@ def _load_wizard_routers():
         "medication_reconciliation",
         "sbar_report",
         "shift_handoff_wizard",
+        "soap_note_wizard",
         "patient_education",
         "quality_improvement",
         "dosage_calculation",
