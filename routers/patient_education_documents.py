@@ -108,46 +108,83 @@ async def generate_patient_education_document(
     - FHIR-compliant coding
     - PDF generation
     """
+    import logging
 
-    # Get diagnosis from database
-    diagnosis = db.query(DiagnosisContentMap).filter_by(id=request.diagnosis_id).first()
+    logger = logging.getLogger(__name__)
 
-    if not diagnosis:
+    try:
+        logger.info(
+            f"Starting patient education document generation for diagnosis_id: {request.diagnosis_id}"
+        )
+
+        # Get diagnosis from database
+        diagnosis = (
+            db.query(DiagnosisContentMap).filter_by(id=request.diagnosis_id).first()
+        )
+
+        if not diagnosis:
+            logger.error(f"Diagnosis not found: {request.diagnosis_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Diagnosis '{request.diagnosis_id}' not found"
+            )
+
+        logger.info(f"Found diagnosis: {diagnosis.diagnosis_display}")
+
+        # Get MedlinePlus content if requested
+        medlineplus_content = None
+        if request.include_medlineplus:
+            try:
+                medlineplus_client = MedlinePlusClient()
+                medlineplus_content = medlineplus_client.fetch_content(
+                    icd10_code=request.icd10_code, language=request.preferred_language
+                )
+                logger.info("MedlinePlus content fetched successfully")
+            except Exception as e:
+                logger.warning(f"Failed to fetch MedlinePlus content: {e}")
+                # Continue without MedlinePlus content
+
+        # Build document content with AI enhancement
+        logger.info("Building document content...")
+        document_content = await _build_document_content(
+            request=request,
+            diagnosis=diagnosis,
+            medlineplus_content=medlineplus_content,
+        )
+        logger.info(
+            f"Document content built with {len(document_content.get('sections', []))} sections"
+        )
+
+        # Generate PDF
+        logger.info("Generating PDF...")
+        pdf_path = _generate_pdf(
+            content=document_content,
+            patient_name=request.patient_name,
+            language=request.preferred_language,
+        )
+        logger.info(f"PDF generated: {pdf_path}")
+
+        # Generate document ID
+        document_id = f"PE_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        return PatientEducationResponse(
+            document_id=document_id,
+            pdf_url=f"/api/v1/documents/download/{pdf_path.name}",
+            html_preview_url=None,  # TODO: Implement HTML preview
+            language=request.preferred_language,
+            reading_level=request.reading_level,
+            generated_at=datetime.now(),
+        )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error generating patient education document: {str(e)}", exc_info=True
+        )
         raise HTTPException(
-            status_code=404, detail=f"Diagnosis '{request.diagnosis_id}' not found"
+            status_code=500, detail=f"Failed to generate document: {str(e)}"
         )
-
-    # Get MedlinePlus content if requested
-    medlineplus_content = None
-    if request.include_medlineplus:
-        medlineplus_client = MedlinePlusClient()
-        medlineplus_content = medlineplus_client.fetch_content(
-            icd10_code=request.icd10_code, language=request.preferred_language
-        )
-
-    # Build document content with AI enhancement
-    document_content = await _build_document_content(
-        request=request, diagnosis=diagnosis, medlineplus_content=medlineplus_content
-    )
-
-    # Generate PDF
-    pdf_path = _generate_pdf(
-        content=document_content,
-        patient_name=request.patient_name,
-        language=request.preferred_language,
-    )
-
-    # Generate document ID
-    document_id = f"PE_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
-    return PatientEducationResponse(
-        document_id=document_id,
-        pdf_url=f"/api/v1/documents/download/{pdf_path.name}",
-        html_preview_url=None,  # TODO: Implement HTML preview
-        language=request.preferred_language,
-        reading_level=request.reading_level,
-        generated_at=datetime.now(),
-    )
 
 
 async def _build_document_content(
