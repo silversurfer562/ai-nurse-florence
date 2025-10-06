@@ -8,7 +8,7 @@ which is a standard communication tool in healthcare settings.
 from datetime import datetime
 from typing import Dict
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from services.openai_client import get_client
@@ -218,9 +218,7 @@ RECOMMENDATION
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Note: This report was generated without AI enhancement. Configure OPENAI_API_KEY for enhanced formatting.
 """
-            return create_success_response(
-                {"sbar_report": sbar_report, "care_setting": input_data.care_setting}
-            )
+            return {"sbar_report": sbar_report, "care_setting": input_data.care_setting}
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -238,15 +236,12 @@ Note: This report was generated without AI enhancement. Configure OPENAI_API_KEY
             f"Successfully generated SBAR report for patient {input_data.patient_id} in {input_data.care_setting} setting"
         )
 
-        return create_success_response(
-            {"sbar_report": sbar_report, "care_setting": input_data.care_setting}
-        )
+        return {"sbar_report": sbar_report, "care_setting": input_data.care_setting}
     except Exception as e:
         logger.error(f"SBAR report generation failed: {e}", exc_info=True)
-        return create_error_response(
-            f"Failed to generate SBAR report from AI model: {str(e)}",
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "generation_failed",
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate SBAR report: {str(e)}",
         )
 
 
@@ -317,9 +312,7 @@ Note: This report was generated without AI enhancement. Configure OPENAI_API_KEY
             # Clean up the session
             del wizard_sessions[wizard_id]
 
-            return create_success_response(
-                {"wizard_id": wizard_id, "sbar_report": sbar_report}
-            )
+            return {"wizard_id": wizard_id, "sbar_report": sbar_report}
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -337,15 +330,12 @@ Note: This report was generated without AI enhancement. Configure OPENAI_API_KEY
         # Clean up the session
         del wizard_sessions[wizard_id]
 
-        return create_success_response(
-            {"wizard_id": wizard_id, "sbar_report": sbar_report}
-        )
+        return {"wizard_id": wizard_id, "sbar_report": sbar_report}
     except Exception as e:
         logger.error(
             f"SBAR report generation failed for session {wizard_id}: {e}", exc_info=True
         )
-        return create_error_response(
-            "Failed to generate SBAR report from AI model.",
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "generation_failed",
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate SBAR report: {str(e)}",
         )
