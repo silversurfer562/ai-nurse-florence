@@ -211,20 +211,25 @@
 
 ### Completed Wizards
 - ✅ **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation **COMPLETED 2025-10-06**
-  - Commit: `bd89864`
+  - Backend Commit: `bd89864`
+  - Frontend Commit: `5030783`
   - 5-step workflow: Patient ID, Current Condition, Treatments, Plan, Safety
   - API endpoints: start, step, enhance, report
   - Structured JSON + formatted narrative output
+  - React component with interactive tour
   - Supports Joint Commission patient safety goals
-  - File: [src/routers/wizards/shift_handoff_wizard.py](../src/routers/wizards/shift_handoff_wizard.py)
+  - Files: [src/routers/wizards/shift_handoff_wizard.py](../src/routers/wizards/shift_handoff_wizard.py), [frontend-react/src/widgets/ShiftHandoffWizard/](../frontend-react/src/widgets/ShiftHandoffWizard/)
+
+- ✅ **SOAP Note Wizard** - Subjective, Objective, Assessment, Plan **COMPLETED 2025-10-06**
+  - Commit: `7090b2e`
+  - 4-step workflow: Subjective, Objective, Assessment, Plan
+  - Evidence-based clinical progress documentation format
+  - AI enhancement for professional language
+  - Session management with structured report output
+  - File: [src/routers/wizards/soap_note_wizard.py](../src/routers/wizards/soap_note_wizard.py)
   - **Next: Frontend React component needed**
 
 ### Planned Wizards
-- 🟡 **SOAP Note Wizard** - Subjective, Objective, Assessment, Plan
-  - Effort: 8-12 hours
-  - Reference: [src/routers/wizards/sbar_wizard.py](../src/routers/wizards/sbar_wizard.py)
-  - Pattern: Multi-step guided documentation with AI enhancement
-  - **Target: Mid-week or later**
 
 - 🟡 **Admission Assessment Wizard** - Structured patient admission workflow
   - Effort: 12-16 hours
@@ -302,10 +307,19 @@
   - Evidence-based interventions for each risk level
 
 - ✅ **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation
-  - Commit: `bd89864`
+  - Backend Commit: `bd89864`
+  - Frontend Commit: `5030783`
   - 5-step workflow with AI enhancement
   - API endpoints for session management
   - Structured + narrative report generation
+  - React component with interactive tour
+
+- ✅ **SOAP Note Wizard** - Clinical progress note documentation
+  - Backend Commit: `7090b2e`
+  - 4-step workflow (Subjective, Objective, Assessment, Plan)
+  - Evidence-based clinical documentation format
+  - AI enhancement for professional language
+  - Session management with structured report output
 
 ---
 
