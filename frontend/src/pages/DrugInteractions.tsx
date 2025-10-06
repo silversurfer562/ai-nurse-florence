@@ -131,7 +131,7 @@ export default function DrugInteractions() {
                     title={`${drug.name}${drug.brand_names && drug.brand_names.length > 0 ? ` (${drug.brand_names.join(', ')})` : ''}`}
                     icon="fa-prescription-bottle"
                     variant="info"
-                    defaultExpanded={index === 0}
+                    defaultExpanded={true}
                   >
                     <div className="space-y-4">
                       {/* HIGH-ALERT MEDICATION WARNINGS (for nurses) */}
