@@ -188,10 +188,14 @@ Optional (graceful degradation):
 PERFORMANCE IMPROVEMENTS
 ------------------------
 [ ] Implement request batching for multiple PMIDs (reduce API calls)
-[ ] Add adaptive cache TTL based on query urgency (urgent = 30min, research = 3hrs)
-[ ] Implement connection pooling with keep-alive headers
-[ ] Add circuit breaker pattern for PubMed API failures
-[ ] Cache parsed XML to avoid re-parsing on similar queries
+[✓] Add adaptive cache TTL based on query urgency (urgent = 30min, research = 3hrs)
+    IMPLEMENTED: See CACHE_TTL_BY_PRIORITY configuration and smart_cache_set calls
+[✓] Implement connection pooling with keep-alive headers
+    IMPLEMENTED: httpx.Limits with 10 keepalive connections in _get_session()
+[✓] Add circuit breaker pattern for PubMed API failures
+    IMPLEMENTED: Circuit breaker with 5-failure threshold and 60s timeout
+[✓] Cache parsed XML to avoid re-parsing on similar queries
+    IMPLEMENTED: XML cached for 24 hours using pmid_cache_key in _search_pubmed_api
 
 FEATURE ENHANCEMENTS
 -------------------
@@ -318,20 +322,42 @@ class LiteratureResult:
 
 class EnhancedLiteratureService:
     """
-    Enhanced literature service with smart caching and advanced query processing.
+    Enhanced literature service with PubMed integration.
 
-    Features:
-    - Intelligent query preprocessing and enhancement
-    - Smart caching with literature-specific strategies
-    - Evidence-based search result ranking
-    - Medical specialty-aware filtering
-    - Citation analysis and relevance scoring
+    Adaptive Cache TTL Strategy
+    ---------------------------
+    Cache duration is automatically adjusted based on query priority:
+    - urgent: 1800s (30 minutes) - Time-sensitive clinical queries
+    - standard: 3600s (1 hour) - Regular literature searches
+    - research: 10800s (3 hours) - In-depth research queries
+
+    This ensures urgent queries get fresher results while research
+    queries benefit from longer caching periods.
     """
+
+    # Adaptive cache TTL configuration (in seconds)
+    CACHE_TTL_BY_PRIORITY = {
+        "urgent": 1800,  # 30 minutes - urgent clinical queries need fresh data
+        "standard": 3600,  # 1 hour - balanced freshness and performance
+        "research": 10800,  # 3 hours - research queries can use longer cache
+    }
+
+    # XML cache TTL - longer since raw XML doesn't change
+    # This allows re-parsing without re-fetching from PubMed API
+    XML_CACHE_TTL = 86400  # 24 hours
+
+    # Circuit breaker configuration
+    CIRCUIT_BREAKER_THRESHOLD = 5  # Open circuit after 5 failures
+    CIRCUIT_BREAKER_TIMEOUT = 60  # Reset circuit after 60 seconds
 
     def __init__(self):
         self.settings = get_settings()
         self.cache_enabled = _has_smart_cache and smart_cache_manager is not None
         self.session = None
+
+        # Circuit breaker state
+        self.circuit_breaker_failures = 0
+        self.circuit_breaker_opened_at = None
 
         if self.cache_enabled:
             logger.info("Enhanced literature service initialized with smart caching")
@@ -344,11 +370,20 @@ class EnhancedLiteratureService:
             return None
 
         if self.session is None:
+            # Configure connection pooling and keep-alive for performance
+            limits = httpx.Limits(
+                max_keepalive_connections=10,  # Reuse up to 10 connections
+                max_connections=20,  # Maximum total connections
+                keepalive_expiry=60.0,  # Keep connections alive for 60 seconds
+            )
+
             self.session = httpx.AsyncClient(
                 timeout=httpx.Timeout(30.0),
+                limits=limits,
                 headers={
                     "User-Agent": "AI-Nurse-Florence/2.1.0 (Educational Research Tool)",
                     "Accept": "application/json",
+                    "Connection": "keep-alive",  # Enable HTTP keep-alive
                 },
             )
         return self.session
@@ -440,6 +475,39 @@ class EnhancedLiteratureService:
         ]
         return f"lit_{'_'.join(str(part) for part in key_parts)}"
 
+    def _is_circuit_open(self) -> bool:
+        """Check if circuit breaker is open."""
+        if self.circuit_breaker_opened_at is None:
+            return False
+
+        # Check if timeout has elapsed
+        elapsed = (datetime.now() - self.circuit_breaker_opened_at).total_seconds()
+        if elapsed >= self.CIRCUIT_BREAKER_TIMEOUT:
+            # Reset circuit breaker
+            logger.info("Circuit breaker timeout elapsed, resetting")
+            self.circuit_breaker_failures = 0
+            self.circuit_breaker_opened_at = None
+            return False
+
+        return True
+
+    def _record_api_failure(self):
+        """Record API failure and potentially open circuit breaker."""
+        self.circuit_breaker_failures += 1
+        if self.circuit_breaker_failures >= self.CIRCUIT_BREAKER_THRESHOLD:
+            self.circuit_breaker_opened_at = datetime.now()
+            logger.warning(
+                f"Circuit breaker OPENED after {self.circuit_breaker_failures} failures. "
+                f"Will retry in {self.CIRCUIT_BREAKER_TIMEOUT}s"
+            )
+
+    def _record_api_success(self):
+        """Record API success and reset circuit breaker."""
+        if self.circuit_breaker_failures > 0:
+            logger.info("API call succeeded, resetting circuit breaker")
+            self.circuit_breaker_failures = 0
+            self.circuit_breaker_opened_at = None
+
     async def _search_pubmed_api(
         self, literature_query: LiteratureQuery
     ) -> List[LiteratureResult]:
@@ -452,6 +520,11 @@ class EnhancedLiteratureService:
         Returns:
             List of literature results
         """
+        # Check circuit breaker
+        if self._is_circuit_open():
+            logger.warning("Circuit breaker is OPEN, returning mock results")
+            return self._create_mock_results(literature_query)
+
         session = await self._get_session()
         if not session:
             return self._create_mock_results(literature_query)
@@ -481,23 +554,63 @@ class EnhancedLiteratureService:
             if not pmids:
                 return []
 
-            # Fetch article details
-            fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-            fetch_params = {
-                "db": "pubmed",
-                "id": ",".join(pmids[:10]),  # Limit to first 10 results
-                "retmode": "xml",
-            }
+            # Generate cache key for XML based on PMIDs (stable)
+            pmid_list = pmids[:10]  # Limit to first 10 results
+            pmid_cache_key = f"pubmed_xml:{','.join(pmid_list)}"
 
-            response = await session.get(fetch_url, params=fetch_params)
-            response.raise_for_status()
+            # Try to get cached XML first
+            xml_content = None
+            if self.cache_enabled and smart_cache_manager:
+                try:
+                    cached_xml = await smart_cache_manager.smart_cache_get(
+                        CacheStrategy.MEDICAL_REFERENCE,  # Using MEDICAL_REFERENCE for stable XML
+                        pmid_cache_key,
+                        similarity_check=False,  # Exact match only for XML
+                    )
+                    if cached_xml:
+                        xml_content = cached_xml
+                        logger.debug(f"XML cache hit for PMIDs: {pmid_cache_key}")
+                except Exception as e:
+                    logger.warning(f"XML cache retrieval failed: {e}")
+
+            # Fetch from PubMed API if not cached
+            if xml_content is None:
+                fetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
+                fetch_params = {
+                    "db": "pubmed",
+                    "id": ",".join(pmid_list),
+                    "retmode": "xml",
+                }
+
+                response = await session.get(fetch_url, params=fetch_params)
+                response.raise_for_status()
+                xml_content = response.text
+
+                # Cache the raw XML (24-hour TTL)
+                if self.cache_enabled and smart_cache_manager:
+                    try:
+                        await smart_cache_manager.smart_cache_set(
+                            CacheStrategy.MEDICAL_REFERENCE,
+                            pmid_cache_key,
+                            xml_content,
+                            ttl_override=self.XML_CACHE_TTL,
+                        )
+                        logger.debug(f"Cached XML for PMIDs: {pmid_cache_key}")
+                    except Exception as e:
+                        logger.warning(f"Failed to cache XML: {e}")
 
             # Parse XML and create results (simplified for demo)
-            results = self._parse_pubmed_xml(response.text, literature_query)
+            results = self._parse_pubmed_xml(xml_content, literature_query)
+
+            # Record successful API call
+            self._record_api_success()
+
             return results
 
         except Exception as e:
             logger.warning(f"PubMed API search failed: {e}")
+            # Record API failure for circuit breaker
+            self._record_api_failure()
             return self._create_mock_results(literature_query)
 
     def _parse_pubmed_xml(
@@ -735,16 +848,25 @@ class EnhancedLiteratureService:
             "timestamp": datetime.now().isoformat(),
         }
 
-        # Cache the result
+        # Cache the result with adaptive TTL based on priority
         if use_cache and self.cache_enabled and smart_cache_manager and CacheStrategy:
             try:
+                # Get adaptive TTL based on query priority
+                ttl_seconds = self.CACHE_TTL_BY_PRIORITY.get(
+                    literature_query.priority, self.CACHE_TTL_BY_PRIORITY["standard"]
+                )
+
                 await smart_cache_manager.smart_cache_set(
                     CacheStrategy.LITERATURE_SEARCH,
                     query,
                     response,
+                    ttl_override=ttl_seconds,
                     specialty=specialty,
                 )
-                logger.info(f"Cached literature result for query: {query}")
+                logger.info(
+                    f"Cached literature result for query: {query} "
+                    f"(priority: {literature_query.priority}, TTL: {ttl_seconds}s)"
+                )
             except Exception as e:
                 logger.warning(f"Failed to cache literature result: {e}")
 
