@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import { useDocumentLanguage } from '../hooks/useDocumentLanguage';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
-import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
+import DiagnosisSelector from '../components/DiagnosisSelector';
 
 interface WizardData {
   [key: string]: string | number;
@@ -27,15 +27,15 @@ interface WizardField {
 }
 
 interface DiagnosisOption {
-  disease_id: number;
-  disease_name: string;
-  category: string;
+  id: string;
+  label: string;
+  value: string;
+  icd10_code: string;
 }
 
 export default function PatientEducation() {
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<WizardData>({});
-  const [diagnosisQuery, setDiagnosisQuery] = useState('');
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisOption | null>(null);
 
   // Care setting integration
@@ -67,30 +67,44 @@ export default function PatientEducation() {
   const steps: WizardStep[] = [
     {
       title: 'Select Diagnosis',
-      description: 'Choose the primary diagnosis for patient education',
+      description: 'Choose the primary diagnosis from the content library for patient education',
       render: (data) => (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Search for Diagnosis <span className="text-red-500">*</span>
           </label>
-          <DiseaseAutocomplete
-            value={diagnosisQuery}
-            onChange={(value) => {
-              setDiagnosisQuery(value);
-              setData({ ...data, diagnosis_name: value });
+          <DiagnosisSelector
+            value={selectedDiagnosis?.label || ''}
+            onChange={(diagnosis) => {
+              setSelectedDiagnosis(diagnosis);
+              if (diagnosis) {
+                setData({
+                  ...data,
+                  diagnosis_id: diagnosis.id,
+                  diagnosis_name: diagnosis.label,
+                  icd10_code: diagnosis.icd10_code,
+                });
+              } else {
+                setData({ ...data, diagnosis_id: '', diagnosis_name: '', icd10_code: '' });
+              }
             }}
-            onSelect={(disease) => {
-              setDiagnosisQuery(disease);
-              setSelectedDiagnosis({ disease_id: 0, disease_name: disease, category: '' });
-              setData({ ...data, diagnosis_name: disease });
-            }}
-            placeholder="Type the disease name (e.g., diabetes, hypertension, asthma)..."
-            enableVoice={true}
+            placeholder="Type to search for diagnosis (e.g., diabetes, hypertension, pneumonia)..."
           />
           <p className="text-sm text-gray-500 mt-2">
             <i className="fas fa-info-circle mr-1"></i>
-            Start typing the disease name (minimum 2 characters). Autocomplete suggestions appear instantly.
+            Start typing the diagnosis name (minimum 2 characters). Only diagnoses from the content library with verified medical information will appear.
           </p>
+          {selectedDiagnosis && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <i className="fas fa-check-circle mr-2"></i>
+                <strong>Selected:</strong> {selectedDiagnosis.label}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                ICD-10: {selectedDiagnosis.icd10_code}
+              </p>
+            </div>
+          )}
         </div>
       ),
     },
@@ -164,8 +178,8 @@ export default function PatientEducation() {
 
     // Special validation for diagnosis step
     if (currentStep === 0) {
-      if (!data.diagnosis_name || data.diagnosis_name.toString().trim() === '') {
-        alert('Please select or enter a diagnosis');
+      if (!data.diagnosis_id || !selectedDiagnosis) {
+        alert('Please select a diagnosis from the content library');
         return false;
       }
       return true;
