@@ -113,15 +113,35 @@ export default function PatientEducation() {
       description: 'Provide basic patient demographics',
       fields: [
         {
+          id: 'patient_name',
+          type: 'text',
+          label: 'Patient Name',
+          placeholder: 'Enter patient name',
+          required: true,
+          help: 'Patient name for document personalization (not stored)',
+        },
+        {
+          id: 'preferred_language',
+          type: 'select',
+          label: 'Preferred Language',
+          required: true,
+          help: 'Language for the patient education document',
+          options: [
+            { value: 'en', label: 'English' },
+            { value: 'es', label: 'Spanish (Español)' },
+            { value: 'zh', label: 'Chinese (中文)' },
+          ],
+        },
+        {
           id: 'reading_level',
           type: 'select',
           label: 'Reading Level',
           required: true,
           help: 'Choose the appropriate reading level for the patient',
           options: [
-            { value: 'elementary', label: 'Elementary (Grades 3-5)' },
-            { value: 'middle', label: 'Middle School (Grades 6-8) - Recommended' },
-            { value: 'high', label: 'High School (Grades 9-12)' },
+            { value: 'basic', label: 'Basic (Grades 3-5)' },
+            { value: 'intermediate', label: 'Intermediate (Grades 6-8) - Recommended' },
+            { value: 'advanced', label: 'Advanced (Grades 9-12)' },
           ],
         },
       ],
