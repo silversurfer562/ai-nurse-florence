@@ -24,10 +24,10 @@ RUN pip install --upgrade pip && \
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash florence
 
-# Copy application files (bust cache: 2025-10-04-23:27-fix-deploy)
+# Copy application files (bust cache: 2025-10-06-00:52-medication-card-fix)
 COPY . /app
 
-# Build frontend on Railway
+# Build frontend on Railway - force fresh build for MedicationCard component
 WORKDIR /app/frontend
 RUN npm ci && npm run build
 
