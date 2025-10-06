@@ -235,18 +235,30 @@ export default function PatientEducation() {
   };
 
   const handleComplete = async () => {
+    console.log('=== handleComplete called ===');
+    console.log('Current data:', data);
+    console.log('Selected diagnosis:', selectedDiagnosis);
+    console.log('Care setting:', careSetting);
+
     try {
       const format = data.format || 'pdf';
+
+      const requestPayload = {
+        ...data,
+        format,
+        care_setting: careSetting || 'med-surg'
+      };
+
+      console.log('About to send POST request with payload:', requestPayload);
 
       const response = await fetch('/api/v1/documents/patient-education', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...data,
-          format,
-          care_setting: careSetting || 'med-surg'
-        }),
+        body: JSON.stringify(requestPayload),
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
 
       if (response.ok) {
         const result = await response.json();
