@@ -2,6 +2,120 @@
 
 This document outlines the UI/UX design standards and best practices for the AI Nurse Florence frontend application.
 
+## Color Palette
+
+### Brand Colors
+
+**Primary (Blue)**
+- Main: `#2563eb` / `primary-600`
+- Use for: Primary CTAs, links, active states, main navigation
+- Tailwind: `bg-primary-600`, `text-primary-600`, `border-primary-600`
+
+**Secondary (Maroon)**
+- Main: `#991b1b` / `secondary-500`
+- Classic: `#800020` / `secondary-600` (hover states)
+- Use for: Secondary CTAs, section headers, card accents, hover states, interactive elements
+- Tailwind: `bg-secondary-500`, `text-secondary-600`, `border-secondary-500`
+
+**Accent (Gold)**
+- Classic: `#d4af37` / `accent-500`
+- Light: `#fbbf24` / `accent-400`
+- Use for: Badges, "Featured" labels, achievement indicators, small highlights
+- **Use sparingly** - accent color only, not for large areas
+- Tailwind: `bg-accent-500`, `text-accent-600`, `border-accent-400`
+
+### Status/Medical Colors
+
+**Emergency/Error (Red)**
+- Color: `#dc2626` / `medical-emergency`
+- **RESERVED FOR**: Error messages, critical alerts, warning icons/text ONLY
+- Do NOT use for: Buttons, backgrounds, decorative elements
+- Tailwind: `text-medical-emergency`, `border-medical-emergency`
+
+**Urgent (Orange)**
+- Color: `#f59e0b` / `medical-urgent`
+- Use for: Urgent notifications, time-sensitive alerts
+- Tailwind: `bg-medical-urgent`, `text-medical-urgent`
+
+**Routine/Success (Green)**
+- Color: `#10b981` / `medical-routine`
+- Use for: Success messages, completed states, routine status
+- Tailwind: `bg-medical-routine`, `text-medical-routine`
+
+**Info (Cyan)**
+- Color: `#3b82f6` / `medical-info`
+- Use for: Informational messages, tooltips
+- Tailwind: `bg-medical-info`, `text-medical-info`
+
+### Color Usage Guidelines
+
+**Visual Hierarchy:**
+1. **Primary CTA**: Blue (`primary-600`)
+2. **Secondary CTA**: Maroon (`secondary-500`)
+3. **Accent/Badge**: Gold (`accent-500`) - small touches only
+4. **Emergency**: Red (`medical-emergency`) - warnings/errors only
+5. **Success**: Green (`medical-routine`)
+
+**DO:**
+- ✅ Use maroon for most interactive elements (links, buttons, hover states)
+- ✅ Use gold sparingly for special designations (badges, "Verified", achievements)
+- ✅ Reserve red exclusively for errors, warnings, and critical alerts
+- ✅ Use blue for primary navigation and main CTAs
+- ✅ Combine blue + maroon for gradients in headers/hero sections
+
+**DON'T:**
+- ❌ Use red for decorative purposes or non-critical elements
+- ❌ Use gold for large backgrounds (overwhelming)
+- ❌ Mix emergency red with maroon in same component (visual confusion)
+- ❌ Use gold for primary or secondary CTAs
+
+**Example Combinations:**
+```tsx
+// Primary button (blue)
+<button className="bg-primary-600 hover:bg-primary-700 text-white">
+  Submit Assessment
+</button>
+
+// Secondary button (maroon)
+<button className="bg-secondary-500 hover:bg-secondary-600 text-white">
+  View Details
+</button>
+
+// Badge with gold accent
+<span className="bg-accent-50 text-accent-700 border border-accent-400">
+  ⭐ Featured
+</span>
+
+// Error message (red - reserved use)
+<div className="border-l-4 border-medical-emergency bg-red-50 text-red-800">
+  ⚠️ Critical: Patient allergy detected
+</div>
+
+// Maroon section header
+<h2 className="text-secondary-600 border-b-2 border-secondary-500">
+  Patient Summary
+</h2>
+```
+
+### CSS Variables (for non-Tailwind usage)
+
+```css
+/* Brand */
+--primary-color: #2563eb;           /* Blue */
+--secondary-color: #991b1b;         /* Maroon */
+--secondary-dark: #800020;          /* Dark maroon */
+--accent-color: #d4af37;            /* Gold */
+--accent-light: #fbbf24;            /* Light gold */
+
+/* Status */
+--error-color: #dc2626;             /* Red - warnings only */
+--success-color: #16a34a;           /* Green */
+--warning-color: #ca8a04;           /* Orange */
+--info-color: #0891b2;              /* Cyan */
+```
+
+---
+
 ## Layout Standards
 
 ### Responsive Grid Layouts for Dense Content
