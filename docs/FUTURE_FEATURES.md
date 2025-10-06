@@ -214,6 +214,7 @@
   - Effort: 8-12 hours
   - Reference: [src/routers/wizards/sbar_wizard.py](../src/routers/wizards/sbar_wizard.py)
   - Pattern: Multi-step guided documentation with AI enhancement
+  - **Target: Mid-week or later**
 
 - 🟡 **Admission Assessment Wizard** - Structured patient admission workflow
   - Effort: 12-16 hours
@@ -223,9 +224,10 @@
   - Effort: 10-14 hours
   - Sections: Hospital course, discharge diagnosis, medications, follow-up
 
-- 🟡 **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation
+- 🔴 **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation
   - Effort: 6-10 hours
   - Similar to SBAR but tailored for shift changes
+  - **Priority: Higher interest, target mid-week or later**
 
 - 🟢 **Incident Report Wizard** - Structured safety event documentation
   - Effort: 8-12 hours
