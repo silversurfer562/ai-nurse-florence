@@ -130,10 +130,23 @@ export default function MedicationCard({
         </div>
 
         {/* Route of Administration */}
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="flex items-center gap-2 text-sm text-gray-700 mb-3">
           <i className="fas fa-arrow-right text-gray-500" aria-hidden="true"></i>
           <span className="font-medium">{route}</span>
         </div>
+
+        {/* "What is this medication for?" - Always visible */}
+        {whatIsThisFor && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r">
+            <div className="flex items-start gap-2 mb-2">
+              <i className="fas fa-question-circle text-blue-600 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+              <h3 className="font-semibold text-blue-900 text-sm">
+                What is this medication for?
+              </h3>
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed">{whatIsThisFor}</p>
+          </div>
+        )}
       </div>
 
       {/* Expanded Content */}
@@ -142,19 +155,6 @@ export default function MedicationCard({
           id={`medication-${name.replace(/\s+/g, '-').toLowerCase()}`}
           className="px-4 py-4 bg-white border-t border-blue-200 space-y-4"
         >
-          {/* "What is this medication for?" Section */}
-          {whatIsThisFor && (
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r">
-              <div className="flex items-start gap-2 mb-2">
-                <i className="fas fa-question-circle text-blue-600 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
-                <h3 className="font-semibold text-blue-900 text-sm">
-                  What is this medication for?
-                </h3>
-              </div>
-              <p className="text-sm text-gray-700 leading-relaxed">{whatIsThisFor}</p>
-            </div>
-          )}
-
           {/* Primary Use Section */}
           {primaryUse && (
             <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded-r">

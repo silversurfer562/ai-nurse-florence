@@ -141,7 +141,7 @@ export default function DrugInteractionDemo() {
                 whatIsThisFor={drug.indication}
                 fdaEnhanced={true}
                 manufacturer="Sample Manufacturer"
-                defaultExpanded={index === 0}
+                defaultExpanded={true}
               >
                 {/* Drug Class */}
                 <div className="p-3 bg-blue-50 rounded-lg mb-4">

@@ -202,7 +202,7 @@ export default function PublicDrugInteractions() {
                       }
                       fdaEnhanced={drug.fda_data_available}
                       manufacturer={drug.manufacturer}
-                      defaultExpanded={index === 0}
+                      defaultExpanded={true}
                       className="h-full"
                     >
                       {/* Drug Class Info */}
