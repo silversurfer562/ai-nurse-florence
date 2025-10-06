@@ -151,7 +151,8 @@
       },
       "searchButton": "Search Trials",
       "statusHint": "Filter trials by their current recruitment status",
-      "maxResultsLabel": "Maximum Results"
+      "maxResultsLabel": "Maximum Results",
+      "hint": "Start typing the disease name - results refine as you type. Use arrow keys to navigate, Enter to select."
     },
     "results": {
       "title": "Search Results",
