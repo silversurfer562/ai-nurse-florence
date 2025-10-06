@@ -209,7 +209,17 @@
 
 ## Clinical Wizards (Inspired by SBAR Success)
 
-### Additional Clinical Documentation Wizards
+### Completed Wizards
+- ✅ **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation **COMPLETED 2025-10-06**
+  - Commit: `bd89864`
+  - 5-step workflow: Patient ID, Current Condition, Treatments, Plan, Safety
+  - API endpoints: start, step, enhance, report
+  - Structured JSON + formatted narrative output
+  - Supports Joint Commission patient safety goals
+  - File: [src/routers/wizards/shift_handoff_wizard.py](../src/routers/wizards/shift_handoff_wizard.py)
+  - **Next: Frontend React component needed**
+
+### Planned Wizards
 - 🟡 **SOAP Note Wizard** - Subjective, Objective, Assessment, Plan
   - Effort: 8-12 hours
   - Reference: [src/routers/wizards/sbar_wizard.py](../src/routers/wizards/sbar_wizard.py)
@@ -223,11 +233,6 @@
 - 🟡 **Discharge Summary Wizard** - Guided discharge documentation
   - Effort: 10-14 hours
   - Sections: Hospital course, discharge diagnosis, medications, follow-up
-
-- 🔴 **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation
-  - Effort: 6-10 hours
-  - Similar to SBAR but tailored for shift changes
-  - **Priority: Higher interest, target mid-week or later**
 
 - 🟢 **Incident Report Wizard** - Structured safety event documentation
   - Effort: 8-12 hours
@@ -288,6 +293,19 @@
 - ✅ **Cache parsed XML to avoid re-parsing** - Enhanced Literature Service
   - Commit: `4829c30`
   - Implementation: 24-hour XML cache with PMID-based keys
+
+- ✅ **Risk Assessment Service** - Evidence-based clinical risk scoring
+  - Commit: `3d95def`
+  - Morse Falls Scale (falls risk, 0-125 points)
+  - Braden Scale (pressure ulcer risk, 6-23 points)
+  - MEWS (clinical deterioration, 0-14 points)
+  - Evidence-based interventions for each risk level
+
+- ✅ **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation
+  - Commit: `bd89864`
+  - 5-step workflow with AI enhancement
+  - API endpoints for session management
+  - Structured + narrative report generation
 
 ---
 
