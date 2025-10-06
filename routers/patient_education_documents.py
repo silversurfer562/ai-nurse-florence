@@ -359,16 +359,34 @@ def _generate_pdf(content: dict, patient_name: str, language: str) -> Path:
 
     # Create output directory if it doesn't exist
     # Use /app/data for persistence on Railway, or local data/ directory for development
+    import logging
     import os
 
-    if os.path.exists("/app/data"):
+    logger = logging.getLogger(__name__)
+
+    # Detect Railway environment by checking for RAILWAY_ENVIRONMENT variable
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") is not None
+        or os.getenv("RAILWAY_SERVICE_ID") is not None
+    )
+
+    if is_railway:
         # Railway environment with persistent volume
         output_dir = Path("/app/data/generated_documents")
+        logger.info(
+            f"Railway environment detected, using persistent volume: {output_dir}"
+        )
     else:
         # Local development environment
         output_dir = Path("data/generated_documents")
+        logger.info(f"Local environment detected, using local directory: {output_dir}")
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Output directory ready: {output_dir}")
+    except Exception as e:
+        logger.error(f"Failed to create output directory {output_dir}: {e}")
+        raise
 
     # Generate unique filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -734,8 +752,13 @@ async def download_document(filename: str):
 
     import os
 
-    # Use same path logic as _generate_pdf
-    if os.path.exists("/app/data"):
+    # Use same environment detection as _generate_pdf
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") is not None
+        or os.getenv("RAILWAY_SERVICE_ID") is not None
+    )
+
+    if is_railway:
         base_dir = Path("/app/data/generated_documents")
     else:
         base_dir = Path("data/generated_documents")
