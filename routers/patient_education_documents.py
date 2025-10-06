@@ -49,9 +49,14 @@ class PatientEducationRequest(BaseModel):
         description="Care setting: icu, med-surg, emergency, outpatient, home-health, skilled-nursing",
     )
 
-    # Diagnosis
-    diagnosis_id: str = Field(..., description="Diagnosis ID from content library")
-    icd10_code: str = Field(..., description="ICD-10 code")
+    # Diagnosis - either use ID from content library OR provide name for ad-hoc generation
+    diagnosis_id: Optional[str] = Field(
+        None, description="Diagnosis ID from content library"
+    )
+    diagnosis_name: Optional[str] = Field(
+        None, description="Diagnosis name (if not using diagnosis_id)"
+    )
+    icd10_code: Optional[str] = Field(None, description="ICD-10 code")
     snomed_code: Optional[str] = Field(
         None, description="SNOMED CT code (if available)"
     )
@@ -114,25 +119,48 @@ async def generate_patient_education_document(
 
     try:
         logger.info(
-            f"Starting patient education document generation for diagnosis_id: {request.diagnosis_id}"
+            f"Starting patient education document generation for diagnosis_id: {request.diagnosis_id}, diagnosis_name: {request.diagnosis_name}"
         )
 
-        # Get diagnosis from database
-        diagnosis = (
-            db.query(DiagnosisContentMap).filter_by(id=request.diagnosis_id).first()
-        )
+        # Get diagnosis from database OR create ad-hoc diagnosis object
+        diagnosis = None
+        if request.diagnosis_id:
+            diagnosis = (
+                db.query(DiagnosisContentMap).filter_by(id=request.diagnosis_id).first()
+            )
+            if not diagnosis:
+                logger.error(f"Diagnosis not found: {request.diagnosis_id}")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Diagnosis '{request.diagnosis_id}' not found",
+                )
+            logger.info(f"Found diagnosis from library: {diagnosis.diagnosis_display}")
+        elif request.diagnosis_name:
+            # Create ad-hoc diagnosis object for user-provided disease name
+            logger.info(f"Creating ad-hoc diagnosis for: {request.diagnosis_name}")
 
-        if not diagnosis:
-            logger.error(f"Diagnosis not found: {request.diagnosis_id}")
+            # Create a simple object with required attributes
+            class AdHocDiagnosis:
+                def __init__(self, name):
+                    self.diagnosis_display = name
+                    self.patient_friendly_description = None
+                    self.standard_warning_signs = None
+                    self.standard_medications = None
+                    self.standard_diet_instructions = None
+                    self.standard_follow_up_instructions = None
+
+            diagnosis = AdHocDiagnosis(request.diagnosis_name)
+        else:
             raise HTTPException(
-                status_code=404, detail=f"Diagnosis '{request.diagnosis_id}' not found"
+                status_code=400,
+                detail="Either diagnosis_id or diagnosis_name must be provided",
             )
 
-        logger.info(f"Found diagnosis: {diagnosis.diagnosis_display}")
+        logger.info(f"Using diagnosis: {diagnosis.diagnosis_display}")
 
-        # Get MedlinePlus content if requested
+        # Get MedlinePlus content if requested (only if ICD-10 code provided)
         medlineplus_content = None
-        if request.include_medlineplus:
+        if request.include_medlineplus and request.icd10_code:
             try:
                 medlineplus_client = MedlinePlusClient()
                 medlineplus_content = medlineplus_client.fetch_content(
