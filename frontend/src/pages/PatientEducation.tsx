@@ -286,10 +286,12 @@ export default function PatientEducation() {
       case 'text':
         return (
           <div className="mb-4" key={field.id}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
               {field.label} {field.required && <span className="text-red-500">*</span>}
             </label>
             <input
+              id={field.id}
+              name={field.id}
               type="text"
               value={data[field.id] || ''}
               onChange={(e) => updateData(field.id, e.target.value)}
@@ -303,10 +305,12 @@ export default function PatientEducation() {
       case 'select':
         return (
           <div className="mb-4" key={field.id}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
               {field.label} {field.required && <span className="text-red-500">*</span>}
             </label>
             <select
+              id={field.id}
+              name={field.id}
               value={data[field.id] || ''}
               onChange={(e) => updateData(field.id, e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -325,10 +329,12 @@ export default function PatientEducation() {
       case 'textarea':
         return (
           <div className="mb-4" key={field.id}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-2">
               {field.label} {field.required && <span className="text-red-500">*</span>}
             </label>
             <textarea
+              id={field.id}
+              name={field.id}
               value={data[field.id] || ''}
               onChange={(e) => updateData(field.id, e.target.value)}
               placeholder={field.placeholder}
