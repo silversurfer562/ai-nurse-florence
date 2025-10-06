@@ -207,6 +207,43 @@
 
 ---
 
+## Clinical Wizards (Inspired by SBAR Success)
+
+### Additional Clinical Documentation Wizards
+- 🟡 **SOAP Note Wizard** - Subjective, Objective, Assessment, Plan
+  - Effort: 8-12 hours
+  - Reference: [src/routers/wizards/sbar_wizard.py](../src/routers/wizards/sbar_wizard.py)
+  - Pattern: Multi-step guided documentation with AI enhancement
+
+- 🟡 **Admission Assessment Wizard** - Structured patient admission workflow
+  - Effort: 12-16 hours
+  - Sections: Chief complaint, HPI, PMH, medications, allergies, systems review
+
+- 🟡 **Discharge Summary Wizard** - Guided discharge documentation
+  - Effort: 10-14 hours
+  - Sections: Hospital course, discharge diagnosis, medications, follow-up
+
+- 🟡 **Shift Handoff Wizard** - Nurse-to-nurse handoff documentation
+  - Effort: 6-10 hours
+  - Similar to SBAR but tailored for shift changes
+
+- 🟢 **Incident Report Wizard** - Structured safety event documentation
+  - Effort: 8-12 hours
+  - Compliance: HIPAA-compliant, objective language
+
+**Design Pattern (from SBAR):**
+- Multi-step progression with step indicator
+- AI enhancement per section
+- Auto-save to browser storage
+- Interactive tour (Joyride)
+- Priority/urgency detection
+- Professional language transformation
+- Final compiled report with print/export
+
+**Status**: Deferred until current priorities complete
+
+---
+
 ## Deferred Features (Low Priority / Future Versions)
 
 ### ChatGPT Store Integration (18 TODOs - Deferred)
