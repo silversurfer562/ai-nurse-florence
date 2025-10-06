@@ -358,8 +358,9 @@ def _generate_pdf(content: dict, patient_name: str, language: str) -> Path:
     """Generate PDF from document content"""
 
     # Create output directory if it doesn't exist
-    output_dir = Path("generated_documents")
-    output_dir.mkdir(exist_ok=True)
+    # Use /app/data for persistence (Railway volume mount point)
+    output_dir = Path("/app/data/generated_documents")
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate unique filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -723,7 +724,7 @@ def _translate(text: str, language: str) -> str:
 async def download_document(filename: str):
     """Download generated document"""
 
-    filepath = Path("generated_documents") / filename
+    filepath = Path("/app/data/generated_documents") / filename
 
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="Document not found")

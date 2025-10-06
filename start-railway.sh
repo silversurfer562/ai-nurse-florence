@@ -10,6 +10,10 @@ echo "PORT: ${PORT}"
 echo "Binding to: 0.0.0.0:${PORT}"
 echo "========================================="
 
+# Create necessary data directories
+mkdir -p /app/data/generated_documents
+echo "Created /app/data/generated_documents for PDF storage"
+
 # Check if drug database exists, build if missing
 DB_PATH="/app/data/drugs.db"
 if [ ! -f "$DB_PATH" ]; then
