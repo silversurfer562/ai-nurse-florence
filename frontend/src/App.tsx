@@ -19,6 +19,7 @@ import IncidentReport from './pages/IncidentReport'
 import LandingPage from './pages/LandingPage'
 import PublicDrugInteractions from './pages/PublicDrugInteractions'
 import DrugInteractionDemo from './pages/DrugInteractionDemo'
+import MedicationInteractionChecker from './pages/MedicationInteractionChecker'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/drug-checker" element={<PublicDrugInteractions />} />
       <Route path="/demo-interactions" element={<DrugInteractionDemo />} />
+      <Route path="/medication-checker" element={<MedicationInteractionChecker />} />
 
       {/* Authenticated Routes */}
       <Route path="/app" element={<Layout />}>

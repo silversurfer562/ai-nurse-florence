@@ -5,7 +5,7 @@
  * showing all the useful clinical information we provide.
  */
 
-import ExpandableSection from '../components/ExpandableSection';
+import MedicationCard from '../components/MedicationCard';
 import { WarningBox, FDAAttribution } from '../components/FDAWarnings';
 
 export default function DrugInteractionDemo() {
@@ -128,69 +128,66 @@ export default function DrugInteractionDemo() {
             <i className="fas fa-pills text-blue-600 mr-2"></i>
             Medication Information
           </h2>
-          <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
             {sampleData.drug_information.map((drug, index) => (
-              <ExpandableSection
+              <MedicationCard
                 key={index}
-                title={`${drug.name.charAt(0).toUpperCase() + drug.name.slice(1)}${drug.brand_names.length > 0 ? ` (${drug.brand_names.join(', ')})` : ''}`}
-                icon="fa-prescription-bottle"
-                variant="info"
+                name={drug.name}
+                displayName={`${drug.name.charAt(0).toUpperCase() + drug.name.slice(1)}${drug.brand_names.length > 0 ? ` (${drug.brand_names.join(', ')})` : ''}`}
+                prescriptionStatus={drug.name === 'aspirin' ? 'OTC' : 'Prescription Required'}
+                dosageForm="TABLET"
+                route={drug.route}
+                primaryUse={drug.indication}
+                whatIsThisFor={drug.indication}
+                fdaEnhanced={true}
+                manufacturer="Sample Manufacturer"
                 defaultExpanded={index === 0}
               >
-                <div className="space-y-4">
-                  {/* Basic Info */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <div className="text-xs font-semibold text-blue-700 mb-1">Drug Class</div>
-                      <div className="text-sm text-gray-800">{drug.drug_class}</div>
-                    </div>
-
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <div className="text-xs font-semibold text-green-700 mb-1">Primary Use</div>
-                      <div className="text-sm text-gray-800">{drug.indication}</div>
-                    </div>
-                  </div>
-
-                  {/* Nursing Considerations */}
-                  {drug.nursing_considerations && drug.nursing_considerations.length > 0 && (
-                    <WarningBox severity="info" title="Nursing Considerations">
-                      <ul className="list-disc list-inside space-y-1">
-                        {drug.nursing_considerations.map((consideration, idx) => (
-                          <li key={idx} className="text-sm">{consideration}</li>
-                        ))}
-                      </ul>
-                    </WarningBox>
-                  )}
-
-                  {/* Side Effects */}
-                  {drug.common_side_effects && drug.common_side_effects.length > 0 && (
-                    <WarningBox severity="moderate" title="Common Side Effects">
-                      <ul className="grid md:grid-cols-2 gap-2">
-                        {drug.common_side_effects.map((effect, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm">
-                            <i className="fas fa-circle text-yellow-600 text-xs mt-1.5 flex-shrink-0"></i>
-                            <span>{effect}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </WarningBox>
-                  )}
-
-                  {/* Warnings */}
-                  {drug.warnings && drug.warnings.length > 0 && (
-                    <WarningBox severity="major" title="Important Warnings">
-                      <ul className="space-y-2">
-                        {drug.warnings.map((warning, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm">
-                            <i className="fas fa-exclamation-triangle text-orange-600 mt-1 flex-shrink-0"></i>
-                            <span>{warning}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </WarningBox>
-                  )}
+                {/* Drug Class */}
+                <div className="p-3 bg-blue-50 rounded-lg mb-4">
+                  <div className="text-xs font-semibold text-blue-700 mb-1">Drug Class</div>
+                  <div className="text-sm text-gray-800">{drug.drug_class}</div>
                 </div>
-              </ExpandableSection>
+
+                {/* Nursing Considerations */}
+                {drug.nursing_considerations && drug.nursing_considerations.length > 0 && (
+                  <WarningBox severity="info" title="Nursing Considerations">
+                    <ul className="list-disc list-inside space-y-1">
+                      {drug.nursing_considerations.map((consideration, idx) => (
+                        <li key={idx} className="text-sm">{consideration}</li>
+                      ))}
+                    </ul>
+                  </WarningBox>
+                )}
+
+                {/* Side Effects */}
+                {drug.common_side_effects && drug.common_side_effects.length > 0 && (
+                  <WarningBox severity="moderate" title="Common Side Effects">
+                    <ul className="grid md:grid-cols-2 gap-2">
+                      {drug.common_side_effects.map((effect, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <i className="fas fa-circle text-yellow-600 text-xs mt-1.5 flex-shrink-0"></i>
+                          <span>{effect}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </WarningBox>
+                )}
+
+                {/* Warnings */}
+                {drug.warnings && drug.warnings.length > 0 && (
+                  <WarningBox severity="major" title="Important Warnings">
+                    <ul className="space-y-2">
+                      {drug.warnings.map((warning, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <i className="fas fa-exclamation-triangle text-orange-600 mt-1 flex-shrink-0"></i>
+                          <span>{warning}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </WarningBox>
+                )}
+              </MedicationCard>
             ))}
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { drugInteractionService } from '../services/api';
 import DrugAutocomplete from '../components/DrugAutocomplete';
 import ExpandableSection from '../components/ExpandableSection';
+import MedicationCard from '../components/MedicationCard';
 import { WarningBox, FDAAttribution } from '../components/FDAWarnings';
 
 /**
@@ -180,194 +181,133 @@ export default function PublicDrugInteractions() {
                 </h2>
                 <div className="grid lg:grid-cols-2 gap-4 lg:items-start">
                   {data.data.drug_information.map((drug: any, index: number) => (
-                    <ExpandableSection
+                    <MedicationCard
                       key={index}
-                      title={`${capitalizeDrugName(drug.name)}${drug.brand_names && drug.brand_names.length > 0 ? ` (${drug.brand_names.join(', ')})` : ''}`}
-                      icon="fa-prescription-bottle"
-                      variant="info"
+                      name={drug.name}
+                      displayName={`${capitalizeDrugName(drug.name)}${drug.brand_names && drug.brand_names.length > 0 ? ` (${drug.brand_names.join(', ')})` : ''}`}
+                      prescriptionStatus={
+                        drug.product_type?.includes('OTC')
+                          ? 'OTC'
+                          : 'Prescription Required'
+                      }
+                      dosageForm={drug.dosage_form || 'Unknown Form'}
+                      route={drug.route || 'Unknown Route'}
+                      primaryUse={drug.indication}
+                      whatIsThisFor={
+                        drug.indication
+                          ? drug.indication.length > 200
+                            ? drug.indication.substring(0, 200) + '...'
+                            : drug.indication
+                          : undefined
+                      }
+                      fdaEnhanced={drug.fda_data_available}
+                      manufacturer={drug.manufacturer}
                       defaultExpanded={index === 0}
                       className="h-full"
                     >
-                      <div className="space-y-4">
-                        {/* Public-Friendly Badges */}
-                        <div className="flex flex-wrap gap-2 pb-3 border-b border-gray-200">
-                          {/* OTC vs Prescription Badge */}
-                          {drug.product_type && (
-                            <>
-                              {drug.product_type.includes('OTC') ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                                  <i className="fas fa-shopping-cart"></i>
-                                  Over-the-Counter (OTC)
-                                </span>
-                              ) : drug.product_type.includes('PRESCRIPTION') ? (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">
-                                  <i className="fas fa-prescription"></i>
-                                  Prescription Required
-                                </span>
-                              ) : null}
-                            </>
-                          )}
-
-                          {/* Dosage Form Badge */}
-                          {drug.dosage_form && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
-                              <i className="fas fa-pills"></i>
-                              {drug.dosage_form}
-                            </span>
-                          )}
-
-                          {/* Route Badge */}
-                          {drug.route && drug.route !== 'Unknown' && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">
-                              <i className="fas fa-arrow-right"></i>
-                              {drug.route}
-                            </span>
-                          )}
+                      {/* Drug Class Info */}
+                      {drug.drug_class && (
+                        <div className="p-3 bg-blue-50 rounded-lg mb-4">
+                          <div className="text-xs font-semibold text-blue-700 mb-1">Drug Class</div>
+                          <div className="text-sm text-gray-800">{drug.drug_class}</div>
                         </div>
+                      )}
 
-                        {/* What is this for? - Simple explanation */}
-                        {drug.indication && (
-                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-l-4 border-blue-500">
-                            <div className="flex items-start gap-3">
-                              <i className="fas fa-question-circle text-blue-600 text-xl mt-0.5"></i>
-                              <div>
-                                <div className="text-sm font-bold text-blue-900 mb-1">What is this medication for?</div>
-                                <div className="text-sm text-gray-700 leading-relaxed">
-                                  {drug.indication.length > 200
-                                    ? drug.indication.substring(0, 200) + '...'
-                                    : drug.indication}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                      {/* Side Effects */}
+                      {drug.common_side_effects && drug.common_side_effects.length > 0 && (
+                        <WarningBox severity="moderate" title="Common Side Effects">
+                          <ul className="grid md:grid-cols-2 gap-2">
+                            {drug.common_side_effects.map((effect: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                <i className="fas fa-circle text-yellow-600 text-xs mt-1.5 flex-shrink-0"></i>
+                                <span>{effect}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </WarningBox>
+                      )}
 
-                        {/* Basic Info */}
-                        <div className="grid md:grid-cols-2 gap-4">
-                          {drug.drug_class && (
-                            <div className="p-3 bg-blue-50 rounded-lg">
-                              <div className="text-xs font-semibold text-blue-700 mb-1">Drug Class</div>
-                              <div className="text-sm text-gray-800">{drug.drug_class}</div>
-                            </div>
-                          )}
+                      {/* Warnings */}
+                      {drug.warnings && drug.warnings.length > 0 && (
+                        <WarningBox severity="major" title="Important Warnings">
+                          <ul className="space-y-2">
+                            {drug.warnings.map((warning: string, idx: number) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                <i className="fas fa-exclamation-triangle text-orange-600 mt-1 flex-shrink-0"></i>
+                                <span>{warning}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </WarningBox>
+                      )}
 
-                          {drug.indication && (
-                            <div className="p-3 bg-green-50 rounded-lg">
-                              <div className="text-xs font-semibold text-green-700 mb-1">Primary Use</div>
-                              <div className="text-sm text-gray-800">{drug.indication}</div>
-                            </div>
-                          )}
-                        </div>
+                      {/* FDA Black Box Warning (MOST CRITICAL) */}
+                      {drug.boxed_warning && (
+                        <WarningBox severity="critical" title="⚠️ FDA BLACK BOX WARNING">
+                          <div className="text-sm whitespace-pre-wrap">{drug.boxed_warning}</div>
+                        </WarningBox>
+                      )}
 
-                        {/* Side Effects */}
-                        {drug.common_side_effects && drug.common_side_effects.length > 0 && (
-                          <WarningBox severity="moderate" title="Common Side Effects">
-                            <ul className="grid md:grid-cols-2 gap-2">
-                              {drug.common_side_effects.map((effect: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                  <i className="fas fa-circle text-yellow-600 text-xs mt-1.5 flex-shrink-0"></i>
-                                  <span>{effect}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </WarningBox>
-                        )}
+                      {/* FDA Contraindications */}
+                      {drug.contraindications_fda && (
+                        <ExpandableSection
+                          title="FDA Contraindications"
+                          icon="fa-ban"
+                          variant="critical"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.contraindications_fda}</div>
+                        </ExpandableSection>
+                      )}
 
-                        {/* Warnings */}
-                        {drug.warnings && drug.warnings.length > 0 && (
-                          <WarningBox severity="major" title="Important Warnings">
-                            <ul className="space-y-2">
-                              {drug.warnings.map((warning: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                  <i className="fas fa-exclamation-triangle text-orange-600 mt-1 flex-shrink-0"></i>
-                                  <span>{warning}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </WarningBox>
-                        )}
+                      {/* FDA Warnings and Cautions */}
+                      {drug.warnings_fda && (
+                        <ExpandableSection
+                          title="FDA Warnings and Cautions"
+                          icon="fa-exclamation-triangle"
+                          variant="warning"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.warnings_fda}</div>
+                        </ExpandableSection>
+                      )}
 
-                        {/* FDA Black Box Warning (MOST CRITICAL) */}
-                        {drug.boxed_warning && (
-                          <WarningBox severity="critical" title="⚠️ FDA BLACK BOX WARNING">
-                            <div className="text-sm whitespace-pre-wrap">{drug.boxed_warning}</div>
-                          </WarningBox>
-                        )}
+                      {/* FDA Adverse Reactions */}
+                      {drug.adverse_reactions_fda && (
+                        <ExpandableSection
+                          title="FDA Adverse Reactions"
+                          icon="fa-heartbeat"
+                          variant="warning"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.adverse_reactions_fda}</div>
+                        </ExpandableSection>
+                      )}
 
-                        {/* FDA Contraindications */}
-                        {drug.contraindications_fda && (
-                          <ExpandableSection
-                            title="FDA Contraindications"
-                            icon="fa-ban"
-                            variant="critical"
-                            defaultExpanded={false}
-                          >
-                            <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.contraindications_fda}</div>
-                          </ExpandableSection>
-                        )}
+                      {/* FDA Drug Interactions */}
+                      {drug.drug_interactions_fda && (
+                        <ExpandableSection
+                          title="FDA Drug Interactions"
+                          icon="fa-flask"
+                          variant="info"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.drug_interactions_fda}</div>
+                        </ExpandableSection>
+                      )}
 
-                        {/* FDA Warnings and Cautions */}
-                        {drug.warnings_fda && (
-                          <ExpandableSection
-                            title="FDA Warnings and Cautions"
-                            icon="fa-exclamation-triangle"
-                            variant="warning"
-                            defaultExpanded={false}
-                          >
-                            <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.warnings_fda}</div>
-                          </ExpandableSection>
-                        )}
-
-                        {/* FDA Adverse Reactions */}
-                        {drug.adverse_reactions_fda && (
-                          <ExpandableSection
-                            title="FDA Adverse Reactions"
-                            icon="fa-heartbeat"
-                            variant="warning"
-                            defaultExpanded={false}
-                          >
-                            <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.adverse_reactions_fda}</div>
-                          </ExpandableSection>
-                        )}
-
-                        {/* FDA Drug Interactions */}
-                        {drug.drug_interactions_fda && (
-                          <ExpandableSection
-                            title="FDA Drug Interactions"
-                            icon="fa-flask"
-                            variant="info"
-                            defaultExpanded={false}
-                          >
-                            <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.drug_interactions_fda}</div>
-                          </ExpandableSection>
-                        )}
-
-                        {/* FDA Special Populations */}
-                        {drug.special_populations && (
-                          <ExpandableSection
-                            title="Use in Special Populations"
-                            icon="fa-users"
-                            variant="info"
-                            defaultExpanded={false}
-                          >
-                            <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.special_populations}</div>
-                          </ExpandableSection>
-                        )}
-
-                        {/* FDA Data Badge */}
-                        {drug.fda_data_available && (
-                          <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-r">
-                            <div className="flex items-center gap-2 text-sm text-blue-900">
-                              <i className="fas fa-shield-alt text-blue-600"></i>
-                              <span className="font-semibold">Enhanced with FDA Data</span>
-                              {drug.manufacturer && (
-                                <span className="text-blue-700">• {drug.manufacturer}</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </ExpandableSection>
+                      {/* FDA Special Populations */}
+                      {drug.special_populations && (
+                        <ExpandableSection
+                          title="Use in Special Populations"
+                          icon="fa-users"
+                          variant="info"
+                          defaultExpanded={false}
+                        >
+                          <div className="text-sm whitespace-pre-wrap text-gray-700">{drug.special_populations}</div>
+                        </ExpandableSection>
+                      )}
+                    </MedicationCard>
                   ))}
                 </div>
               </div>

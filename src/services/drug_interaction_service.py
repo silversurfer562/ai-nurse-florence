@@ -157,6 +157,14 @@ class DrugInteractionService:
                 drug_class="ace_inhibitor",
                 route="oral",
             ),
+            "atorvastatin": Drug(
+                name="atorvastatin",
+                generic_name="atorvastatin",
+                brand_names=["Lipitor"],
+                drug_class="statin",
+                route="oral",
+                indication="Used to lower cholesterol and reduce risk of cardiovascular disease",
+            ),
             # Diabetes medications
             "metformin": Drug(
                 name="metformin",
