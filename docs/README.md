@@ -2,6 +2,8 @@
 
 Welcome to the AI Nurse Florence documentation. This directory contains guides and reference materials for both users and developers.
 
+> **📖 Looking for the big picture?** Start with **[MASTER_DOC.md](../MASTER_DOC.md)** — the central "brain" of the project that provides complete context, navigation, and current project state.
+
 ## User Documentation
 
 - [Nurse User Guide](clinical/nurse_user_guide.md) - A comprehensive guide for healthcare professionals (kept in `docs/clinical/`)
@@ -10,10 +12,18 @@ Welcome to the AI Nurse Florence documentation. This directory contains guides a
 
 ## Developer Documentation
 
-- [Developer Guide](developer_guide.md) - Technical documentation for developers (placeholder created; restore or merge archived content to make canonical)
+- [Developer Guide](developer_guide.md) - Technical documentation for developers
 - [API Reference](technical/api-documentation.md) - Detailed API endpoint documentation (also available live at `/docs`)
 - [Architecture Overview](technical/architecture-overview.md) - System architecture and design
+- [Technical Specification](technical/technical-specification.md) - Requirements, constraints, and detailed specs
 - [Prompt Enhancement](technical/prompt_enhancement.md) - Guide to the prompt enhancement system
+
+## Project History & Decisions
+
+- **[Iterations Log](ITERATIONS.md)** - Chronological development history with lessons learned
+- **[Decisions Log](DECISIONS.md)** - Architecture Decision Records (ADR) with rationale
+- **[Development Roadmap](DEVELOPMENT_ROADMAP.md)** - Phase-by-phase development plan
+- **[Sprint Plan](SPRINT_PLAN.md)** - Current sprint goals and tasks
 
 ## Deployment and Operations
 

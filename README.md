@@ -24,12 +24,12 @@ AI Nurse Florence is a **production-ready** FastAPI-based healthcare information
 - **Patient Education**: Readability-optimized health information materials via MedlinePlus
 - **Clinical Documentation**: SBAR report generation and summarization tools
 - **Prompt Enhancement**: Intelligent query clarification and improvement with context-aware suggestions
-- **Drug Interaction Checker**: 🤖 **AI-Powered** - Analyzes complex drug interactions using OpenAI. Provides comprehensive drug information, clinical alerts, and severity-based warnings. Database used only for medication name autocomplete.
+- **Drug Interaction Checker**: ✅ **Deterministic & Reliable** - Uses rule-based algorithms with structured drug interaction database for 100% auditable, safety-critical checking. AI assists with database updates only, NOT clinical decisions. Every interaction flag is traceable and documented.
 - **Live Medical Data**: Real-time access to authoritative medical databases and literature
 
 ### 🔑 API Requirements
 
-- **Required**: OpenAI API key (for Drug Interaction Checker and AI-powered features)
+- **Required**: OpenAI API key (for Claude AI patient education and database content management)
 - **Optional**: NCBI API key (for PubMed rate limit increases)
 
 ## 🚀 Quick Start
@@ -189,12 +189,27 @@ CORS_ORIGINS=["http://localhost:3000"]  # Frontend origins
 - **Rate Limits**: Varies by plan and model
 - **Best Practice**: Implement exponential backoff, monitor usage in OpenAI dashboard
 
-## 📚 Documentation
+## 📚 Full Documentation
 
-- [Developer Guide](docs/developer_guide.md)
-- [User Guide](docs/nurse_user_guide.md)
-- [API Reference](docs/api_reference.md)
-- [Deployment Guide](docs/deployment.md)
+**This README is your starting point.** For complete project documentation, architecture details, development history, and contribution guidelines, see the **[MASTER_DOC.md](./MASTER_DOC.md)** — the central "brain" of the project.
+
+### Essential Resources
+
+- **[MASTER_DOC.md](./MASTER_DOC.md)** — Project navigation hub and central knowledge base
+- **[Developer Guide](./docs/developer_guide.md)** — Technical documentation for developers
+- **[Nurse User Guide](./docs/clinical/nurse_user_guide.md)** — Comprehensive guide for healthcare professionals
+- **[Architecture Overview](./docs/technical/architecture-overview.md)** — System design and components
+- **[API Documentation](./docs/technical/api-documentation.md)** — Detailed API reference (also at `/docs`)
+- **[Development Roadmap](./docs/DEVELOPMENT_ROADMAP.md)** — Project phases and future plans
+
+### Quick Links
+
+| Resource | Description |
+|----------|-------------|
+| [MASTER_DOC.md](./MASTER_DOC.md) | Central project brain and knowledge base |
+| [Live API Docs](http://localhost:8000/docs) | Interactive Swagger UI (when running locally) |
+| [Deployment Guide](./docs/technical/deployment-guide.md) | Production deployment instructions |
+| [Contributing Guide](./CONTRIBUTING.md) | How to contribute to this public benefit initiative |
 
 ## 💝 Support This Project
 
