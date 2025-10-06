@@ -1,314 +1,294 @@
 """
-SBAR Report Wizard - AI Nurse Florence
-Following Wizard Pattern Implementation for clinical documentation
-Enhanced with AI assistance for time-saving and quality improvement
+A wizard for generating SBAR (Situation, Background, Assessment, Recommendation) reports.
+
+This multi-step wizard guides users through creating a structured SBAR report,
+which is a standard communication tool in healthcare settings.
 """
 
-from fastapi import APIRouter, HTTPException
+from typing import Dict
+
+from fastapi import APIRouter, status
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, List
-from uuid import uuid4
-from datetime import datetime
-import logging
-import re
 
-from src.utils.config import get_educational_banner
-from src.services.openai_client import OpenAIService
+from services.openai_client import get_client
+from utils.api_responses import create_error_response, create_success_response
+from utils.logging import get_logger
 
-logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/wizards/sbar-report", tags=["wizards"])
+logger = get_logger(__name__)
 
-router = APIRouter(
-    prefix="/wizard/sbar-report",
-    tags=["wizards", "sbar-report"],
-    responses={
-        404: {"description": "SBAR wizard session not found"},
-        422: {"description": "Invalid SBAR data"}
-    }
+# In-memory storage for wizard state. In production, use Redis or a database.
+wizard_sessions: Dict[str, Dict[str, str]] = {}
+
+# --- Pydantic Models for Wizard Steps ---
+
+
+class StartSbarResponse(BaseModel):
+    wizard_id: str
+    message: str
+    next_step: str
+
+
+class SbarStepInput(BaseModel):
+    wizard_id: str = Field(..., description="The unique ID for this wizard session.")
+    text: str = Field(..., description="The text content for the current step.")
+
+
+class SbarStepResponse(BaseModel):
+    wizard_id: str
+    next_step: str
+    message: str
+
+
+class GenerateSbarInput(BaseModel):
+    wizard_id: str = Field(..., description="The unique ID for this wizard session.")
+    recommendation: str = Field(..., description="The 'Recommendation' text.")
+
+
+class GenerateSbarResponse(BaseModel):
+    wizard_id: str
+    sbar_report: str
+
+
+class DirectSbarInput(BaseModel):
+    patient_id: str = Field(..., description="Patient identifier")
+    situation: str = Field(..., description="The 'Situation' text")
+    background: str = Field(..., description="The 'Background' text")
+    assessment: str = Field(..., description="The 'Assessment' text")
+    recommendation: str = Field(..., description="The 'Recommendation' text")
+    care_setting: str = Field(default="med-surg", description="Care setting context")
+
+
+class DirectSbarResponse(BaseModel):
+    sbar_report: str
+    care_setting: str
+
+
+# --- Wizard Endpoints ---
+
+
+@router.post(
+    "/start", response_model=StartSbarResponse, summary="Step 1: Start the SBAR wizard"
 )
+async def start_sbar_wizard():
+    """
+    Initializes a new SBAR report wizard session and returns a unique `wizard_id`.
+    """
+    import uuid
 
-# Session storage following session state pattern
-_sbar_sessions: Dict[str, Dict[str, Any]] = {}
+    wizard_id = str(uuid.uuid4())
+    wizard_sessions[wizard_id] = {}
+    logger.info(f"Started SBAR wizard session: {wizard_id}")
 
-# Initialize AI service
-_ai_service = OpenAIService()
-
-class SBARStep(BaseModel):
-    """SBAR step data following API Design Standards."""
-    situation: Optional[str] = Field(None, description="Current patient situation")
-    background: Optional[str] = Field(None, description="Relevant patient background")
-    assessment: Optional[str] = Field(None, description="Clinical assessment")
-    recommendation: Optional[str] = Field(None, description="Recommendations and requests")
-
-class SBAREnhanceRequest(BaseModel):
-    """Request to enhance SBAR text with AI."""
-    text: str = Field(..., description="Text to enhance")
-    section: str = Field(..., description="SBAR section (situation/background/assessment/recommendation)")
-
-@router.post("/start")
-async def start_sbar_report():
-    """Start SBAR report wizard following Wizard Pattern Implementation."""
-    wizard_id = str(uuid4())
-    
-    _sbar_sessions[wizard_id] = {
-        "created_at": datetime.now().isoformat(),
-        "current_step": 1,
-        "total_steps": 4,
-        "completed": False,
-        "sbar_data": {},
-        "sections": ["Situation", "Background", "Assessment", "Recommendation"]
-    }
-    
-    return {
-        "wizard_id": wizard_id,
-        "current_step": 1,
-        "section": "Situation",
-        "prompt": "Describe the current patient situation and reason for communication",
-        "banner": get_educational_banner()
-    }
-
-@router.post("/{wizard_id}/step")
-async def submit_sbar_step(wizard_id: str, step_data: SBARStep):
-    """Submit SBAR step following clinical documentation standards."""
-    if wizard_id not in _sbar_sessions:
-        raise HTTPException(status_code=404, detail="SBAR session not found")
-    
-    session = _sbar_sessions[wizard_id]
-    current_step = session["current_step"]
-    
-    # Store current step data
-    step_fields = ["situation", "background", "assessment", "recommendation"]
-    field_name = step_fields[current_step - 1]
-    field_value = getattr(step_data, field_name)
-    
-    if field_value:
-        session["sbar_data"][field_name] = field_value
-    
-    # Advance or complete
-    next_step = current_step + 1
-    if next_step > 4:
-        session["completed"] = True
-        return {
+    return create_success_response(
+        {
             "wizard_id": wizard_id,
-            "completed": True,
-            "sbar_report": session["sbar_data"],
-            "banner": get_educational_banner()
+            "message": "SBAR wizard started. Please proceed to add the 'Situation'.",
+            "next_step": "situation",
         }
-    
-    session["current_step"] = next_step
-    prompts = [
-        "Provide relevant patient background and medical history",
-        "Share your clinical assessment and current findings", 
-        "State your recommendations and what you need"
-    ]
-    
-    return {
-        "wizard_id": wizard_id,
-        "current_step": next_step,
-        "section": session["sections"][next_step - 1],
-        "prompt": prompts[next_step - 2],
-        "banner": get_educational_banner()
-    }
+    )
 
-@router.post("/ai/enhance")
-async def enhance_sbar_text(request: SBAREnhanceRequest):
-    """
-    AI-powered text enhancement for SBAR sections.
-    Converts informal notes to professional clinical language.
-    """
-    try:
-        section_guidance = {
-            "situation": "Convert this to clear, concise SBAR Situation statement. Include patient ID, location, and reason for communication.",
-            "background": "Convert this to professional SBAR Background. Include admission date, diagnosis, relevant history, and current medications.",
-            "assessment": "Convert this to structured SBAR Assessment. Include vital signs, physical findings, and current status.",
-            "recommendation": "Convert this to clear SBAR Recommendation. State specific actions needed and priority level."
-        }
 
-        guidance = section_guidance.get(request.section.lower(), "Convert to professional clinical language")
-
-        prompt = f"""{guidance}
-
-Informal notes: {request.text}
-
-Convert to professional clinical language. Keep it concise and focused. Use standard medical terminology."""
-
-        context = "You are a clinical documentation assistant helping nurses write professional SBAR reports. Be concise and use proper medical terminology."
-
-        ai_response = await _ai_service.generate_response(prompt, context)
-
-        return {
-            "original": request.text,
-            "enhanced": ai_response.get("response", request.text),
-            "section": request.section
-        }
-
-    except Exception as e:
-        logger.error(f"SBAR enhancement error: {e}")
-        return {
-            "original": request.text,
-            "enhanced": request.text,
-            "section": request.section,
-            "error": "AI enhancement temporarily unavailable"
-        }
-
-@router.post("/ai/check-completeness")
-async def check_sbar_completeness(sbar_data: Dict[str, Any]):
-    """
-    AI-powered completeness check for SBAR report.
-    Identifies missing critical information.
-    """
-    try:
-        prompt = f"""Review this SBAR report and identify any critical missing information.
-
-Situation: {sbar_data.get('situation', 'Not provided')}
-Background: {sbar_data.get('background', 'Not provided')}
-Assessment: {sbar_data.get('assessment', 'Not provided')}
-Recommendation: {sbar_data.get('recommendation', 'Not provided')}
-
-List specific missing elements in each section. Be concise. Focus on:
-- Situation: Patient ID, location, reason for call
-- Background: Admission date, diagnosis, allergies, medications
-- Assessment: Vital signs, physical findings, mental status
-- Recommendation: Specific actions needed, priority level
-
-Format as bullet points by section."""
-
-        context = "You are a clinical documentation quality checker helping ensure complete SBAR reports."
-
-        ai_response = await _ai_service.generate_response(prompt, context)
-
-        return {
-            "completeness_check": ai_response.get("response", "Unable to assess completeness"),
-            "banner": get_educational_banner()
-        }
-
-    except Exception as e:
-        logger.error(f"SBAR completeness check error: {e}")
-        return {
-            "completeness_check": "Completeness check temporarily unavailable",
-            "error": str(e),
-            "banner": get_educational_banner()
-        }
-
-@router.post("/ai/suggest-priority")
-async def suggest_priority_level(assessment_data: Dict[str, Any]):
-    """
-    AI-powered priority suggestion based on assessment findings.
-    Helps nurses quickly identify urgency level.
-    """
-    try:
-        prompt = f"""Based on this patient assessment, suggest the appropriate priority level for communication.
-
-Vital Signs: {assessment_data.get('vital_signs', 'Not provided')}
-Physical Assessment: {assessment_data.get('physical_assessment', 'Not provided')}
-Mental Status: {assessment_data.get('mental_status', 'Not provided')}
-Clinical Concerns: {assessment_data.get('clinical_concerns', 'Not provided')}
-
-Suggest priority level:
-- STAT (immediate life-threatening)
-- URGENT (requires attention within 1 hour)
-- ROUTINE (can wait for regular rounds)
-
-Provide brief reasoning (1-2 sentences)."""
-
-        context = "You are a clinical triage assistant helping nurses assess communication priority. Be conservative - err on side of higher priority if uncertain."
-
-        ai_response = await _ai_service.generate_response(prompt, context)
-
-        # Extract priority level from response
-        response_text = ai_response.get("response", "")
-        priority = "routine"  # default
-
-        if "STAT" in response_text.upper():
-            priority = "stat"
-        elif "URGENT" in response_text.upper():
-            priority = "urgent"
-
-        return {
-            "suggested_priority": priority,
-            "reasoning": response_text
-        }
-
-    except Exception as e:
-        logger.error(f"Priority suggestion error: {e}")
-        return {
-            "suggested_priority": "routine",
-            "reasoning": "Priority suggestion temporarily unavailable",
-            "error": str(e)
-        }
-
-@router.post("/ai/check-medications")
-async def check_medication_interactions(medication_text: Dict[str, str]):
-    """
-    Check for drug interactions from SBAR Background section.
-    Integrates with drug interaction checker for patient safety.
-    """
-    try:
-        from src.services.drug_interaction_service import DrugInteractionService
-
-        med_text = medication_text.get("medications", "")
-
-        if not med_text or len(med_text.strip()) < 3:
-            return {
-                "has_interactions": False,
-                "message": "No medications provided to check"
-            }
-
-        # Parse medication names from text using AI
-        prompt = f"""Extract medication names from this text. Return ONLY a comma-separated list of medication names, nothing else.
-
-Text: {med_text}
-
-Examples:
-- "metformin 500mg BID, lisinopril 10mg daily" → metformin, lisinopril
-- "Patient on warfarin and aspirin" → warfarin, aspirin
-- "Current meds: Tylenol PRN, Lasix 40mg" → Tylenol, Lasix"""
-
-        context = "You are a medication parser. Extract only drug names, no dosages or frequencies."
-
-        ai_response = await _ai_service.generate_response(prompt, context)
-
-        # Parse medication names
-        med_list_text = ai_response.get("response", "")
-        medications = [med.strip() for med in med_list_text.split(",") if med.strip()]
-
-        if len(medications) < 2:
-            return {
-                "has_interactions": False,
-                "medications_found": medications,
-                "message": "Need at least 2 medications to check interactions"
-            }
-
-        # Check interactions using existing drug interaction service
-        drug_service = DrugInteractionService()
-
-        # Use the drug interaction service
-        interaction_result = await drug_service.check_drug_interactions(
-            drugs=medications,
-            patient_context={"source": "sbar_wizard"}
+def _update_step(wizard_id: str, step_name: str, text: str, next_step_name: str):
+    """Helper function to update a step in the wizard session."""
+    if wizard_id not in wizard_sessions:
+        return create_error_response(
+            "Wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found"
         )
 
-        # Parse interaction results
-        interactions = interaction_result.get("interactions", [])
-        total_interactions = interaction_result.get("total_interactions", 0)
+    wizard_sessions[wizard_id][step_name] = text
+    logger.info(f"Updated SBAR session {wizard_id} with step: {step_name}")
 
-        has_major_interactions = any(
-            inter.get("severity", "").lower() in ["major", "severe", "critical"]
-            for inter in interactions
+    return create_success_response(
+        {
+            "wizard_id": wizard_id,
+            "message": f"'{step_name.capitalize()}' received. Please proceed to add the '{next_step_name.capitalize()}'.",
+            "next_step": next_step_name,
+        }
+    )
+
+
+@router.post(
+    "/situation", response_model=SbarStepResponse, summary="Step 2: Add Situation"
+)
+async def add_situation(step_input: SbarStepInput):
+    """Adds the **Situation** component to the SBAR report."""
+    return _update_step(
+        step_input.wizard_id, "situation", step_input.text, "background"
+    )
+
+
+@router.post(
+    "/background", response_model=SbarStepResponse, summary="Step 3: Add Background"
+)
+async def add_background(step_input: SbarStepInput):
+    """Adds the **Background** component to the SBAR report."""
+    return _update_step(
+        step_input.wizard_id, "background", step_input.text, "assessment"
+    )
+
+
+@router.post(
+    "/assessment", response_model=SbarStepResponse, summary="Step 4: Add Assessment"
+)
+async def add_assessment(step_input: SbarStepInput):
+    """Adds the **Assessment** component to the SBAR report."""
+    return _update_step(
+        step_input.wizard_id, "assessment", step_input.text, "recommendation"
+    )
+
+
+@router.post(
+    "/generate",
+    response_model=DirectSbarResponse,
+    summary="Generate Complete SBAR Report (Direct)",
+)
+async def generate_sbar_report_direct(input_data: DirectSbarInput):
+    """
+    Generate a complete SBAR report directly from all provided components.
+    This is a simplified endpoint that doesn't require wizard session management.
+    """
+    # Validate that all required fields are present
+    if not all(
+        [
+            input_data.situation,
+            input_data.background,
+            input_data.assessment,
+            input_data.recommendation,
+        ]
+    ):
+        return create_error_response(
+            "All SBAR components (situation, background, assessment, recommendation) are required.",
+            status.HTTP_400_BAD_REQUEST,
+            "missing_required_fields",
         )
 
-        return {
-            "has_interactions": total_interactions > 0,
-            "medications_found": medications,
-            "total_interactions": total_interactions,
-            "has_major_interactions": has_major_interactions,
-            "interactions": interactions[:3],  # Return top 3 most important
-            "full_report_available": total_interactions > 3
-        }
+    # Build context-aware prompt based on care setting
+    care_setting_context = {
+        "icu": "critical care setting with focus on hemodynamic stability and ventilator management",
+        "emergency": "emergency department with focus on rapid assessment and triage",
+        "home-health": "home health setting with focus on patient/caregiver education and safety",
+        "med-surg": "medical-surgical unit with focus on routine monitoring and care coordination",
+    }.get(input_data.care_setting, "general clinical setting")
 
+    prompt = f"""
+    Format the following clinical information into a clear, professional SBAR report for a {care_setting_context}.
+
+    Use these exact headings:
+    - SITUATION
+    - BACKGROUND
+    - ASSESSMENT
+    - RECOMMENDATION
+
+    Format the report professionally with proper spacing and organization suitable for clinical handoff.
+    Patient ID: {input_data.patient_id}
+
+    Situation: {input_data.situation}
+
+    Background: {input_data.background}
+
+    Assessment: {input_data.assessment}
+
+    Recommendation: {input_data.recommendation}
+    """
+
+    try:
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"You are an expert nursing assistant specializing in clinical communication in a {care_setting_context}. Format SBAR reports clearly and professionally.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,  # Lower temperature for more consistent formatting
+        )
+        sbar_report = response.choices[0].message.content
+        logger.info(
+            f"Successfully generated SBAR report for patient {input_data.patient_id} in {input_data.care_setting} setting"
+        )
+
+        return create_success_response(
+            {"sbar_report": sbar_report, "care_setting": input_data.care_setting}
+        )
     except Exception as e:
-        logger.error(f"Medication interaction check error: {e}")
-        return {
-            "has_interactions": False,
-            "error": "Medication check temporarily unavailable",
-            "error_detail": str(e)
-        }
+        logger.error(f"SBAR report generation failed: {e}", exc_info=True)
+        return create_error_response(
+            f"Failed to generate SBAR report from AI model: {str(e)}",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "generation_failed",
+        )
+
+
+@router.post(
+    "/generate-wizard",
+    response_model=GenerateSbarResponse,
+    summary="Step 5: Add Recommendation and Generate Report (Wizard)",
+)
+async def generate_sbar_report_wizard(step_input: GenerateSbarInput):
+    """
+    Adds the final **Recommendation** component and generates the complete,
+    formatted SBAR report using an AI model. (Wizard session-based flow)
+    """
+    wizard_id = step_input.wizard_id
+    if wizard_id not in wizard_sessions:
+        return create_error_response(
+            "Wizard session not found.", status.HTTP_404_NOT_FOUND, "wizard_not_found"
+        )
+
+    session_data = wizard_sessions[wizard_id]
+    session_data["recommendation"] = step_input.recommendation
+
+    # Verify all parts are present
+    required_parts = ["situation", "background", "assessment", "recommendation"]
+    if not all(part in session_data for part in required_parts):
+        missing = [part for part in required_parts if part not in session_data]
+        return create_error_response(
+            f"Cannot generate report. Missing parts: {', '.join(missing)}",
+            status.HTTP_400_BAD_REQUEST,
+            "missing_sbar_parts",
+        )
+
+    prompt = f"""
+    Format the following clinical information into a clear and concise SBAR report.
+    Use clear headings for each section (Situation, Background, Assessment, Recommendation).
+    Ensure the language is professional and suitable for a clinical handoff.
+
+    Situation: {session_data['situation']}
+    Background: {session_data['background']}
+    Assessment: {session_data['assessment']}
+    Recommendation: {session_data['recommendation']}
+    """
+
+    try:
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert nursing assistant specializing in clinical communication.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+        sbar_report = response.choices[0].message.content
+        logger.info(f"Successfully generated SBAR report for session {wizard_id}")
+
+        # Clean up the session
+        del wizard_sessions[wizard_id]
+
+        return create_success_response(
+            {"wizard_id": wizard_id, "sbar_report": sbar_report}
+        )
+    except Exception as e:
+        logger.error(
+            f"SBAR report generation failed for session {wizard_id}: {e}", exc_info=True
+        )
+        return create_error_response(
+            "Failed to generate SBAR report from AI model.",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "generation_failed",
+        )
