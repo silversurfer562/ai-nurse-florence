@@ -379,6 +379,28 @@ async def _build_document_content(
             }
         )
 
+    # Add disclaimer if this is an ad-hoc diagnosis (no structured content from library)
+    is_adhoc = (
+        not diagnosis.standard_warning_signs
+        and not diagnosis.standard_medications
+        and not diagnosis.standard_diet_instructions
+    )
+    if is_adhoc:
+        content["sections"].append(
+            {
+                "title": "Important Note",
+                "content": _translate(
+                    "This document was generated using general medical knowledge and AI assistance. "
+                    "For comprehensive, evidence-based information about this condition, please consult "
+                    "your healthcare provider or visit trusted medical resources like MedlinePlus.gov, "
+                    "CDC.gov, or NIH.gov.",
+                    request.preferred_language,
+                ),
+                "icon": "info-circle",
+                "style": "info",
+            }
+        )
+
     return content
 
 
