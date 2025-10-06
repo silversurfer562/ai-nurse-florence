@@ -235,7 +235,13 @@ export default function PatientEducation() {
           window.open(result.pdf_url, '_blank');
         }
       } else {
-        alert('Failed to generate document. Please try again.');
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        console.error('Patient education generation failed:', errorData);
+        console.error('Request data sent:', { ...data, format, care_setting: careSetting || 'med-surg' });
+        const errorMessage = typeof errorData.detail === 'string'
+          ? errorData.detail
+          : JSON.stringify(errorData.detail, null, 2);
+        alert(`Failed to generate document: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error generating document:', error);
