@@ -198,7 +198,7 @@ export default function PatientEducation() {
     // Special validation for diagnosis step
     if (currentStep === 0) {
       if (!data.diagnosis_id || !selectedDiagnosis) {
-        alert('Please select a diagnosis from the content library');
+        alert('Please select a diagnosis from the dropdown list. Start typing to see available options.');
         return false;
       }
       return true;

@@ -167,49 +167,15 @@ def _load_wizard_routers():
 def _load_optional_routers():
     """Load optional service routers following External Service Integration."""
 
-    # Chat/conversation router
-    try:
-        from .conversation import router
+    # NOTE: conversation, users, med_check, and educational routers
+    # are not yet implemented - removed from loader to reduce log noise
+    # TODO: Implement these routers when needed:
+    #   - conversation.py: Chat/conversation history
+    #   - users.py: User management
+    #   - med_check.py: Medication checking
+    #   - educational.py: Educational content management
 
-        _router_registry["conversation"] = router
-        router_status["conversation"] = True
-        logger.info("✅ Conversation router loaded")
-    except (ImportError, AttributeError) as e:
-        logger.warning(f"⚠️ Conversation router unavailable: {e}")
-        router_status["conversation"] = False
-
-    # User management router
-    try:
-        from .users import router
-
-        _router_registry["users"] = router
-        router_status["users"] = True
-        logger.info("✅ Users router loaded")
-    except (ImportError, AttributeError) as e:
-        logger.warning(f"⚠️ Users router unavailable: {e}")
-        router_status["users"] = False
-
-    # Med check router
-    try:
-        from .med_check import router
-
-        _router_registry["med_check"] = router
-        router_status["med_check"] = True
-        logger.info("✅ Med check router loaded")
-    except (ImportError, AttributeError) as e:
-        logger.warning(f"⚠️ Med check router unavailable: {e}")
-        router_status["med_check"] = False
-
-    # Educational router
-    try:
-        from .educational import router
-
-        _router_registry["educational"] = router
-        router_status["educational"] = True
-        logger.info("✅ Educational router loaded")
-    except (ImportError, AttributeError) as e:
-        logger.warning(f"⚠️ Educational router unavailable: {e}")
-        router_status["educational"] = False
+    pass  # No optional routers currently implemented
 
 
 def _load_routers():

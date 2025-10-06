@@ -176,7 +176,7 @@ except Exception as e:
 
 # Admin router - protected routes for admin functions
 try:
-    from routers.admin import admin_router
+    from routers.admin import router as admin_router
 
     api_router.include_router(admin_router)
     logger.info("Admin router registered successfully")
