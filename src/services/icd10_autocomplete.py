@@ -107,5 +107,5 @@ def search_icd10(query: str, limit: int = 10) -> List[Dict[str, str]]:
     return results
 
 
-# Pre-load codes on module import for faster first request
-load_icd10_codes()
+# DON'T pre-load codes - lazy load on first request to avoid startup timeout
+# load_icd10_codes()
