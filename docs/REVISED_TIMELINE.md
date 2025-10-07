@@ -348,6 +348,72 @@ Let's ship it! 🚀
 
 ---
 
+---
+
+## UPDATED: October 7, 2025
+
+### Additional Work Completed This Week
+
+#### High-Priority Feature Implementations ✅ ALL COMPLETED
+**Completed October 7, 2025** (Outside original timeline scope)
+
+1. **Clinical Decision Support Integration** ✅
+   - Integrated Risk Assessment Service with 3 endpoints
+   - Falls risk (Morse Scale), Pressure ulcer (Braden Scale), Deterioration (MEWS)
+   - Evidence-based validated assessment tools
+   - **Time:** 6-8 hours
+   - **Commit:** `0b0d172`
+
+2. **FDA OpenFDA API Integration** ✅
+   - Created FDADrugService for drug information retrieval
+   - Drug labels, interactions, adverse events from FAERS
+   - Comprehensive test suite validates production readiness
+   - **Time:** 4-6 hours
+   - **Commit:** `60a579e`
+
+3. **Rate Limiting** ✅
+   - Verified existing production-ready implementation
+   - Redis-based with memory fallback
+   - Configuration in place
+   - **Time:** 2-3 hours (verification)
+
+4. **Prompt Enhancement Service** ✅
+   - Medical terminology normalization (50+ abbreviations)
+   - Vague query detection and clarification
+   - Context hint extraction
+   - **Time:** 10-15 hours
+   - **Commit:** `aa18097`
+
+5. **Side Effect Categorization** ✅
+   - Intelligent text analysis for serious vs common effects
+   - 40+ serious keywords, 30+ common keywords
+   - Automatic severity parsing
+   - **Time:** 3-4 hours
+   - **Commit:** `c9b7cea`
+
+6. **HTML Preview Feature** ✅
+   - HTML generation utility with professional styling
+   - Multi-language support (en/es/zh)
+   - Preview endpoint for patient documents
+   - **Time:** 3-4 hours
+   - **Commit:** `f369841`
+
+7. **Restrictive Navigation Pattern** ✅
+   - Applied to all 4 wizards (DischargeInstructions, SbarReport, MedicationGuide, IncidentReport)
+   - Forward-only navigation for data integrity
+   - Regulatory compliance focus
+   - **Time:** 8-10 hours
+   - **Commits:** Multiple
+
+**Total Additional Work:** 32-43 hours completed in 1 day
+
+**Model Selector Service Decision:** ⭕ Won't Implement
+- **Rationale:** Model selection is a system admin/operations decision, not code logic
+- **Current Implementation:** Configuration-driven via OPENAI_MODEL in .env (already exists)
+- **Decision Date:** 2025-10-07
+
+---
+
 *AI Nurse Florence - Revised Development Timeline*
-*Updated: 2025-10-01*
-*Next Review: Daily during sprint*
+*Updated: 2025-10-07*
+*Next Review: End of Week 1 (Oct 7)*
