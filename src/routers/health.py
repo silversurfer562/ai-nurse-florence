@@ -269,6 +269,20 @@ async def ai_health_check():
             "timestamp": datetime.now().isoformat(),
             "ai_system": health_status,
         }
+    except ValueError:
+        # No API keys configured - return graceful response without error
+        return {
+            "status": "not_configured",
+            "timestamp": datetime.now().isoformat(),
+            "ai_system": {
+                "primary_provider": None,
+                "fallback_provider": None,
+                "providers_available": {
+                    "openai": False,
+                    "anthropic": False,
+                },
+            },
+        }
     except Exception as e:
         return {
             "status": "error",

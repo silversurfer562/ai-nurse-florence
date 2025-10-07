@@ -391,7 +391,7 @@ export const SbarWizard: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Patient ID / Name <span className="text-red-500">*</span>
+                      Patient ID / Name
                     </label>
                     <input
                       type="text"
@@ -404,7 +404,7 @@ export const SbarWizard: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Location / Room <span className="text-red-500">*</span>
+                      Location / Room
                     </label>
                     <input
                       type="text"
@@ -433,7 +433,7 @@ export const SbarWizard: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Temperature (°F) <span className="text-red-500">*</span>
+                      Temperature (°F)
                     </label>
                     <input
                       type="text"
@@ -446,7 +446,7 @@ export const SbarWizard: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Blood Pressure <span className="text-red-500">*</span>
+                      Blood Pressure
                     </label>
                     <input
                       type="text"
@@ -459,7 +459,7 @@ export const SbarWizard: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Heart Rate (bpm) <span className="text-red-500">*</span>
+                      Heart Rate (bpm)
                     </label>
                     <input
                       type="text"
@@ -472,7 +472,7 @@ export const SbarWizard: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Respiratory Rate <span className="text-red-500">*</span>
+                      Respiratory Rate
                     </label>
                     <input
                       type="text"
@@ -485,7 +485,7 @@ export const SbarWizard: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      O₂ Saturation (%) <span className="text-red-500">*</span>
+                      O₂ Saturation (%)
                     </label>
                     <input
                       type="text"
@@ -640,7 +640,7 @@ export const SbarWizard: React.FC = () => {
           <div className="sbar-navigation flex justify-between items-center">
             <button
               onClick={previousStep}
-              disabled={currentStep === 1 || isLoading}
+              disabled={currentStep === 1}
               className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i className="fas fa-arrow-left mr-2"></i>
