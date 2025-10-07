@@ -221,13 +221,14 @@
   - Files: [src/routers/wizards/shift_handoff_wizard.py](../src/routers/wizards/shift_handoff_wizard.py), [frontend-react/src/widgets/ShiftHandoffWizard/](../frontend-react/src/widgets/ShiftHandoffWizard/)
 
 - ✅ **SOAP Note Wizard** - Subjective, Objective, Assessment, Plan **COMPLETED 2025-10-06**
-  - Commit: `7090b2e`
+  - Backend Commit: `7090b2e`
+  - Frontend Commit: `cadc08e`
   - 4-step workflow: Subjective, Objective, Assessment, Plan
   - Evidence-based clinical progress documentation format
   - AI enhancement for professional language
   - Session management with structured report output
-  - File: [src/routers/wizards/soap_note_wizard.py](../src/routers/wizards/soap_note_wizard.py)
-  - **Next: Frontend React component needed**
+  - React component with enhanced tour (gold accent, auto-launch, ESC hint)
+  - Files: [src/routers/wizards/soap_note_wizard.py](../src/routers/wizards/soap_note_wizard.py), [frontend-react/src/widgets/SoapNoteWizard/](../frontend-react/src/widgets/SoapNoteWizard/)
 
 ### Planned Wizards
 
@@ -243,16 +244,28 @@
   - Effort: 8-12 hours
   - Compliance: HIPAA-compliant, objective language
 
-**Design Pattern (from SBAR):**
+**Standardized Design Pattern:**
+
+See [WIZARD_TOUR_PATTERN.md](./WIZARD_TOUR_PATTERN.md) for complete implementation guide.
+
+Core Features:
 - Multi-step progression with step indicator
 - AI enhancement per section
 - Auto-save to browser storage
-- Interactive tour (Joyride)
-- Priority/urgency detection
+- **Enhanced interactive tour** (gold accent, auto-launch, ESC hint)
+- Priority/urgency detection (where applicable)
 - Professional language transformation
 - Final compiled report with print/export
 
-**Status**: Deferred until current priorities complete
+Tour Pattern (NEW - 2025-10-06):
+- ✅ Auto-launches 2.5s after page load (first visit only)
+- ✅ Gold accent Help button with pulse animation
+- ✅ ESC key hint in first tour step
+- ✅ localStorage tracking prevents repeat tours
+- ✅ Dynamic button text for new vs returning users
+- ✅ Satisfies both new nurses and experienced users
+
+**Status**: Pattern established, ready for new wizards
 
 ---
 
