@@ -456,11 +456,11 @@ async def debug_icd10_status():
     try:
         from src.services import icd10_autocomplete
 
+        # Match the path logic in icd10_autocomplete.py
+        router_dir = os.path.dirname(os.path.abspath(__file__))  # /app/routers
+        app_root = os.path.dirname(router_dir)  # /app
         data_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            "data",
-            "icd10_raw",
-            "icd10cm-codes-2025.txt",
+            app_root, "data", "icd10_raw", "icd10cm-codes-2025.txt"
         )
 
         return JSONResponse(
