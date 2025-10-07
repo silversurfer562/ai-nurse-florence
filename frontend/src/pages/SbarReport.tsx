@@ -34,7 +34,6 @@ export default function SbarReport() {
   // Tour state
   const [runTour, setRunTour] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
-  const [hasSeenTour, setHasSeenTour] = useState(false);
 
   // Care setting integration
   const { careSetting } = useCareSettings();
@@ -82,8 +81,6 @@ export default function SbarReport() {
       }, 2500);
       setShowPulse(true);
       return () => clearTimeout(timer);
-    } else {
-      setHasSeenTour(true);
     }
   }, []);
 
@@ -93,7 +90,6 @@ export default function SbarReport() {
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setRunTour(false);
       localStorage.setItem('sbarTourSeen', 'true');
-      setHasSeenTour(true);
     }
   };
 
@@ -363,7 +359,7 @@ export default function SbarReport() {
               title="Quick tour - Press ESC anytime to exit"
             >
               <i className="fas fa-question-circle mr-2"></i>
-              {!hasSeenTour && showPulse ? 'New? Take Quick Tour!' : 'Help'}
+              Quick Start
             </button>
           </div>
           <p className="text-gray-600">Structured clinical communication for patient handoffs</p>
