@@ -10,7 +10,8 @@ export default function Dashboard() {
       description: t('dashboard.patientEducation.description'),
       action: t('dashboard.patientEducation.action'),
       icon: 'fa-file-medical',
-      color: 'blue',
+      bgColor: 'bg-primary-100',
+      iconColor: 'text-primary-600',
       path: '/app/patient-education',
     },
     {
@@ -18,7 +19,8 @@ export default function Dashboard() {
       description: t('dashboard.drugInteractions.description'),
       action: t('dashboard.drugInteractions.action'),
       icon: 'fa-pills',
-      color: 'red',
+      bgColor: 'bg-secondary-100',
+      iconColor: 'text-secondary-600',
       path: '/app/drug-interactions',
     },
     {
@@ -26,7 +28,8 @@ export default function Dashboard() {
       description: t('clinicalTrials.subtitle'),
       action: t('clinicalTrials.searchSection.searchButton'),
       icon: 'fa-flask',
-      color: 'purple',
+      bgColor: 'bg-accent-100',
+      iconColor: 'text-accent-600',
       path: '/app/clinical-trials',
     },
     {
@@ -34,7 +37,8 @@ export default function Dashboard() {
       description: t('diseaseInfo.subtitle'),
       action: t('diseaseInfo.searchButton'),
       icon: 'fa-stethoscope',
-      color: 'green',
+      bgColor: 'bg-success-100',
+      iconColor: 'text-success-600',
       path: '/app/disease-info',
     },
   ];
@@ -47,10 +51,10 @@ export default function Dashboard() {
           <Link
             key={card.path}
             to={card.path}
-            className={`bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200`}
+            className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
           >
-            <div className={`bg-${card.color}-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-              <i className={`fas ${card.icon} text-${card.color}-600 text-2xl`}></i>
+            <div className={`${card.bgColor} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
+              <i className={`fas ${card.icon} ${card.iconColor} text-2xl`}></i>
             </div>
             <h3 className="text-lg font-bold text-gray-800 mb-2">{card.title}</h3>
             <p className="text-gray-600 text-sm">{card.description}</p>
@@ -84,10 +88,10 @@ export default function Dashboard() {
 
           <Link
             to="/app/discharge-instructions"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-green-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-success-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-sign-out-alt text-green-600 text-xl"></i>
+              <i className="fas fa-sign-out-alt text-success-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">Discharge Instructions</h3>
                 <p className="text-xs text-gray-500">Patient discharge planning and instructions</p>
@@ -97,10 +101,10 @@ export default function Dashboard() {
 
           <Link
             to="/app/medication-guide"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-purple-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-secondary-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-prescription-bottle text-purple-600 text-xl"></i>
+              <i className="fas fa-prescription-bottle text-secondary-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">Medication Guide</h3>
                 <p className="text-xs text-gray-500">Patient medication information sheets</p>
@@ -110,10 +114,10 @@ export default function Dashboard() {
 
           <Link
             to="/app/incident-report"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-red-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-error-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+              <i className="fas fa-exclamation-triangle text-error-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">Incident Report</h3>
                 <p className="text-xs text-gray-500">Safety event documentation</p>
