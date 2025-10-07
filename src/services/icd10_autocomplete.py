@@ -24,11 +24,13 @@ def load_icd10_codes() -> None:
 
     try:
         # Path to ICD-10 data file
+        # __file__ is /app/src/services/icd10_autocomplete.py in production
+        # We need to go to /app/data, not /data
+        service_dir = os.path.dirname(os.path.abspath(__file__))  # /app/src/services
+        src_dir = os.path.dirname(service_dir)  # /app/src
+        app_root = os.path.dirname(src_dir)  # /app
         data_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            "data",
-            "icd10_raw",
-            "icd10cm-codes-2025.txt",
+            app_root, "data", "icd10_raw", "icd10cm-codes-2025.txt"
         )
 
         if not os.path.exists(data_path):
