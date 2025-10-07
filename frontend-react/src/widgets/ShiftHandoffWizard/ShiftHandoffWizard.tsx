@@ -118,7 +118,14 @@ const FIELD_LABELS: Record<string, string> = {
 const TOUR_STEPS: Step[] = [
   {
     target: '.shift-handoff-wizard-container',
-    content: 'Welcome to the Shift Handoff Wizard! Create professional nurse-to-nurse handoff reports following best practices.',
+    content: (
+      <div>
+        <p className="mb-2">Welcome to the Shift Handoff Wizard! Create professional nurse-to-nurse handoff reports following best practices.</p>
+        <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
+          💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
+        </p>
+      </div>
+    ),
     disableBeacon: true,
   },
   {
@@ -152,6 +159,8 @@ export const ShiftHandoffWizard: React.FC = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [finalReport, setFinalReport] = useState<any>(null);
   const [runTour, setRunTour] = useState(false);
+  const [hasSeenTour, setHasSeenTour] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
 
   const currentStepConfig = SHIFT_HANDOFF_STEPS[currentStep - 1];
 
@@ -179,10 +188,39 @@ export const ShiftHandoffWizard: React.FC = () => {
     }
   }, [wizardId]);
 
+  // Auto-launch tour on first visit (after page load)
+  useEffect(() => {
+    // Check if user has seen the tour before
+    const tourSeen = localStorage.getItem('shiftHandoffTourSeen');
+
+    if (!tourSeen) {
+      // Wait for page to fully load, then start tour
+      const timer = setTimeout(() => {
+        setRunTour(true);
+        setShowPulse(false); // Stop pulse when tour starts
+      }, 2500); // 2.5 second delay after page load
+
+      // Show pulse on Help button while waiting
+      setShowPulse(true);
+
+      return () => clearTimeout(timer);
+    } else {
+      setHasSeenTour(true);
+    }
+  }, []);
+
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status } = data;
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
       setRunTour(false);
+      setHasSeenTour(true);
+      // Mark tour as seen in localStorage
+      localStorage.setItem('shiftHandoffTourSeen', 'true');
+      // Keep pulse for 30 seconds after skipping, then stop
+      if (status === STATUS.SKIPPED) {
+        setShowPulse(true);
+        setTimeout(() => setShowPulse(false), 30000);
+      }
     }
   };
 
@@ -348,7 +386,7 @@ export const ShiftHandoffWizard: React.FC = () => {
         callback={handleJoyrideCallback}
         styles={{
           options: {
-            primaryColor: '#2563eb',
+            primaryColor: '#d4af37', // Gold accent color
             zIndex: 10000,
           },
         }}
@@ -359,9 +397,15 @@ export const ShiftHandoffWizard: React.FC = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Shift Handoff Wizard</h1>
-            <button onClick={() => setRunTour(true)} className="btn bg-secondary-500 text-white hover:bg-secondary-600 text-sm">
+            <button
+              onClick={() => setRunTour(true)}
+              className={`btn bg-accent-500 text-white hover:bg-accent-600 text-sm ${
+                showPulse ? 'animate-pulse' : ''
+              }`}
+              title="Quick tour - Press ESC anytime to exit"
+            >
               <i className="fas fa-question-circle mr-2"></i>
-              Help
+              {!hasSeenTour && showPulse ? 'New? Take Quick Tour!' : 'Help'}
             </button>
           </div>
 
