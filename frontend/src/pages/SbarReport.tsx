@@ -67,7 +67,7 @@ export default function SbarReport() {
     },
     {
       target: '.help-button',
-      content: 'Need help anytime? Click this button to restart the tour. Press ESC now to begin!',
+      content: 'Need help anytime? Click this button to restart the tour.',
     },
   ];
 
