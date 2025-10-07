@@ -320,7 +320,7 @@ export default function SbarReport() {
               <i className="fas fa-plus mr-2"></i>Create New SBAR
             </button>
             <a
-              href="/"
+              href="/app"
               className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               <i className="fas fa-home mr-2"></i>Back to Dashboard
