@@ -183,9 +183,9 @@ export default function LandingPage() {
                 Drug interaction checking, dosage calculations, and medication reconciliation tools.
               </p>
               <ul className="text-sm text-gray-600 space-y-2">
-                <li><i className="fas fa-check text-green-500 mr-2"></i>500+ medications</li>
+                <li><i className="fas fa-check text-green-500 mr-2"></i>25,000+ medications</li>
                 <li><i className="fas fa-check text-green-500 mr-2"></i>Real-time checking</li>
-                <li><i className="fas fa-check text-green-500 mr-2"></i>Always free</li>
+                <li><i className="fas fa-check text-green-500 mr-2"></i>Free public service</li>
               </ul>
             </div>
 
@@ -222,12 +222,12 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-6 justify-center mb-8">
               <div className="text-center">
-                <div className="text-3xl font-bold">500+</div>
+                <div className="text-3xl font-bold">25,000+</div>
                 <div className="text-blue-100">Medications</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">100%</div>
-                <div className="text-blue-100">Free</div>
+                <div className="text-blue-100">Public Service</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">0</div>
