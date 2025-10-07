@@ -56,11 +56,11 @@ export default function SbarReport() {
     },
     {
       target: '.wizard-progress',
-      content: 'Track your progress through the four SBAR sections. Click any step to jump directly to it.',
+      content: 'Track your progress through all five steps: Patient Information, then the four SBAR sections. Click any step to jump directly to it.',
     },
     {
       target: '.wizard-content',
-      content: 'Complete each section with relevant patient information. The wizard guides you through Situation, Background, Assessment, and Recommendation.',
+      content: 'Complete each section with relevant information. The wizard guides you through Patient ID, Situation, Background, Assessment, and Recommendation.',
     },
     {
       target: '.wizard-navigation',
