@@ -236,13 +236,19 @@
   - Effort: 12-16 hours
   - Sections: Chief complaint, HPI, PMH, medications, allergies, systems review
 
-- 🟡 **Discharge Summary Wizard** - Guided discharge documentation
-  - Effort: 10-14 hours
-  - Sections: Hospital course, discharge diagnosis, medications, follow-up
-
-- 🟢 **Incident Report Wizard** - Structured safety event documentation
-  - Effort: 8-12 hours
-  - Compliance: HIPAA-compliant, objective language
+- 🟡 **Comprehensive Discharge Summary Wizard** - Provider-focused discharge documentation
+  - Effort: 1-2 weeks (10-14 hours)
+  - Purpose: Provider-to-provider medical record (distinct from patient-facing DischargeInstructions)
+  - **Additional Fields Beyond DischargeInstructions:**
+    - Patient & Admission: patient_name, admission_date, discharge_date, length_of_stay, attending_physician, discharge_disposition
+    - Hospital Course: admission_diagnosis, hospital_course narrative, procedures_performed, complications, consults_obtained, significant_events
+    - Discharge Status: discharge_diagnosis, discharge_condition, discharge_vital_signs, pending_results, discharge_labs, functional_status
+    - Enhanced Medications: medication_changes from admission
+    - Enhanced Follow-up: patient_education_provided, patient_understanding, caregiver_education
+  - **Technical Features:** 5-step wizard, AI narrative enhancement, FHIR compatibility for EHR integration, specialty templates
+  - **Compliance:** Joint Commission discharge summary requirements, CMS discharge planning
+  - **Implementation Notes:** Must use restrictive forward-only navigation, provider authentication/signature
+  - **Reference:** Prototype deleted 2025-01-07, fields documented in FUTURE_ENHANCEMENTS.md
 
 **Standardized Design Pattern:**
 
