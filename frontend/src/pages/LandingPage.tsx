@@ -180,10 +180,10 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Medication Safety</h3>
               <p className="text-gray-600 mb-4">
-                Drug interaction checking, dosage calculations, and medication reconciliation tools.
+                Drug interaction checking powered by FDA and authoritative medical data sources.
               </p>
               <ul className="text-sm text-gray-600 space-y-2">
-                <li><i className="fas fa-check text-green-500 mr-2"></i>25,000+ medications</li>
+                <li><i className="fas fa-check text-green-500 mr-2"></i>25,000+ FDA-sourced medications</li>
                 <li><i className="fas fa-check text-green-500 mr-2"></i>Real-time checking</li>
                 <li><i className="fas fa-check text-green-500 mr-2"></i>Free public service</li>
               </ul>
@@ -218,12 +218,12 @@ export default function LandingPage() {
             <h2 className="text-4xl font-bold mb-4">Free Drug Interaction Checker</h2>
             <p className="text-xl mb-8 text-blue-100">
               When the NIH Drug Interaction API was discontinued, we stepped up.
-              Check medication interactions instantly—no login required.
+              Check medication interactions instantly using FDA and authoritative medical data—no login required.
             </p>
             <div className="flex flex-wrap gap-6 justify-center mb-8">
               <div className="text-center">
                 <div className="text-3xl font-bold">25,000+</div>
-                <div className="text-blue-100">Medications</div>
+                <div className="text-blue-100">FDA Medications</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">100%</div>
@@ -298,18 +298,20 @@ export default function LandingPage() {
             <div className="prose prose-lg max-w-none">
               <p className="text-gray-700 mb-4">
                 When the NIH discontinued its Drug Interaction API, we were building advanced clinical tools for healthcare
-                institutions—comprehensive documentation wizards, research features, and medication safety systems far beyond
-                what the public API offered.
+                institutions—comprehensive documentation wizards, research features, and medication safety systems powered by
+                FDA and authoritative medical data sources, far beyond what the public API offered.
               </p>
               <p className="text-gray-700 mb-4">
                 We weren't ready to launch publicly, but we couldn't stand by while patients and healthcare consumers lost
-                access to drug interaction checking. So we deployed our <strong>more advanced drug checker</strong> as a free
-                public service. No login required. No data stored. Just better drug interaction checking for everyone.
+                access to drug interaction checking. So we deployed our <strong>more advanced drug checker</strong>—built on
+                FDA-sourced medication data and evidence-based interaction databases—as a free public service. No login required.
+                No data stored. Just authoritative drug interaction checking for everyone.
               </p>
               <p className="text-gray-700 mb-4">
-                That free tool is just the beginning. Our platform includes AI-powered clinical documentation, comprehensive
-                research capabilities, and evidence-based decision support—all designed to help nursing professionals deliver
-                exceptional care. The drug checker remains free because we believe critical health information should be
+                That free tool is just the beginning. Our platform integrates data from the FDA, NIH, PubMed, and other trusted
+                medical authorities to provide AI-powered clinical documentation, comprehensive research capabilities, and
+                evidence-based decision support—all designed to help nursing professionals deliver exceptional care. The drug
+                checker remains free because we believe critical health information from authoritative sources should be
                 accessible to all, not just those with institutional access.
               </p>
               <p className="text-gray-700 font-semibold">
