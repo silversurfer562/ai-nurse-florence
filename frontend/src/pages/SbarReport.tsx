@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
+import { tourConfig, getQuickStartButtonProps } from '../utils/tourConfig';
 
 interface WizardData {
   [key: string]: string;
@@ -336,15 +337,8 @@ export default function SbarReport() {
       <Joyride
         steps={tourSteps}
         run={runTour}
-        continuous
-        showSkipButton
         callback={handleTourCallback}
-        styles={{
-          options: {
-            primaryColor: '#d4af37',
-            zIndex: 10000,
-          },
-        }}
+        {...tourConfig}
       />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
@@ -353,12 +347,9 @@ export default function SbarReport() {
             <h1 className="text-4xl font-bold text-gray-800">SBAR Report Wizard</h1>
             <button
               onClick={() => setRunTour(true)}
-              className={`help-button px-3 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-all text-sm ${
-                showPulse ? 'animate-pulse' : ''
-              }`}
-              title="Quick tour - Press ESC anytime to exit"
+              {...getQuickStartButtonProps('SBAR Report', showPulse)}
             >
-              <i className="fas fa-question-circle mr-2"></i>
+              <i className="fas fa-question-circle mr-2" aria-hidden="true"></i>
               Quick Start
             </button>
           </div>

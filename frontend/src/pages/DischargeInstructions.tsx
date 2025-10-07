@@ -3,6 +3,7 @@ import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
+import { tourConfig, getQuickStartButtonProps } from '../utils/tourConfig';
 
 interface Medication {
   name: string;
@@ -582,15 +583,8 @@ export default function DischargeInstructions() {
       <Joyride
         steps={tourSteps}
         run={runTour}
-        continuous
-        showSkipButton
         callback={handleTourCallback}
-        styles={{
-          options: {
-            primaryColor: '#d4af37',
-            zIndex: 10000,
-          },
-        }}
+        {...tourConfig}
       />
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
@@ -599,10 +593,7 @@ export default function DischargeInstructions() {
             <h1 className="text-4xl font-bold text-gray-800">Discharge Instructions Wizard</h1>
             <button
               onClick={() => setRunTour(true)}
-              className={`help-button px-3 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-all text-sm ${
-                showPulse ? 'animate-pulse' : ''
-              }`}
-              title="Quick tour - Press ESC anytime to exit"
+              {...getQuickStartButtonProps('Discharge Instructions', showPulse)}
             >
               <i className="fas fa-question-circle mr-2"></i>
               Quick Start
