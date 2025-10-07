@@ -14,6 +14,9 @@ export default function LandingPage() {
               <span className="text-xl font-bold text-gray-900">AI Nurse Florence</span>
             </div>
             <div className="flex items-center gap-4">
+              <a href="/about" className="text-gray-600 hover:text-primary-600 transition-colors">
+                About
+              </a>
               <a href="/drug-checker" className="text-gray-600 hover:text-primary-600 transition-colors">
                 Drug Checker
               </a>
@@ -198,8 +201,46 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Our Story */}
       <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Our Story
+            </h2>
+            <p className="text-xl text-gray-600">
+              Born from a commitment to public health and accessible healthcare technology
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 md:p-12 border border-blue-100">
+            <div className="prose prose-lg max-w-none">
+              <p className="text-gray-700 mb-4">
+                AI Nurse Florence was created by a team passionate about public health and making healthcare
+                technology accessible to everyone. When the NIH discontinued its Drug Interaction API, we saw
+                an opportunity to serve the healthcare community by filling a critical gap.
+              </p>
+              <p className="text-gray-700 mb-4">
+                What started as a mission to provide a free drug interaction checker has grown into a comprehensive
+                clinical decision support platform. We believe that nurses—the backbone of our healthcare system—deserve
+                tools that help them work more efficiently and deliver better patient care.
+              </p>
+              <p className="text-gray-700 mb-4">
+                Our commitment to public health drives everything we do. That's why our drug interaction checker
+                remains completely free, with no login required. It's why we focus on evidence-based tools that
+                improve patient safety. And it's why we continue to develop features that address real challenges
+                faced by nursing professionals every day.
+              </p>
+              <p className="text-gray-700 font-semibold">
+                We're here to serve the healthcare community, one nurse at a time.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">
             Ready to Transform Your Workflow?
@@ -240,11 +281,11 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-bold mb-4">Mission</h3>
-              <p className="text-gray-400 text-sm">
-                Serving the healthcare community with accessible, evidence-based clinical tools
-                that help nurses work more efficiently and safely.
-              </p>
+              <h3 className="font-bold mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="/about" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="/" className="hover:text-white transition-colors">Home</a></li>
+              </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
