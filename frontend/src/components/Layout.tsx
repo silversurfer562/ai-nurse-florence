@@ -66,17 +66,6 @@ export default function Layout() {
                 <span className="font-medium">Dashboard</span>
               </Link>
 
-              {/* Current Language Indicator - Click to go to Settings */}
-              <Link
-                to="/app/settings"
-                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                title="Change language in Settings"
-                aria-label="Current language - click to change in Settings"
-              >
-                <i className="fas fa-globe"></i>
-                <span className="text-sm font-medium hidden sm:inline">{t('common.currentLanguage')}</span>
-              </Link>
-
               {/* Settings Icon */}
               <Link
                 to="/app/settings"
