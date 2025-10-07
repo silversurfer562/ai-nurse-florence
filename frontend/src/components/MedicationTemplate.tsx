@@ -17,6 +17,7 @@ import {
   SafetyBadge,
   WarningBox
 } from './FDAWarnings';
+import { categorizeSideEffects, parseInteractionSeverity } from '../utils/sideEffectCategorization';
 
 /**
  * FDA Drug Data Shape (from API)
@@ -177,21 +178,23 @@ export default function MedicationTemplate({
         )}
 
         {/* Side Effects - Collapsed */}
-        {fdaData.adverseReactions && fdaData.adverseReactions.length > 0 && (
-          <ExpandableSection
-            title="Possible Side Effects"
-            icon="fa-heartbeat"
-            variant="warning"
-            badge={fdaData.adverseReactions.length}
-            defaultExpanded={false}
-          >
-            {/* TODO: In real implementation, categorize into serious vs common */}
-            <AdverseReactions
-              common={fdaData.adverseReactions.slice(0, 5)}
-              serious={fdaData.adverseReactions.slice(5, 8)}
-            />
-          </ExpandableSection>
-        )}
+        {fdaData.adverseReactions && fdaData.adverseReactions.length > 0 && (() => {
+          const categorized = categorizeSideEffects(fdaData.adverseReactions);
+          return (
+            <ExpandableSection
+              title="Possible Side Effects"
+              icon="fa-heartbeat"
+              variant="warning"
+              badge={fdaData.adverseReactions.length}
+              defaultExpanded={false}
+            >
+              <AdverseReactions
+                common={categorized.common}
+                serious={categorized.serious}
+              />
+            </ExpandableSection>
+          );
+        })()}
 
         {/* Drug Interactions - Collapsed */}
         {interactions.length > 0 && (
@@ -205,7 +208,7 @@ export default function MedicationTemplate({
             <DrugInteractions
               interactions={interactions.map(i => ({
                 description: i,
-                severity: 'moderate' // TODO: Parse severity from text
+                severity: parseInteractionSeverity(i)
               }))}
             />
           </ExpandableSection>
