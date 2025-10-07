@@ -114,6 +114,32 @@ class Settings(BaseSettings):
         description="Preferred AI provider: 'openai' or 'anthropic' (openai=cheaper, anthropic=higher quality)",
     )
 
+    # AI Fallback Configuration - Automatic failover for production reliability
+    AI_FALLBACK_ENABLED: bool = Field(
+        default=True,
+        description="Enable automatic fallback to secondary AI provider on failures",
+    )
+    AI_FALLBACK_PROVIDER: Optional[str] = Field(
+        default=None,
+        description="Fallback AI provider ('openai' or 'anthropic'). If None, auto-selects alternate provider.",
+    )
+    AI_FALLBACK_MODEL: Optional[str] = Field(
+        default=None,
+        description="Model to use for fallback provider. If None, uses provider's default.",
+    )
+    AI_MAX_RETRIES: int = Field(
+        default=3,
+        description="Maximum retry attempts before triggering fallback",
+    )
+    AI_CIRCUIT_BREAKER_THRESHOLD: int = Field(
+        default=5,
+        description="Consecutive failures before opening circuit breaker",
+    )
+    AI_CIRCUIT_BREAKER_TIMEOUT: int = Field(
+        default=300,
+        description="Circuit breaker timeout in seconds (default: 5 minutes)",
+    )
+
     # Redis Configuration following Caching Strategy
     REDIS_URL: Optional[str] = Field(default=None, description="Redis connection URL")
 
@@ -199,6 +225,39 @@ class Settings(BaseSettings):
             raise ValueError(
                 "No AI provider configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY"
             )
+
+    def get_fallback_provider(self) -> Optional[str]:
+        """
+        Get the fallback AI provider. Auto-selects if not explicitly configured.
+        Returns None if fallback is disabled or no alternate provider available.
+        """
+        if not self.AI_FALLBACK_ENABLED:
+            return None
+
+        # If explicitly configured, use that
+        if self.AI_FALLBACK_PROVIDER:
+            if self.AI_FALLBACK_PROVIDER == "openai" and self.has_openai():
+                return "openai"
+            elif self.AI_FALLBACK_PROVIDER == "anthropic" and self.has_anthropic():
+                return "anthropic"
+
+        # Auto-select alternate provider
+        primary = self.get_active_ai_provider()
+        if primary == "anthropic" and self.has_openai():
+            return "openai"
+        elif primary == "openai" and self.has_anthropic():
+            return "anthropic"
+
+        return None
+
+    def get_provider_model(self, provider: str) -> str:
+        """Get the model to use for a specific provider."""
+        if provider == "openai":
+            return self.OPENAI_MODEL
+        elif provider == "anthropic":
+            return self.ANTHROPIC_MODEL
+        else:
+            raise ValueError(f"Unknown provider: {provider}")
 
     def has_redis(self) -> bool:
         """Check if Redis is configured following Caching Strategy."""
