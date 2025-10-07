@@ -437,88 +437,150 @@ async def get_diagnosis_by_id(diagnosis_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/diagnosis/autocomplete")
-async def autocomplete_diagnosis(
-    q: str, limit: int = 10, db: Session = Depends(get_db)
-):
+async def autocomplete_diagnosis(q: str, limit: int = 10):
     """
-    Autocomplete for diagnosis search using comprehensive disease glossary.
+    Autocomplete for diagnosis search.
 
-    Searches 12,000+ diseases with synonyms from the DiseaseReference database.
-    Returns minimal data for autocomplete dropdowns.
+    Returns static list of common diagnoses for autocomplete dropdowns.
+    TODO: Integrate with DiseaseReference database when available in production.
     """
-    try:
-        # Import DiseaseReference model
-        import json
+    # Static list of common diagnoses with synonyms
+    common_diagnoses = [
+        {
+            "id": "dm2",
+            "label": "Type 2 Diabetes Mellitus",
+            "icd10_code": "E11.9",
+            "synonyms": ["diabetes", "dm", "t2dm"],
+        },
+        {
+            "id": "dm1",
+            "label": "Type 1 Diabetes Mellitus",
+            "icd10_code": "E10.9",
+            "synonyms": ["diabetes", "dm", "t1dm"],
+        },
+        {
+            "id": "htn",
+            "label": "Essential Hypertension",
+            "icd10_code": "I10",
+            "synonyms": ["high blood pressure", "hbp"],
+        },
+        {
+            "id": "cad",
+            "label": "Coronary Artery Disease",
+            "icd10_code": "I25.10",
+            "synonyms": ["heart disease", "coronary"],
+        },
+        {
+            "id": "chf",
+            "label": "Congestive Heart Failure",
+            "icd10_code": "I50.9",
+            "synonyms": ["heart failure", "hf"],
+        },
+        {
+            "id": "copd",
+            "label": "Chronic Obstructive Pulmonary Disease",
+            "icd10_code": "J44.9",
+            "synonyms": ["emphysema", "chronic bronchitis"],
+        },
+        {"id": "asthma", "label": "Asthma", "icd10_code": "J45.909", "synonyms": []},
+        {
+            "id": "pneumonia",
+            "label": "Pneumonia",
+            "icd10_code": "J18.9",
+            "synonyms": ["lung infection"],
+        },
+        {
+            "id": "uti",
+            "label": "Urinary Tract Infection",
+            "icd10_code": "N39.0",
+            "synonyms": ["bladder infection"],
+        },
+        {
+            "id": "ckd",
+            "label": "Chronic Kidney Disease",
+            "icd10_code": "N18.9",
+            "synonyms": ["kidney disease", "renal disease"],
+        },
+        {
+            "id": "stroke",
+            "label": "Cerebrovascular Accident",
+            "icd10_code": "I63.9",
+            "synonyms": ["stroke", "cva"],
+        },
+        {
+            "id": "mi",
+            "label": "Myocardial Infarction",
+            "icd10_code": "I21.9",
+            "synonyms": ["heart attack", "mi"],
+        },
+        {
+            "id": "afib",
+            "label": "Atrial Fibrillation",
+            "icd10_code": "I48.91",
+            "synonyms": ["afib", "a-fib"],
+        },
+        {
+            "id": "depression",
+            "label": "Major Depressive Disorder",
+            "icd10_code": "F32.9",
+            "synonyms": ["depression"],
+        },
+        {
+            "id": "anxiety",
+            "label": "Anxiety Disorder",
+            "icd10_code": "F41.9",
+            "synonyms": ["anxiety"],
+        },
+        {
+            "id": "osteoarthritis",
+            "label": "Osteoarthritis",
+            "icd10_code": "M19.90",
+            "synonyms": ["arthritis", "oa"],
+        },
+        {
+            "id": "gerd",
+            "label": "Gastroesophageal Reflux Disease",
+            "icd10_code": "K21.9",
+            "synonyms": ["acid reflux", "heartburn", "gerd"],
+        },
+        {
+            "id": "hypothyroid",
+            "label": "Hypothyroidism",
+            "icd10_code": "E03.9",
+            "synonyms": ["underactive thyroid"],
+        },
+        {
+            "id": "cellulitis",
+            "label": "Cellulitis",
+            "icd10_code": "L03.90",
+            "synonyms": ["skin infection"],
+        },
+        {
+            "id": "sepsis",
+            "label": "Sepsis",
+            "icd10_code": "A41.9",
+            "synonyms": ["blood infection"],
+        },
+    ]
 
-        from src.models.disease_reference import DiseaseReference
+    q_lower = q.lower()
+    filtered = [
+        d
+        for d in common_diagnoses
+        if q_lower in d["label"].lower()
+        or q_lower in d["icd10_code"].lower()
+        or any(q_lower in syn.lower() for syn in d["synonyms"])
+    ]
 
-        # Search disease glossary by name or synonyms
-        search_term = f"%{q.lower()}%"
-        diseases_db = (
-            db.query(DiseaseReference)
-            .filter(
-                (DiseaseReference.disease_name.ilike(search_term))
-                | (DiseaseReference.disease_synonyms.ilike(search_term))
-            )
-            .order_by(DiseaseReference.disease_name)
-            .limit(limit)
-            .all()
-        )
-
-        # Convert to autocomplete format
-        results = []
-        for disease in diseases_db:
-            # Get first ICD-10 code if available
-            icd10_codes = json.loads(disease.icd10_codes) if disease.icd10_codes else []
-            icd10_code = icd10_codes[0] if icd10_codes else "N/A"
-
-            results.append(
-                {
-                    "id": disease.mondo_id,
-                    "label": f"{disease.disease_name} ({icd10_code})",
-                    "value": disease.mondo_id,
-                    "icd10_code": icd10_code,
-                }
-            )
-
-        return results
-
-    except Exception as e:
-        logger.error(f"Diagnosis autocomplete database query failed: {str(e)}")
-        # Fallback to static list of common diagnoses
-        common_diagnoses = [
-            {"id": "dm2", "label": "Type 2 Diabetes Mellitus", "icd10_code": "E11.9"},
-            {"id": "dm1", "label": "Type 1 Diabetes Mellitus", "icd10_code": "E10.9"},
-            {"id": "htn", "label": "Essential Hypertension", "icd10_code": "I10"},
-            {"id": "cad", "label": "Coronary Artery Disease", "icd10_code": "I25.10"},
-            {"id": "chf", "label": "Congestive Heart Failure", "icd10_code": "I50.9"},
-            {
-                "id": "copd",
-                "label": "Chronic Obstructive Pulmonary Disease",
-                "icd10_code": "J44.9",
-            },
-            {"id": "asthma", "label": "Asthma", "icd10_code": "J45.909"},
-            {"id": "pneumonia", "label": "Pneumonia", "icd10_code": "J18.9"},
-            {"id": "uti", "label": "Urinary Tract Infection", "icd10_code": "N39.0"},
-            {"id": "ckd", "label": "Chronic Kidney Disease", "icd10_code": "N18.9"},
-        ]
-
-        q_lower = q.lower()
-        filtered = [
-            d
-            for d in common_diagnoses
-            if q_lower in d["label"].lower() or q_lower in d["icd10_code"].lower()
-        ]
-
-        return [
-            {
-                "id": d["id"],
-                "label": f"{d['label']} ({d['icd10_code']})",
-                "value": d["id"],
-                "icd10_code": d["icd10_code"],
-            }
-            for d in filtered[:limit]
-        ]
+    return [
+        {
+            "id": d["id"],
+            "label": f"{d['label']} ({d['icd10_code']})",
+            "value": d["id"],
+            "icd10_code": d["icd10_code"],
+        }
+        for d in filtered[:limit]
+    ]
 
 
 # ============================================================================
