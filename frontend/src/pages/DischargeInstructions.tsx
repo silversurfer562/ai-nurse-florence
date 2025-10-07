@@ -183,6 +183,18 @@ export default function DischargeInstructions() {
   };
 
   const handleGenerate = async (format: 'pdf' | 'docx' | 'txt' = 'pdf') => {
+    // Validate required fields before generating
+    if (!data.primary_diagnosis.trim()) {
+      alert('Please enter the primary diagnosis before generating the document');
+      setCurrentStep(1); // Jump to diagnosis step
+      return;
+    }
+    if (data.warning_signs.length === 0 || data.emergency_criteria.length === 0) {
+      alert('Please add warning signs and emergency criteria for patient safety');
+      setCurrentStep(5); // Jump to safety step
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const response = await fetch('/api/v1/patient-documents/discharge-instructions', {
