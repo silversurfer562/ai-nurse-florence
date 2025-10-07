@@ -25,7 +25,6 @@ interface WizardData {
 
 export default function IncidentReport() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     incident_date: new Date().toISOString().split('T')[0],
     incident_time: new Date().toTimeString().slice(0, 5),
@@ -57,6 +56,9 @@ export default function IncidentReport() {
       content: (
         <div>
           <p className="mb-2">Welcome to the Incident Report Wizard! Document safety events objectively and thoroughly.</p>
+          <p className="text-sm text-orange-800 bg-orange-50 p-2 rounded mt-2">
+            <strong>⚠️ Important:</strong> This wizard moves forward only. Review each step carefully before clicking Next. Incident reports are legal documents.
+          </p>
           <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
             💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
           </p>
@@ -66,15 +68,15 @@ export default function IncidentReport() {
     },
     {
       target: '.wizard-progress',
-      content: 'Track your progress through all seven steps: When & Where, What Happened, Details, Response, Analysis, Reporter Info, and Review.',
+      content: 'Track your progress through all seven steps. Green = completed, Red/Blue = current, Gray = upcoming. You cannot go back to edit previous steps.',
     },
     {
       target: '.wizard-content',
-      content: 'Complete each section objectively. Focus on facts, not blame. This tool helps create thorough safety documentation.',
+      content: 'Complete each section objectively with facts only. You cannot return to edit previous steps, so review carefully before advancing.',
     },
     {
-      target: '.help-button',
-      content: 'Need help anytime? Click this button to restart the tour.',
+      target: '.wizard-navigation',
+      content: 'Use "Next" to advance and "Start Over" to restart if needed. The wizard will confirm before moving forward.',
     },
   ];
 
@@ -167,17 +169,43 @@ export default function IncidentReport() {
 
   const nextStep = () => {
     if (!validateStep()) return;
+
+    // Show confirmation dialog before advancing (except on first step)
+    if (currentStep > 0 && currentStep < steps.length - 1) {
+      const confirmed = window.confirm(
+        "Please review your entries. You won't be able to go back to edit this step. Continue?"
+      );
+      if (!confirmed) return;
+    }
+
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      const nextStepIndex = currentStep + 1;
-      setCurrentStep(nextStepIndex);
-      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const previousStep = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  const startOver = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to start over? All entered data will be lost."
+    );
+    if (confirmed) {
+      setData({
+        incident_date: new Date().toISOString().split('T')[0],
+        incident_time: new Date().toTimeString().slice(0, 5),
+        location: '',
+        incident_type: '',
+        severity: 'minor',
+        description: '',
+        immediate_action: '',
+        witnesses: [],
+        contributing_factors: [],
+        preventive_measures: [],
+        reporter_name: '',
+        reporter_role: 'Registered Nurse'
+      });
+      setCurrentStep(0);
+    }
   };
 
   const handleGenerate = async () => {
@@ -661,28 +689,23 @@ Generated: ${new Date().toLocaleString()}
           <div className="wizard-progress bg-gray-50 p-6">
             <div className="flex justify-between items-center gap-1 sm:gap-2">
               {steps.map((step, index) => {
-                const isClickable = index <= maxStepReached;
                 const isCompleted = index < currentStep;
                 const isCurrent = index === currentStep;
 
                 return (
                   <div key={index} className="flex flex-col items-center flex-1">
-                    <button
-                      onClick={() => isClickable && setCurrentStep(index)}
-                      disabled={!isClickable}
+                    <div
                       className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
                         isCurrent
                           ? 'bg-error-600 text-white ring-4 ring-error-200'
                           : isCompleted
-                          ? 'bg-success-500 text-white hover:bg-success-600 cursor-pointer'
-                          : isClickable
-                          ? 'bg-gray-300 text-gray-600 hover:bg-gray-400 cursor-pointer'
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                          ? 'bg-success-500 text-white'
+                          : 'bg-gray-200 text-gray-400'
                       }`}
-                      title={isClickable ? `Go to ${step.title}` : `Complete previous steps first`}
+                      title={step.title}
                     >
                       <i className={`fas ${step.icon} text-sm sm:text-base`}></i>
-                    </button>
+                    </div>
                     <span className="text-[10px] sm:text-xs mt-2 font-medium text-gray-600 hidden sm:block">{step.title}</span>
                   </div>
                 );
@@ -697,18 +720,16 @@ Generated: ${new Date().toLocaleString()}
 
           <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex flex-col sm:flex-row gap-3 sm:justify-between">
             <button
-              onClick={previousStep}
-              disabled={currentStep === 0}
-              className={`min-h-[44px] px-6 py-3 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 ${
-                currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              onClick={startOver}
+              className="min-h-[44px] px-6 py-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <i className="fas fa-arrow-left mr-2"></i>Previous
+              <i className="fas fa-redo mr-2"></i>Start Over
             </button>
             <button
               onClick={nextStep}
               disabled={isGenerating}
               className="min-h-[44px] px-6 py-3 bg-error-600 text-white rounded-lg hover:bg-error-700 disabled:opacity-50"
+              title="Advance to next step (you cannot go back to edit this step)"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (
