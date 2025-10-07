@@ -50,7 +50,14 @@ const SBAR_STEPS: Array<{
 const TOUR_STEPS: Step[] = [
   {
     target: '.sbar-wizard-container',
-    content: 'Welcome to the SBAR Wizard! This tool helps you create professional clinical handoff reports with AI assistance.',
+    content: (
+      <div>
+        <p className="mb-2">Welcome to the SBAR Wizard! This tool helps you create professional clinical handoff reports with AI assistance.</p>
+        <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
+          💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
+        </p>
+      </div>
+    ),
     disableBeacon: true,
   },
   {
@@ -99,6 +106,8 @@ export const SbarWizard: React.FC = () => {
 
   const [runTour, setRunTour] = useState(false);
   const [showEnhancementModal, setShowEnhancementModal] = useState(false);
+  const [hasSeenTour, setHasSeenTour] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
 
   // Vital signs state (for Assessment step)
   const [vitalSigns, setVitalSigns] = useState({
@@ -131,10 +140,39 @@ export const SbarWizard: React.FC = () => {
     }
   }, [startWizard]);
 
+  // Auto-launch tour on first visit (after page load)
+  useEffect(() => {
+    // Check if user has seen the tour before
+    const tourSeen = localStorage.getItem('sbarTourSeen');
+
+    if (!tourSeen) {
+      // Wait for page to fully load, then start tour
+      const timer = setTimeout(() => {
+        setRunTour(true);
+        setShowPulse(false); // Stop pulse when tour starts
+      }, 2500); // 2.5 second delay after page load
+
+      // Show pulse on Help button while waiting
+      setShowPulse(true);
+
+      return () => clearTimeout(timer);
+    } else {
+      setHasSeenTour(true);
+    }
+  }, []);
+
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status } = data;
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
       setRunTour(false);
+      setHasSeenTour(true);
+      // Mark tour as seen in localStorage
+      localStorage.setItem('sbarTourSeen', 'true');
+      // Keep pulse for 30 seconds after skipping, then stop
+      if (status === STATUS.SKIPPED) {
+        setShowPulse(true);
+        setTimeout(() => setShowPulse(false), 30000);
+      }
     }
   };
 
@@ -273,7 +311,7 @@ export const SbarWizard: React.FC = () => {
         callback={handleJoyrideCallback}
         styles={{
           options: {
-            primaryColor: '#2563eb',
+            primaryColor: '#d4af37', // Gold accent color
             zIndex: 10000,
           },
         }}
@@ -286,10 +324,13 @@ export const SbarWizard: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900">SBAR Wizard</h1>
             <button
               onClick={() => setRunTour(true)}
-              className="btn btn-secondary text-sm"
+              className={`btn bg-accent-500 text-white hover:bg-accent-600 text-sm ${
+                showPulse ? 'animate-pulse' : ''
+              }`}
+              title="Quick tour - Press ESC anytime to exit"
             >
               <i className="fas fa-question-circle mr-2"></i>
-              Help
+              {!hasSeenTour && showPulse ? 'New? Take Quick Tour!' : 'Help'}
             </button>
           </div>
 
