@@ -25,26 +25,26 @@ export default function Layout() {
   const isOnDashboard = location.pathname === '/app' || location.pathname === '/app/';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-indigo-100">
       {/* Skip Navigation Links */}
       <SkipLink href="#main-content">Skip to main content</SkipLink>
       <SkipLink href="#primary-navigation">Skip to navigation</SkipLink>
 
       {/* Header */}
-      <header role="banner" className="bg-white shadow-lg border-b-4 border-blue-600" aria-label="Main navigation">
+      <header role="banner" className="bg-white shadow-lg border-b-4 border-primary-600" aria-label="Main navigation">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <a
               href="/"
-              className="flex items-center space-x-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg p-2 -m-2"
+              className="flex items-center space-x-4 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-lg p-2 -m-2"
               aria-label={`${t('common.appName')} - Return to home page`}
             >
-              <div className="bg-blue-600 p-3 rounded-xl" aria-hidden="true">
+              <div className="bg-primary-600 p-3 rounded-xl" aria-hidden="true">
                 <i className="fas fa-stethoscope text-white text-2xl"></i>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">{t('common.appName')}</h1>
-                <p className="text-sm text-blue-600 font-medium">{t('common.appTagline')}</p>
+                <p className="text-sm text-primary-600 font-medium">{t('common.appTagline')}</p>
               </div>
             </a>
 
@@ -59,7 +59,7 @@ export default function Layout() {
               {/* Dashboard Button - Always visible */}
               <Link
                 to="/app"
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
                 aria-label="Go to Dashboard"
               >
                 <i className="fas fa-table-columns" aria-hidden="true"></i>
@@ -69,7 +69,7 @@ export default function Layout() {
               {/* Settings Icon */}
               <Link
                 to="/app/settings"
-                className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="flex items-center justify-center w-10 h-10 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
                 aria-label="Open settings"
               >
                 <i className="fas fa-cog text-xl" aria-hidden="true"></i>
@@ -83,7 +83,7 @@ export default function Layout() {
                     helpButton.click();
                   }
                 }}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
                 aria-label={`Open ${t('common.help')} menu`}
               >
                 <i className="fas fa-question-circle" aria-hidden="true"></i>
@@ -129,7 +129,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-600">
           {isOnDashboard && (
             <>
-              <p className="font-semibold text-blue-600 mb-1">{t('common.footer.disclaimer')}</p>
+              <p className="font-semibold text-primary-600 mb-1">{t('common.footer.disclaimer')}</p>
               <p>{t('common.footer.subtext')}</p>
             </>
           )}

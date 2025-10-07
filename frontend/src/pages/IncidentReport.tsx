@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
+import VoiceDictation from '../components/VoiceDictation';
 import { tourConfig, getQuickStartButtonProps } from '../utils/tourConfig';
 
 interface WizardData {
@@ -351,13 +352,19 @@ Generated: ${new Date().toLocaleString()}
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description of Incident <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={data.description}
-                onChange={(e) => updateData('description', e.target.value)}
-                placeholder="Describe exactly what happened, including sequence of events..."
-                rows={5}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.description}
+                  onChange={(e) => updateData('description', e.target.value)}
+                  placeholder="Describe exactly what happened, including sequence of events..."
+                  rows={5}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('description', (data.description || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
           </div>
         );
@@ -369,25 +376,37 @@ Generated: ${new Date().toLocaleString()}
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Injuries/Harm (if any)
               </label>
-              <textarea
-                value={data.injuries || ''}
-                onChange={(e) => updateData('injuries', e.target.value)}
-                placeholder="Describe any injuries, patient status changes, or harm..."
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.injuries || ''}
+                  onChange={(e) => updateData('injuries', e.target.value)}
+                  placeholder="Describe any injuries, patient status changes, or harm..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('injuries', (data.injuries || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Equipment Involved (if any)
               </label>
-              <textarea
-                value={data.equipment_involved || ''}
-                onChange={(e) => updateData('equipment_involved', e.target.value)}
-                placeholder="List any equipment involved, including serial/model numbers..."
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.equipment_involved || ''}
+                  onChange={(e) => updateData('equipment_involved', e.target.value)}
+                  placeholder="List any equipment involved, including serial/model numbers..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('equipment_involved', (data.equipment_involved || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -404,7 +423,7 @@ Generated: ${new Date().toLocaleString()}
                 />
                 <button
                   onClick={() => addArrayItem('witnesses', newItem)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
                 >
                   Add
                 </button>
@@ -433,13 +452,19 @@ Generated: ${new Date().toLocaleString()}
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Immediate Action Taken <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={data.immediate_action}
-                onChange={(e) => updateData('immediate_action', e.target.value)}
-                placeholder="Describe the immediate response and any interventions..."
-                rows={5}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.immediate_action}
+                  onChange={(e) => updateData('immediate_action', e.target.value)}
+                  placeholder="Describe the immediate response and any interventions..."
+                  rows={5}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('immediate_action', (data.immediate_action || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
               <p className="text-sm text-gray-500 mt-2">
                 <i className="fas fa-info-circle mr-1"></i>
                 Include patient assessment, notifications made, and any immediate corrective actions
@@ -585,8 +610,8 @@ Generated: ${new Date().toLocaleString()}
               <h4 className="font-semibold text-gray-900 mb-2">Reported By</h4>
               <p className="text-gray-700">{data.reporter_name} - {data.reporter_role}</p>
             </div>
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-              <p className="text-sm text-blue-900">
+            <div className="bg-primary-50 border-l-4 border-primary-600 p-4 rounded">
+              <p className="text-sm text-primary-900">
                 <i className="fas fa-info-circle mr-2"></i>
                 Click "Generate" to create your incident report
               </p>
@@ -600,7 +625,7 @@ Generated: ${new Date().toLocaleString()}
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
       <Joyride
         steps={tourSteps}
         run={runTour}

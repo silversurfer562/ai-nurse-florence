@@ -65,20 +65,20 @@ export default function CareSettingModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-8 text-white">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-8 text-white">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-3xl font-bold mb-2">
                 {title || 'Welcome to AI Nurse Florence'}
               </h2>
-              <p className="text-blue-100 text-lg">
+              <p className="text-primary-100 text-lg">
                 {subtitle || 'Let\'s personalize your experience based on where you work'}
               </p>
             </div>
             {canDismiss && onClose && (
               <button
                 onClick={handleCancel}
-                className="text-white hover:text-blue-200 transition-colors"
+                className="text-white hover:text-primary-200 transition-colors"
                 aria-label="Close modal"
               >
                 <i className="fas fa-times text-2xl"></i>
@@ -90,11 +90,11 @@ export default function CareSettingModal({
         {/* Content */}
         <div className="p-8">
           {/* Explanation */}
-          <div className="mb-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="mb-8 p-6 bg-primary-50 rounded-xl border border-primary-200">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <i className="fas fa-lightbulb text-blue-600 text-xl"></i>
+                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                  <i className="fas fa-lightbulb text-primary-600 text-xl"></i>
                 </div>
               </div>
               <div>
@@ -105,15 +105,15 @@ export default function CareSettingModal({
                 </p>
                 <ul className="space-y-2 text-sm text-gray-600">
                   <li className="flex items-start gap-2">
-                    <i className="fas fa-check text-blue-600 mt-1"></i>
+                    <i className="fas fa-check text-primary-600 mt-1"></i>
                     <span><strong>Setting-aware templates:</strong> Get documentation prompts relevant to your environment</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <i className="fas fa-check text-blue-600 mt-1"></i>
+                    <i className="fas fa-check text-primary-600 mt-1"></i>
                     <span><strong>Context-specific safety:</strong> Receive safety considerations appropriate for your setting</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <i className="fas fa-check text-blue-600 mt-1"></i>
+                    <i className="fas fa-check text-primary-600 mt-1"></i>
                     <span><strong>Workflow optimization:</strong> Templates adapt to your care setting's pace and complexity</span>
                   </li>
                 </ul>
@@ -153,7 +153,7 @@ export default function CareSettingModal({
               disabled={!selectedSetting}
               className={`px-8 py-3 rounded-lg font-semibold transition-all ${
                 selectedSetting
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+                  ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-md hover:shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >

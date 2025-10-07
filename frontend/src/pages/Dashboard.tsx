@@ -54,7 +54,7 @@ export default function Dashboard() {
             </div>
             <h3 className="text-lg font-bold text-gray-800 mb-2">{card.title}</h3>
             <p className="text-gray-600 text-sm">{card.description}</p>
-            <div className="mt-4 flex items-center text-blue-600 font-medium text-sm">
+            <div className="mt-4 flex items-center text-primary-600 font-medium text-sm">
               <span>{card.action}</span>
               <i className="fas fa-arrow-right ml-2"></i>
             </div>
@@ -65,16 +65,16 @@ export default function Dashboard() {
       {/* Clinical Documentation Section */}
       <div className="mb-8">
         <h2 className="text-xl font-bold text-gray-800 mb-4">
-          <i className="fas fa-clipboard-list text-blue-600 mr-2"></i>
+          <i className="fas fa-clipboard-list text-primary-600 mr-2"></i>
           Clinical Documentation
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/app/sbar-report"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-blue-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-primary-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-comments text-blue-600 text-xl"></i>
+              <i className="fas fa-comments text-primary-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">SBAR Report</h3>
                 <p className="text-xs text-gray-500">Situation-Background-Assessment-Recommendation</p>

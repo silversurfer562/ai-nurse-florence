@@ -3,6 +3,7 @@ import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 import DiseaseAutocomplete from '../components/DiseaseAutocomplete';
+import VoiceDictation from '../components/VoiceDictation';
 import { tourConfig, getQuickStartButtonProps } from '../utils/tourConfig';
 
 interface Medication {
@@ -232,7 +233,7 @@ export default function DischargeInstructions() {
                 value={data.patient_name || ''}
                 onChange={(e) => updateData('patient_name', e.target.value)}
                 placeholder="Patient initials or ID (e.g., J.D., Room 412)"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               <p className="text-sm text-gray-500 mt-1">
                 <i className="fas fa-info-circle mr-1"></i>
@@ -276,7 +277,7 @@ export default function DischargeInstructions() {
               <h4 className="font-semibold text-gray-800">Discharge Medications</h4>
               <button
                 onClick={addMedication}
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                className="px-3 py-1 bg-primary-600 text-white rounded hover:bg-primary-700 text-sm"
               >
                 <i className="fas fa-plus mr-1"></i>Add Medication
               </button>
@@ -356,7 +357,7 @@ export default function DischargeInstructions() {
                     addArrayItem('follow_up_appointments', newItem);
                     setNewItem('');
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
                 >
                   Add
                 </button>
@@ -404,7 +405,7 @@ export default function DischargeInstructions() {
                     addArrayItem('activity_restrictions', newItem);
                     setNewItem('');
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
                 >
                   Add
                 </button>
@@ -427,25 +428,37 @@ export default function DischargeInstructions() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Diet Instructions (Optional)
               </label>
-              <textarea
-                value={data.diet_instructions || ''}
-                onChange={(e) => updateData('diet_instructions', e.target.value)}
-                placeholder="e.g., Low sodium diet, drink plenty of fluids..."
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.diet_instructions || ''}
+                  onChange={(e) => updateData('diet_instructions', e.target.value)}
+                  placeholder="e.g., Low sodium diet, drink plenty of fluids..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('diet_instructions', (data.diet_instructions || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Wound Care (Optional)
               </label>
-              <textarea
-                value={data.wound_care || ''}
-                onChange={(e) => updateData('wound_care', e.target.value)}
-                placeholder="e.g., Keep incision clean and dry, change dressing daily..."
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.wound_care || ''}
+                  onChange={(e) => updateData('wound_care', e.target.value)}
+                  placeholder="e.g., Keep incision clean and dry, change dressing daily..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('wound_care', (data.wound_care || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
           </div>
         );
@@ -564,8 +577,8 @@ export default function DischargeInstructions() {
               <h4 className="font-semibold text-gray-900 mb-2">Emergency Criteria</h4>
               <p className="text-gray-700">{data.emergency_criteria.length} criteria</p>
             </div>
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-              <p className="text-sm text-blue-900">
+            <div className="bg-primary-50 border-l-4 border-primary-600 p-4 rounded">
+              <p className="text-sm text-primary-900">
                 <i className="fas fa-info-circle mr-2"></i>
                 Click "Generate" to create your discharge instructions PDF
               </p>
@@ -579,7 +592,7 @@ export default function DischargeInstructions() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
       <Joyride
         steps={tourSteps}
         run={runTour}
@@ -616,7 +629,7 @@ export default function DischargeInstructions() {
                     onClick={() => setCurrentStep(index)}
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                       index === currentStep
-                        ? 'bg-blue-600 text-white ring-4 ring-blue-200'
+                        ? 'bg-primary-600 text-white ring-4 ring-primary-200'
                         : index < currentStep
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-200 text-gray-600'
@@ -671,7 +684,7 @@ export default function DischargeInstructions() {
                 <button
                   onClick={() => handleGenerate('docx')}
                   disabled={isGenerating}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
                 >
                   <i className="fas fa-file-word mr-2"></i>Export Word
                 </button>
@@ -687,7 +700,7 @@ export default function DischargeInstructions() {
               <button
                 onClick={nextStep}
                 disabled={isGenerating}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 Next<i className="fas fa-arrow-right ml-2"></i>
               </button>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
+import VoiceDictation from '../components/VoiceDictation';
 import { tourConfig, getQuickStartButtonProps } from '../utils/tourConfig';
 
 interface WizardData {
@@ -277,7 +278,7 @@ export default function SbarReport() {
 
   if (generatedReport) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           {/* Header */}
           <div className="text-center mb-8">
@@ -295,7 +296,7 @@ export default function SbarReport() {
               <div className="flex gap-2">
                 <button
                   onClick={copyToClipboard}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   <i className="fas fa-copy mr-2"></i>Copy
                 </button>
@@ -316,7 +317,7 @@ export default function SbarReport() {
           <div className="flex justify-center gap-4">
             <button
               onClick={startNew}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               <i className="fas fa-plus mr-2"></i>Create New SBAR
             </button>
@@ -333,7 +334,7 @@ export default function SbarReport() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
       <Joyride
         steps={tourSteps}
         run={runTour}
@@ -362,9 +363,9 @@ export default function SbarReport() {
         {/* Wizard Container */}
         <div className="wizard-container bg-white rounded-lg shadow-lg overflow-visible">
           {/* Wizard Header */}
-          <div className="wizard-header bg-blue-600 text-white p-6 rounded-t-lg">
+          <div className="wizard-header bg-primary-600 text-white p-6 rounded-t-lg">
             <h2 className="text-2xl font-bold">SBAR Communication Tool</h2>
-            <p className="text-blue-100 mt-2">Complete each section for effective clinical handoff</p>
+            <p className="text-primary-100 mt-2">Complete each section for effective clinical handoff</p>
           </div>
 
           {/* Progress Bar */}
@@ -377,7 +378,7 @@ export default function SbarReport() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-primary-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
               ></div>
             </div>
@@ -388,9 +389,9 @@ export default function SbarReport() {
                     onClick={() => setCurrentStep(index)}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                       index <= currentStep
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-primary-600 text-white hover:bg-primary-700'
                         : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
-                    } ${index === currentStep ? 'ring-2 ring-blue-400 ring-offset-2' : ''}`}
+                    } ${index === currentStep ? 'ring-2 ring-primary-400 ring-offset-2' : ''}`}
                     title={`Go to step ${index + 1}: ${step.title}`}
                   >
                     {index + 1}
@@ -413,13 +414,19 @@ export default function SbarReport() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {steps[currentStep].field.label} <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  value={data[steps[currentStep].field.id] || ''}
-                  onChange={(e) => updateData(steps[currentStep].field.id, e.target.value)}
-                  placeholder={steps[currentStep].field.placeholder}
-                  rows={steps[currentStep].field.rows}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <div>
+                  <textarea
+                    value={data[steps[currentStep].field.id] || ''}
+                    onChange={(e) => updateData(steps[currentStep].field.id, e.target.value)}
+                    placeholder={steps[currentStep].field.placeholder}
+                    rows={steps[currentStep].field.rows}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                  <VoiceDictation
+                    onTranscript={(text) => updateData(steps[currentStep].field.id, (data[steps[currentStep].field.id] || '') + ' ' + text)}
+                    placeholder="Use voice to dictate"
+                  />
+                </div>
                 <p className="text-sm text-gray-500 mt-2">
                   <i className="fas fa-info-circle mr-1"></i>
                   {steps[currentStep].field.help}
@@ -443,7 +450,7 @@ export default function SbarReport() {
             <button
               onClick={nextStep}
               disabled={isGenerating}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (

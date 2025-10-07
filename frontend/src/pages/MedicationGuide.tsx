@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
+import VoiceDictation from '../components/VoiceDictation';
 import { tourConfig, getQuickStartButtonProps } from '../utils/tourConfig';
 
 interface WizardData {
@@ -186,7 +187,7 @@ export default function MedicationGuide() {
                 value={data.medication_name}
                 onChange={(e) => updateData('medication_name', e.target.value)}
                 placeholder="e.g., Metformin, Lisinopril, Atorvastatin"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -250,14 +251,14 @@ export default function MedicationGuide() {
                 />
                 <button
                   onClick={() => addArrayItem('special_instructions', newItem)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
                 >
                   Add
                 </button>
               </div>
               <ul className="space-y-2">
                 {data.special_instructions.map((item, index) => (
-                  <li key={index} className="flex justify-between items-center bg-blue-50 p-2 rounded">
+                  <li key={index} className="flex justify-between items-center bg-primary-50 p-2 rounded">
                     <span>{item}</span>
                     <button
                       onClick={() => removeArrayItem('special_instructions', index)}
@@ -273,13 +274,19 @@ export default function MedicationGuide() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Storage Instructions (Optional)
               </label>
-              <textarea
-                value={data.storage_instructions || ''}
-                onChange={(e) => updateData('storage_instructions', e.target.value)}
-                placeholder="e.g., Store at room temperature, Keep in refrigerator"
-                rows={2}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.storage_instructions || ''}
+                  onChange={(e) => updateData('storage_instructions', e.target.value)}
+                  placeholder="e.g., Store at room temperature, Keep in refrigerator"
+                  rows={2}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('storage_instructions', (data.storage_instructions || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
           </div>
         );
@@ -291,25 +298,37 @@ export default function MedicationGuide() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Purpose (Why you are taking this medication)
               </label>
-              <textarea
-                value={data.purpose || ''}
-                onChange={(e) => updateData('purpose', e.target.value)}
-                placeholder="e.g., To lower your blood sugar, To control high blood pressure"
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.purpose || ''}
+                  onChange={(e) => updateData('purpose', e.target.value)}
+                  placeholder="e.g., To lower your blood sugar, To control high blood pressure"
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('purpose', (data.purpose || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 How It Works (Simple explanation)
               </label>
-              <textarea
-                value={data.how_it_works || ''}
-                onChange={(e) => updateData('how_it_works', e.target.value)}
-                placeholder="e.g., Helps your body use insulin better, Relaxes blood vessels"
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg"
-              />
+              <div>
+                <textarea
+                  value={data.how_it_works || ''}
+                  onChange={(e) => updateData('how_it_works', e.target.value)}
+                  placeholder="e.g., Helps your body use insulin better, Relaxes blood vessels"
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg"
+                />
+                <VoiceDictation
+                  onTranscript={(text) => updateData('how_it_works', (data.how_it_works || '') + ' ' + text)}
+                  placeholder="Use voice to dictate"
+                />
+              </div>
             </div>
           </div>
         );
@@ -425,8 +444,8 @@ export default function MedicationGuide() {
                 ))}
               </ul>
             </div>
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-              <p className="text-sm text-blue-900">
+            <div className="bg-primary-50 border-l-4 border-primary-600 p-4 rounded">
+              <p className="text-sm text-primary-900">
                 <i className="fas fa-info-circle mr-2"></i>
                 Always tell your doctor about all medications you are taking, including over-the-counter drugs and supplements
               </p>
@@ -449,8 +468,8 @@ export default function MedicationGuide() {
               <h4 className="font-semibold text-gray-900 mb-2">Instructions</h4>
               <p className="text-gray-700">{data.special_instructions.length} instruction(s)</p>
             </div>
-            <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-              <p className="text-sm text-blue-900">
+            <div className="bg-primary-50 border-l-4 border-primary-600 p-4 rounded">
+              <p className="text-sm text-primary-900">
                 <i className="fas fa-info-circle mr-2"></i>
                 Click "Generate" to create your medication guide PDF
               </p>
@@ -464,7 +483,7 @@ export default function MedicationGuide() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
       <Joyride
         steps={tourSteps}
         run={runTour}
@@ -489,9 +508,9 @@ export default function MedicationGuide() {
         {careSetting && <CareSettingContextBanner className="mb-6" />}
 
         <div className="wizard-container bg-white rounded-lg shadow-lg">
-          <div className="wizard-header bg-blue-600 text-white p-6 rounded-t-lg">
+          <div className="wizard-header bg-primary-600 text-white p-6 rounded-t-lg">
             <h2 className="text-2xl font-bold">Medication Guide</h2>
-            <p className="text-blue-100 mt-2">Patient-friendly medication information</p>
+            <p className="text-primary-100 mt-2">Patient-friendly medication information</p>
           </div>
 
           <div className="wizard-progress bg-gray-50 p-4">
@@ -501,7 +520,7 @@ export default function MedicationGuide() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-primary-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
               ></div>
             </div>
@@ -526,7 +545,7 @@ export default function MedicationGuide() {
             <button
               onClick={nextStep}
               disabled={isGenerating}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (

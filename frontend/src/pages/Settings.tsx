@@ -45,7 +45,7 @@ export default function Settings() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          <i className="fas fa-cog mr-3 text-blue-600"></i>
+          <i className="fas fa-cog mr-3 text-primary-600"></i>
           Settings
         </h1>
         <p className="text-gray-600">
@@ -63,7 +63,7 @@ export default function Settings() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
+                    ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
                 role="tab"
@@ -107,7 +107,7 @@ export default function Settings() {
                 {/* Data Privacy */}
                 <div className="card">
                   <h3 className="font-semibold text-gray-800 mb-3">
-                    <i className="fas fa-shield-halved mr-2 text-blue-600"></i>
+                    <i className="fas fa-shield-halved mr-2 text-primary-600"></i>
                     Data Privacy & Security
                   </h3>
                   <div className="space-y-2 text-sm text-gray-600">
@@ -166,15 +166,15 @@ export default function Settings() {
 
               {/* Current Setting Display */}
               {careSetting && (
-                <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg">
+                <div className="mb-6 p-4 bg-primary-50 border-l-4 border-primary-600 rounded-r-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-blue-800 font-medium mb-1">Current Care Setting</p>
-                      <p className="text-lg font-bold text-blue-900">{careSetting.replace('-', ' ').toUpperCase()}</p>
+                      <p className="text-sm text-primary-800 font-medium mb-1">Current Care Setting</p>
+                      <p className="text-lg font-bold text-primary-900">{careSetting.replace('-', ' ').toUpperCase()}</p>
                     </div>
                     <button
                       onClick={handleClearCareSetting}
-                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      className="text-sm text-primary-600 hover:text-primary-800 underline"
                     >
                       Clear Setting
                     </button>
@@ -193,7 +193,7 @@ export default function Settings() {
               {/* Information Box */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h3 className="font-semibold text-gray-800 mb-2">
-                  <i className="fas fa-info-circle mr-2 text-blue-600"></i>
+                  <i className="fas fa-info-circle mr-2 text-primary-600"></i>
                   How Care Settings Work
                 </h3>
                 <ul className="space-y-2 text-sm text-gray-600">
@@ -229,7 +229,7 @@ export default function Settings() {
               {/* UI Language Section */}
               <div className="card mb-6">
                 <h3 className="font-semibold text-gray-800 mb-4">
-                  <i className="fas fa-display mr-2 text-blue-600"></i>
+                  <i className="fas fa-display mr-2 text-primary-600"></i>
                   Interface Language
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
@@ -285,7 +285,7 @@ export default function Settings() {
               {/* Supported Languages Info */}
               <div className="card">
                 <h3 className="font-semibold text-gray-800 mb-3">
-                  <i className="fas fa-globe mr-2 text-blue-600"></i>
+                  <i className="fas fa-globe mr-2 text-primary-600"></i>
                   Supported Languages (16 Total)
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm text-gray-600">
@@ -369,7 +369,7 @@ export default function Settings() {
               {/* WCAG Compliance */}
               <div className="card mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3">
-                  <i className="fas fa-universal-access mr-2 text-blue-600"></i>
+                  <i className="fas fa-universal-access mr-2 text-primary-600"></i>
                   WCAG 2.1 Level AA Compliant
                 </h3>
                 <div className="space-y-2 text-sm text-gray-600">
@@ -399,7 +399,7 @@ export default function Settings() {
               {/* Voice Dictation Info */}
               <div className="card mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3">
-                  <i className="fas fa-microphone mr-2 text-blue-600"></i>
+                  <i className="fas fa-microphone mr-2 text-primary-600"></i>
                   Voice Dictation
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
@@ -452,7 +452,7 @@ export default function Settings() {
       </div>
 
       {/* Help Footer */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+      <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 text-center">
         <h3 className="font-semibold text-gray-800 mb-2">Need Help?</h3>
         <p className="text-sm text-gray-600 mb-4">
           For questions or support, please refer to our documentation or contact your system administrator.
