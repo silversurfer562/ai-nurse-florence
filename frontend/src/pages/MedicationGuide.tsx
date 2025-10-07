@@ -21,6 +21,7 @@ interface WizardData {
 
 export default function MedicationGuide() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     medication_name: '',
     dosage: '',
@@ -136,7 +137,9 @@ export default function MedicationGuide() {
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      setCurrentStep(currentStep + 1);
+      const nextStepIndex = currentStep + 1;
+      setCurrentStep(nextStepIndex);
+      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
     }
   };
 

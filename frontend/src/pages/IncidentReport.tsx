@@ -25,6 +25,7 @@ interface WizardData {
 
 export default function IncidentReport() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     incident_date: new Date().toISOString().split('T')[0],
     incident_time: new Date().toTimeString().slice(0, 5),
@@ -169,7 +170,9 @@ export default function IncidentReport() {
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      setCurrentStep(currentStep + 1);
+      const nextStepIndex = currentStep + 1;
+      setCurrentStep(nextStepIndex);
+      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
     }
   };
 
@@ -657,23 +660,33 @@ Generated: ${new Date().toLocaleString()}
 
           <div className="wizard-progress bg-gray-50 p-6">
             <div className="flex justify-between items-center gap-1 sm:gap-2">
-              {steps.map((step, index) => (
-                <div key={index} className="flex flex-col items-center flex-1">
-                  <button
-                    onClick={() => setCurrentStep(index)}
-                    className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
-                      index === currentStep
-                        ? 'bg-error-600 text-white ring-4 ring-error-200'
-                        : index < currentStep
-                        ? 'bg-success-500 text-white'
-                        : 'bg-gray-200 text-gray-600'
-                    }`}
-                  >
-                    <i className={`fas ${step.icon} text-sm sm:text-base`}></i>
-                  </button>
-                  <span className="text-[10px] sm:text-xs mt-2 font-medium text-gray-600 hidden sm:block">{step.title}</span>
-                </div>
-              ))}
+              {steps.map((step, index) => {
+                const isClickable = index <= maxStepReached;
+                const isCompleted = index < currentStep;
+                const isCurrent = index === currentStep;
+
+                return (
+                  <div key={index} className="flex flex-col items-center flex-1">
+                    <button
+                      onClick={() => isClickable && setCurrentStep(index)}
+                      disabled={!isClickable}
+                      className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
+                        isCurrent
+                          ? 'bg-error-600 text-white ring-4 ring-error-200'
+                          : isCompleted
+                          ? 'bg-success-500 text-white hover:bg-success-600 cursor-pointer'
+                          : isClickable
+                          ? 'bg-gray-300 text-gray-600 hover:bg-gray-400 cursor-pointer'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                      }`}
+                      title={isClickable ? `Go to ${step.title}` : `Complete previous steps first`}
+                    >
+                      <i className={`fas ${step.icon} text-sm sm:text-base`}></i>
+                    </button>
+                    <span className="text-[10px] sm:text-xs mt-2 font-medium text-gray-600 hidden sm:block">{step.title}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

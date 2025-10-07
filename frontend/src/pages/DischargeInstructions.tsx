@@ -29,6 +29,7 @@ interface WizardData {
 
 export default function DischargeInstructions() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     primary_diagnosis: '',
     medications: [],
@@ -172,7 +173,9 @@ export default function DischargeInstructions() {
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      setCurrentStep(currentStep + 1);
+      const nextStepIndex = currentStep + 1;
+      setCurrentStep(nextStepIndex);
+      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
     }
   };
 
@@ -568,31 +571,201 @@ export default function DischargeInstructions() {
 
       case 6: // Review
         return (
-          <div className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Patient</h4>
-              <p className="text-gray-700">{data.patient_name || 'Not specified'}</p>
+          <div className="space-y-6">
+            {/* Validation Warnings */}
+            {(!data.primary_diagnosis || data.warning_signs.length === 0 || data.emergency_criteria.length === 0) && (
+              <div className="bg-error-50 border-l-4 border-error-600 p-4 rounded">
+                <p className="text-sm text-error-900 font-semibold mb-2">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  Missing Required Information
+                </p>
+                <ul className="text-sm text-error-800 space-y-1 ml-6 list-disc">
+                  {!data.primary_diagnosis && <li>Primary diagnosis is required</li>}
+                  {data.warning_signs.length === 0 && <li>At least one warning sign is required</li>}
+                  {data.emergency_criteria.length === 0 && <li>At least one emergency criterion is required</li>}
+                </ul>
+              </div>
+            )}
+
+            {/* Patient Info */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-user text-primary-600 mr-2"></i>
+                  Patient Information
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(0)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              <p className="text-gray-700">{data.patient_name || <span className="text-gray-400 italic">Not specified</span>}</p>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Diagnosis</h4>
-              <p className="text-gray-700">{data.primary_diagnosis}</p>
+
+            {/* Diagnosis */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-stethoscope text-primary-600 mr-2"></i>
+                  Primary Diagnosis <span className="text-red-500 ml-1">*</span>
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              <p className="text-gray-700">{data.primary_diagnosis || <span className="text-error-500 italic">Required - not provided</span>}</p>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Medications</h4>
-              <p className="text-gray-700">{data.medications.length} medication(s)</p>
+
+            {/* Medications */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-pills text-primary-600 mr-2"></i>
+                  Medications ({data.medications.length})
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              {data.medications.length > 0 ? (
+                <ul className="space-y-2">
+                  {data.medications.map((med, idx) => (
+                    <li key={idx} className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                      <span className="font-medium">{med.name || 'Unnamed'}</span> - {med.dosage} {med.frequency}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400 italic text-sm">No medications added</p>
+              )}
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Warning Signs</h4>
-              <p className="text-gray-700">{data.warning_signs.length} warning sign(s)</p>
+
+            {/* Follow-up */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-calendar-check text-primary-600 mr-2"></i>
+                  Follow-up Appointments ({data.follow_up_appointments.length})
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(3)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              {data.follow_up_appointments.length > 0 ? (
+                <ul className="space-y-1 list-disc list-inside text-sm text-gray-700">
+                  {data.follow_up_appointments.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-400 italic text-sm">No follow-up appointments added</p>
+              )}
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Emergency Criteria</h4>
-              <p className="text-gray-700">{data.emergency_criteria.length} criteria</p>
+
+            {/* Activity & Diet Instructions */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-clipboard-list text-primary-600 mr-2"></i>
+                  Activity & Diet Instructions
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(4)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Activity Restrictions:</p>
+                  {data.activity_restrictions.length > 0 ? (
+                    <ul className="space-y-1 list-disc list-inside text-sm text-gray-600">
+                      {data.activity_restrictions.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-400 italic text-sm">None specified</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Diet:</p>
+                  <p className="text-sm text-gray-600">{data.diet_instructions || <span className="text-gray-400 italic">None specified</span>}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Wound Care:</p>
+                  <p className="text-sm text-gray-600">{data.wound_care || <span className="text-gray-400 italic">None specified</span>}</p>
+                </div>
+              </div>
             </div>
-            <div className="bg-primary-50 border-l-4 border-primary-600 p-4 rounded">
-              <p className="text-sm text-primary-900">
-                <i className="fas fa-info-circle mr-2"></i>
-                Click "Generate" to create your discharge instructions PDF
+
+            {/* Safety - Warning Signs */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-exclamation-triangle text-warning-600 mr-2"></i>
+                  Warning Signs <span className="text-red-500 ml-1">*</span>
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(5)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              {data.warning_signs.length > 0 ? (
+                <ul className="space-y-1 list-disc list-inside text-sm text-gray-700">
+                  {data.warning_signs.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-error-500 italic text-sm">Required - no warning signs added</p>
+              )}
+            </div>
+
+            {/* Safety - Emergency Criteria */}
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-semibold text-gray-900 flex items-center">
+                  <i className="fas fa-ambulance text-error-600 mr-2"></i>
+                  When to Call 911 / Go to ER <span className="text-red-500 ml-1">*</span>
+                </h4>
+                <button
+                  onClick={() => setCurrentStep(5)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  <i className="fas fa-edit mr-1"></i>Edit
+                </button>
+              </div>
+              {data.emergency_criteria.length > 0 ? (
+                <ul className="space-y-1 list-disc list-inside text-sm text-gray-700">
+                  {data.emergency_criteria.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-error-500 italic text-sm">Required - no emergency criteria added</p>
+              )}
+            </div>
+
+            {/* Export Instructions */}
+            <div className="bg-success-50 border-l-4 border-success-600 p-4 rounded">
+              <p className="text-sm text-success-900">
+                <i className="fas fa-check-circle mr-2"></i>
+                Review all information above. Click "Edit" next to any section to make changes, or export your document below.
               </p>
             </div>
           </div>
@@ -635,26 +808,36 @@ export default function DischargeInstructions() {
           {/* Progress Steps */}
           <div className="wizard-progress bg-gray-50 p-6 rounded-t-lg">
             <div className="flex justify-between items-center gap-1 sm:gap-2">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex flex-col items-center flex-1">
-                  <button
-                    onClick={() => setCurrentStep(index)}
-                    className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
-                      index === currentStep
-                        ? 'bg-primary-600 text-white ring-4 ring-primary-200'
-                        : index < currentStep
-                        ? 'bg-success-500 text-white'
-                        : 'bg-gray-200 text-gray-600'
-                    }`}
-                  >
-                    <i className={`fas ${step.icon} text-sm sm:text-base`}></i>
-                  </button>
-                  <span className="text-[10px] sm:text-xs mt-2 font-medium text-gray-600 hidden sm:block">{step.title}</span>
-                  {index < steps.length - 1 && (
-                    <div className={`h-1 w-full mt-4 ${index < currentStep ? 'bg-success-500' : 'bg-gray-200'}`}></div>
-                  )}
-                </div>
-              ))}
+              {steps.map((step, index) => {
+                const isClickable = index <= maxStepReached;
+                const isCompleted = index < currentStep;
+                const isCurrent = index === currentStep;
+
+                return (
+                  <div key={step.id} className="flex flex-col items-center flex-1">
+                    <button
+                      onClick={() => isClickable && setCurrentStep(index)}
+                      disabled={!isClickable}
+                      className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
+                        isCurrent
+                          ? 'bg-primary-600 text-white ring-4 ring-primary-200'
+                          : isCompleted
+                          ? 'bg-success-500 text-white hover:bg-success-600 cursor-pointer'
+                          : isClickable
+                          ? 'bg-gray-300 text-gray-600 hover:bg-gray-400 cursor-pointer'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                      }`}
+                      title={isClickable ? `Go to ${step.title}` : `Complete previous steps first`}
+                    >
+                      <i className={`fas ${step.icon} text-sm sm:text-base`}></i>
+                    </button>
+                    <span className="text-[10px] sm:text-xs mt-2 font-medium text-gray-600 hidden sm:block">{step.title}</span>
+                    {index < steps.length - 1 && (
+                      <div className={`h-1 w-full mt-4 ${index < currentStep ? 'bg-success-500' : 'bg-gray-200'}`}></div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

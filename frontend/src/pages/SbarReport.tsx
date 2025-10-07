@@ -23,6 +23,7 @@ interface WizardStep {
 
 export default function SbarReport() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     patient_id: '',
     situation: '',
@@ -205,7 +206,9 @@ export default function SbarReport() {
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      setCurrentStep(currentStep + 1);
+      const nextStepIndex = currentStep + 1;
+      setCurrentStep(nextStepIndex);
+      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
     }
   };
 
@@ -383,22 +386,33 @@ export default function SbarReport() {
               ></div>
             </div>
             <div className="flex justify-between mt-2 gap-1 sm:gap-2">
-              {steps.map((step, index) => (
-                <div key={index} className="flex flex-col items-center flex-1">
-                  <button
-                    onClick={() => setCurrentStep(index)}
-                    className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
-                      index <= currentStep
-                        ? 'bg-primary-600 text-white hover:bg-primary-700'
-                        : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
-                    } ${index === currentStep ? 'ring-2 ring-primary-400 ring-offset-2' : ''}`}
-                    title={`Go to step ${index + 1}: ${step.title}`}
-                  >
-                    {index + 1}
-                  </button>
-                  <span className="text-[10px] sm:text-xs text-gray-600 mt-1 text-center hidden sm:block">{step.title}</span>
-                </div>
-              ))}
+              {steps.map((step, index) => {
+                const isClickable = index <= maxStepReached;
+                const isCompleted = index < currentStep;
+                const isCurrent = index === currentStep;
+
+                return (
+                  <div key={index} className="flex flex-col items-center flex-1">
+                    <button
+                      onClick={() => isClickable && setCurrentStep(index)}
+                      disabled={!isClickable}
+                      className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
+                        isCurrent
+                          ? 'bg-primary-600 text-white ring-2 ring-primary-400 ring-offset-2'
+                          : isCompleted
+                          ? 'bg-success-500 text-white hover:bg-success-600 cursor-pointer'
+                          : isClickable
+                          ? 'bg-gray-300 text-gray-600 hover:bg-gray-400 cursor-pointer'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                      }`}
+                      title={isClickable ? `Go to step ${index + 1}: ${step.title}` : `Complete previous steps first`}
+                    >
+                      {index + 1}
+                    </button>
+                    <span className="text-[10px] sm:text-xs text-gray-600 mt-1 text-center hidden sm:block">{step.title}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
