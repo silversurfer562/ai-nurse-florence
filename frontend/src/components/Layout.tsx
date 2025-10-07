@@ -106,7 +106,7 @@ export default function Layout() {
                 className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg"
                 role="status"
                 aria-live="polite"
-                aria-label={`System status: ${healthData ? 'Connected' : 'Connecting'}`}
+                aria-label={`System status: ${healthData ? 'Online' : 'Connecting'}`}
               >
                 <div
                   className={`w-3 h-3 rounded-full ${healthData ? 'bg-green-500' : 'bg-gray-400'} animate-pulse`}

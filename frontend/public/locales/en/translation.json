@@ -2,7 +2,7 @@
   "common": {
     "appName": "AI Nurse Florence",
     "appTagline": "Your Clinical Assistant",
-    "connected": "Connected",
+    "connected": "Online",
     "connecting": "Connecting...",
     "home": "Home",
     "help": "Help",
