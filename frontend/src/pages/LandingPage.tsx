@@ -216,19 +216,20 @@ export default function LandingPage() {
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 md:p-12 border border-blue-100">
             <div className="prose prose-lg max-w-none">
               <p className="text-gray-700 mb-4">
-                We're building enterprise clinical decision support software for hospitals and healthcare institutions.
-                Our platform helps nursing professionals manage complex workflows, create evidence-based documentation,
-                and deliver exceptional patient care.
+                When the NIH discontinued its Drug Interaction API, we were building advanced clinical tools for healthcare
+                institutions—comprehensive documentation wizards, research features, and medication safety systems far beyond
+                what the public API offered.
               </p>
               <p className="text-gray-700 mb-4">
-                When the NIH discontinued its Drug Interaction API, we weren't ready to launch publicly yet—but we
-                couldn't stand by while the healthcare community lost a vital public resource. We built and deployed
-                our free drug interaction checker to fill that gap, no login required.
+                We weren't ready to launch publicly, but we couldn't stand by while patients and healthcare consumers lost
+                access to drug interaction checking. So we deployed our <strong>more advanced drug checker</strong> as a free
+                public service. No login required. No data stored. Just better drug interaction checking for everyone.
               </p>
               <p className="text-gray-700 mb-4">
-                That decision reflects who we are: a team committed to both institutional excellence and public health.
-                Our drug interaction checker remains completely free because healthcare information should be accessible
-                to everyone who needs it, not just those who can afford enterprise software.
+                That free tool is just the beginning. Our platform includes AI-powered clinical documentation, comprehensive
+                research capabilities, and evidence-based decision support—all designed to help nursing professionals deliver
+                exceptional care. The drug checker remains free because we believe critical health information should be
+                accessible to all, not just those with institutional access.
               </p>
               <p className="text-gray-700 font-semibold">
                 <a href="/about" className="text-primary-600 hover:text-primary-700 underline">

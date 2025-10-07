@@ -52,31 +52,32 @@ export default function AboutUs() {
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
             <div className="space-y-6 text-lg text-gray-700">
               <p>
-                AI Nurse Florence was created to serve hospitals and healthcare institutions with enterprise-grade
-                clinical decision support tools. Our team has been building software specifically designed for
-                nursing professionals—tools that integrate seamlessly into hospital workflows and help nurses
-                deliver better patient care.
+                AI Nurse Florence was created to provide comprehensive clinical decision support for nursing professionals.
+                We built a platform with three core capabilities: <strong>advanced clinical documentation wizards</strong>,
+                <strong>sophisticated drug interaction and medication safety tools</strong>, and <strong>comprehensive
+                research features</strong> including literature search, clinical trials database, and medical references.
               </p>
               <p>
-                We weren't planning to go public yet. Our focus was on refining our institutional software,
-                working closely with healthcare systems to perfect our clinical documentation wizards, medication
-                safety tools, and workflow automation features.
+                Our drug interaction system was designed to go far beyond basic checking—it analyzes severity, provides
+                clinical context, and integrates with our documentation tools. Our research features give nurses instant
+                access to evidence-based information. Our documentation wizards use AI to help create SBAR reports, SOAP
+                notes, care plans, and more in minutes instead of hours.
               </p>
               <p>
-                Then the National Institutes of Health (NIH) discontinued its Drug Interaction API. Overnight,
-                patients, caregivers, and healthcare consumers lost access to a critical public resource.
-                We couldn't just stand by.
+                We were refining these advanced features for healthcare institutions when the National Institutes of Health
+                (NIH) discontinued its Drug Interaction API. Overnight, patients, caregivers, and the public lost access
+                to a critical resource. We weren't ready to launch publicly, but we couldn't stand by.
               </p>
               <p>
-                Even though we weren't ready for a public launch, we felt compelled to help. We built and deployed
-                our free drug interaction checker to fill the gap left by the NIH's discontinued service. No login
-                required. No data stored. Just a public service for anyone who needs it.
+                So we deployed our <strong>more advanced drug interaction checker</strong> as a free public service—no login,
+                no data storage, just better drug checking than what was lost. We didn't just fill the gap; we exceeded it
+                with more comprehensive interaction analysis and clearer clinical guidance.
               </p>
               <p>
-                That moment defined who we are. Yes, we're building enterprise software for hospitals—that remains
-                our core mission. But we're also deeply committed to public health and serving the healthcare community
-                at large. Our drug interaction checker will always remain free because we believe healthcare technology
-                should be accessible to everyone who needs it.
+                That decision defined who we are. We're building advanced clinical tools—documentation wizards, research
+                capabilities, and medication safety features—for healthcare institutions. But we're also committed to public
+                health. Our drug interaction checker remains free because critical health information should be accessible to
+                everyone, not just those with institutional access. The advanced features? Those help nurses deliver better care.
               </p>
             </div>
           </div>
