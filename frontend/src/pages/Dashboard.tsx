@@ -88,10 +88,10 @@ export default function Dashboard() {
 
           <Link
             to="/app/discharge-instructions"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-success-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-secondary-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-sign-out-alt text-success-600 text-xl"></i>
+              <i className="fas fa-sign-out-alt text-secondary-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">Discharge Instructions</h3>
                 <p className="text-xs text-gray-500">Patient discharge planning and instructions</p>
@@ -101,10 +101,10 @@ export default function Dashboard() {
 
           <Link
             to="/app/medication-guide"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-secondary-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-accent-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-prescription-bottle text-secondary-600 text-xl"></i>
+              <i className="fas fa-prescription-bottle text-accent-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">Medication Guide</h3>
                 <p className="text-xs text-gray-500">Patient medication information sheets</p>
@@ -114,10 +114,10 @@ export default function Dashboard() {
 
           <Link
             to="/app/incident-report"
-            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-error-500"
+            className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-all duration-200 border-l-4 border-success-500"
           >
             <div className="flex items-center space-x-3">
-              <i className="fas fa-exclamation-triangle text-error-600 text-xl"></i>
+              <i className="fas fa-exclamation-triangle text-success-600 text-xl"></i>
               <div>
                 <h3 className="font-semibold text-gray-800">Incident Report</h3>
                 <p className="text-xs text-gray-500">Safety event documentation</p>
