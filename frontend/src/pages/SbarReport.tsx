@@ -282,8 +282,8 @@ export default function SbarReport() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">SBAR Report Generated</h1>
-            <p className="text-gray-600">Structured clinical communication ready to use</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-2">SBAR Report Generated</h1>
+            <p className="text-sm sm:text-base text-gray-600">Structured clinical communication ready to use</p>
           </div>
 
           {/* Care Setting Banner */}
@@ -291,18 +291,18 @@ export default function SbarReport() {
 
           {/* Generated Report */}
           <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-            <div className="mb-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800">Your SBAR Report</h2>
-              <div className="flex gap-2">
+            <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Your SBAR Report</h2>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={copyToClipboard}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  className="min-h-[44px] px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   <i className="fas fa-copy mr-2"></i>Copy
                 </button>
                 <button
                   onClick={downloadReport}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="min-h-[44px] px-4 py-3 bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors"
                 >
                   <i className="fas fa-download mr-2"></i>Download
                 </button>
@@ -314,16 +314,16 @@ export default function SbarReport() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
             <button
               onClick={startNew}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               <i className="fas fa-plus mr-2"></i>Create New SBAR
             </button>
             <a
               href="/app"
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="min-h-[44px] px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center"
             >
               <i className="fas fa-table-columns mr-2"></i>Back to Dashboard
             </a>
@@ -344,8 +344,8 @@ export default function SbarReport() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4 mb-2">
-            <h1 className="text-4xl font-bold text-gray-800">SBAR Report Wizard</h1>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">SBAR Report Wizard</h1>
             <button
               onClick={() => setRunTour(true)}
               {...getQuickStartButtonProps('SBAR Report', showPulse)}
@@ -354,7 +354,7 @@ export default function SbarReport() {
               Quick Start
             </button>
           </div>
-          <p className="text-gray-600">Structured clinical communication for patient handoffs</p>
+          <p className="text-sm sm:text-base text-gray-600">Structured clinical communication for patient handoffs</p>
         </div>
 
         {/* Care Setting Context Banner */}
@@ -382,12 +382,12 @@ export default function SbarReport() {
                 style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
               ></div>
             </div>
-            <div className="flex justify-between mt-2">
+            <div className="flex justify-between mt-2 gap-1 sm:gap-2">
               {steps.map((step, index) => (
-                <div key={index} className="flex flex-col items-center">
+                <div key={index} className="flex flex-col items-center flex-1">
                   <button
                     onClick={() => setCurrentStep(index)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                    className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
                       index <= currentStep
                         ? 'bg-primary-600 text-white hover:bg-primary-700'
                         : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
@@ -396,7 +396,7 @@ export default function SbarReport() {
                   >
                     {index + 1}
                   </button>
-                  <span className="text-xs text-gray-600 mt-1 text-center">{step.title}</span>
+                  <span className="text-[10px] sm:text-xs text-gray-600 mt-1 text-center hidden sm:block">{step.title}</span>
                 </div>
               ))}
             </div>
@@ -436,11 +436,11 @@ export default function SbarReport() {
           </div>
 
           {/* Navigation */}
-          <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex justify-between">
+          <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex flex-col sm:flex-row gap-3 sm:justify-between">
             <button
               onClick={previousStep}
               disabled={currentStep === 0}
-              className={`px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors ${
+              className={`min-h-[44px] px-5 py-3 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors ${
                 currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -450,7 +450,7 @@ export default function SbarReport() {
             <button
               onClick={nextStep}
               disabled={isGenerating}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (

@@ -602,8 +602,8 @@ export default function DischargeInstructions() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4 mb-2">
-            <h1 className="text-4xl font-bold text-gray-800">Discharge Instructions Wizard</h1>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Discharge Instructions Wizard</h1>
             <button
               onClick={() => setRunTour(true)}
               {...getQuickStartButtonProps('Discharge Instructions', showPulse)}
@@ -612,7 +612,7 @@ export default function DischargeInstructions() {
               Quick Start
             </button>
           </div>
-          <p className="text-gray-600">Comprehensive patient discharge documentation</p>
+          <p className="text-sm sm:text-base text-gray-600">Comprehensive patient discharge documentation</p>
         </div>
 
         {/* Care Setting Banner */}
@@ -622,24 +622,24 @@ export default function DischargeInstructions() {
         <div className="wizard-container bg-white rounded-lg shadow-lg overflow-visible">
           {/* Progress Steps */}
           <div className="wizard-progress bg-gray-50 p-6 rounded-t-lg">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-1 sm:gap-2">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex flex-col items-center flex-1">
                   <button
                     onClick={() => setCurrentStep(index)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                    className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
                       index === currentStep
                         ? 'bg-primary-600 text-white ring-4 ring-primary-200'
                         : index < currentStep
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-success-500 text-white'
                         : 'bg-gray-200 text-gray-600'
                     }`}
                   >
-                    <i className={`fas ${step.icon}`}></i>
+                    <i className={`fas ${step.icon} text-sm sm:text-base`}></i>
                   </button>
-                  <span className="text-xs mt-2 font-medium text-gray-600">{step.title}</span>
+                  <span className="text-[10px] sm:text-xs mt-2 font-medium text-gray-600 hidden sm:block">{step.title}</span>
                   {index < steps.length - 1 && (
-                    <div className={`h-1 w-full mt-4 ${index < currentStep ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                    <div className={`h-1 w-full mt-4 ${index < currentStep ? 'bg-success-500' : 'bg-gray-200'}`}></div>
                   )}
                 </div>
               ))}
@@ -653,11 +653,11 @@ export default function DischargeInstructions() {
           </div>
 
           {/* Navigation */}
-          <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex justify-between">
+          <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex flex-col sm:flex-row gap-3 sm:justify-between">
             <button
               onClick={previousStep}
               disabled={currentStep === 0}
-              className={`px-6 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors ${
+              className={`min-h-[44px] px-6 py-3 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors ${
                 currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -665,11 +665,11 @@ export default function DischargeInstructions() {
             </button>
 
             {currentStep === steps.length - 1 ? (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => handleGenerate('pdf')}
                   disabled={isGenerating}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  className="min-h-[44px] px-6 py-3 bg-error-600 text-white rounded-lg hover:bg-error-700 transition-colors disabled:opacity-50"
                 >
                   {isGenerating ? (
                     <>
@@ -684,14 +684,14 @@ export default function DischargeInstructions() {
                 <button
                   onClick={() => handleGenerate('docx')}
                   disabled={isGenerating}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                  className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
                 >
                   <i className="fas fa-file-word mr-2"></i>Export Word
                 </button>
                 <button
                   onClick={() => handleGenerate('txt')}
                   disabled={isGenerating}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  className="min-h-[44px] px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
                 >
                   <i className="fas fa-file-alt mr-2"></i>Export Text
                 </button>
@@ -700,7 +700,7 @@ export default function DischargeInstructions() {
               <button
                 onClick={nextStep}
                 disabled={isGenerating}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 Next<i className="fas fa-arrow-right ml-2"></i>
               </button>

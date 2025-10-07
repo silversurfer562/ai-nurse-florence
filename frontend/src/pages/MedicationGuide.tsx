@@ -492,8 +492,8 @@ export default function MedicationGuide() {
       />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4 mb-2">
-            <h1 className="text-4xl font-bold text-gray-800">Medication Guide Wizard</h1>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">Medication Guide Wizard</h1>
             <button
               onClick={() => setRunTour(true)}
               {...getQuickStartButtonProps('Medication Guide', showPulse)}
@@ -502,7 +502,7 @@ export default function MedicationGuide() {
               Quick Start
             </button>
           </div>
-          <p className="text-gray-600">Comprehensive medication information for patients</p>
+          <p className="text-sm sm:text-base text-gray-600">Comprehensive medication information for patients</p>
         </div>
 
         {careSetting && <CareSettingContextBanner className="mb-6" />}
@@ -532,11 +532,11 @@ export default function MedicationGuide() {
             {renderStepContent()}
           </div>
 
-          <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex justify-between">
+          <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex flex-col sm:flex-row gap-3 sm:justify-between">
             <button
               onClick={previousStep}
               disabled={currentStep === 0}
-              className={`px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 ${
+              className={`min-h-[44px] px-5 py-3 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 ${
                 currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -545,7 +545,7 @@ export default function MedicationGuide() {
             <button
               onClick={nextStep}
               disabled={isGenerating}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (
