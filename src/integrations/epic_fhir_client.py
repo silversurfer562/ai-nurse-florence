@@ -10,9 +10,9 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from src.config import settings
-
 logger = logging.getLogger(__name__)
+
+# Remove config dependency - settings will be passed as parameters
 
 
 class OAuthManager:
@@ -363,12 +363,7 @@ def create_epic_client(
     Returns:
         Configured EpicFHIRClient instance
     """
-    base_url = base_url or settings.epic_fhir_base_url or settings.epic_sandbox_url
-    client_id = client_id or settings.epic_client_id
-    client_secret = client_secret or settings.epic_client_secret
-    token_url = token_url or settings.epic_oauth_token_url
-
-    # Validation
+    # Validation - all parameters are required now (no settings fallback)
     if not base_url:
         raise ValueError("Epic FHIR base URL is required")
     if not client_id:
@@ -383,11 +378,11 @@ def create_epic_client(
         token_url=token_url, client_id=client_id, client_secret=client_secret
     )
 
-    # Create Epic client
+    # Create Epic client with default timeout
     epic_client = EpicFHIRClient(
         base_url=base_url,
         oauth_manager=oauth_manager,
-        timeout=settings.epic_request_timeout,
+        timeout=30,  # Default 30 second timeout
     )
 
     logger.info(f"Epic FHIR client created for {base_url}")

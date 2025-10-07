@@ -209,6 +209,17 @@ except Exception as e:
     logger.warning(f"Failed to register content settings router: {e}")
     ROUTERS_LOADED["content_settings"] = False
 
+# Epic EHR Integration Router - FHIR patient lookup
+try:
+    from src.routers.epic_ehr import router as epic_ehr_router
+
+    api_router.include_router(epic_ehr_router)
+    logger.info("✅ Epic EHR integration router registered successfully")
+    ROUTERS_LOADED["epic_ehr"] = True
+except Exception as e:
+    logger.warning(f"Failed to register Epic EHR router: {e}")
+    ROUTERS_LOADED["epic_ehr"] = False
+
 
 # Education router (now using v1/patient-education)
 try:
