@@ -101,7 +101,7 @@ AI_FALLBACK_PROVIDER=openai          # Auto-selects if not specified
 AI_FALLBACK_MODEL=gpt-4o             # Uses provider default if not specified
 AI_MAX_RETRIES=3                     # Retry attempts before fallback
 AI_CIRCUIT_BREAKER_THRESHOLD=5       # Failures before opening circuit
-AI_CIRCUIT_BREAKER_TIMEOUT=300       # Cooldown period (5 minutes)
+AI_CIRCUIT_BREAKER_TIMEOUT=60        # Cooldown period (1 minute)
 ```
 
 **Benefits:**
@@ -115,7 +115,7 @@ AI_CIRCUIT_BREAKER_TIMEOUT=300       # Cooldown period (5 minutes)
 1. Primary: Claude attempts (with 3 retries + exponential backoff)
 2. If Claude fails → Automatic fallback to GPT-4o
 3. Circuit breaker opens after 5 consecutive failures
-4. After 5 minutes, system tests Claude recovery
+4. After 1 minute, system tests Claude recovery
 5. Returns to Claude when healthy
 
 ---

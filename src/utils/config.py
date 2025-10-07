@@ -136,8 +136,8 @@ class Settings(BaseSettings):
         description="Consecutive failures before opening circuit breaker",
     )
     AI_CIRCUIT_BREAKER_TIMEOUT: int = Field(
-        default=300,
-        description="Circuit breaker timeout in seconds (default: 5 minutes)",
+        default=60,
+        description="Circuit breaker timeout in seconds (default: 1 minute)",
     )
 
     # Redis Configuration following Caching Strategy
