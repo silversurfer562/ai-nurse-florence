@@ -3,6 +3,7 @@ Patient Documents API - PDF Generation for Patient Education Materials
 Generates discharge instructions, medication guides, and disease education materials
 """
 
+import logging
 from datetime import datetime
 
 import httpx
@@ -27,6 +28,9 @@ from src.models.patient_document_schemas import (
     MedicationGuideRequest,
     MedicationGuideResponse,
 )
+from src.services.fda_drug_service import FDADrugService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/patient-documents", tags=["Patient Documents"])
 
@@ -180,11 +184,36 @@ async def create_medication_guide(request: MedicationGuideRequest):
     ```
     """
     try:
-        # If auto-populate is enabled, fetch additional data
+        # If auto-populate is enabled, fetch additional data from FDA
         data_sources = []
+        fda_data = None
+
         if request.auto_populate:
-            # TODO: Integrate with FDA OpenFDA API
-            # For now, use provided data
+            try:
+                fda_service = FDADrugService()
+                fda_data = await fda_service.get_medication_guide_data(
+                    request.medication_name
+                )
+
+                if fda_data and fda_data.get("data_available"):
+                    data_sources.append("FDA OpenFDA API")
+                    # Merge FDA data with user-provided data (user data takes precedence)
+                    if not request.purpose and fda_data.get("purpose"):
+                        request.purpose = fda_data["purpose"]
+                    if not request.drug_interactions and fda_data.get(
+                        "drug_interactions"
+                    ):
+                        request.drug_interactions = fda_data["drug_interactions"]
+                    if not request.storage_instructions and fda_data.get(
+                        "storage_instructions"
+                    ):
+                        request.storage_instructions = fda_data["storage_instructions"]
+                else:
+                    data_sources.append("User-provided information")
+            except Exception as e:
+                logger.error(f"FDA API error for {request.medication_name}: {e}")
+                data_sources.append("User-provided information")
+        else:
             data_sources.append("User-provided information")
 
         # Prepare data for PDF generation
