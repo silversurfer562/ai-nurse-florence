@@ -10,6 +10,52 @@ from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
+
+def simplify_diagnosis_name(description: str) -> str:
+    """
+    Simplify ICD-10 diagnosis names for patient education.
+
+    Removes medical jargon and technical details:
+    - "Type 1 diabetes mellitus without complications" → "Type 1 Diabetes"
+    - "Essential (primary) hypertension" → "Essential Hypertension"
+    - "Acute myocardial infarction" → "Acute Myocardial Infarction (Heart Attack)"
+    """
+    simplified = description
+
+    # Remove common suffixes that add medical detail
+    removals = [
+        ", unspecified",
+        " without complications",
+        " with complications",
+        " unspecified",
+        ", unspecified type",
+        ", diet controlled",
+        ", insulin controlled",
+        ", in childbirth",
+        ", in pregnancy",
+        ", in the puerperium",
+        ", uncomplicated",
+        " uncomplicated",
+    ]
+
+    for removal in removals:
+        simplified = simplified.replace(removal, "")
+
+    # Replace "mellitus" with nothing (diabetes mellitus → diabetes)
+    simplified = simplified.replace(" mellitus", "")
+
+    # Remove parenthetical details like "(primary)" unless it's a helpful synonym
+    simplified = re.sub(r"\s*\([^)]*\)\s*", " ", simplified)
+
+    # Clean up extra spaces
+    simplified = re.sub(r"\s+", " ", simplified).strip()
+
+    # Title case for better readability
+    simplified = simplified.title()
+
+    return simplified
+
+
 # Global cache for ICD-10 codes
 _icd10_codes: List[Dict[str, str]] = []
 _loaded = False
@@ -117,13 +163,14 @@ def search_icd10(query: str, limit: int = 10) -> List[Dict[str, str]]:
     # Sort by score (simpler/more general first)
     matches.sort(key=lambda x: x["score"])
 
-    # Return top results
+    # Return top results with simplified names
     results = []
     for match in matches[:limit]:
+        simplified_name = simplify_diagnosis_name(match["description"])
         results.append(
             {
                 "id": match["code"],
-                "label": f"{match['description']} ({match['code']})",
+                "label": f"{simplified_name} ({match['code']})",
                 "value": match["code"],
                 "icd10_code": match["code"],
             }
