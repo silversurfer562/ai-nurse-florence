@@ -444,9 +444,18 @@ async def autocomplete_diagnosis(q: str, limit: int = 10):
     Searches 74,000+ diagnosis codes from CDC ICD-10-CM 2025 data.
     Returns minimal data for autocomplete dropdowns.
     """
-    from src.services.icd10_autocomplete import search_icd10
+    try:
+        from src.services.icd10_autocomplete import search_icd10
 
-    return search_icd10(q, limit)
+        results = search_icd10(q, limit)
+        logger.info(
+            f"Diagnosis autocomplete: query='{q}', found {len(results)} results"
+        )
+        return results
+    except Exception as e:
+        logger.error(f"Diagnosis autocomplete failed: {e}", exc_info=True)
+        # Return empty list on error - graceful degradation
+        return []
 
 
 # ============================================================================
