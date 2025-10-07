@@ -21,7 +21,6 @@ interface WizardData {
 
 export default function MedicationGuide() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     medication_name: '',
     dosage: '',
@@ -49,6 +48,9 @@ export default function MedicationGuide() {
       content: (
         <div>
           <p className="mb-2">Welcome to the Medication Guide Wizard! Create patient-friendly medication education materials.</p>
+          <p className="text-sm text-orange-800 bg-orange-50 p-2 rounded mt-2">
+            <strong>⚠️ Important:</strong> This wizard moves forward only. Review each step carefully before clicking Next. Patient safety requires accurate medication information.
+          </p>
           <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
             💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
           </p>
@@ -58,15 +60,15 @@ export default function MedicationGuide() {
     },
     {
       target: '.wizard-progress',
-      content: 'Track your progress through all six steps: Medication Info, Instructions, Purpose, Side Effects, Safety, and Review.',
+      content: 'Track your progress through all steps. You cannot go back to edit previous steps - review carefully before advancing.',
     },
     {
       target: '.wizard-content',
-      content: 'Complete each section with medication details. The wizard helps create comprehensive patient education materials.',
+      content: 'Complete medication details carefully. This information will be given to patients, so accuracy is critical.',
     },
     {
-      target: '.help-button',
-      content: 'Need help anytime? Click this button to restart the tour.',
+      target: '.wizard-navigation',
+      content: 'Use "Next" to advance and "Start Over" to restart if needed. The wizard will confirm before moving forward.',
     },
   ];
 
@@ -134,17 +136,39 @@ export default function MedicationGuide() {
 
   const nextStep = () => {
     if (!validateStep()) return;
+
+    // Show confirmation dialog before advancing (except on first step)
+    if (currentStep > 0 && currentStep < steps.length - 1) {
+      const confirmed = window.confirm(
+        "Please review your entries. You won't be able to go back to edit this step. Continue?"
+      );
+      if (!confirmed) return;
+    }
+
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      const nextStepIndex = currentStep + 1;
-      setCurrentStep(nextStepIndex);
-      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const previousStep = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  const startOver = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to start over? All entered data will be lost."
+    );
+    if (confirmed) {
+      setData({
+        medication_name: '',
+        dosage: '',
+        frequency: '',
+        route: 'oral',
+        special_instructions: [],
+        common_side_effects: [],
+        serious_side_effects: [],
+        interactions: []
+      });
+      setCurrentStep(0);
+    }
   };
 
   const handleGenerate = async () => {
@@ -537,18 +561,16 @@ export default function MedicationGuide() {
 
           <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex flex-col sm:flex-row gap-3 sm:justify-between">
             <button
-              onClick={previousStep}
-              disabled={currentStep === 0}
-              className={`min-h-[44px] px-5 py-3 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 ${
-                currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              onClick={startOver}
+              className="min-h-[44px] px-6 py-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <i className="fas fa-arrow-left mr-2"></i>Previous
+              <i className="fas fa-redo mr-2"></i>Start Over
             </button>
             <button
               onClick={nextStep}
               disabled={isGenerating}
               className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              title="Advance to next step (you cannot go back to edit this step)"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (
