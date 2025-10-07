@@ -32,7 +32,12 @@ def load_icd10_codes() -> None:
         )
 
         if not os.path.exists(data_path):
-            logger.warning(f"ICD-10 data file not found at {data_path}")
+            logger.error(
+                f"ICD-10 data file not found at {data_path} - "
+                f"Current directory: {os.getcwd()}, "
+                f"__file__: {__file__}"
+            )
+            _loaded = True  # Mark as loaded to avoid repeated checks
             return
 
         logger.info(f"Loading ICD-10 codes from {data_path}...")
@@ -55,7 +60,8 @@ def load_icd10_codes() -> None:
         logger.info(f"✅ Loaded {len(_icd10_codes)} ICD-10 codes for autocomplete")
 
     except Exception as e:
-        logger.error(f"Failed to load ICD-10 codes: {e}")
+        logger.error(f"Failed to load ICD-10 codes: {e}", exc_info=True)
+        _loaded = True  # Mark as loaded to avoid repeated checks
 
 
 def search_icd10(query: str, limit: int = 10) -> List[Dict[str, str]]:

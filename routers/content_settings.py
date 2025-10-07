@@ -430,6 +430,8 @@ async def autocomplete_diagnosis(q: str, limit: int = 10):
     Searches 74,000+ diagnosis codes from CDC ICD-10-CM 2025 data.
     Returns minimal data for autocomplete dropdowns.
     """
+    from fastapi.responses import JSONResponse
+
     try:
         from src.services.icd10_autocomplete import search_icd10
 
@@ -437,11 +439,11 @@ async def autocomplete_diagnosis(q: str, limit: int = 10):
         logger.info(
             f"Diagnosis autocomplete: query='{q}', found {len(results)} results"
         )
-        return results
+        return JSONResponse(content=results)
     except Exception as e:
         logger.error(f"Diagnosis autocomplete failed: {e}", exc_info=True)
         # Return empty list on error - graceful degradation
-        return []
+        return JSONResponse(content=[])
 
 
 @router.get("/diagnosis/{diagnosis_id}", response_model=DiagnosisSearchResponse)
