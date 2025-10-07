@@ -199,29 +199,67 @@ except Exception as e:
     ROUTERS_LOADED["webhooks"] = False
 
 
-# Diagnosis Search Endpoint - Simple disease name suggestions
+# Diagnosis Search Endpoint - Disease name suggestions from database
 @app.get("/api/v1/content-settings/diagnosis/search")
 async def search_diagnoses_proxy(q: str, limit: int = 20):
     """
-    Search for disease/diagnosis names.
+    Search for disease/diagnosis names from disease_aliases database.
     Used by clinical trials page autocomplete.
     """
-    # Try MeSH first if available
+    # Query disease_aliases database for matching diseases
     try:
-        from src.services.mesh_service import map_to_mesh
+        from sqlalchemy import create_engine, text
 
-        mesh_results = map_to_mesh(q, top_k=limit)
-        if mesh_results:
-            return [
+        from src.models.database import DATABASE_URL
+
+        engine = create_engine(DATABASE_URL)
+        with engine.connect() as conn:
+            # Search for diseases where alias contains the query (case-insensitive)
+            query_text = text(
+                """
+                SELECT DISTINCT
+                    mondo_id as disease_id,
+                    canonical_name as disease_name,
+                    'FDA/MONDO' as category
+                FROM disease_aliases
+                WHERE LOWER(alias) LIKE LOWER(:search_term)
+                   OR LOWER(canonical_name) LIKE LOWER(:search_term)
+                ORDER BY
+                    CASE
+                        WHEN LOWER(alias) = LOWER(:exact_match) THEN 1
+                        WHEN LOWER(canonical_name) = LOWER(:exact_match) THEN 2
+                        WHEN LOWER(alias) LIKE LOWER(:search_term_start) THEN 3
+                        WHEN LOWER(canonical_name) LIKE LOWER(:search_term_start) THEN 4
+                        ELSE 5
+                    END,
+                    canonical_name
+                LIMIT :result_limit
+            """
+            )
+
+            result = conn.execute(
+                query_text,
                 {
-                    "disease_id": result.get("mesh_id", idx),
-                    "disease_name": result.get("term", q),
-                    "category": "MeSH Term",
-                }
-                for idx, result in enumerate(mesh_results)
+                    "search_term": f"%{q}%",
+                    "exact_match": q,
+                    "search_term_start": f"{q}%",
+                    "result_limit": limit,
+                },
+            )
+
+            diseases = [
+                {"disease_id": row[0], "disease_name": row[1], "category": row[2]}
+                for row in result
             ]
+
+            if diseases:
+                logger.debug(
+                    f"Found {len(diseases)} diseases matching '{q}' in database"
+                )
+                return diseases
+
     except Exception as e:
-        logger.debug(f"MeSH unavailable: {e}")
+        logger.warning(f"Disease database unavailable: {e}")
 
     # Comprehensive disease database with common variants and synonyms
     common_diseases = {
