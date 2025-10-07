@@ -52,26 +52,31 @@ export default function AboutUs() {
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
             <div className="space-y-6 text-lg text-gray-700">
               <p>
-                AI Nurse Florence was born from a deep commitment to public health and a belief that
-                healthcare technology should be accessible to everyone who needs it.
+                AI Nurse Florence was created to serve hospitals and healthcare institutions with enterprise-grade
+                clinical decision support tools. Our team has been building software specifically designed for
+                nursing professionals—tools that integrate seamlessly into hospital workflows and help nurses
+                deliver better patient care.
               </p>
               <p>
-                When the National Institutes of Health (NIH) discontinued its Drug Interaction API,
-                the healthcare community lost a valuable public resource. Patients, caregivers, and
-                healthcare consumers suddenly had one less tool to help them make informed decisions
-                about their medications. We saw this as an opportunity—and a responsibility—to step up.
+                We weren't planning to go public yet. Our focus was on refining our institutional software,
+                working closely with healthcare systems to perfect our clinical documentation wizards, medication
+                safety tools, and workflow automation features.
               </p>
               <p>
-                What began as a mission to provide a free drug interaction checker quickly evolved into
-                something much larger. As we engaged with nurses and healthcare professionals, we heard
-                consistent feedback: they needed better tools to manage their increasingly complex workflows.
-                They needed technology that understood the unique challenges of nursing practice.
+                Then the National Institutes of Health (NIH) discontinued its Drug Interaction API. Overnight,
+                patients, caregivers, and healthcare consumers lost access to a critical public resource.
+                We couldn't just stand by.
               </p>
               <p>
-                Today, AI Nurse Florence is a comprehensive clinical decision support platform designed
-                specifically for nursing professionals. But we haven't forgotten our roots in public health.
-                Our drug interaction checker remains completely free, with no login required—a public resource
-                for anyone who needs it.
+                Even though we weren't ready for a public launch, we felt compelled to help. We built and deployed
+                our free drug interaction checker to fill the gap left by the NIH's discontinued service. No login
+                required. No data stored. Just a public service for anyone who needs it.
+              </p>
+              <p>
+                That moment defined who we are. Yes, we're building enterprise software for hospitals—that remains
+                our core mission. But we're also deeply committed to public health and serving the healthcare community
+                at large. Our drug interaction checker will always remain free because we believe healthcare technology
+                should be accessible to everyone who needs it.
               </p>
             </div>
           </div>
