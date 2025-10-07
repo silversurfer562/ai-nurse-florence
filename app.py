@@ -291,6 +291,20 @@ async def startup_event():
     logger.info("🚀 Application startup complete")
 
 
+# Root route - serve React app
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_root():
+    """Serve React app index.html at root."""
+    index_path = "frontend/dist/index.html"
+    if os.path.exists(index_path):
+        with open(index_path, "r") as f:
+            return f.read()
+    return HTMLResponse(
+        content="<h1>AI Nurse Florence</h1><p>React frontend not built. Run: cd frontend && npm run build</p>",
+        status_code=503,
+    )
+
+
 # Catchall route for React Router (SPA client-side routing)
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def catch_all(full_path: str):
@@ -298,12 +312,6 @@ async def catch_all(full_path: str):
     Catchall route for React Router client-side routing.
     Serves index.html for all non-API, non-static routes.
     """
-    # Skip if no path (root handled above)
-    if not full_path:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404)
-
     # For file extensions, let them 404 naturally (don't serve React app)
     if "." in full_path.split("/")[-1]:
         # This looks like a file request (e.g., .json, .js, .css)
