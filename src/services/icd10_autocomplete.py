@@ -70,6 +70,8 @@ def search_icd10(query: str, limit: int = 10) -> List[Dict[str, str]]:
     """
     Search ICD-10 codes by description or code.
 
+    Prioritizes simpler, shorter descriptions for better UX.
+
     Args:
         query: Search term (e.g., "diabetes", "E11")
         limit: Maximum results to return
@@ -85,26 +87,47 @@ def search_icd10(query: str, limit: int = 10) -> List[Dict[str, str]]:
         return []
 
     query_lower = query.lower()
-    results = []
+    matches = []
 
-    # Search through codes
+    # Search through codes and collect all matches
     for item in _icd10_codes:
-        if len(results) >= limit:
-            break
-
         code = item["code"]
         description = item["description"]
 
         # Match by code or description
         if query_lower in code.lower() or query_lower in description.lower():
-            results.append(
-                {
-                    "id": code,
-                    "label": f"{description} ({code})",
-                    "value": code,
-                    "icd10_code": code,
-                }
+            # Calculate a simplicity score (prefer shorter descriptions)
+            desc_length = len(description)
+            # Bonus for codes ending in 9 or 0 (usually more general)
+            is_general = code.endswith("9") or code.endswith("0")
+            # Penalty for words like "with", "due to" (usually more specific)
+            is_specific = (
+                " with " in description.lower() or " due to " in description.lower()
             )
+
+            # Lower score = better (will sort ascending)
+            score = desc_length
+            if is_general:
+                score -= 50  # Prioritize general codes
+            if is_specific:
+                score += 100  # Deprioritize specific complications
+
+            matches.append({"code": code, "description": description, "score": score})
+
+    # Sort by score (simpler/more general first)
+    matches.sort(key=lambda x: x["score"])
+
+    # Return top results
+    results = []
+    for match in matches[:limit]:
+        results.append(
+            {
+                "id": match["code"],
+                "label": f"{match['description']} ({match['code']})",
+                "value": match["code"],
+                "icd10_code": match["code"],
+            }
+        )
 
     return results
 
