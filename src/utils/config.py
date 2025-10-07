@@ -97,7 +97,21 @@ class Settings(BaseSettings):
         default=None, description="OpenAI API key from environment variable"
     )
     OPENAI_MODEL: str = Field(
-        default="gpt-3.5-turbo", description="Default OpenAI model"
+        default="gpt-4o-mini",
+        description="Default OpenAI model (gpt-4o-mini recommended for cost/quality balance)",
+    )
+
+    # Anthropic Claude Configuration - Alternative AI provider
+    ANTHROPIC_API_KEY: Optional[str] = Field(
+        default=None, description="Anthropic API key from environment variable"
+    )
+    ANTHROPIC_MODEL: str = Field(
+        default="claude-3-5-sonnet-20241022",
+        description="Default Anthropic Claude model (claude-3-5-sonnet for best quality)",
+    )
+    AI_PROVIDER: str = Field(
+        default="openai",
+        description="Preferred AI provider: 'openai' or 'anthropic' (openai=cheaper, anthropic=higher quality)",
     )
 
     # Redis Configuration following Caching Strategy
@@ -161,6 +175,30 @@ class Settings(BaseSettings):
     def has_openai(self) -> bool:
         """Check if OpenAI API key is configured following OpenAI Integration."""
         return self.OPENAI_API_KEY is not None and self.OPENAI_API_KEY.strip() != ""
+
+    def has_anthropic(self) -> bool:
+        """Check if Anthropic API key is configured."""
+        return (
+            self.ANTHROPIC_API_KEY is not None and self.ANTHROPIC_API_KEY.strip() != ""
+        )
+
+    def get_active_ai_provider(self) -> str:
+        """
+        Get the active AI provider based on configuration and API key availability.
+        Returns 'openai', 'anthropic', or raises error if none configured.
+        """
+        if self.AI_PROVIDER == "anthropic" and self.has_anthropic():
+            return "anthropic"
+        elif self.AI_PROVIDER == "openai" and self.has_openai():
+            return "openai"
+        elif self.has_openai():
+            return "openai"
+        elif self.has_anthropic():
+            return "anthropic"
+        else:
+            raise ValueError(
+                "No AI provider configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY"
+            )
 
     def has_redis(self) -> bool:
         """Check if Redis is configured following Caching Strategy."""
