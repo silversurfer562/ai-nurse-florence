@@ -768,7 +768,6 @@ export default function DischargeInstructions() {
               {steps.map((step, index) => {
                 const isCompleted = index < currentStep;
                 const isCurrent = index === currentStep;
-                const isFuture = index > currentStep;
 
                 return (
                   <div key={step.id} className="flex flex-col items-center flex-1">
