@@ -23,7 +23,6 @@ interface WizardStep {
 
 export default function SbarReport() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [maxStepReached, setMaxStepReached] = useState(0); // Track furthest step reached
   const [data, setData] = useState<WizardData>({
     patient_id: '',
     situation: '',
@@ -49,6 +48,9 @@ export default function SbarReport() {
       content: (
         <div>
           <p className="mb-2">Welcome to the SBAR Report Wizard! This tool helps you create structured clinical communications following the SBAR format.</p>
+          <p className="text-sm text-orange-800 bg-orange-50 p-2 rounded mt-2">
+            <strong>⚠️ Important:</strong> This wizard moves forward only. Review each step carefully before clicking Next.
+          </p>
           <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
             💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
           </p>
@@ -58,19 +60,15 @@ export default function SbarReport() {
     },
     {
       target: '.wizard-progress',
-      content: 'Track your progress through all five steps: Patient Information, then the four SBAR sections. Click any step to jump directly to it.',
+      content: 'Track your progress through all five steps. Green = completed, Blue with ring = current, Gray = upcoming. Steps cannot be clicked to go back.',
     },
     {
       target: '.wizard-content',
-      content: 'Complete each section with relevant information. The wizard guides you through Patient ID, Situation, Background, Assessment, and Recommendation.',
+      content: 'Complete each section carefully. You cannot return to edit previous steps, so review your entries before advancing.',
     },
     {
       target: '.wizard-navigation',
-      content: 'Use these buttons to navigate between steps. The final step will generate your professional SBAR report.',
-    },
-    {
-      target: '.help-button',
-      content: 'Need help anytime? Click this button to restart the tour.',
+      content: 'Use "Next" to advance and "Start Over" to restart if needed. The wizard will confirm before moving to the next step.',
     },
   ];
 
@@ -203,18 +201,35 @@ export default function SbarReport() {
   const nextStep = () => {
     if (!validateStep()) return;
 
+    // Show confirmation dialog before advancing (except on first step)
+    if (currentStep > 0 && currentStep < steps.length - 1) {
+      const confirmed = window.confirm(
+        "Please review your entries. You won't be able to go back to edit this step. Continue?"
+      );
+      if (!confirmed) return;
+    }
+
     if (currentStep === steps.length - 1) {
       handleGenerate();
     } else {
-      const nextStepIndex = currentStep + 1;
-      setCurrentStep(nextStepIndex);
-      setMaxStepReached(Math.max(maxStepReached, nextStepIndex));
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const previousStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+  const startOver = () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to start over? All entered data will be lost."
+    );
+    if (confirmed) {
+      setData({
+        patient_id: '',
+        situation: '',
+        background: '',
+        assessment: '',
+        recommendation: ''
+      });
+      setGeneratedReport(null);
+      setCurrentStep(0);
     }
   };
 
@@ -387,28 +402,23 @@ export default function SbarReport() {
             </div>
             <div className="flex justify-between mt-2 gap-1 sm:gap-2">
               {steps.map((step, index) => {
-                const isClickable = index <= maxStepReached;
                 const isCompleted = index < currentStep;
                 const isCurrent = index === currentStep;
 
                 return (
                   <div key={index} className="flex flex-col items-center flex-1">
-                    <button
-                      onClick={() => isClickable && setCurrentStep(index)}
-                      disabled={!isClickable}
+                    <div
                       className={`min-w-[44px] min-h-[44px] w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
                         isCurrent
                           ? 'bg-primary-600 text-white ring-2 ring-primary-400 ring-offset-2'
                           : isCompleted
-                          ? 'bg-success-500 text-white hover:bg-success-600 cursor-pointer'
-                          : isClickable
-                          ? 'bg-gray-300 text-gray-600 hover:bg-gray-400 cursor-pointer'
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                          ? 'bg-success-500 text-white'
+                          : 'bg-gray-200 text-gray-400'
                       }`}
-                      title={isClickable ? `Go to step ${index + 1}: ${step.title}` : `Complete previous steps first`}
+                      title={step.title}
                     >
                       {index + 1}
-                    </button>
+                    </div>
                     <span className="text-[10px] sm:text-xs text-gray-600 mt-1 text-center hidden sm:block">{step.title}</span>
                   </div>
                 );
@@ -452,19 +462,17 @@ export default function SbarReport() {
           {/* Navigation */}
           <div className="wizard-navigation bg-gray-50 p-4 rounded-b-lg flex flex-col sm:flex-row gap-3 sm:justify-between">
             <button
-              onClick={previousStep}
-              disabled={currentStep === 0}
-              className={`min-h-[44px] px-5 py-3 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors ${
-                currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              onClick={startOver}
+              className="min-h-[44px] px-6 py-3 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <i className="fas fa-arrow-left mr-2"></i>Previous
+              <i className="fas fa-redo mr-2"></i>Start Over
             </button>
 
             <button
               onClick={nextStep}
               disabled={isGenerating}
               className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Advance to next step (you cannot go back to edit this step)"
             >
               {currentStep === steps.length - 1 ? (
                 isGenerating ? (
