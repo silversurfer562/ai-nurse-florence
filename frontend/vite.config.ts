@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 
 // Plugin to copy locales to dist
 function copyLocales() {
@@ -40,6 +40,11 @@ function copyLocales() {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), copyLocales()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
   server: {
     port: 5173,
     proxy: {

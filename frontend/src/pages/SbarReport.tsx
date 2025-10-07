@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
 import { useCareSettings, useCareSettingTemplates } from '../hooks/useCareSettings';
 import CareSettingContextBanner from '../components/CareSettingContextBanner';
 
@@ -30,9 +31,71 @@ export default function SbarReport() {
   const [generatedReport, setGeneratedReport] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Tour state
+  const [runTour, setRunTour] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
+  const [hasSeenTour, setHasSeenTour] = useState(false);
+
   // Care setting integration
   const { careSetting } = useCareSettings();
   const { getTemplateDefaults } = useCareSettingTemplates();
+
+  // Tour steps
+  const tourSteps: Step[] = [
+    {
+      target: '.wizard-container',
+      content: (
+        <div>
+          <p className="mb-2">Welcome to the SBAR Report Wizard! This tool helps you create structured clinical communications following the SBAR format.</p>
+          <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
+            💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
+          </p>
+        </div>
+      ),
+      disableBeacon: true,
+    },
+    {
+      target: '.wizard-progress',
+      content: 'Track your progress through the four SBAR sections. Click any step to jump directly to it.',
+    },
+    {
+      target: '.wizard-content',
+      content: 'Complete each section with relevant patient information. The wizard guides you through Situation, Background, Assessment, and Recommendation.',
+    },
+    {
+      target: '.wizard-navigation',
+      content: 'Use these buttons to navigate between steps. The final step will generate your professional SBAR report.',
+    },
+    {
+      target: '.help-button',
+      content: 'Need help anytime? Click this button to restart the tour. Press ESC now to begin!',
+    },
+  ];
+
+  // Auto-launch tour on first visit
+  useEffect(() => {
+    const tourSeen = localStorage.getItem('sbarTourSeen');
+    if (!tourSeen) {
+      const timer = setTimeout(() => {
+        setRunTour(true);
+        setShowPulse(false);
+      }, 2500);
+      setShowPulse(true);
+      return () => clearTimeout(timer);
+    } else {
+      setHasSeenTour(true);
+    }
+  }, []);
+
+  // Tour callback handler
+  const handleTourCallback = (data: CallBackProps) => {
+    const { status } = data;
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRunTour(false);
+      localStorage.setItem('sbarTourSeen', 'true');
+      setHasSeenTour(true);
+    }
+  };
 
   // Load care setting template defaults
   useEffect(() => {
@@ -274,10 +337,35 @@ export default function SbarReport() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <Joyride
+        steps={tourSteps}
+        run={runTour}
+        continuous
+        showSkipButton
+        callback={handleTourCallback}
+        styles={{
+          options: {
+            primaryColor: '#d4af37',
+            zIndex: 10000,
+          },
+        }}
+      />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">SBAR Report Wizard</h1>
+          <div className="flex justify-center items-center gap-4 mb-2">
+            <h1 className="text-4xl font-bold text-gray-800">SBAR Report Wizard</h1>
+            <button
+              onClick={() => setRunTour(true)}
+              className={`help-button px-3 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-all text-sm ${
+                showPulse ? 'animate-pulse' : ''
+              }`}
+              title="Quick tour - Press ESC anytime to exit"
+            >
+              <i className="fas fa-question-circle mr-2"></i>
+              {!hasSeenTour && showPulse ? 'New? Take Quick Tour!' : 'Help'}
+            </button>
+          </div>
           <p className="text-gray-600">Structured clinical communication for patient handoffs</p>
         </div>
 
