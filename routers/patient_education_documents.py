@@ -27,6 +27,7 @@ from src.database import get_db
 from src.integrations.medlineplus import MedlinePlusClient
 from src.models.content_settings import DiagnosisContentMap
 from src.services.claude_service import claude_service
+from src.utils.html_generator import generate_patient_education_html
 
 router = APIRouter(prefix="/documents", tags=["Patient Education Documents"])
 
@@ -166,13 +167,22 @@ async def generate_patient_education_document(
         )
         logger.info(f"PDF generated: {pdf_path}")
 
+        # Generate HTML preview
+        logger.info("Generating HTML preview...")
+        html_path = _generate_html(
+            content=document_content,
+            patient_name=request.patient_name,
+            language=request.preferred_language,
+        )
+        logger.info(f"HTML generated: {html_path}")
+
         # Generate document ID
         document_id = f"PE_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         return PatientEducationResponse(
             document_id=document_id,
             pdf_url=f"/api/v1/documents/download/{pdf_path.name}",
-            html_preview_url=None,  # TODO: Implement HTML preview
+            html_preview_url=f"/api/v1/documents/preview/{html_path.name}",
             language=request.preferred_language,
             reading_level=request.reading_level,
             generated_at=datetime.now(),
@@ -491,6 +501,73 @@ def _generate_pdf(content: dict, patient_name: str, language: str) -> Path:
     return filepath
 
 
+def _generate_html(content: dict, patient_name: str, language: str) -> Path:
+    """Generate HTML preview from document content"""
+    import logging
+    import os
+
+    logger = logging.getLogger(__name__)
+
+    # Detect Railway environment
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") is not None
+        or os.getenv("RAILWAY_SERVICE_ID") is not None
+    )
+
+    if is_railway:
+        output_dir = Path("/app/data/generated_documents")
+        logger.info(
+            f"Railway environment detected, using persistent volume: {output_dir}"
+        )
+    else:
+        output_dir = Path("data/generated_documents")
+        logger.info(f"Local environment detected, using local directory: {output_dir}")
+
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Output directory ready: {output_dir}")
+    except Exception as e:
+        logger.error(f"Failed to create output directory {output_dir}: {e}")
+        raise
+
+    # Generate unique filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"patient_education_{timestamp}.html"
+    filepath = output_dir / filename
+
+    # Extract sections into dict for HTML generator
+    sections = {}
+    for section in content.get("sections", []):
+        section_title = section.get("title", "")
+        section_content = section.get("content", "")
+
+        # Add bullet points if present
+        if "bullet_points" in section and section["bullet_points"]:
+            bullet_list = "\n".join(
+                [f"• {point}" for point in section["bullet_points"]]
+            )
+            section_content = f"{section_content}\n\n{bullet_list}"
+
+        sections[section_title] = section_content
+
+    # Generate HTML using our utility
+    html_content = generate_patient_education_html(
+        patient_name=patient_name,
+        diagnosis=content.get("diagnosis_name", ""),
+        language=language,
+        sections=sections,
+        custom_instructions=None,  # Already in sections if present
+        follow_up_date=None,  # Already in sections if present
+    )
+
+    # Write HTML to file
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    logger.info(f"HTML preview generated: {filepath}")
+    return filepath
+
+
 def _format_medications(medications: List[dict], language: str) -> str:
     """Format medication list for document"""
 
@@ -774,3 +851,31 @@ async def download_document(filename: str):
     return FileResponse(
         path=str(filepath), media_type="application/pdf", filename=filename
     )
+
+
+@router.get("/preview/{filename}")
+async def preview_document(filename: str):
+    """Preview generated document as HTML"""
+    import os
+
+    # Use same environment detection as _generate_pdf
+    is_railway = (
+        os.getenv("RAILWAY_ENVIRONMENT") is not None
+        or os.getenv("RAILWAY_SERVICE_ID") is not None
+    )
+
+    if is_railway:
+        base_dir = Path("/app/data/generated_documents")
+    else:
+        base_dir = Path("data/generated_documents")
+
+    filepath = base_dir / filename
+
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Document preview not found")
+
+    # Verify it's an HTML file
+    if not filename.endswith(".html"):
+        raise HTTPException(status_code=400, detail="Invalid preview file format")
+
+    return FileResponse(path=str(filepath), media_type="text/html", filename=filename)
