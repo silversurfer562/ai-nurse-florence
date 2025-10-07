@@ -121,8 +121,7 @@ export default function LandingPage() {
               <span className="block text-primary-600 mt-2">Built for Nurses</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              AI-powered tools to help you document faster, make confident decisions,
-              and deliver exceptional patient care.
+              Provide better patient care while improving compliance with regulatory and legal requirements—in a fraction of the time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
@@ -164,12 +163,12 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Clinical Documentation</h3>
               <p className="text-gray-600 mb-4">
-                SBAR reports, SOAP notes, shift handoffs, and care plans with AI-powered assistance.
+                Complete compliant SBAR reports, discharge instructions, and incident reports in minutes, not hours.
               </p>
               <ul className="text-sm text-gray-600 space-y-2">
-                <li><i className="fas fa-check text-green-500 mr-2"></i>Guided wizards</li>
+                <li><i className="fas fa-check text-green-500 mr-2"></i>Regulatory compliant</li>
                 <li><i className="fas fa-check text-green-500 mr-2"></i>Evidence-based templates</li>
-                <li><i className="fas fa-check text-green-500 mr-2"></i>Instant generation</li>
+                <li><i className="fas fa-check text-green-500 mr-2"></i>90% time savings</li>
               </ul>
             </div>
 
@@ -331,7 +330,7 @@ export default function LandingPage() {
             Ready to Transform Your Workflow?
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Healthcare professionals: Try our full platform now—no signup required.
+            Deliver better patient care, improve regulatory compliance, and reduce documentation time by 90%. Try our full platform now—no signup required.
           </p>
           <a
             href="/app"
