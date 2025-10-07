@@ -40,7 +40,7 @@ export default function Layout() {
               aria-label={`${t('common.appName')} - Return to home page`}
             >
               <div className="bg-blue-600 p-3 rounded-xl" aria-hidden="true">
-                <i className="fas fa-user-nurse text-white text-2xl"></i>
+                <i className="fas fa-stethoscope text-white text-2xl"></i>
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">{t('common.appName')}</h1>
@@ -56,17 +56,15 @@ export default function Layout() {
                 onClick={() => setShowCareSettingModal(true)}
               />
 
-              {/* Dashboard Icon - Show when not on dashboard */}
-              {!isOnDashboard && (
-                <Link
-                  to="/app"
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                  aria-label="Return to Dashboard"
-                >
-                  <i className="fas fa-table-columns" aria-hidden="true"></i>
-                  <span className="font-medium">Dashboard</span>
-                </Link>
-              )}
+              {/* Dashboard Button - Always visible */}
+              <Link
+                to="/app"
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                aria-label="Go to Dashboard"
+              >
+                <i className="fas fa-table-columns" aria-hidden="true"></i>
+                <span className="font-medium">Dashboard</span>
+              </Link>
 
               {/* Current Language Indicator - Click to go to Settings */}
               <Link
