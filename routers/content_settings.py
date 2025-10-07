@@ -10,24 +10,25 @@ Endpoints:
 - Medication content search
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
-from datetime import datetime
 import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 # Database imports
 from src.database import get_db
 from src.models.content_settings import (
-    FacilitySettings,
-    WorkSettingPreset,
-    PersonalContentLibrary,
     DiagnosisContentMap,
+    FacilitySettings,
     MedicationContentMap,
+    PersonalContentLibrary,
+    WorkSettingPreset,
     search_diagnosis_by_icd10,
     search_diagnosis_by_name,
-    search_medication_by_rxnorm
+    search_medication_by_rxnorm,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,8 +39,10 @@ router = APIRouter(prefix="/content-settings", tags=["Content Settings"])
 # Pydantic Schemas
 # ============================================================================
 
+
 class FacilitySettingsCreate(BaseModel):
     """Create/update facility settings"""
+
     facility_id: str
     facility_name: str
     main_phone: Optional[str] = None
@@ -54,6 +57,7 @@ class FacilitySettingsCreate(BaseModel):
 
 class FacilitySettingsResponse(BaseModel):
     """Facility settings response"""
+
     facility_id: str
     facility_name: str
     main_phone: Optional[str]
@@ -73,6 +77,7 @@ class FacilitySettingsResponse(BaseModel):
 
 class WorkSettingPresetResponse(BaseModel):
     """Work setting preset response"""
+
     id: str
     work_setting: str
     common_warning_signs: List[str]
@@ -91,6 +96,7 @@ class WorkSettingPresetResponse(BaseModel):
 
 class PersonalContentUpdate(BaseModel):
     """Update personal content library"""
+
     favorite_warning_signs: Optional[List[str]] = None
     favorite_medication_instructions: Optional[List[str]] = None
     favorite_follow_up_phrases: Optional[List[str]] = None
@@ -101,6 +107,7 @@ class PersonalContentUpdate(BaseModel):
 
 class PersonalContentResponse(BaseModel):
     """Personal content library response"""
+
     user_id: str
     favorite_warning_signs: List[str]
     favorite_medication_instructions: List[str]
@@ -118,6 +125,7 @@ class PersonalContentResponse(BaseModel):
 
 class DiagnosisSearchResponse(BaseModel):
     """Diagnosis search result"""
+
     id: str
     icd10_code: str
     snomed_code: Optional[str]
@@ -136,11 +144,9 @@ class DiagnosisSearchResponse(BaseModel):
 # Facility Settings Endpoints
 # ============================================================================
 
+
 @router.get("/facility/{facility_id}", response_model=FacilitySettingsResponse)
-async def get_facility_settings(
-    facility_id: str,
-    db: Session = Depends(get_db)
-):
+async def get_facility_settings(facility_id: str, db: Session = Depends(get_db)):
     """
     Get facility settings by ID
 
@@ -151,7 +157,7 @@ async def get_facility_settings(
     if not facility:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Facility settings not found for ID: {facility_id}"
+            detail=f"Facility settings not found for ID: {facility_id}",
         )
 
     return facility
@@ -159,17 +165,16 @@ async def get_facility_settings(
 
 @router.put("/facility", response_model=FacilitySettingsResponse)
 async def create_or_update_facility_settings(
-    settings: FacilitySettingsCreate,
-    db: Session = Depends(get_db)
+    settings: FacilitySettingsCreate, db: Session = Depends(get_db)
 ):
     """
     Create or update facility settings
 
     If facility already exists, updates it. Otherwise creates new facility settings.
     """
-    existing = db.query(FacilitySettings).filter_by(
-        facility_id=settings.facility_id
-    ).first()
+    existing = (
+        db.query(FacilitySettings).filter_by(facility_id=settings.facility_id).first()
+    )
 
     if existing:
         # Update existing
@@ -185,7 +190,7 @@ async def create_or_update_facility_settings(
         new_facility = FacilitySettings(
             **settings.dict(),
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
         db.add(new_facility)
         db.commit()
@@ -198,11 +203,9 @@ async def create_or_update_facility_settings(
 # Work Setting Presets Endpoints
 # ============================================================================
 
+
 @router.get("/work-preset/{work_setting}", response_model=WorkSettingPresetResponse)
-async def get_work_setting_preset(
-    work_setting: str,
-    db: Session = Depends(get_db)
-):
+async def get_work_setting_preset(work_setting: str, db: Session = Depends(get_db)):
     """
     Get work setting preset by name
 
@@ -214,16 +217,14 @@ async def get_work_setting_preset(
     if not preset:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Work setting preset not found: {work_setting}"
+            detail=f"Work setting preset not found: {work_setting}",
         )
 
     return preset
 
 
 @router.get("/work-presets", response_model=List[WorkSettingPresetResponse])
-async def list_work_setting_presets(
-    db: Session = Depends(get_db)
-):
+async def list_work_setting_presets(db: Session = Depends(get_db)):
     """
     List all available work setting presets
 
@@ -237,11 +238,9 @@ async def list_work_setting_presets(
 # Personal Content Library Endpoints
 # ============================================================================
 
+
 @router.get("/personal/{user_id}", response_model=PersonalContentResponse)
-async def get_personal_content_library(
-    user_id: str,
-    db: Session = Depends(get_db)
-):
+async def get_personal_content_library(user_id: str, db: Session = Depends(get_db)):
     """
     Get user's personal content library
 
@@ -262,7 +261,7 @@ async def get_personal_content_library(
             custom_medication_templates=[],
             most_used_diagnoses=[],
             most_used_medications=[],
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
         db.add(library)
         db.commit()
@@ -274,9 +273,7 @@ async def get_personal_content_library(
 
 @router.put("/personal/{user_id}", response_model=PersonalContentResponse)
 async def update_personal_content_library(
-    user_id: str,
-    updates: PersonalContentUpdate,
-    db: Session = Depends(get_db)
+    user_id: str, updates: PersonalContentUpdate, db: Session = Depends(get_db)
 ):
     """
     Update user's personal content library
@@ -291,7 +288,7 @@ async def update_personal_content_library(
         library = PersonalContentLibrary(
             user_id=user_id,
             **updates.dict(exclude_none=True),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
         db.add(library)
     else:
@@ -308,10 +305,7 @@ async def update_personal_content_library(
 
 @router.post("/personal/{user_id}/favorite")
 async def add_to_favorites(
-    user_id: str,
-    category: str,
-    content: str,
-    db: Session = Depends(get_db)
+    user_id: str, category: str, content: str, db: Session = Depends(get_db)
 ):
     """
     Add item to user's favorites
@@ -329,13 +323,13 @@ async def add_to_favorites(
         "warning_signs": "favorite_warning_signs",
         "medication_instructions": "favorite_medication_instructions",
         "follow_up_phrases": "favorite_follow_up_phrases",
-        "activity_restrictions": "favorite_activity_restrictions"
+        "activity_restrictions": "favorite_activity_restrictions",
     }
 
     if category not in category_map:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid category: {category}"
+            detail=f"Invalid category: {category}",
         )
 
     field_name = category_map[category]
@@ -353,26 +347,27 @@ async def add_to_favorites(
 
 @router.delete("/personal/{user_id}/favorite")
 async def remove_from_favorites(
-    user_id: str,
-    category: str,
-    content: str,
-    db: Session = Depends(get_db)
+    user_id: str, category: str, content: str, db: Session = Depends(get_db)
 ):
     """Remove item from user's favorites"""
     library = db.query(PersonalContentLibrary).filter_by(user_id=user_id).first()
 
     if not library:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Library not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Library not found"
+        )
 
     category_map = {
         "warning_signs": "favorite_warning_signs",
         "medication_instructions": "favorite_medication_instructions",
         "follow_up_phrases": "favorite_follow_up_phrases",
-        "activity_restrictions": "favorite_activity_restrictions"
+        "activity_restrictions": "favorite_activity_restrictions",
     }
 
     if category not in category_map:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid category")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid category"
+        )
 
     field_name = category_map[category]
     current_list = getattr(library, field_name) or []
@@ -391,12 +386,9 @@ async def remove_from_favorites(
 # Diagnosis Content Search Endpoints
 # ============================================================================
 
+
 @router.get("/diagnosis/search", response_model=List[DiagnosisSearchResponse])
-async def search_diagnoses(
-    q: str,
-    limit: int = 20,
-    db: Session = Depends(get_db)
-):
+async def search_diagnoses(q: str, limit: int = 20, db: Session = Depends(get_db)):
     """
     Search diagnoses by name or alias
 
@@ -413,10 +405,7 @@ async def search_diagnoses(
 
 
 @router.get("/diagnosis/icd10/{icd10_code}", response_model=DiagnosisSearchResponse)
-async def get_diagnosis_by_icd10(
-    icd10_code: str,
-    db: Session = Depends(get_db)
-):
+async def get_diagnosis_by_icd10(icd10_code: str, db: Session = Depends(get_db)):
     """
     Get diagnosis by ICD-10 code
 
@@ -427,52 +416,100 @@ async def get_diagnosis_by_icd10(
     if not diagnosis:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Diagnosis not found for ICD-10 code: {icd10_code}"
+            detail=f"Diagnosis not found for ICD-10 code: {icd10_code}",
         )
 
     return diagnosis
 
 
 @router.get("/diagnosis/{diagnosis_id}", response_model=DiagnosisSearchResponse)
-async def get_diagnosis_by_id(
-    diagnosis_id: str,
-    db: Session = Depends(get_db)
-):
+async def get_diagnosis_by_id(diagnosis_id: str, db: Session = Depends(get_db)):
     """Get diagnosis content by ID"""
     diagnosis = db.query(DiagnosisContentMap).filter_by(id=diagnosis_id).first()
 
     if not diagnosis:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Diagnosis not found: {diagnosis_id}"
+            detail=f"Diagnosis not found: {diagnosis_id}",
         )
 
     return diagnosis
 
 
 @router.get("/diagnosis/autocomplete")
-async def autocomplete_diagnosis(
-    q: str,
-    limit: int = 10,
-    db: Session = Depends(get_db)
-):
+async def autocomplete_diagnosis(q: str, limit: int = 10):
     """
     Autocomplete for diagnosis search
 
     Returns minimal data for autocomplete dropdowns.
+    Uses static list of common diagnoses until database is populated.
     """
-    try:
-        results = search_diagnosis_by_name(db, q)
+    # Static list of common diagnoses
+    common_diagnoses = [
+        {"id": "dm2", "label": "Type 2 Diabetes Mellitus", "icd10_code": "E11.9"},
+        {"id": "dm1", "label": "Type 1 Diabetes Mellitus", "icd10_code": "E10.9"},
+        {"id": "htn", "label": "Essential Hypertension", "icd10_code": "I10"},
+        {"id": "cad", "label": "Coronary Artery Disease", "icd10_code": "I25.10"},
+        {"id": "chf", "label": "Congestive Heart Failure", "icd10_code": "I50.9"},
+        {
+            "id": "copd",
+            "label": "Chronic Obstructive Pulmonary Disease",
+            "icd10_code": "J44.9",
+        },
+        {"id": "asthma", "label": "Asthma", "icd10_code": "J45.909"},
+        {"id": "pneumonia", "label": "Pneumonia", "icd10_code": "J18.9"},
+        {"id": "uti", "label": "Urinary Tract Infection", "icd10_code": "N39.0"},
+        {"id": "ckd", "label": "Chronic Kidney Disease", "icd10_code": "N18.9"},
+        {
+            "id": "stroke",
+            "label": "Cerebrovascular Accident (Stroke)",
+            "icd10_code": "I63.9",
+        },
+        {"id": "mi", "label": "Myocardial Infarction", "icd10_code": "I21.9"},
+        {"id": "afib", "label": "Atrial Fibrillation", "icd10_code": "I48.91"},
+        {
+            "id": "depression",
+            "label": "Major Depressive Disorder",
+            "icd10_code": "F32.9",
+        },
+        {"id": "anxiety", "label": "Anxiety Disorder", "icd10_code": "F41.9"},
+        {"id": "osteoarthritis", "label": "Osteoarthritis", "icd10_code": "M19.90"},
+        {
+            "id": "gerd",
+            "label": "Gastroesophageal Reflux Disease",
+            "icd10_code": "K21.9",
+        },
+        {"id": "hypothyroid", "label": "Hypothyroidism", "icd10_code": "E03.9"},
+        {"id": "hyperthyroid", "label": "Hyperthyroidism", "icd10_code": "E05.90"},
+        {"id": "anemia", "label": "Anemia", "icd10_code": "D64.9"},
+        {"id": "cellulitis", "label": "Cellulitis", "icd10_code": "L03.90"},
+        {"id": "sepsis", "label": "Sepsis", "icd10_code": "A41.9"},
+        {"id": "dvt", "label": "Deep Vein Thrombosis", "icd10_code": "I82.40"},
+        {"id": "pe", "label": "Pulmonary Embolism", "icd10_code": "I26.99"},
+        {"id": "covid19", "label": "COVID-19", "icd10_code": "U07.1"},
+    ]
 
-        return [
-            {
-                "id": d.id,
-                "label": f"{d.diagnosis_display} ({d.icd10_code})",
-                "value": d.id,
-                "icd10_code": d.icd10_code
-            }
-            for d in results[:limit]
+    try:
+        # Filter by search query (case insensitive)
+        q_lower = q.lower()
+        filtered = [
+            d
+            for d in common_diagnoses
+            if q_lower in d["label"].lower() or q_lower in d["icd10_code"].lower()
         ]
+
+        # Add value field for compatibility
+        results = [
+            {
+                "id": d["id"],
+                "label": f"{d['label']} ({d['icd10_code']})",
+                "value": d["id"],
+                "icd10_code": d["icd10_code"],
+            }
+            for d in filtered[:limit]
+        ]
+
+        return results
     except Exception as e:
         logger.error(f"Diagnosis autocomplete failed: {str(e)}")
         # Return empty list instead of 500 error - graceful degradation
@@ -483,43 +520,38 @@ async def autocomplete_diagnosis(
 # Medication Content Search Endpoints
 # ============================================================================
 
+
 @router.get("/medication/rxnorm/{rxnorm_code}")
-async def get_medication_by_rxnorm(
-    rxnorm_code: str,
-    db: Session = Depends(get_db)
-):
+async def get_medication_by_rxnorm(rxnorm_code: str, db: Session = Depends(get_db)):
     """Get medication by RxNorm code"""
     medication = search_medication_by_rxnorm(db, rxnorm_code)
 
     if not medication:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Medication not found for RxNorm code: {rxnorm_code}"
+            detail=f"Medication not found for RxNorm code: {rxnorm_code}",
         )
 
     return medication
 
 
 @router.get("/medication/search")
-async def search_medications(
-    q: str,
-    limit: int = 20,
-    db: Session = Depends(get_db)
-):
+async def search_medications(q: str, limit: int = 20, db: Session = Depends(get_db)):
     """Search medications by name"""
     search_pattern = f"%{q.lower()}%"
-    results = db.query(MedicationContentMap).filter(
-        MedicationContentMap.medication_display.ilike(search_pattern)
-    ).limit(limit).all()
+    results = (
+        db.query(MedicationContentMap)
+        .filter(MedicationContentMap.medication_display.ilike(search_pattern))
+        .limit(limit)
+        .all()
+    )
 
     return results
 
 
 @router.get("/medication/autocomplete")
 async def autocomplete_medication(
-    q: str,
-    limit: int = 10,
-    db: Session = Depends(get_db)
+    q: str, limit: int = 10, db: Session = Depends(get_db)
 ):
     """
     Autocomplete for medication search
@@ -527,9 +559,12 @@ async def autocomplete_medication(
     Returns minimal data for autocomplete dropdowns.
     """
     search_pattern = f"%{q.lower()}%"
-    results = db.query(MedicationContentMap).filter(
-        MedicationContentMap.medication_display.ilike(search_pattern)
-    ).limit(limit).all()
+    results = (
+        db.query(MedicationContentMap)
+        .filter(MedicationContentMap.medication_display.ilike(search_pattern))
+        .limit(limit)
+        .all()
+    )
 
     return [
         {
@@ -537,7 +572,7 @@ async def autocomplete_medication(
             "label": m.medication_display,
             "value": m.id,
             "rxnorm_code": m.rxnorm_code,
-            "generic_name": m.generic_name
+            "generic_name": m.generic_name,
         }
         for m in results
     ]
@@ -547,12 +582,13 @@ async def autocomplete_medication(
 # Usage Tracking (NO PHI)
 # ============================================================================
 
+
 @router.post("/track-usage/{user_id}")
 async def track_content_usage(
     user_id: str,
     content_type: str,  # "diagnosis" or "medication"
     content_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Track content usage for personalization
@@ -578,11 +614,13 @@ async def track_content_usage(
                 break
 
         if not found:
-            usage_list.append({
-                "id": content_id,
-                "count": 1,
-                "last_used": datetime.utcnow().isoformat()
-            })
+            usage_list.append(
+                {
+                    "id": content_id,
+                    "count": 1,
+                    "last_used": datetime.utcnow().isoformat(),
+                }
+            )
 
         library.most_used_diagnoses = usage_list
 
@@ -597,11 +635,13 @@ async def track_content_usage(
                 break
 
         if not found:
-            usage_list.append({
-                "id": content_id,
-                "count": 1,
-                "last_used": datetime.utcnow().isoformat()
-            })
+            usage_list.append(
+                {
+                    "id": content_id,
+                    "count": 1,
+                    "last_used": datetime.utcnow().isoformat(),
+                }
+            )
 
         library.most_used_medications = usage_list
 
