@@ -83,16 +83,49 @@ OPENAI_API_KEY=your-staging-key
 ---
 
 ### Production (.env.production)
+
+#### **Option 1: Quality-First with Automatic Fallback (RECOMMENDED for Healthcare)**
 ```bash
-# Option 1: Cost-optimized (recommended initially)
+# Primary provider - best quality
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your-anthropic-key
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+
+# Fallback provider - reliable backup
+OPENAI_API_KEY=your-openai-key
+OPENAI_MODEL=gpt-4o
+
+# Automatic failover configuration
+AI_FALLBACK_ENABLED=true
+AI_FALLBACK_PROVIDER=openai          # Auto-selects if not specified
+AI_FALLBACK_MODEL=gpt-4o             # Uses provider default if not specified
+AI_MAX_RETRIES=3                     # Retry attempts before fallback
+AI_CIRCUIT_BREAKER_THRESHOLD=5       # Failures before opening circuit
+AI_CIRCUIT_BREAKER_TIMEOUT=300       # Cooldown period (5 minutes)
+```
+
+**Benefits:**
+- ✅ **Zero-downtime AI**: Automatic failover to backup provider
+- ✅ **Quality-first**: Claude for best clinical reasoning
+- ✅ **Reliable backup**: GPT-4o if Claude unavailable
+- ✅ **Cost protection**: Circuit breaker prevents runaway costs
+- ✅ **Self-healing**: Auto-recovery after timeout
+
+**How it works:**
+1. Primary: Claude attempts (with 3 retries + exponential backoff)
+2. If Claude fails → Automatic fallback to GPT-4o
+3. Circuit breaker opens after 5 consecutive failures
+4. After 5 minutes, system tests Claude recovery
+5. Returns to Claude when healthy
+
+---
+
+#### Option 2: Cost-optimized (single provider)
+```bash
 AI_PROVIDER=openai
 OPENAI_MODEL=gpt-4o
 OPENAI_API_KEY=your-prod-key
-
-# Option 2: Quality-optimized (when you need the best)
-AI_PROVIDER=anthropic
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
-ANTHROPIC_API_KEY=your-prod-key
+AI_FALLBACK_ENABLED=false
 ```
 
 **Goal:** Best balance of cost/quality for real users
