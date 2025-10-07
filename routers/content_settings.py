@@ -422,20 +422,6 @@ async def get_diagnosis_by_icd10(icd10_code: str, db: Session = Depends(get_db))
     return diagnosis
 
 
-@router.get("/diagnosis/{diagnosis_id}", response_model=DiagnosisSearchResponse)
-async def get_diagnosis_by_id(diagnosis_id: str, db: Session = Depends(get_db)):
-    """Get diagnosis content by ID"""
-    diagnosis = db.query(DiagnosisContentMap).filter_by(id=diagnosis_id).first()
-
-    if not diagnosis:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Diagnosis not found: {diagnosis_id}",
-        )
-
-    return diagnosis
-
-
 @router.get("/diagnosis/autocomplete")
 async def autocomplete_diagnosis(q: str, limit: int = 10):
     """
@@ -456,6 +442,20 @@ async def autocomplete_diagnosis(q: str, limit: int = 10):
         logger.error(f"Diagnosis autocomplete failed: {e}", exc_info=True)
         # Return empty list on error - graceful degradation
         return []
+
+
+@router.get("/diagnosis/{diagnosis_id}", response_model=DiagnosisSearchResponse)
+async def get_diagnosis_by_id(diagnosis_id: str, db: Session = Depends(get_db)):
+    """Get diagnosis content by ID"""
+    diagnosis = db.query(DiagnosisContentMap).filter_by(id=diagnosis_id).first()
+
+    if not diagnosis:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Diagnosis not found: {diagnosis_id}",
+        )
+
+    return diagnosis
 
 
 # ============================================================================

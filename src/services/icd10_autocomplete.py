@@ -5,6 +5,7 @@ Provides fast autocomplete for 74,000+ ICD-10 diagnosis codes
 
 import logging
 import os
+import re
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,8 @@ def load_icd10_codes() -> None:
                 if not line:
                     continue
 
-                parts = line.split("\t", 1)
+                # Split on whitespace (2+ spaces) - format is: "CODE    Description"
+                parts = re.split(r"\s{2,}", line, maxsplit=1)
                 if len(parts) == 2:
                     code, description = parts
                     _icd10_codes.append(
