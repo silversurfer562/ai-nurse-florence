@@ -160,8 +160,8 @@ export default function DischargeInstructions() {
         }
         break;
       case 5:
-        if (data.warning_signs.length === 0 || data.emergency_criteria.length === 0) {
-          alert('Please add warning signs and emergency criteria for patient safety');
+        if (data.warning_signs.length === 0 && data.emergency_criteria.length === 0) {
+          alert('Please add at least one warning sign or emergency criterion for patient safety');
           return false;
         }
         break;
