@@ -34,10 +34,10 @@ export default function Layout() {
       <header role="banner" className="bg-white shadow-lg border-b-4 border-blue-600" aria-label="Main navigation">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link
-              to="/app"
+            <a
+              href="/"
               className="flex items-center space-x-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg p-2 -m-2"
-              aria-label={`${t('common.appName')} - ${t('common.appTagline')}`}
+              aria-label={`${t('common.appName')} - Return to home page`}
             >
               <div className="bg-blue-600 p-3 rounded-xl" aria-hidden="true">
                 <i className="fas fa-user-nurse text-white text-2xl"></i>
@@ -46,7 +46,7 @@ export default function Layout() {
                 <h1 className="text-2xl font-bold text-gray-800">{t('common.appName')}</h1>
                 <p className="text-sm text-blue-600 font-medium">{t('common.appTagline')}</p>
               </div>
-            </Link>
+            </a>
 
             {/* Right Side Icons */}
             <nav id="primary-navigation" className="flex items-center space-x-3" aria-label="Primary navigation" role="navigation">
@@ -56,15 +56,15 @@ export default function Layout() {
                 onClick={() => setShowCareSettingModal(true)}
               />
 
-              {/* Home Icon - Show when not on dashboard */}
+              {/* Dashboard Icon - Show when not on dashboard */}
               {!isOnDashboard && (
                 <Link
                   to="/app"
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                  aria-label={`Return to ${t('common.home')}`}
+                  aria-label="Return to Dashboard"
                 >
-                  <i className="fas fa-house-medical" aria-hidden="true"></i>
-                  <span className="font-medium">{t('common.home')}</span>
+                  <i className="fas fa-table-columns" aria-hidden="true"></i>
+                  <span className="font-medium">Dashboard</span>
                 </Link>
               )}
 

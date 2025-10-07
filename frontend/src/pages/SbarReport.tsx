@@ -323,7 +323,7 @@ export default function SbarReport() {
               href="/app"
               className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              <i className="fas fa-home mr-2"></i>Back to Dashboard
+              <i className="fas fa-table-columns mr-2"></i>Back to Dashboard
             </a>
           </div>
         </div>
