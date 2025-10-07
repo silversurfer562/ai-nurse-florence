@@ -198,8 +198,20 @@ except Exception as e:
     logger.warning(f"Failed to register webhooks router: {e}")
     ROUTERS_LOADED["webhooks"] = False
 
+# Content Settings Router - Diagnosis autocomplete and content management
+try:
+    from routers.content_settings import router as content_settings_router
 
-# Diagnosis Search Endpoint - Disease name suggestions from database
+    api_router.include_router(content_settings_router)
+    logger.info("✅ Content settings router registered successfully")
+    ROUTERS_LOADED["content_settings"] = True
+except Exception as e:
+    logger.warning(f"Failed to register content settings router: {e}")
+    ROUTERS_LOADED["content_settings"] = False
+
+
+# Diagnosis Search Endpoint - Disease name suggestions from database (FALLBACK)
+# This is a fallback if content_settings router fails to load
 @app.get("/api/v1/content-settings/diagnosis/search")
 async def search_diagnoses_proxy(q: str, limit: int = 20):
     """
