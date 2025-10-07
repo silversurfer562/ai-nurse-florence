@@ -463,11 +463,23 @@ async def debug_icd10_status():
             app_root, "data", "icd10_raw", "icd10cm-codes-2025.txt"
         )
 
+        # List files in expected directory
+        data_dir = os.path.join(app_root, "data", "icd10_raw")
+        files_in_dir = (
+            os.listdir(data_dir) if os.path.exists(data_dir) else ["DIR_NOT_FOUND"]
+        )
+
         return JSONResponse(
             content={
                 "file_path": data_path,
                 "file_exists": os.path.exists(data_path),
                 "cwd": os.getcwd(),
+                "__file__": __file__,
+                "router_dir": router_dir,
+                "app_root": app_root,
+                "data_dir": data_dir,
+                "data_dir_exists": os.path.exists(data_dir),
+                "files_in_data_dir": files_in_dir,
                 "codes_loaded": len(icd10_autocomplete._icd10_codes),
                 "loaded_flag": icd10_autocomplete._loaded,
             }
