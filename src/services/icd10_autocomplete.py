@@ -1,0 +1,103 @@
+"""
+ICD-10 Autocomplete Service
+Provides fast autocomplete for 74,000+ ICD-10 diagnosis codes
+"""
+
+import logging
+import os
+from typing import Dict, List
+
+logger = logging.getLogger(__name__)
+
+# Global cache for ICD-10 codes
+_icd10_codes: List[Dict[str, str]] = []
+_loaded = False
+
+
+def load_icd10_codes() -> None:
+    """Load ICD-10 codes from data file into memory (one-time load)."""
+    global _icd10_codes, _loaded
+
+    if _loaded:
+        return
+
+    try:
+        # Path to ICD-10 data file
+        data_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "data",
+            "icd10_raw",
+            "icd10cm-codes-2025.txt",
+        )
+
+        if not os.path.exists(data_path):
+            logger.warning(f"ICD-10 data file not found at {data_path}")
+            return
+
+        logger.info(f"Loading ICD-10 codes from {data_path}...")
+
+        with open(data_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+
+                parts = line.split("\t", 1)
+                if len(parts) == 2:
+                    code, description = parts
+                    _icd10_codes.append(
+                        {"code": code.strip(), "description": description.strip()}
+                    )
+
+        _loaded = True
+        logger.info(f"✅ Loaded {len(_icd10_codes)} ICD-10 codes for autocomplete")
+
+    except Exception as e:
+        logger.error(f"Failed to load ICD-10 codes: {e}")
+
+
+def search_icd10(query: str, limit: int = 10) -> List[Dict[str, str]]:
+    """
+    Search ICD-10 codes by description or code.
+
+    Args:
+        query: Search term (e.g., "diabetes", "E11")
+        limit: Maximum results to return
+
+    Returns:
+        List of matching diagnoses with id, label, value, icd10_code
+    """
+    # Ensure codes are loaded
+    if not _loaded:
+        load_icd10_codes()
+
+    if not _icd10_codes:
+        return []
+
+    query_lower = query.lower()
+    results = []
+
+    # Search through codes
+    for item in _icd10_codes:
+        if len(results) >= limit:
+            break
+
+        code = item["code"]
+        description = item["description"]
+
+        # Match by code or description
+        if query_lower in code.lower() or query_lower in description.lower():
+            results.append(
+                {
+                    "id": code,
+                    "label": f"{description} ({code})",
+                    "value": code,
+                    "icd10_code": code,
+                }
+            )
+
+    return results
+
+
+# Pre-load codes on module import for faster first request
+load_icd10_codes()
