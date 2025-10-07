@@ -446,6 +446,36 @@ async def autocomplete_diagnosis(q: str, limit: int = 10):
         return JSONResponse(content=[])
 
 
+@router.get("/diagnosis/autocomplete/debug")
+async def debug_icd10_status():
+    """Debug endpoint to check ICD-10 file status"""
+    import os
+
+    from fastapi.responses import JSONResponse
+
+    try:
+        from src.services import icd10_autocomplete
+
+        data_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "data",
+            "icd10_raw",
+            "icd10cm-codes-2025.txt",
+        )
+
+        return JSONResponse(
+            content={
+                "file_path": data_path,
+                "file_exists": os.path.exists(data_path),
+                "cwd": os.getcwd(),
+                "codes_loaded": len(icd10_autocomplete._icd10_codes),
+                "loaded_flag": icd10_autocomplete._loaded,
+            }
+        )
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
 @router.get("/diagnosis/{diagnosis_id}", response_model=DiagnosisSearchResponse)
 async def get_diagnosis_by_id(diagnosis_id: str, db: Session = Depends(get_db)):
     """Get diagnosis content by ID"""
