@@ -55,6 +55,9 @@ export default function DischargeInstructions() {
       content: (
         <div>
           <p className="mb-2">Welcome to the Discharge Instructions Wizard! Create comprehensive, patient-friendly discharge instructions.</p>
+          <p className="text-sm text-orange-800 bg-orange-50 p-2 rounded mt-2">
+            <strong>⚠️ Important:</strong> This wizard moves forward only. Review each step carefully before clicking Next.
+          </p>
           <p className="text-sm text-gray-600 mt-3 pt-2 border-t border-gray-200">
             💡 <strong>Tip:</strong> Press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300">ESC</kbd> anytime to exit this tour
           </p>
@@ -64,15 +67,15 @@ export default function DischargeInstructions() {
     },
     {
       target: '.wizard-progress',
-      content: 'Track your progress through all seven steps: Patient Info, Diagnosis, Medications, Follow-up, Instructions, Safety, and Review.',
+      content: 'Track your progress through all seven steps. Green = completed, Blue = current, Gray = upcoming. Steps cannot be clicked to go back.',
     },
     {
       target: '.wizard-content',
-      content: 'Complete each section with relevant discharge information. The wizard guides you through all necessary patient education.',
+      content: 'Complete each section carefully. You cannot return to edit previous steps, so review your entries before advancing.',
     },
     {
-      target: '.help-button',
-      content: 'Need help anytime? Click this button to restart the tour.',
+      target: '.wizard-navigation',
+      content: 'Use "Next" to advance and "Start Over" to restart if needed. The wizard will confirm before moving to the next step.',
     },
   ];
 
@@ -722,16 +725,6 @@ export default function DischargeInstructions() {
               )}
             </div>
 
-            {/* Export Instructions */}
-            <div className="bg-warning-50 border-l-4 border-warning-600 p-4 rounded">
-              <p className="text-sm text-warning-900 font-medium mb-2">
-                <i className="fas fa-info-circle mr-2"></i>
-                Final Review - No Going Back
-              </p>
-              <p className="text-sm text-warning-800">
-                Please carefully review all information above. Once you export, you cannot edit this form. If you need to make changes, click "Start Over" below.
-              </p>
-            </div>
           </div>
         );
 
@@ -853,6 +846,7 @@ export default function DischargeInstructions() {
                 onClick={nextStep}
                 disabled={isGenerating}
                 className="min-h-[44px] px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
+                title="Advance to next step (you cannot go back to edit this step)"
               >
                 Next<i className="fas fa-arrow-right ml-2"></i>
               </button>
