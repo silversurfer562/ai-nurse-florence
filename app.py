@@ -199,18 +199,15 @@ except Exception as e:
     ROUTERS_LOADED["webhooks"] = False
 
 # Content Settings Router - Diagnosis autocomplete and content management
-# TEMPORARILY DISABLED - causing Railway deployment crash
-# TODO: Debug and re-enable
-# try:
-#     from routers.content_settings import router as content_settings_router
-#     api_router.include_router(content_settings_router)
-#     logger.info("✅ Content settings router registered successfully")
-#     ROUTERS_LOADED["content_settings"] = True
-# except Exception as e:
-#     logger.warning(f"Failed to register content settings router: {e}")
-#     ROUTERS_LOADED["content_settings"] = False
-logger.warning("⚠️ Content settings router disabled - needs Railway compatibility fix")
-ROUTERS_LOADED["content_settings"] = False
+try:
+    from routers.content_settings import router as content_settings_router
+
+    api_router.include_router(content_settings_router)
+    logger.info("✅ Content settings router registered successfully")
+    ROUTERS_LOADED["content_settings"] = True
+except Exception as e:
+    logger.warning(f"Failed to register content settings router: {e}")
+    ROUTERS_LOADED["content_settings"] = False
 
 
 # Education router (now using v1/patient-education)
