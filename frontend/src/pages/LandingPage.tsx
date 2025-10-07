@@ -403,11 +403,11 @@ export default function LandingPage() {
                     The fastest way to reach our team
                   </p>
                   <a
-                    href="mailto:patrick.roebuck@deepstudyai.com?subject=AI%20Nurse%20Florence%20Inquiry"
+                    href="mailto:support@deepstudyai.com?subject=AI%20Nurse%20Florence%20Inquiry"
                     className="inline-block px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-md"
                   >
                     <i className="fas fa-paper-plane mr-2"></i>
-                    patrick.roebuck@deepstudyai.com
+                    support@deepstudyai.com
                   </a>
                 </div>
 
