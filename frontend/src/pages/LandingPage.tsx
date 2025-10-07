@@ -2,18 +2,60 @@
  * AI Nurse Florence Landing Page
  * Modern clinical decision support platform for nursing professionals
  */
+import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
+
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [mobileMenuOpen]);
+
   return (
     <div className="min-h-screen bg-white">
+      {/* SEO Meta Tags */}
+      <Helmet>
+        <title>AI Nurse Florence - Clinical Decision Support Built for Nurses</title>
+        <meta
+          name="description"
+          content="AI-powered clinical documentation wizards, free drug interaction checker, and evidence-based decision support tools designed for nursing professionals. No login required."
+        />
+        <meta property="og:title" content="AI Nurse Florence - Clinical Decision Support Built for Nurses" />
+        <meta property="og:description" content="AI-powered clinical documentation wizards, free drug interaction checker, and evidence-based decision support tools designed for nursing professionals." />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="AI Nurse Florence - Clinical Decision Support Built for Nurses" />
+        <meta name="twitter:description" content="Free drug interaction checker and AI-powered clinical documentation tools for nurses" />
+      </Helmet>
+
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Logo */}
             <div className="flex items-center">
               <i className="fas fa-heart-pulse text-secondary-500 text-2xl mr-3"></i>
               <span className="text-xl font-bold text-gray-900">AI Nurse Florence</span>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
               <a href="/about" className="text-gray-600 hover:text-primary-600 transition-colors">
                 About
               </a>
@@ -24,11 +66,50 @@ export default function LandingPage() {
                 href="/app"
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
-                Sign In
+                Try Free
+              </a>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-4 py-4 space-y-3">
+              <a
+                href="/about"
+                className="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About
+              </a>
+              <a
+                href="/drug-checker"
+                className="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Drug Checker
+              </a>
+              <a
+                href="/app"
+                className="block px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-center"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Try Free
               </a>
             </div>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero Section */}
@@ -49,7 +130,7 @@ export default function LandingPage() {
                 className="px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-lg"
               >
                 <i className="fas fa-rocket mr-2"></i>
-                Get Started Free
+                Try Free - No Login Required
               </a>
               <a
                 href="/drug-checker"
@@ -255,7 +336,7 @@ export default function LandingPage() {
             className="inline-block px-10 py-5 bg-primary-600 text-white text-xl font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-xl"
           >
             <i className="fas fa-heart-pulse mr-3"></i>
-            Explore the Dashboard
+            Try Free Now
           </a>
           <p className="text-sm text-gray-500 mt-4">Full access • No login required • Test all features</p>
         </div>
