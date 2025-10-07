@@ -247,16 +247,112 @@ export default function LandingPage() {
             Ready to Transform Your Workflow?
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Join nurses using AI Nurse Florence to save time and improve patient outcomes.
+            Healthcare professionals: Try our full platform now—no signup required.
           </p>
           <a
             href="/app"
             className="inline-block px-10 py-5 bg-primary-600 text-white text-xl font-bold rounded-lg hover:bg-primary-700 transition-colors shadow-xl"
           >
             <i className="fas fa-heart-pulse mr-3"></i>
-            Start Using Florence Today
+            Explore the Dashboard
           </a>
-          <p className="text-sm text-gray-500 mt-4">No credit card required • Free to start</p>
+          <p className="text-sm text-gray-500 mt-4">Full access • No login required • Test all features</p>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Interested in Enterprise Deployment?
+            </h2>
+            <p className="text-xl text-gray-600">
+              Contact us to discuss how AI Nurse Florence can serve your hospital or healthcare institution
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Contact Info */}
+            <div className="bg-gradient-to-br from-primary-50 to-white p-8 rounded-2xl border border-primary-100">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Get in Touch</h3>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <i className="fas fa-hospital text-primary-600 text-xl mr-4 mt-1"></i>
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-1">For Hospitals & Health Systems</h4>
+                    <p className="text-gray-600">
+                      Learn about enterprise licensing, integration options, and custom features
+                      for your organization.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <i className="fas fa-user-md text-primary-600 text-xl mr-4 mt-1"></i>
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-1">For Healthcare Professionals</h4>
+                    <p className="text-gray-600">
+                      Questions about features, workflows, or how AI Nurse Florence can
+                      fit into your practice? We're here to help.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <i className="fas fa-lightbulb text-primary-600 text-xl mr-4 mt-1"></i>
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-1">Feedback & Suggestions</h4>
+                    <p className="text-gray-600">
+                      We're continuously improving. Share your ideas for new features or
+                      enhancements.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Form */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-lg">
+              <div className="space-y-6">
+                <div className="text-center">
+                  <i className="fas fa-envelope text-primary-600 text-5xl mb-4"></i>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Email Us Directly</h3>
+                  <p className="text-gray-600 mb-6">
+                    The fastest way to reach our team
+                  </p>
+                  <a
+                    href="mailto:patrick.roebuck@deepstudyai.com?subject=AI%20Nurse%20Florence%20Inquiry"
+                    className="inline-block px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-md"
+                  >
+                    <i className="fas fa-paper-plane mr-2"></i>
+                    patrick.roebuck@deepstudyai.com
+                  </a>
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                  <p className="text-sm text-gray-600 text-center">
+                    When contacting us, please include:
+                  </p>
+                  <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                    <li className="flex items-start">
+                      <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                      Your name and role
+                    </li>
+                    <li className="flex items-start">
+                      <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                      Organization/hospital name
+                    </li>
+                    <li className="flex items-start">
+                      <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                      What you'd like to discuss
+                    </li>
+                  </ul>
+                  <p className="mt-4 text-sm text-gray-500 text-center italic">
+                    We typically respond within 1 business day
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
