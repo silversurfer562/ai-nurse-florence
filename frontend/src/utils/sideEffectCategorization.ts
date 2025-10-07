@@ -157,16 +157,22 @@ export function categorizeSideEffects(sideEffects: string[]): CategorizedSideEff
 /**
  * Parse severity from interaction text
  */
-export function parseInteractionSeverity(description: string): 'major' | 'moderate' | 'minor' {
+export function parseInteractionSeverity(description: string): 'critical' | 'major' | 'moderate' {
   const lowerDescription = description.toLowerCase();
+
+  // Critical interaction keywords (life-threatening)
+  const criticalKeywords = [
+    'contraindicated',
+    'fatal',
+    'life-threatening',
+    'do not use',
+    'do not combine'
+  ];
 
   // Major interaction keywords
   const majorKeywords = [
-    'contraindicated',
     'avoid',
     'do not',
-    'fatal',
-    'life-threatening',
     'severe',
     'serious',
     'major',
@@ -174,26 +180,16 @@ export function parseInteractionSeverity(description: string): 'major' | 'modera
     'dangerous'
   ];
 
-  // Minor interaction keywords
-  const minorKeywords = [
-    'minor',
-    'mild',
-    'slight',
-    'minimal',
-    'insignificant',
-    'unlikely'
-  ];
+  // Check for critical severity
+  if (criticalKeywords.some(keyword => lowerDescription.includes(keyword))) {
+    return 'critical';
+  }
 
   // Check for major severity
   if (majorKeywords.some(keyword => lowerDescription.includes(keyword))) {
     return 'major';
   }
 
-  // Check for minor severity
-  if (minorKeywords.some(keyword => lowerDescription.includes(keyword))) {
-    return 'minor';
-  }
-
-  // Default to moderate
+  // Default to moderate (includes minor interactions)
   return 'moderate';
 }
