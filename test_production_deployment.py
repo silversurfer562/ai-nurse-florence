@@ -21,7 +21,9 @@ except ImportError:
 
 # CONFIGURATION
 # Update this with your actual Railway URL
-PRODUCTION_URL = "https://your-app.railway.app"  # TODO: Update this!
+# Production: https://ai-nurse-florence-production.up.railway.app
+# Staging: https://ai-nurse-florence-staging.up.railway.app
+PRODUCTION_URL = "https://ai-nurse-florence-production.up.railway.app"
 
 
 async def test_endpoint(
