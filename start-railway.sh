@@ -40,5 +40,16 @@ else
     echo "========================================="
 fi
 
+# Start mock FHIR server in background if EPIC_MOCK_MODE is enabled
+if [ "$EPIC_MOCK_MODE" = "true" ] || [ "$MOCK_FHIR_SERVER_ENABLED" = "true" ]; then
+    echo "========================================="
+    echo "Starting Mock Epic FHIR Server on port 8888"
+    echo "========================================="
+    python3 tests/mock_fhir_server.py &
+    MOCK_PID=$!
+    echo "Mock FHIR server started with PID: $MOCK_PID"
+    sleep 2  # Give mock server time to start
+fi
+
 # Start the application with the resolved port
 exec gunicorn -k uvicorn.workers.UvicornWorker --workers 4 --bind "0.0.0.0:8080" --timeout 120 app:app
