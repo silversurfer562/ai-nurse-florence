@@ -441,10 +441,10 @@
         // Check API connection
         async function checkApiConnection() {
             try {
-                const response = await fetch(`${API_BASE_URL}/health`);
+                const response = await fetch(`${API_BASE_URL}/monitoring/status`);
                 const data = await response.json();
 
-                if (data.status === 'healthy' || data.status === 'operational') {
+                if (data.status === 'healthy' || data.status === 'operational' || response.ok) {
                     updateConnectionStatus('connected', 'System Online');
                 } else {
                     throw new Error('API not operational');
