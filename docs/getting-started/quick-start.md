@@ -1,12 +1,32 @@
 # Quick Start Guide
-## Get AI Nurse Florence running in 5 minutes
+
+**Who This Is For**: Developers, IT staff, and technical users who want to get AI Nurse Florence running locally for development, testing, or evaluation. Basic command-line experience is helpful but not required.
+
+**Prerequisites**:
+- Python 3.9+ installed on your system
+- Git installed
+- OpenAI API key (optional but recommended for AI features)
+- 10 GB free disk space
+- Basic terminal/command-line familiarity
+
+**Time**: 5 minutes to get running; 2 minutes with automated script.
+
+---
+
+## Table of Contents
+
+- [Fastest Setup](#-fastest-setup-2-minutes)
+- [Quick Configuration](#-quick-configuration)
+- [Test It's Working](#-test-its-working)
+- [Common Use Cases](#-common-use-cases)
+- [Quick Troubleshooting](#-quick-troubleshooting)
+- [What Can You Do Now](#-what-can-you-do-now)
+- [Next Steps](#-next-steps)
+- [Related Resources](#related-resources)
+
+---
 
 ## 🚀 Fastest Setup (2 minutes)
-
-### Prerequisites
-- Python 3.9+ installed
-- Git installed
-- OpenAI API key (optional, but recommended)
 
 ### Three Simple Steps
 
@@ -194,6 +214,27 @@ See [API Documentation](../technical/api-documentation.md)
 
 ---
 
-**Quick Start Version**: 1.0.0  
-**Time to First API Call**: < 5 minutes  
+## Related Resources
+
+**For Developers:**
+- [Developer Guide](../developer_guide.md) - Technical architecture and patterns
+- [Setup Guide](../development/setup-guide.md) - Detailed development environment setup
+- [API Documentation](../technical/api-documentation.md) - Complete API reference
+
+**For Deployment:**
+- [Deployment Quick Start](../../DEPLOYMENT_QUICK_START.md) - Docker production deployment
+- [Deployment Guide](../technical/deployment-guide.md) - Railway and cloud deployment
+
+**For Clinical Users:**
+- [Nurse User Guide](../clinical/nurse_user_guide.md) - How to use Florence clinically
+- [Clinical Workflows](../clinical/clinical-workflows.md) - Healthcare use cases
+
+**For Understanding the Project:**
+- [MASTER_DOC.md](../../MASTER_DOC.md) - Central knowledge base
+- [Development Philosophy](../../docs/DEVELOPMENT_PHILOSOPHY.md) - Core principles
+
+---
+
+**Quick Start Version**: 1.0.0
+**Time to First API Call**: < 5 minutes
 **No PHI Storage** | **Educational Use Only**

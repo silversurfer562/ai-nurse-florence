@@ -1,5 +1,7 @@
 # AI Nurse Florence — Healthcare AI Assistant
 
+**Who This Is For**: Healthcare professionals (nurses, nurse practitioners, physician assistants), medical students, and developers building clinical information systems. If you provide patient care or develop healthcare technology, this platform supports your evidence-based practice with live medical data and clinical documentation tools.
+
 **🚀 Production-Ready Platform with Live Medical APIs**
 
 **A Public Benefit Technology Initiative by Deep Study AI, LLC**
@@ -193,6 +195,20 @@ CORS_ORIGINS=["http://localhost:3000"]  # Frontend origins
 
 **This README is your starting point.** For complete project documentation, architecture details, development history, and contribution guidelines, see the **[MASTER_DOC.md](./MASTER_DOC.md)** — the central "brain" of the project.
 
+**Quick Navigation by Role:**
+- **Nurses & Healthcare Professionals** → Start with [Nurse User Guide](./docs/clinical/nurse_user_guide.md)
+- **Developers** → Start with [Developer Guide](./docs/developer_guide.md) or [Quick Start](./docs/getting-started/quick-start.md)
+- **DevOps/System Administrators** → Start with [Deployment Guide](./docs/technical/deployment-guide.md)
+- **Contributors** → Start with [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **Decision Makers** → Start with [Development Philosophy](./docs/DEVELOPMENT_PHILOSOPHY.md)
+
+### Development Philosophy & Standards
+
+- **[Development Philosophy](./docs/DEVELOPMENT_PHILOSOPHY.md)** — Core principles guiding AI Nurse Florence
+- **[Coding Standards](./docs/CODING_STANDARDS.md)** — Python, FastAPI, and healthcare-specific code standards
+- **[Code Patterns](./docs/PATTERNS.md)** — Reusable patterns for services, routers, and integrations
+- **[Architectural Decisions](./docs/adr/)** — ADRs documenting key technical decisions
+
 ### Essential Resources
 
 - **[MASTER_DOC.md](./MASTER_DOC.md)** — Project navigation hub and central knowledge base
@@ -207,6 +223,7 @@ CORS_ORIGINS=["http://localhost:3000"]  # Frontend origins
 | Resource | Description |
 |----------|-------------|
 | [MASTER_DOC.md](./MASTER_DOC.md) | Central project brain and knowledge base |
+| [Development Philosophy](./docs/DEVELOPMENT_PHILOSOPHY.md) | Core principles and values |
 | [Live API Docs](http://localhost:8000/docs) | Interactive Swagger UI (when running locally) |
 | [Deployment Guide](./docs/technical/deployment-guide.md) | Production deployment instructions |
 | [Contributing Guide](./CONTRIBUTING.md) | How to contribute to this public benefit initiative |
@@ -250,6 +267,16 @@ As a public benefit corporation technology initiative, this project prioritizes:
 ## 🛡️ Medical Disclaimer
 
 AI Nurse Florence provides educational information for healthcare professionals. All content is for informational purposes only and does not constitute medical advice. Always consult qualified healthcare providers for medical decisions.
+
+---
+
+## Related Resources
+
+- [MASTER_DOC.md](./MASTER_DOC.md) - Central project knowledge base
+- [Development Philosophy](./docs/DEVELOPMENT_PHILOSOPHY.md) - Core principles
+- [API Documentation](./docs/technical/api-documentation.md) - Complete API reference
+- [Architecture Overview](./docs/technical/architecture-overview.md) - System design
+- [Clinical Workflows](./docs/clinical/clinical-workflows.md) - Healthcare use cases
 
 ---
 

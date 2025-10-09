@@ -82,11 +82,27 @@ Deep Study AI, LLC is committed to advancing healthcare accessibility and qualit
 
 #### Code Standards
 
-- **Code Quality**: Follow PEP 8 style guidelines
-- **Type Hints**: Use type hints for all function parameters and returns
-- **Documentation**: Write docstrings in Google format
-- **Testing**: Include unit tests for new functionality
+All contributors must follow our established development standards:
+
+- **Development Philosophy**: Read [DEVELOPMENT_PHILOSOPHY.md](./docs/DEVELOPMENT_PHILOSOPHY.md) for core principles
+- **Coding Standards**: Follow [CODING_STANDARDS.md](./docs/CODING_STANDARDS.md) for Python, FastAPI, and healthcare-specific standards
+- **Code Patterns**: Use patterns from [PATTERNS.md](./docs/PATTERNS.md) for consistency
+- **Documentation Policy**: Follow [DOCUMENTATION_POLICY.md](./docs/DOCUMENTATION_POLICY.md) for writing clear, audience-focused docs
+- **Architectural Decisions**: Review [ADRs](./docs/adr/) to understand key technical choices
 - **Medical Accuracy**: Ensure all medical information is accurate and properly sourced
+
+#### Documentation Standards
+
+> **This book uses plain language and role-based navigation. New readers get simple explanations of purpose and reasoning; practitioners find just-in-time how-tos and reference; deep dives live in explanations. This structure keeps learning efficient and filters out unrelated detail.**
+
+When contributing documentation:
+- **Identify the category**: Is this a tutorial, how-to, reference, or explanation?
+- **State your audience**: First paragraph must say who this is for
+- **Use plain language**: Define technical terms, explain the "why"
+- **Include examples**: Show working code from the actual codebase
+- **Add signposts**: "If you're new, start here. If experienced, skip to..."
+
+See [DOCUMENTATION_POLICY.md](./docs/DOCUMENTATION_POLICY.md) for complete guidelines and templates.
 
 #### Pull Request Guidelines
 

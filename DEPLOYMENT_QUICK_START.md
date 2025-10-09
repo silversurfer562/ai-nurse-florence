@@ -331,4 +331,215 @@ Set up alerts for:
 - [ ] Backup strategy implemented
 - [ ] Security review completed
 
+---
+
+## 🔧 Troubleshooting
+
+### Common Deployment Issues
+
+#### API Container Won't Start
+
+**Symptom**: Container exits immediately or won't start
+
+**Solutions**:
+1. **Check OpenAI API Key**:
+   ```bash
+   # Verify .env file has valid key
+   cat .env | grep OPENAI_API_KEY
+   # Key should start with 'sk-proj-' or 'sk-'
+   ```
+
+2. **Check Container Logs**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml logs api
+   # Look for error messages in startup
+   ```
+
+3. **Verify Environment Variables**:
+   ```bash
+   # Ensure USE_LIVE=1 is set
+   docker-compose -f docker-compose.prod.yml exec api env | grep USE_LIVE
+   ```
+
+4. **Memory Issues**:
+   ```bash
+   # Increase Docker memory limit to 4GB+
+   # Docker Desktop -> Settings -> Resources -> Memory
+   ```
+
+#### Database Connection Failures
+
+**Symptom**: API can't connect to PostgreSQL
+
+**Solutions**:
+1. **Check PostgreSQL is Running**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml ps postgres
+   # Should show "Up" status
+   ```
+
+2. **Test Database Connection**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml exec postgres pg_isready -U florence
+   # Should return "accepting connections"
+   ```
+
+3. **Reset Database**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml down
+   docker volume rm ai-nurse-florence_postgres-data
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+#### Redis Connection Issues
+
+**Symptom**: Caching not working or connection errors
+
+**Solutions**:
+1. **Verify Redis is Running**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml exec redis redis-cli ping
+   # Should return "PONG"
+   ```
+
+2. **Clear Redis Cache**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml exec redis redis-cli FLUSHALL
+   ```
+
+3. **Check Redis Logs**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml logs redis
+   ```
+
+#### Port Already in Use
+
+**Symptom**: Error binding to port 8000
+
+**Solutions**:
+1. **Find Process Using Port**:
+   ```bash
+   # macOS/Linux
+   lsof -i :8000
+   # Kill the process
+   kill -9 <PID>
+   ```
+
+2. **Use Different Port**:
+   ```bash
+   # Edit docker-compose.prod.yml
+   # Change ports: "8001:8000"
+   ```
+
+#### External API Timeouts
+
+**Symptom**: Medical data lookups fail or timeout
+
+**Solutions**:
+1. **Test External APIs Directly**:
+   ```bash
+   # Test MyDisease.info
+   curl "https://mydisease.info/v1/query?q=diabetes"
+
+   # Test PubMed
+   curl "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=diabetes"
+
+   # Test ClinicalTrials.gov
+   curl "https://clinicaltrials.gov/api/v2/studies?query.cond=diabetes"
+   ```
+
+2. **Check Network/Firewall**:
+   ```bash
+   # Ensure outbound HTTPS is allowed
+   # Check if behind corporate proxy
+   ```
+
+3. **Verify USE_LIVE Setting**:
+   ```bash
+   # In .env file
+   USE_LIVE=1  # Must be set for production
+   ```
+
+#### SSL/Certificate Issues
+
+**Symptom**: HTTPS not working or certificate errors
+
+**Solutions**:
+1. **Renew Let's Encrypt Certificate**:
+   ```bash
+   sudo certbot renew
+   sudo systemctl reload nginx
+   ```
+
+2. **Check Certificate Expiration**:
+   ```bash
+   sudo certbot certificates
+   ```
+
+3. **Test SSL Configuration**:
+   ```bash
+   curl -I https://api.your-domain.com/api/v1/health
+   ```
+
+### Performance Issues
+
+#### Slow Response Times
+
+**Symptoms**: API responses take >5 seconds
+
+**Solutions**:
+1. **Check Cache Hit Rate**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml exec redis redis-cli INFO stats
+   # Look for keyspace_hits vs keyspace_misses
+   ```
+
+2. **Monitor Resource Usage**:
+   ```bash
+   docker stats
+   # Check CPU and memory usage
+   ```
+
+3. **Scale API Instances**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d --scale api=3
+   ```
+
+#### High Memory Usage
+
+**Symptoms**: Container using >2GB RAM
+
+**Solutions**:
+1. **Restart Containers**:
+   ```bash
+   docker-compose -f docker-compose.prod.yml restart api
+   ```
+
+2. **Clear Logs**:
+   ```bash
+   docker system prune -a --volumes
+   ```
+
+3. **Limit Container Memory**:
+   ```yaml
+   # In docker-compose.prod.yml
+   services:
+     api:
+       deploy:
+         resources:
+           limits:
+             memory: 2G
+   ```
+
+### Getting Additional Help
+
+If these solutions don't resolve your issue:
+
+1. **Check Logs**: Always start with `docker-compose logs -f api`
+2. **GitHub Issues**: Search existing issues at https://github.com/silversurfer562/ai-nurse-florence/issues
+3. **Create Issue**: Include logs, error messages, and environment details
+4. **Email Support**: patrickroebuck@pm.me for urgent production issues
+
+---
+
 **Your AI Nurse Florence API is now production-ready! 🏥✨**

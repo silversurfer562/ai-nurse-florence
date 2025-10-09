@@ -1,6 +1,29 @@
 # AI Nurse Florence: Developer Guide
 
-This guide provides technical documentation for developers working with the AI Nurse Florence API and codebase.
+**Who This Is For**: Backend developers, full-stack engineers, and technical contributors working on the AI Nurse Florence codebase. You should have experience with Python, FastAPI, and RESTful APIs. This guide covers the technical architecture, service integration patterns, and development workflows.
+
+**Prerequisites**:
+- Python 3.9+ development experience
+- Familiarity with FastAPI or similar async web frameworks
+- Understanding of RESTful API design
+- Basic knowledge of Docker and containerization
+- Git version control experience
+
+**Time**: Allow 30-60 minutes to read through and understand the architecture, plus 15-30 minutes for environment setup.
+
+---
+
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Live Medical Data Integration](#live-medical-data-integration)
+- [Background Cache Update Services](#background-cache-update-services)
+- [SNOMED CT Code Integration](#snomed-ct-code-integration)
+- [Getting Started](#getting-started)
+- [API Development](#api-development)
+- [Troubleshooting](#troubleshooting)
+
+---
 
 ## Architecture Overview
 
@@ -450,4 +473,15 @@ print(status['last_fetch_source'])  # Should be 'api' if working
 
 ### Creating New Endpoints
 
-(Previous content continues...)
+(Content for endpoint creation would continue here...)
+
+---
+
+## Related Resources
+
+- [Architecture Overview](./technical/architecture-overview.md) - Detailed system design
+- [API Documentation](./technical/api-documentation.md) - Complete API reference
+- [Quick Start Guide](./getting-started/quick-start.md) - Get running quickly
+- [Setup Guide](./development/setup-guide.md) - Development environment setup
+- [CODING_STANDARDS.md](../docs/CODING_STANDARDS.md) - Code style and patterns
+- [PATTERNS.md](../docs/PATTERNS.md) - Reusable service patterns

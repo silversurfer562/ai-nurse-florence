@@ -71,6 +71,18 @@ def _load_core_routers():
         logger.warning(f"⚠️ Session monitoring router unavailable: {e}")
         router_status["session_monitoring"] = False
 
+    # Epic Integration Wizard router (LangChain-powered)
+    try:
+        from .epic_wizard import router
+
+        _router_registry["epic_wizard"] = router
+        router_status["epic_wizard"] = True
+        logger.info("✅ Epic Integration Wizard router loaded successfully")
+    except (ImportError, AttributeError) as e:
+        logger.warning(f"⚠️ Epic Integration Wizard router unavailable: {e}")
+        logger.warning("   Requires: langchain, langgraph dependencies")
+        router_status["epic_wizard"] = False
+
 
 def _load_medical_routers():
     """Load medical information routers following External Service Integration."""
