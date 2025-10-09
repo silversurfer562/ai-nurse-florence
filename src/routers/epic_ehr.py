@@ -126,6 +126,8 @@ def get_epic_client() -> Optional[Any]:
     Dependency to get Epic FHIR client instance.
     Returns None if Epic integration is not available.
     """
+    import os
+
     EpicFHIRClient, _ = get_epic_imports()
 
     if EpicFHIRClient is None:
@@ -133,11 +135,10 @@ def get_epic_client() -> Optional[Any]:
 
     try:
         # Initialize Epic client with settings from environment
-        # For now, use mock server settings
         client = EpicFHIRClient(
-            base_url="http://localhost:8888",  # Mock FHIR server
-            client_id="test_client_id",
-            client_secret="test_client_secret",
+            base_url=os.getenv("EPIC_FHIR_BASE_URL", "http://localhost:8888"),
+            client_id=os.getenv("EPIC_CLIENT_ID", "test_client_id"),
+            client_secret=os.getenv("EPIC_CLIENT_SECRET", "test_client_secret"),
         )
         return client
     except Exception as e:
