@@ -134,11 +134,28 @@ def get_epic_client() -> Optional[Any]:
         return None
 
     try:
-        # Initialize Epic client with settings from environment
+        # Import OAuthManager
+        from src.integrations.epic_fhir_client import OAuthManager
+
+        # Get configuration from environment
+        base_url = os.getenv("EPIC_FHIR_BASE_URL", "http://localhost:8888")
+        client_id = os.getenv("EPIC_CLIENT_ID", "test_client_id")
+        client_secret = os.getenv("EPIC_CLIENT_SECRET", "test_client_secret")
+
+        # For mock server, use a mock token URL
+        token_url = base_url + "/oauth2/token"
+
+        # Initialize OAuth manager
+        oauth_manager = OAuthManager(
+            token_url=token_url,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+
+        # Initialize Epic client with OAuth manager
         client = EpicFHIRClient(
-            base_url=os.getenv("EPIC_FHIR_BASE_URL", "http://localhost:8888"),
-            client_id=os.getenv("EPIC_CLIENT_ID", "test_client_id"),
-            client_secret=os.getenv("EPIC_CLIENT_SECRET", "test_client_secret"),
+            base_url=base_url,
+            oauth_manager=oauth_manager,
         )
         return client
     except Exception as e:
