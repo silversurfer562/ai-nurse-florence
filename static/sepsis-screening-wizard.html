@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/static/js/wizardPersistence.js"></script>
     <script src="/static/js/careSettings.js"></script>
+    <script src="/static/js/documentationModule.js"></script>
     <style>
         .wizard-container {
             max-width: 4xl;
@@ -151,8 +152,8 @@
                         <p class="text-gray-600 mt-1" id="wizardDescription">Complete rapid sepsis assessment with qSOFA and SIRS criteria</p>
                     </div>
                     <div class="text-right">
-                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
-                        <div class="text-lg font-semibold text-red-600" id="progressPercent">25%</div>
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">20%</div>
                     </div>
                 </div>
 
@@ -173,17 +174,23 @@
                     <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
                         <span>4</span>
                     </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
                 </div>
 
                 <!-- Step Labels -->
                 <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
-                    <div class="text-center w-24">Suspected Infection</div>
+                    <div class="text-center w-20">Suspected Infection</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-24">qSOFA Score</div>
+                    <div class="text-center w-20">qSOFA Score</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-24">SIRS Criteria</div>
+                    <div class="text-center w-20">SIRS Criteria</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-24">Interventions</div>
+                    <div class="text-center w-20">Interventions</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Documentation</div>
                 </div>
             </div>
 
@@ -582,9 +589,9 @@
             <div id="step4" class="step-content p-6">
                 <h3 class="text-xl font-bold text-gray-900 mb-4">
                     <i class="fas fa-notes-medical text-red-600 mr-2"></i>
-                    Sepsis Bundle & Review
+                    Sepsis Bundle & Interventions
                 </h3>
-                <p class="text-gray-700 mb-6">Complete sepsis bundle within 1 hour and review assessment.</p>
+                <p class="text-gray-700 mb-6">Complete sepsis bundle within 1 hour and document interventions.</p>
 
                 <div class="space-y-6">
                     <!-- Assessment Summary -->
@@ -708,6 +715,117 @@
                 </div>
             </div>
 
+            <!-- Step 5: Documentation Preview & Submit -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical text-red-600 mr-2"></i>
+                    Preview & Submit Documentation
+                </h3>
+                <p class="text-gray-700 mb-6">Review the auto-generated SBAR documentation, edit if needed, and submit to patient record.</p>
+
+                <div class="space-y-6">
+                    <!-- Legal Documentation Notice -->
+                    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-lg p-5 shadow-sm">
+                        <div class="flex items-start">
+                            <i class="fas fa-gavel text-blue-600 text-2xl mr-4 mt-1"></i>
+                            <div>
+                                <h4 class="text-lg font-bold text-blue-900 mb-2">Legal Documentation Requirement</h4>
+                                <p class="text-sm text-blue-800 mb-3">
+                                    Sepsis screening and interventions require formal documentation in the patient's medical record. This SBAR note will serve as legal documentation of your assessment and actions taken.
+                                </p>
+                                <div class="bg-blue-100 rounded p-3 text-xs text-blue-900">
+                                    <strong>📋 "If you didn't document it, it didn't happen"</strong><br>
+                                    This documentation meets Joint Commission standards and CDC Sepsis Core Elements requirements.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SBAR Preview Card -->
+                    <div class="bg-white border-2 border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                        <div class="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-4">
+                            <h4 class="text-xl font-bold flex items-center">
+                                <i class="fas fa-file-medical mr-3"></i>
+                                SBAR Clinical Documentation
+                            </h4>
+                            <p class="text-sm text-red-100 mt-1">Auto-generated from your assessment data</p>
+                        </div>
+
+                        <div id="sbarPreviewContainer" class="p-6 bg-gray-50">
+                            <div class="bg-white border border-gray-300 rounded-lg p-6 font-mono text-sm whitespace-pre-wrap" id="sbarPreviewText">
+                                <!-- SBAR will be populated here by JavaScript -->
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                                    <p>Generating SBAR documentation...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit and Action Buttons -->
+                        <div class="bg-gray-100 px-6 py-4 border-t border-gray-300">
+                            <div class="flex justify-between items-center mb-4">
+                                <button onclick="editSBARNote()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <i class="fas fa-edit"></i>
+                                    Edit Note
+                                </button>
+                                <div class="flex gap-3">
+                                    <button onclick="printSBAR()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-print"></i>
+                                        Print
+                                    </button>
+                                    <button onclick="exportSBARToPDF()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-file-pdf"></i>
+                                        PDF
+                                    </button>
+                                    <button onclick="copySBARToClipboard()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-copy"></i>
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Final Confirmation Checkbox -->
+                            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" id="documentationConfirmed" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" required>
+                                    <div>
+                                        <span class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-check-square text-yellow-600 mr-2"></i>
+                                            I confirm this documentation is accurate and complete
+                                        </span>
+                                        <p class="text-xs text-gray-700 mt-1">
+                                            By checking this box, you certify that this SBAR note accurately reflects the patient assessment and interventions documented in this wizard. This will be submitted to the patient's medical record.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentation Metadata -->
+                    <div class="bg-gray-100 border border-gray-300 rounded-lg p-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Document ID:</span>
+                                <p class="font-mono font-semibold" id="docId">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Date/Time:</span>
+                                <p class="font-semibold" id="docTimestamp">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Nurse:</span>
+                                <p class="font-semibold" id="docNurse">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Care Setting:</span>
+                                <p class="font-semibold" id="docCareSetting">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Navigation Buttons -->
             <div class="border-t border-gray-200 p-6 flex justify-between">
                 <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
@@ -728,7 +846,7 @@
         let wizardState = {
             current_step: 1,
             completed_steps: [],
-            total_steps: 4,
+            total_steps: 5,
             data: {
                 chiefComplaint: '',
                 infectionSource: '',
@@ -955,6 +1073,11 @@
             if (stepNum === 4) {
                 populateSummary();
             }
+
+            // Generate SBAR if on step 5
+            if (stepNum === 5) {
+                generateAndDisplaySBAR();
+            }
         }
 
         // Navigate back
@@ -976,13 +1099,18 @@
             }
 
             // Advance to next step
-            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
 
             updateWizardUI();
 
             // Populate summary if on step 4
             if (wizardState.current_step === 4) {
                 populateSummary();
+            }
+
+            // Generate SBAR if on step 5
+            if (wizardState.current_step === 5) {
+                generateAndDisplaySBAR();
             }
         }
 
@@ -1030,7 +1158,7 @@
         // Update wizard UI
         function updateWizardUI() {
             const currentStep = wizardState.current_step;
-            const progressPercent = Math.floor((currentStep / 4) * 100);
+            const progressPercent = Math.floor((currentStep / 5) * 100);
 
             // Update progress
             document.getElementById('progressBar').style.width = `${progressPercent}%`;
@@ -1066,7 +1194,7 @@
 
             backBtn.disabled = currentStep === 1;
 
-            if (currentStep === 4) {
+            if (currentStep === 5) {
                 nextBtn.classList.add('hidden');
                 finishBtn.classList.remove('hidden');
             } else {
@@ -1157,18 +1285,31 @@
                 return;
             }
 
-            showMessage('success', 'Sepsis screening completed successfully!');
+            // Validate documentation confirmation
+            const docConfirmed = document.getElementById('documentationConfirmed').checked;
+            if (!docConfirmed) {
+                showMessage('error', 'Please confirm the documentation is accurate before submitting.');
+                return;
+            }
 
-            // In production, this would save to the database
+            showMessage('success', 'Sepsis screening and documentation completed successfully!');
+
+            // In production, this would save to the database and EHR
             console.log('Sepsis Screening Data:', wizardState.data);
+            console.log('SBAR Documentation:', window.currentSBARData);
 
             // Show completion message
             setTimeout(() => {
                 const bundleComplete = wizardState.data.bundleItems.length;
                 const bundleTotal = 5;
-                alert(`Sepsis screening documented successfully!\n\nScreening ID: SS-${Date.now()}\nNurse: ${wizardState.data.nurseSignature}\nqSOFA Score: ${wizardState.data.qsofaScore}/3\nSIRS Count: ${wizardState.data.sirsScore}/4\nBundle Items Completed: ${bundleComplete}/${bundleTotal}`);
+                const docId = document.getElementById('docId').textContent;
+                alert(`Sepsis screening documented successfully!\n\nScreening ID: SS-${Date.now()}\nDocument ID: ${docId}\nNurse: ${wizardState.data.nurseSignature}\nqSOFA Score: ${wizardState.data.qsofaScore}/3\nSIRS Count: ${wizardState.data.sirsScore}/4\nBundle Items Completed: ${bundleComplete}/${bundleTotal}\n\nSBAR note has been submitted to patient medical record.`);
+
+                // Clear wizard persistence on successful completion
+                WizardPersistence.clearWizardState(WIZARD_ID);
+
                 // Optionally redirect to dashboard
-                // window.location.href = '/';
+                // window.location.href = '/static/dashboard.html';
             }, 500);
         }
 
@@ -1443,6 +1584,127 @@
             if (typeof calculateQSOFA === 'function') {
                 calculateQSOFA();
             }
+        }
+
+        // ===== STEP 5 DOCUMENTATION FUNCTIONS =====
+
+        // Generate and display SBAR note
+        function generateAndDisplaySBAR() {
+            // Collect all wizard data
+            const data = wizardState.data;
+
+            // Get infection source text
+            const infectionSourceMap = {
+                'respiratory': 'Respiratory (Pneumonia)',
+                'urinary': 'Urinary Tract',
+                'abdominal': 'Abdominal',
+                'skin': 'Skin/Soft Tissue',
+                'bloodstream': 'Bloodstream',
+                'central-line': 'Central Line Associated',
+                'surgical': 'Surgical Site',
+                'unknown': 'Unknown',
+                'other': 'Other'
+            };
+
+            // Prepare wizard data for DocumentationModule
+            const wizardData = {
+                patientAge: 65, // Would come from EHR in production
+                patientGender: 'M',
+                patientName: 'Patient',
+                chiefComplaint: data.chiefComplaint || 'Not documented',
+                infectionSource: infectionSourceMap[data.infectionSource] || 'Not specified',
+                infectionSourceRaw: data.infectionSource,
+                onsetTime: data.onsetTime || 'Unknown',
+                riskFactors: data.riskFactors || [],
+                qsofaScore: data.qsofaScore || 0,
+                qsofaComponents: {
+                    respiratoryRate: data.respiratoryRate,
+                    mentalStatus: data.mentalStatus,
+                    systolicBP: data.systolicBP
+                },
+                sirsScore: data.sirsScore || 0,
+                sirsComponents: {
+                    temperature: data.temperature,
+                    heartRate: data.heartRate,
+                    respiratoryRate: data.sirsRespiratoryRate,
+                    wbc: data.wbc
+                },
+                vitalSigns: {
+                    temperature: data.temperature,
+                    heartRate: data.heartRate,
+                    respiratoryRate: data.sirsRespiratoryRate,
+                    bloodPressure: data.systolicBP === '1' ? '≤100 mmHg' : '>100 mmHg'
+                },
+                labs: {
+                    wbc: data.wbc
+                },
+                interventions: data.bundleItems || [],
+                additionalNotes: data.additionalNotes || '',
+                reassessmentTime: data.reassessmentTime || '',
+                nurseSignature: data.nurseSignature || '',
+                providerNotified: data.additionalNotes.toLowerCase().includes('md') ||
+                                 data.additionalNotes.toLowerCase().includes('physician') ||
+                                 data.additionalNotes.toLowerCase().includes('provider')
+            };
+
+            // Generate SBAR using DocumentationModule
+            const sbarData = DocumentationModule.generateSBAR(wizardData, 'sepsis');
+
+            // Store globally for later reference
+            window.currentSBARData = sbarData;
+
+            // Format and display
+            const formattedSBAR = DocumentationModule.formatSBARForDisplay(sbarData);
+            document.getElementById('sbarPreviewText').textContent = formattedSBAR;
+
+            // Update metadata
+            document.getElementById('docId').textContent = sbarData.metadata.documentId;
+            document.getElementById('docTimestamp').textContent = sbarData.metadata.timestampFormatted;
+            document.getElementById('docNurse').textContent = sbarData.metadata.nurse;
+
+            // Get care setting if available
+            const careSetting = CareSettings.getCurrentSetting();
+            const careSettingName = CareSettings.SETTINGS[careSetting]?.name || 'Not specified';
+            document.getElementById('docCareSetting').textContent = careSettingName;
+        }
+
+        // Edit SBAR note
+        function editSBARNote() {
+            const previewText = document.getElementById('sbarPreviewText');
+            const isEditing = previewText.contentEditable === 'true';
+
+            if (isEditing) {
+                // Save edits
+                previewText.contentEditable = 'false';
+                previewText.classList.remove('bg-yellow-50', 'border-2', 'border-yellow-400');
+                showMessage('success', 'Edits saved. Review the updated documentation before submitting.');
+            } else {
+                // Enable editing
+                previewText.contentEditable = 'true';
+                previewText.classList.add('bg-yellow-50', 'border-2', 'border-yellow-400');
+                previewText.focus();
+                showMessage('warning', 'Editing mode enabled. Modify the text as needed, then click "Edit Note" again to save.');
+            }
+        }
+
+        // Print SBAR
+        function printSBAR() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            DocumentationModule.printChartCopy(sbarText);
+        }
+
+        // Export SBAR to PDF (simplified - just downloads as text)
+        function exportSBARToPDF() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            const metadata = window.currentSBARData?.metadata || {};
+            DocumentationModule.exportToPDF(sbarText, metadata);
+        }
+
+        // Copy SBAR to clipboard
+        function copySBARToClipboard() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            DocumentationModule.copyToClipboard(sbarText);
+            showMessage('success', 'SBAR documentation copied to clipboard');
         }
 
         function showAIMessage(type, message) {
