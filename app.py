@@ -316,6 +316,15 @@ async def serve_root():
     )
 
 
+# Redirect /app to Clinical Wizards Dashboard
+@app.get("/app", response_class=HTMLResponse, include_in_schema=False)
+async def redirect_to_dashboard():
+    """Redirect /app to the Clinical Wizards Dashboard."""
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/static/dashboard.html", status_code=302)
+
+
 # Catchall route for React Router (SPA client-side routing)
 @app.get("/{full_path:path}", response_class=HTMLResponse, include_in_schema=False)
 async def catch_all(full_path: str):
