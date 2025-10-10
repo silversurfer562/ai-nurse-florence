@@ -218,7 +218,20 @@
                     <i class="fas fa-virus text-red-600 mr-2"></i>
                     Suspected Infection
                 </h3>
-                <p class="text-gray-700 mb-6">Document presenting symptoms and suspected infection source.</p>
+                <p class="text-gray-700 mb-4">Document presenting symptoms and suspected infection source.</p>
+
+                <!-- AI Assist Button -->
+                <div class="mb-6">
+                    <button id="aiAssistBtn" onclick="getAIAssist()" class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 flex items-center gap-2">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Assist - Get Suggestions</span>
+                        <i class="fas fa-sparkles"></i>
+                    </button>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Click to get AI-powered suggestions based on patient context (powered by LangChain)
+                    </p>
+                </div>
 
                 <div class="space-y-6">
                     <!-- Chief Complaint -->
@@ -1294,6 +1307,201 @@
             autosaveDraft();
             originalNavigateNext();
         };
+
+        // ===== LANGCHAIN AI ASSIST FUNCTIONS =====
+
+        async function getAIAssist() {
+            const btn = document.getElementById('aiAssistBtn');
+            const originalHTML = btn.innerHTML;
+
+            // Show loading state
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting AI suggestions...';
+
+            try {
+                // Gather patient context (in production, this would come from EHR)
+                const patientContext = {
+                    age: 65,
+                    gender: 'Male',
+                    chief_complaint: document.getElementById('chiefComplaint')?.value || 'Not provided',
+                    medical_history: ['Diabetes', 'Hypertension'],
+                    medications: ['Metformin', 'Lisinopril'],
+                    allergies: ['Penicillin']
+                };
+
+                // Get current vitals (mock data - in production would come from monitors)
+                const currentVitals = {
+                    temperature: 38.5,
+                    heart_rate: 110,
+                    respiratory_rate: 24,
+                    blood_pressure: '95/60',
+                    spo2: 92
+                };
+
+                // Recent labs (mock data)
+                const recentLabs = {
+                    wbc: 15000,
+                    lactate: 2.5,
+                    creatinine: 1.5
+                };
+
+                // Call LangChain API
+                const response = await fetch('/api/v1/wizard-ai/sepsis/suggest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        patient_context: patientContext,
+                        current_vitals: currentVitals,
+                        recent_labs: recentLabs
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.suggestions) {
+                    // Apply AI suggestions to the form
+                    applyAISuggestions(data.suggestions);
+
+                    // Show success message
+                    showAIMessage('success', 'AI suggestions applied successfully! Review and adjust as needed.');
+                } else {
+                    throw new Error('Invalid response format');
+                }
+
+            } catch (error) {
+                console.error('AI Assist error:', error);
+                showAIMessage('error', `AI assist unavailable: ${error.message}. Please complete assessment manually.`);
+            } finally {
+                // Restore button
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        function applyAISuggestions(suggestions) {
+            // Apply infection source suggestion
+            if (suggestions.suspected_infection_source) {
+                const sourceSelect = document.getElementById('infectionSource');
+                const sourceOptions = Array.from(sourceSelect.options);
+                const matchingOption = sourceOptions.find(opt =>
+                    opt.text.toLowerCase().includes(suggestions.suspected_infection_source.toLowerCase())
+                );
+                if (matchingOption) {
+                    sourceSelect.value = matchingOption.value;
+                }
+            }
+
+            // Check risk factors based on AI suggestions
+            if (suggestions.risk_factors_present && Array.isArray(suggestions.risk_factors_present)) {
+                suggestions.risk_factors_present.forEach(riskFactor => {
+                    const checkbox = document.querySelector(`input[type="checkbox"][value*="${riskFactor}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+
+            // Pre-fill qSOFA predictions
+            if (suggestions.qsofa_prediction) {
+                if (suggestions.qsofa_prediction.respiratory_rate !== undefined) {
+                    const rrSelect = document.getElementById('qsofaRR');
+                    if (rrSelect) {
+                        rrSelect.value = suggestions.qsofa_prediction.respiratory_rate > 0 ? 'gte22' : 'lt22';
+                    }
+                }
+                if (suggestions.qsofa_prediction.mental_status !== undefined) {
+                    const msSelect = document.getElementById('qsofaMentalStatus');
+                    if (msSelect) {
+                        msSelect.value = suggestions.qsofa_prediction.mental_status > 0 ? 'altered' : 'normal';
+                    }
+                }
+                if (suggestions.qsofa_prediction.systolic_bp !== undefined) {
+                    const bpSelect = document.getElementById('qsofaBP');
+                    if (bpSelect) {
+                        bpSelect.value = suggestions.qsofa_prediction.systolic_bp > 0 ? 'lte100' : 'gt100';
+                    }
+                }
+            }
+
+            // Show clinical reasoning in an info box
+            if (suggestions.clinical_reasoning) {
+                showAIReasoning(suggestions.clinical_reasoning);
+            }
+
+            // Highlight recommended interventions
+            if (suggestions.recommended_interventions && Array.isArray(suggestions.recommended_interventions)) {
+                highlightInterventions(suggestions.recommended_interventions);
+            }
+
+            // Trigger any calculators to update
+            if (typeof calculateQSOFA === 'function') {
+                calculateQSOFA();
+            }
+        }
+
+        function showAIMessage(type, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-${type} p-4 rounded-lg mb-4`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} text-lg mt-0.5"></i>
+                    <div>
+                        <strong>${type === 'success' ? 'AI Suggestions Applied' : 'AI Assist Error'}</strong>
+                        <p class="text-sm mt-1">${message}</p>
+                    </div>
+                </div>
+            `;
+
+            // Insert after AI button
+            const aiButtonDiv = document.getElementById('aiAssistBtn').parentElement;
+            aiButtonDiv.insertAdjacentElement('afterend', messageDiv);
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => messageDiv.remove(), 10000);
+        }
+
+        function showAIReasoning(reasoning) {
+            const reasoningDiv = document.createElement('div');
+            reasoningDiv.className = 'bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-lg mb-4';
+            reasoningDiv.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-brain text-indigo-600 text-lg mt-0.5"></i>
+                    <div>
+                        <strong class="text-indigo-900">AI Clinical Reasoning:</strong>
+                        <p class="text-sm text-indigo-800 mt-1">${reasoning}</p>
+                    </div>
+                </div>
+            `;
+
+            // Insert at top of form
+            const step1 = document.getElementById('step1');
+            const firstFormField = step1.querySelector('.space-y-6');
+            firstFormField.insertAdjacentElement('beforebegin', reasoningDiv);
+        }
+
+        function highlightInterventions(interventions) {
+            // Store for display in Step 4
+            window.aiRecommendedInterventions = interventions;
+
+            // Show preview banner
+            const banner = document.createElement('div');
+            banner.className = 'bg-green-50 border border-green-200 p-3 rounded-lg mb-4';
+            banner.innerHTML = `
+                <strong class="text-green-900">
+                    <i class="fas fa-lightbulb text-green-600 mr-2"></i>
+                    ${interventions.length} AI-recommended interventions will be highlighted in Step 4
+                </strong>
+            `;
+
+            const step1 = document.getElementById('step1');
+            step1.querySelector('.space-y-6').insertAdjacentElement('beforebegin', banner);
+        }
     </script>
 </body>
 </html>
