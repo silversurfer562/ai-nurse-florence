@@ -772,10 +772,252 @@ Review for accuracy and completeness before submission.`;
         return withinWindow && !hasContraindications;
     },
 
-    // Placeholder templates for other wizards (to be implemented)
-
+    /**
+     * Generate SBAR for Cardiac Assessment
+     */
     generateCardiacSBAR(data) {
-        return { situation: 'Cardiac SBAR - To be implemented', background: '', assessment: '', recommendation: '' };
+        return {
+            situation: this.formatCardiacSituation({
+                age: data.patientAge || 'Unknown',
+                gender: data.patientGender || 'Unknown',
+                chiefComplaint: data.chiefComplaint || 'Not documented',
+                painLocation: data.painLocation || 'Not specified',
+                painQualities: data.painQualities || [],
+                painDuration: data.painDuration || 'Unknown',
+                heartScore: data.heartScore || 0,
+                stemiCriteria: data.stemiCriteria || 'no'
+            }),
+
+            background: this.formatCardiacBackground({
+                riskFactors: data.riskFactors || [],
+                medicalHistory: data.medicalHistory || [],
+                medications: data.medications || [],
+                allergies: data.allergies || [],
+                associatedSymptoms: data.associatedSymptoms || []
+            }),
+
+            assessment: this.formatCardiacAssessment({
+                heartScore: data.heartScore || 0,
+                heartRiskLevel: data.heartRiskLevel || 'Unknown',
+                historyScore: data.historyScore || 0,
+                ekgScore: data.ekgScore || 0,
+                ageScore: data.ageScore || 0,
+                riskFactors: data.riskFactors || [],
+                troponinScore: data.troponinScore || 0,
+                vitalSigns: data.vitalSigns || {},
+                ecgRhythm: data.ecgRhythm || 'Not documented',
+                stChanges: data.stChanges || {},
+                stemiCriteria: data.stemiCriteria || 'no',
+                labs: data.labs || {}
+            }),
+
+            recommendation: this.formatCardiacRecommendation({
+                heartScore: data.heartScore || 0,
+                stemiCriteria: data.stemiCriteria || 'no',
+                disposition: data.disposition || 'Pending',
+                medicationsGiven: data.medicationsGiven || [],
+                cathLabTime: data.cathLabTime || '',
+                dispositionInstructions: data.dispositionInstructions || '',
+                additionalNotes: data.additionalNotes || ''
+            })
+        };
+    },
+
+    /**
+     * Format Situation section for Cardiac
+     */
+    formatCardiacSituation(data) {
+        let situation = `${data.age} year old ${data.gender} presenting with ${data.chiefComplaint}`;
+
+        if (data.painLocation !== 'Not specified') {
+            situation += ` located in ${data.painLocation}`;
+        }
+
+        if (data.painQualities && data.painQualities.length > 0) {
+            situation += `, described as ${data.painQualities.join(', ')}`;
+        }
+
+        if (data.painDuration !== 'Unknown') {
+            situation += `, duration: ${data.painDuration} minutes`;
+        }
+
+        situation += `. HEART score: ${data.heartScore}/10`;
+
+        if (data.stemiCriteria === 'yes') {
+            situation += '. **STEMI CRITERIA MET - CATH LAB ACTIVATED**';
+        }
+
+        return situation + '.';
+    },
+
+    /**
+     * Format Background section for Cardiac
+     */
+    formatCardiacBackground(data) {
+        let background = '';
+
+        // Cardiac risk factors
+        if (data.riskFactors && data.riskFactors.length > 0) {
+            background += `Cardiac Risk Factors: ${data.riskFactors.join(', ')}. `;
+        }
+
+        // Medical history
+        if (data.medicalHistory && data.medicalHistory.length > 0) {
+            background += `Past Medical History: ${data.medicalHistory.join(', ')}. `;
+        }
+
+        // Medications
+        if (data.medications && data.medications.length > 0) {
+            background += `Current Medications: ${data.medications.join(', ')}. `;
+        }
+
+        // Allergies
+        if (data.allergies && data.allergies.length > 0) {
+            background += `Allergies: ${data.allergies.join(', ')}. `;
+        } else {
+            background += `Allergies: NKDA. `;
+        }
+
+        // Associated symptoms
+        if (data.associatedSymptoms && data.associatedSymptoms.length > 0) {
+            background += `Associated Symptoms: ${data.associatedSymptoms.join(', ')}.`;
+        }
+
+        return background || 'No significant cardiac history documented.';
+    },
+
+    /**
+     * Format Assessment section for Cardiac
+     */
+    formatCardiacAssessment(data) {
+        let assessment = '';
+
+        // HEART Score
+        const maceRisk = data.heartScore <= 3 ? '1.7%' :
+                        data.heartScore <= 6 ? '16.6%' :
+                        '50-65%';
+
+        assessment += `HEART Score: ${data.heartScore}/10 (${data.heartRiskLevel} - ${maceRisk} 6-week MACE risk)\n`;
+        assessment += `  - History (clinical suspicion): ${data.historyScore}/2\n`;
+        assessment += `  - EKG findings: ${data.ekgScore}/2\n`;
+        assessment += `  - Age: ${data.ageScore}/2\n`;
+        assessment += `  - Risk factors: ${data.riskFactors.length > 0 ? data.riskFactors.join(', ') : 'None documented'}\n`;
+        assessment += `  - Troponin: ${data.troponinScore}/2\n`;
+
+        // Vital Signs
+        if (data.vitalSigns && Object.keys(data.vitalSigns).length > 0) {
+            assessment += `\nCurrent Vital Signs:\n`;
+            assessment += `  - Heart Rate: ${data.vitalSigns.heartRate} bpm\n`;
+            assessment += `  - Blood Pressure: ${data.vitalSigns.bloodPressure} mmHg\n`;
+            assessment += `  - Respiratory Rate: ${data.vitalSigns.respiratoryRate}/min\n`;
+            assessment += `  - SpO2: ${data.vitalSigns.o2Saturation}%\n`;
+        }
+
+        // ECG Findings
+        assessment += `\n12-Lead ECG:\n`;
+        assessment += `  - Rhythm: ${data.ecgRhythm}\n`;
+
+        if (data.stChanges) {
+            if (data.stChanges.stElevation) {
+                assessment += `  - ST Elevation: ${data.stChanges.stElevationLeads || 'Yes'}\n`;
+            }
+            if (data.stChanges.stDepression) {
+                assessment += `  - ST Depression: ${data.stChanges.stDepressionLeads || 'Yes'}\n`;
+            }
+            if (data.stChanges.tWaveInversion) {
+                assessment += `  - T-wave Inversions: ${data.stChanges.tWaveLeads || 'Yes'}\n`;
+            }
+            if (data.stChanges.qWaves) {
+                assessment += `  - Pathological Q Waves: ${data.stChanges.qWaveLeads || 'Yes'}\n`;
+            }
+        }
+
+        if (data.stemiCriteria === 'yes') {
+            assessment += `  - **STEMI CRITERIA: POSITIVE**\n`;
+        }
+
+        // Labs
+        if (data.labs && Object.keys(data.labs).length > 0) {
+            assessment += `\nLaboratory Values:\n`;
+            if (data.labs.troponinValue) assessment += `  - Troponin: ${data.labs.troponinValue} ng/mL (drawn at ${data.labs.troponinTime || 'time not documented'})\n`;
+            if (data.labs.bnpValue) assessment += `  - BNP: ${data.labs.bnpValue}\n`;
+            if (data.labs.bmpResults) assessment += `  - BMP: ${data.labs.bmpResults}\n`;
+            if (data.labs.cbcResults) assessment += `  - CBC: ${data.labs.cbcResults}\n`;
+        }
+
+        return assessment;
+    },
+
+    /**
+     * Format Recommendation section for Cardiac
+     */
+    formatCardiacRecommendation(data) {
+        let recommendation = '';
+
+        // STEMI pathway
+        if (data.stemiCriteria === 'yes') {
+            recommendation += '**STEMI PATHWAY ACTIVATED**\n';
+            recommendation += 'Immediate Actions Required:\n';
+            recommendation += '  ☑ Activate cath lab (door-to-balloon time <90 minutes)\n';
+            recommendation += '  ☑ Cardiology consult STAT\n';
+            recommendation += '  ☑ Aspirin 324mg PO (if not already given)\n';
+            recommendation += '  ☑ Dual antiplatelet therapy (Clopidogrel/Ticagrelor)\n';
+            recommendation += '  ☑ Anticoagulation (Heparin bolus + infusion)\n';
+            recommendation += '  ☑ Continuous cardiac monitoring\n';
+            recommendation += '  ☑ Admission to CCU\n\n';
+        } else {
+            // Risk-based recommendations
+            if (data.heartScore <= 3) {
+                recommendation += 'Low HEART Score (0-3): Low risk for MACE\n';
+                recommendation += 'Recommendation: Consider discharge home with cardiology follow-up in 72 hours\n';
+                recommendation += '  - Stress test within 72 hours (outpatient)\n';
+                recommendation += '  - Return precautions provided\n';
+                recommendation += '  - Follow-up with primary care or cardiologist\n\n';
+            } else if (data.heartScore <= 6) {
+                recommendation += 'Moderate HEART Score (4-6): Moderate risk for MACE\n';
+                recommendation += 'Recommendation: Observation unit for serial troponins and monitoring\n';
+                recommendation += '  - Serial troponins (0, 3, 6 hours)\n';
+                recommendation += '  - Continuous telemetry monitoring\n';
+                recommendation += '  - Consider stress test or CT coronary angiography\n';
+                recommendation += '  - Cardiology consultation\n\n';
+            } else {
+                recommendation += 'High HEART Score (7-10): High risk for MACE\n';
+                recommendation += 'Recommendation: Admit to telemetry or CCU\n';
+                recommendation += '  - Cardiology consult\n';
+                recommendation += '  - Serial troponins and ECGs\n';
+                recommendation += '  - Consider early invasive strategy (cardiac catheterization)\n';
+                recommendation += '  - Optimal medical therapy (antiplatelet, statin, beta-blocker)\n\n';
+            }
+        }
+
+        // Medications administered
+        if (data.medicationsGiven && data.medicationsGiven.length > 0) {
+            recommendation += 'Medications Administered:\n';
+            data.medicationsGiven.forEach(med => {
+                recommendation += `  ☑ ${med}\n`;
+            });
+            recommendation += '\n';
+        }
+
+        // Cath lab activation
+        if (data.cathLabTime) {
+            recommendation += `Cath Lab/Cardiology: Scheduled for ${data.cathLabTime}\n\n`;
+        }
+
+        // Disposition
+        recommendation += `Disposition: ${data.disposition}\n`;
+
+        if (data.dispositionInstructions) {
+            recommendation += `\nDisposition Instructions:\n${data.dispositionInstructions}\n`;
+        }
+
+        if (data.additionalNotes) {
+            recommendation += `\nAdditional Notes:\n${data.additionalNotes}\n`;
+        }
+
+        recommendation += '\nContinue cardiac monitoring and reassess per protocol.';
+
+        return recommendation;
     },
 
     generateCodeBlueSBAR(data) {

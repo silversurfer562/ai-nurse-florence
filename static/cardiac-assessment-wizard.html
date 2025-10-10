@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/static/js/wizardPersistence.js"></script>
     <script src="/static/js/careSettings.js"></script>
+    <script src="/static/js/documentationModule.js"></script>
     <style>
         .wizard-container {
             max-width: 4xl;
@@ -153,8 +154,8 @@
                         <p class="text-gray-600 mt-1" id="wizardDescription">Complete comprehensive cardiac assessment with HEART score</p>
                     </div>
                     <div class="text-right">
-                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
-                        <div class="text-lg font-semibold text-red-600" id="progressPercent">20%</div>
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 6</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">17%</div>
                     </div>
                 </div>
 
@@ -179,19 +180,25 @@
                     <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
                         <span>5</span>
                     </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="6" onclick="navigateToStep(6)">
+                        <span>6</span>
+                    </div>
                 </div>
 
                 <!-- Step Labels -->
                 <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
-                    <div class="text-center w-20">Chief Complaint</div>
+                    <div class="text-center w-16">Chief Complaint</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-20">HEART Score</div>
+                    <div class="text-center w-16">HEART Score</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-20">ECG Findings</div>
+                    <div class="text-center w-16">ECG Findings</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-20">Labs & Meds</div>
+                    <div class="text-center w-16">Labs & Meds</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-20">Disposition</div>
+                    <div class="text-center w-16">Disposition</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-16">Documentation</div>
                 </div>
             </div>
 
@@ -831,11 +838,11 @@
                 </div>
             </div>
 
-            <!-- Step 5: Disposition & Review -->
+            <!-- Step 5: Disposition -->
             <div id="step5" class="step-content p-6">
                 <h3 class="text-xl font-bold text-gray-900 mb-4">
-                    <i class="fas fa-file-medical text-red-600 mr-2"></i>
-                    Disposition & Review
+                    <i class="fas fa-hospital-user text-red-600 mr-2"></i>
+                    Disposition
                 </h3>
                 <p class="text-gray-700 mb-6">Review the cardiac assessment and determine disposition.</p>
 
@@ -916,6 +923,117 @@
                 </div>
             </div>
 
+            <!-- Step 6: Documentation Preview & Submit -->
+            <div id="step6" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical text-red-600 mr-2"></i>
+                    Preview & Submit Documentation
+                </h3>
+                <p class="text-gray-700 mb-6">Review the auto-generated SBAR documentation, edit if needed, and submit to patient record.</p>
+
+                <div class="space-y-6">
+                    <!-- Legal Documentation Notice -->
+                    <div class="bg-purple-50 border-l-4 border-purple-600 rounded-lg p-5 shadow-sm" style="border-left-color: #7c3aed;">
+                        <div class="flex items-start">
+                            <i class="fas fa-gavel text-2xl mr-4 mt-1" style="color: #7c3aed;"></i>
+                            <div>
+                                <h4 class="text-lg font-bold mb-2" style="color: #5b21b6;">Legal Documentation Requirement</h4>
+                                <p class="text-sm mb-3" style="color: #6b21a8;">
+                                    Cardiac assessment and HEART score require formal documentation in the patient's medical record. This SBAR note will serve as legal documentation of your assessment and interventions.
+                                </p>
+                                <div class="rounded p-3 text-xs" style="background: #ede9fe; color: #5b21b6;">
+                                    <strong>📋 "If you didn't document it, it didn't happen"</strong><br>
+                                    This documentation meets Joint Commission standards and ACC/AHA cardiac care guidelines.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SBAR Preview Card -->
+                    <div class="bg-white border-2 border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                        <div class="text-white px-6 py-4" style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);">
+                            <h4 class="text-xl font-bold flex items-center">
+                                <i class="fas fa-file-medical mr-3"></i>
+                                SBAR Clinical Documentation
+                            </h4>
+                            <p class="text-sm mt-1" style="color: #e9d5ff;">Auto-generated from your assessment data</p>
+                        </div>
+
+                        <div id="sbarPreviewContainer" class="p-6 bg-gray-50">
+                            <div class="bg-white border border-gray-300 rounded-lg p-6 font-mono text-sm whitespace-pre-wrap" id="sbarPreviewText">
+                                <!-- SBAR will be populated here by JavaScript -->
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                                    <p>Generating SBAR documentation...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit and Action Buttons -->
+                        <div class="bg-gray-100 px-6 py-4 border-t border-gray-300">
+                            <div class="flex justify-between items-center mb-4">
+                                <button onclick="editSBARNote()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <i class="fas fa-edit"></i>
+                                    Edit Note
+                                </button>
+                                <div class="flex gap-3">
+                                    <button onclick="printSBAR()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-print"></i>
+                                        Print
+                                    </button>
+                                    <button onclick="exportSBARToPDF()" class="px-4 py-2 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2" style="background: #7c3aed;">
+                                        <i class="fas fa-file-pdf"></i>
+                                        PDF
+                                    </button>
+                                    <button onclick="copySBARToClipboard()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-copy"></i>
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Final Confirmation Checkbox -->
+                            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" id="documentationConfirmed" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" required>
+                                    <div>
+                                        <span class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-check-square text-yellow-600 mr-2"></i>
+                                            I confirm this documentation is accurate and complete
+                                        </span>
+                                        <p class="text-xs text-gray-700 mt-1">
+                                            By checking this box, you certify that this SBAR note accurately reflects the cardiac assessment and interventions documented in this wizard. This will be submitted to the patient's medical record.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentation Metadata -->
+                    <div class="bg-gray-100 border border-gray-300 rounded-lg p-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Document ID:</span>
+                                <p class="font-mono font-semibold" id="docId">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Date/Time:</span>
+                                <p class="font-semibold" id="docTimestamp">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Nurse:</span>
+                                <p class="font-semibold" id="docNurse">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Care Setting:</span>
+                                <p class="font-semibold" id="docCareSetting">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Navigation Buttons -->
             <div class="border-t border-gray-200 p-6 flex justify-between">
                 <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
@@ -936,7 +1054,7 @@
         let wizardState = {
             current_step: 1,
             completed_steps: [],
-            total_steps: 5,
+            total_steps: 6,
             data: {
                 chiefComplaint: '',
                 painLocation: '',
@@ -1169,6 +1287,11 @@
             if (stepNum === 5) {
                 populateSummary();
             }
+
+            // Generate SBAR if on step 6
+            if (stepNum === 6) {
+                generateAndDisplaySBAR();
+            }
         }
 
         // Navigate back
@@ -1190,13 +1313,18 @@
             }
 
             // Advance to next step
-            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 6);
 
             updateWizardUI();
 
             // Populate summary if on step 5
             if (wizardState.current_step === 5) {
                 populateSummary();
+            }
+
+            // Generate SBAR if on step 6
+            if (wizardState.current_step === 6) {
+                generateAndDisplaySBAR();
             }
         }
 
@@ -1295,7 +1423,7 @@
         // Update wizard UI
         function updateWizardUI() {
             const currentStep = wizardState.current_step;
-            const progressPercent = Math.floor((currentStep / 5) * 100);
+            const progressPercent = Math.floor((currentStep / 6) * 100);
 
             // Update progress
             document.getElementById('progressBar').style.width = `${progressPercent}%`;
@@ -1331,7 +1459,7 @@
 
             backBtn.disabled = currentStep === 1;
 
-            if (currentStep === 5) {
+            if (currentStep === 6) {
                 nextBtn.classList.add('hidden');
                 finishBtn.classList.remove('hidden');
             } else {
@@ -1417,6 +1545,126 @@
             `;
         }
 
+        // ===== STEP 6 DOCUMENTATION FUNCTIONS =====
+
+        // Generate and display SBAR note
+        function generateAndDisplaySBAR() {
+            // Collect all wizard data
+            const data = wizardState.data;
+
+            // Get risk level text
+            const getRiskLevel = (score) => {
+                if (score <= 3) return 'Low Risk';
+                if (score <= 6) return 'Moderate Risk';
+                return 'High Risk';
+            };
+
+            // Prepare wizard data for DocumentationModule
+            const wizardData = {
+                patientAge: data.patientAge || 65, // Would come from EHR in production
+                patientGender: 'M',
+                patientName: 'Patient',
+                chiefComplaint: data.chiefComplaint || 'Not documented',
+                painLocation: data.painLocation || 'Not specified',
+                painQualities: data.painQualities || [],
+                painDuration: data.painDuration || 'Unknown',
+                associatedSymptoms: data.associatedSymptoms || [],
+                heartScore: data.heartScore || 0,
+                heartRiskLevel: getRiskLevel(data.heartScore || 0),
+                historyScore: data.historyScore || 0,
+                ekgScore: data.ekgScore || 0,
+                ageScore: this.calculateAgeScore(data.patientAge),
+                riskFactors: data.riskFactors || [],
+                troponinScore: data.troponinScore || 0,
+                vitalSigns: {
+                    heartRate: data.heartRate || 'N/A',
+                    bloodPressure: data.bloodPressure || 'N/A',
+                    respiratoryRate: data.respiratoryRate || 'N/A',
+                    o2Saturation: data.o2Saturation || 'N/A'
+                },
+                ecgPerformed: data.ecgPerformed || 'no',
+                ecgTime: data.ecgTime || '',
+                ecgRhythm: data.ecgRhythm || 'Not documented',
+                stChanges: data.stChanges || {},
+                stemiCriteria: data.stemiCriteria || 'no',
+                labs: data.labs || {},
+                medicationsGiven: data.medicationsGiven || [],
+                medicationNotes: data.medicationNotes || '',
+                cathLabTime: data.cathLabTime || '',
+                disposition: data.disposition || 'Pending',
+                dispositionInstructions: data.dispositionInstructions || '',
+                additionalNotes: data.additionalNotes || '',
+                nurseSignature: data.nurseSignature || ''
+            };
+
+            // Generate SBAR using DocumentationModule
+            const sbarData = DocumentationModule.generateSBAR(wizardData, 'cardiac');
+
+            // Store globally for later reference
+            window.currentSBARData = sbarData;
+
+            // Format and display
+            const formattedSBAR = DocumentationModule.formatSBARForDisplay(sbarData);
+            document.getElementById('sbarPreviewText').textContent = formattedSBAR;
+
+            // Update metadata
+            document.getElementById('docId').textContent = sbarData.metadata.documentId;
+            document.getElementById('docTimestamp').textContent = sbarData.metadata.timestampFormatted;
+            document.getElementById('docNurse').textContent = sbarData.metadata.nurse;
+
+            // Get care setting if available
+            const careSetting = CareSettings.getCurrentSetting();
+            const careSettingName = CareSettings.SETTINGS[careSetting]?.name || 'Not specified';
+            document.getElementById('docCareSetting').textContent = careSettingName;
+        }
+
+        // Helper to calculate age score
+        function calculateAgeScore(age) {
+            if (!age) return 0;
+            if (age >= 65) return 2;
+            if (age >= 45) return 1;
+            return 0;
+        }
+
+        // Edit SBAR note
+        function editSBARNote() {
+            const previewText = document.getElementById('sbarPreviewText');
+            const isEditing = previewText.contentEditable === 'true';
+
+            if (isEditing) {
+                // Save edits
+                previewText.contentEditable = 'false';
+                previewText.classList.remove('bg-yellow-50', 'border-2', 'border-yellow-400');
+                showMessage('success', 'Edits saved. Review the updated documentation before submitting.');
+            } else {
+                // Enable editing
+                previewText.contentEditable = 'true';
+                previewText.classList.add('bg-yellow-50', 'border-2', 'border-yellow-400');
+                previewText.focus();
+                showMessage('warning', 'Editing mode enabled. Modify the text as needed, then click "Edit Note" again to save.');
+            }
+        }
+
+        // Print SBAR
+        function printSBAR() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            DocumentationModule.printChartCopy(sbarText);
+        }
+
+        // Export SBAR to PDF (simplified - just downloads as text)
+        function exportSBARToPDF() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            const metadata = window.currentSBARData?.metadata || {};
+            DocumentationModule.exportToPDF(sbarText, metadata);
+        }
+
+        // Copy SBAR to clipboard
+        function copySBARToClipboard() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            DocumentationModule.copyToClipboard(sbarText);
+            showMessage('success', 'SBAR documentation copied to clipboard');
+        }
+
         // Finish wizard
         function finishWizard() {
             collectCurrentStepData();
@@ -1427,14 +1675,27 @@
                 return;
             }
 
-            showMessage('success', 'Cardiac assessment completed successfully!');
+            // Validate documentation confirmation
+            const docConfirmed = document.getElementById('documentationConfirmed').checked;
+            if (!docConfirmed) {
+                showMessage('error', 'Please confirm the documentation is accurate before submitting.');
+                return;
+            }
 
-            // In production, this would save to the database
+            showMessage('success', 'Cardiac assessment and documentation completed successfully!');
+
+            // In production, this would save to the database and EHR
             console.log('Cardiac Assessment Data:', wizardState.data);
+            console.log('SBAR Documentation:', window.currentSBARData);
 
             // Show completion message
             setTimeout(() => {
-                alert('Cardiac assessment documented successfully!\n\nAssessment ID: CA-' + Date.now() + '\nNurse: ' + wizardState.data.nurseSignature + '\nHEART Score: ' + wizardState.data.heartScore);
+                const docId = document.getElementById('docId').textContent;
+                alert(`Cardiac assessment documented successfully!\n\nAssessment ID: CA-${Date.now()}\nDocument ID: ${docId}\nNurse: ${wizardState.data.nurseSignature}\nHEART Score: ${wizardState.data.heartScore}/10\nDisposition: ${wizardState.data.disposition}\n\nSBAR note has been submitted to patient medical record.`);
+
+                // Clear wizard persistence on successful completion
+                WizardPersistence.clearWizardState(WIZARD_ID);
+
                 // Optionally redirect to dashboard
                 // window.location.href = '/';
             }, 500);
