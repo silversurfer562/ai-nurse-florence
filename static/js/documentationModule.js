@@ -491,10 +491,288 @@ Review for accuracy and completeness before submission.`;
         return { valid: true, errors: [] };
     },
 
-    // Placeholder templates for other wizards (to be implemented)
+    /**
+     * Generate SBAR for Stroke Assessment
+     */
     generateStrokeSBAR(data) {
-        return { situation: 'Stroke SBAR - To be implemented', background: '', assessment: '', recommendation: '' };
+        return {
+            situation: this.formatStrokeSituation({
+                lastKnownWell: data.lastKnownWell || 'Unknown',
+                nihssScore: data.nihssScore || 0,
+                cincinnatiDroop: data.cincinnatiDroop,
+                cincinnatiDrift: data.cincinnatiDrift,
+                cincinnatiSpeech: data.cincinnatiSpeech
+            }),
+
+            background: this.formatStrokeBackground({
+                medicalHistory: data.medicalHistory || [],
+                medications: data.medications || [],
+                allergies: data.allergies || [],
+                riskFactors: this.extractStrokeRiskFactors(data)
+            }),
+
+            assessment: this.formatStrokeAssessment({
+                nihssScore: data.nihssScore || 0,
+                nihssComponents: this.getNIHSSComponents(data),
+                cincinnatiPositive: this.isCincinnatiPositive(data),
+                tpaWindow: this.calculateTPAWindow(data.lastKnownWell)
+            }),
+
+            recommendation: this.formatStrokeRecommendation({
+                nihssScore: data.nihssScore || 0,
+                tpaEligible: this.isTPAEligible(data),
+                contraindications: data.contraindications || [],
+                interventions: data.interventions || []
+            })
+        };
     },
+
+    /**
+     * Format Situation section for Stroke
+     */
+    formatStrokeSituation(data) {
+        const timeFromOnset = this.calculateTimeFromOnset(data.lastKnownWell);
+        const cincinnatiFindings = [];
+
+        if (data.cincinnatiDroop === 'positive') cincinnatiFindings.push('facial droop');
+        if (data.cincinnatiDrift === 'positive') cincinnatiFindings.push('arm drift');
+        if (data.cincinnatiSpeech === 'abnormal') cincinnatiFindings.push('speech abnormality');
+
+        const cincinnatiText = cincinnatiFindings.length > 0
+            ? `Positive Cincinnati Stroke Scale findings: ${cincinnatiFindings.join(', ')}.`
+            : 'Cincinnati Stroke Scale completed.';
+
+        return `Patient presenting with acute neurological symptoms. Last known well: ${data.lastKnownWell} (${timeFromOnset}). ${cincinnatiText} NIHSS score: ${data.nihssScore}/42.`;
+    },
+
+    /**
+     * Format Background section for Stroke
+     */
+    formatStrokeBackground(data) {
+        let background = '';
+
+        // Risk factors specific to stroke
+        if (data.riskFactors && data.riskFactors.length > 0) {
+            background += `Stroke Risk Factors: ${data.riskFactors.join(', ')}. `;
+        }
+
+        if (data.medicalHistory && data.medicalHistory.length > 0) {
+            background += `Past Medical History: ${data.medicalHistory.join(', ')}. `;
+        }
+
+        if (data.medications && data.medications.length > 0) {
+            background += `Current Medications: ${data.medications.join(', ')}. `;
+        }
+
+        if (data.allergies && data.allergies.length > 0) {
+            background += `Allergies: ${data.allergies.join(', ')}. `;
+        } else {
+            background += `Allergies: NKDA. `;
+        }
+
+        return background || 'No significant medical history documented.';
+    },
+
+    /**
+     * Format Assessment section for Stroke
+     */
+    formatStrokeAssessment(data) {
+        let assessment = '';
+
+        // NIHSS Score
+        const severity = data.nihssScore <= 4 ? 'Minor' :
+                        data.nihssScore <= 15 ? 'Moderate' :
+                        data.nihssScore <= 20 ? 'Moderate to Severe' :
+                        'Severe';
+
+        assessment += `NIHSS Score: ${data.nihssScore}/42 (${severity} Stroke)\n`;
+
+        // NIHSS Component Breakdown
+        if (data.nihssComponents) {
+            assessment += `\nNIHSS Component Breakdown:\n`;
+            assessment += `  - Level of Consciousness: ${data.nihssComponents.consciousness || 'Not documented'}\n`;
+            assessment += `  - Best Gaze: ${data.nihssComponents.gaze || 'Not documented'}\n`;
+            assessment += `  - Visual Fields: ${data.nihssComponents.visual || 'Not documented'}\n`;
+            assessment += `  - Facial Palsy: ${data.nihssComponents.facialPalsy || 'Not documented'}\n`;
+            assessment += `  - Motor Arm: ${data.nihssComponents.motorArm || 'Not documented'}\n`;
+            assessment += `  - Motor Leg: ${data.nihssComponents.motorLeg || 'Not documented'}\n`;
+            assessment += `  - Limb Ataxia: ${data.nihssComponents.ataxia || 'Not documented'}\n`;
+            assessment += `  - Sensory: ${data.nihssComponents.sensory || 'Not documented'}\n`;
+            assessment += `  - Language: ${data.nihssComponents.language || 'Not documented'}\n`;
+            assessment += `  - Dysarthria: ${data.nihssComponents.dysarthria || 'Not documented'}\n`;
+            assessment += `  - Extinction/Inattention: ${data.nihssComponents.extinction || 'Not documented'}\n`;
+        }
+
+        // Cincinnati Stroke Scale
+        if (data.cincinnatiPositive) {
+            assessment += `\nCincinnati Stroke Scale: POSITIVE - Suggests acute stroke\n`;
+        }
+
+        // tPA Window
+        assessment += `\ntPA Eligibility Window: ${data.tpaWindow}\n`;
+
+        return assessment;
+    },
+
+    /**
+     * Format Recommendation section for Stroke
+     */
+    formatStrokeRecommendation(data) {
+        let recommendation = '';
+
+        // tPA Eligibility
+        if (data.tpaEligible) {
+            recommendation += `PATIENT IS CANDIDATE FOR tPA (Alteplase)\n`;
+            recommendation += `Recommendation: Administer tPA per protocol if no contraindications develop.\n\n`;
+        } else {
+            recommendation += `Patient NOT candidate for tPA.\n`;
+            if (data.contraindications && data.contraindications.length > 0) {
+                recommendation += `Contraindications: ${data.contraindications.join(', ')}\n\n`;
+            }
+        }
+
+        // Interventions
+        if (data.interventions && data.interventions.length > 0) {
+            recommendation += 'Stroke Interventions Completed:\n';
+            data.interventions.forEach(intervention => {
+                recommendation += `  ☑ ${intervention}\n`;
+            });
+        }
+
+        // Standard recommendations based on severity
+        recommendation += `\nRecommended Actions:\n`;
+        recommendation += `  - Activate stroke team/neurology consult immediately\n`;
+        recommendation += `  - Stat CT head (non-contrast) to rule out hemorrhage\n`;
+        recommendation += `  - Blood pressure management (target < 185/110 if tPA candidate)\n`;
+        recommendation += `  - Establish 2 large bore IVs\n`;
+        recommendation += `  - Labs: CBC, BMP, coags (PT/INR, PTT), troponin, lipid panel\n`;
+        recommendation += `  - Continuous cardiac and neuro monitoring\n`;
+
+        if (data.nihssScore > 10) {
+            recommendation += `  - Consider ICU admission due to severe stroke (NIHSS > 10)\n`;
+        }
+
+        recommendation += `\nReassess NIHSS and vital signs every 15 minutes.`;
+
+        return recommendation;
+    },
+
+    /**
+     * Helper: Extract stroke risk factors from data
+     */
+    extractStrokeRiskFactors(data) {
+        const riskFactors = [];
+        const history = data.medicalHistory || [];
+
+        if (history.includes('Hypertension') || history.includes('HTN')) riskFactors.push('Hypertension');
+        if (history.includes('Atrial Fibrillation') || history.includes('AFib')) riskFactors.push('Atrial Fibrillation');
+        if (history.includes('Diabetes')) riskFactors.push('Diabetes');
+        if (history.includes('Hyperlipidemia')) riskFactors.push('Hyperlipidemia');
+        if (history.includes('Previous Stroke') || history.includes('CVA')) riskFactors.push('Previous Stroke');
+        if (history.includes('TIA')) riskFactors.push('TIA');
+        if (history.includes('Smoking')) riskFactors.push('Tobacco use');
+
+        // Check medications for anticoagulants
+        const medications = data.medications || [];
+        if (medications.some(med => med.toLowerCase().includes('warfarin') || med.toLowerCase().includes('coumadin'))) {
+            riskFactors.push('Anticoagulation therapy');
+        }
+
+        return riskFactors;
+    },
+
+    /**
+     * Helper: Get NIHSS component descriptions
+     */
+    getNIHSSComponents(data) {
+        return {
+            consciousness: this.describeNIHSSComponent('1a-1c', [data.nihss1a, data.nihss1b, data.nihss1c]),
+            gaze: this.describeNIHSSComponent('2', data.nihss2),
+            visual: this.describeNIHSSComponent('3', data.nihss3),
+            facialPalsy: this.describeNIHSSComponent('4', data.nihss4),
+            motorArm: this.describeNIHSSComponent('5', [data.nihss5a, data.nihss5b]),
+            motorLeg: this.describeNIHSSComponent('6', [data.nihss6a, data.nihss6b]),
+            ataxia: this.describeNIHSSComponent('7', data.nihss7),
+            sensory: this.describeNIHSSComponent('8', data.nihss8),
+            language: this.describeNIHSSComponent('9', data.nihss9),
+            dysarthria: this.describeNIHSSComponent('10', data.nihss10),
+            extinction: this.describeNIHSSComponent('11', data.nihss11)
+        };
+    },
+
+    /**
+     * Helper: Describe NIHSS component score
+     */
+    describeNIHSSComponent(component, score) {
+        if (Array.isArray(score)) {
+            const total = score.reduce((sum, s) => sum + (s || 0), 0);
+            return `${total} points`;
+        }
+        return score !== null && score !== undefined ? `${score} points` : 'Not assessed';
+    },
+
+    /**
+     * Helper: Check if Cincinnati is positive
+     */
+    isCincinnatiPositive(data) {
+        return data.cincinnatiDroop === 'positive' ||
+               data.cincinnatiDrift === 'positive' ||
+               data.cincinnatiSpeech === 'abnormal';
+    },
+
+    /**
+     * Helper: Calculate time from onset
+     */
+    calculateTimeFromOnset(lastKnownWell) {
+        if (!lastKnownWell) return 'Unknown';
+
+        const onsetTime = new Date(lastKnownWell);
+        const now = new Date();
+        const diffMs = now - onsetTime;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        return `${diffHours}h ${diffMinutes}m ago`;
+    },
+
+    /**
+     * Helper: Calculate tPA eligibility window
+     */
+    calculateTPAWindow(lastKnownWell) {
+        if (!lastKnownWell) return 'Unable to determine - onset time unknown';
+
+        const onsetTime = new Date(lastKnownWell);
+        const now = new Date();
+        const diffHours = (now - onsetTime) / (1000 * 60 * 60);
+
+        if (diffHours < 3) {
+            const remaining = 3 - diffHours;
+            return `Within 3-hour window (${remaining.toFixed(1)} hours remaining)`;
+        } else if (diffHours < 4.5) {
+            const remaining = 4.5 - diffHours;
+            return `Within extended 4.5-hour window (${remaining.toFixed(1)} hours remaining)`;
+        } else {
+            return `Outside tPA window (${diffHours.toFixed(1)} hours from onset)`;
+        }
+    },
+
+    /**
+     * Helper: Determine tPA eligibility
+     */
+    isTPAEligible(data) {
+        if (!data.lastKnownWell) return false;
+
+        const onsetTime = new Date(data.lastKnownWell);
+        const now = new Date();
+        const diffHours = (now - onsetTime) / (1000 * 60 * 60);
+
+        const withinWindow = diffHours < 4.5;
+        const hasContraindications = data.contraindications && data.contraindications.length > 0;
+
+        return withinWindow && !hasContraindications;
+    },
+
+    // Placeholder templates for other wizards (to be implemented)
 
     generateCardiacSBAR(data) {
         return { situation: 'Cardiac SBAR - To be implemented', background: '', assessment: '', recommendation: '' };
