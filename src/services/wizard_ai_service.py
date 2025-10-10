@@ -4,14 +4,13 @@ Provides AI-powered assistance for clinical wizards
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
-
-from src.core.config import settings
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +77,7 @@ class WizardAIService:
         """Initialize the wizard AI service with LangChain"""
         self.llm = ChatAnthropic(
             model="claude-3-5-sonnet-20241022",
-            api_key=settings.ANTHROPIC_API_KEY,
+            api_key=os.getenv("ANTHROPIC_API_KEY"),
             temperature=0.3,  # Lower temperature for clinical accuracy
             max_tokens=2000,
         )
