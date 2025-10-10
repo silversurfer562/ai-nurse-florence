@@ -760,52 +760,41 @@
             }
         }
 
-        // Navigate next
-        async function navigateNext() {
+        // Navigate next - CLIENT-SIDE MODE FOR DEMO
+        function navigateNext() {
             // Validate current step before proceeding
             if (!validateCurrentStep()) {
                 return;
             }
 
-            // Submit current step data
+            // Collect and save current step data
             const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
 
-            try {
-                const response = await fetch(`${API_BASE}/step/${wizardState.current_step}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(stepData)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Step submission failed: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                updateWizardUI(data);
-
-                // Handle step-specific logic after submission
-                handleStepSpecificLogic(data);
-
-            } catch (error) {
-                console.log('Step submission: using fallback navigation');
-                // Silent fallback - advance to next step anyway for demo
-                wizardState.current_step = Math.min(wizardState.current_step + 1, 7);
-                updateWizardUI({
-                    current_step: wizardState.current_step,
-                    completed_steps: wizardState.completed_steps,
-                    total_steps: 7,
-                    progress_percent: Math.floor((wizardState.current_step / 7) * 100),
-                    step_name: 'Epic Integration Setup',
-                    step_description: 'Configure your Epic FHIR connection',
-                    can_proceed: true,
-                    errors: [],
-                    warnings: [],
-                    messages: [],
-                    state_data: wizardState.data
-                });
-                handleStepSpecificLogic({state_data: wizardState.data});
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
             }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 7);
+
+            // Update UI
+            updateWizardUI({
+                current_step: wizardState.current_step,
+                completed_steps: wizardState.completed_steps,
+                total_steps: 7,
+                progress_percent: Math.floor((wizardState.current_step / 7) * 100),
+                step_name: 'Epic Integration Setup',
+                step_description: 'Configure your Epic FHIR connection',
+                can_proceed: true,
+                errors: [],
+                warnings: [],
+                messages: [],
+                state_data: wizardState.data
+            });
+
+            handleStepSpecificLogic({state_data: wizardState.data});
         }
 
         // Handle step-specific UI population
