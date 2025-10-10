@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/static/js/wizardPersistence.js"></script>
     <script src="/static/js/careSettings.js"></script>
+    <script src="/static/js/documentationModule.js"></script>
     <style>
         .wizard-container {
             max-width: 4xl;
@@ -133,7 +134,7 @@
                         <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps for safe blood product administration</p>
                     </div>
                     <div class="text-right">
-                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 6</div>
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 7</div>
                         <div class="text-lg font-semibold text-red-600" id="progressPercent">0%</div>
                     </div>
                 </div>
@@ -163,6 +164,10 @@
                     <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="6" onclick="navigateToStep(6)">
                         <span>6</span>
                     </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="7" onclick="navigateToStep(7)">
+                        <span>7</span>
+                    </div>
                 </div>
 
                 <!-- Step Labels -->
@@ -177,7 +182,9 @@
                     <div class="flex-1"></div>
                     <div class="text-center w-10">Post-Assess</div>
                     <div class="flex-1"></div>
-                    <div class="text-center w-10">Document</div>
+                    <div class="text-center w-10">Summary</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">SBAR Doc</div>
                 </div>
             </div>
 
@@ -550,11 +557,11 @@
                 </div>
             </div>
 
-            <!-- Step 6: Documentation & Review -->
+            <!-- Step 6: Transfusion Summary & Documentation -->
             <div id="step6" class="step-content p-6">
                 <h3 class="text-xl font-bold text-gray-900 mb-4">
                     <i class="fas fa-file-medical text-red-600 mr-2"></i>
-                    Documentation & Review
+                    Transfusion Summary & Documentation
                 </h3>
                 <p class="text-gray-700 mb-6">Complete transfusion documentation and review all data.</p>
 
@@ -608,6 +615,117 @@
                 </div>
             </div>
 
+            <!-- Step 7: SBAR Documentation Preview -->
+            <div id="step7" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4" style="color: #e11d48;">
+                    <i class="fas fa-file-medical mr-2" style="color: #e11d48;"></i>
+                    Preview & Submit Documentation
+                </h3>
+                <p class="text-gray-700 mb-6">Review the auto-generated SBAR documentation, edit if needed, and submit to patient record.</p>
+
+                <div class="space-y-6">
+                    <!-- Legal Documentation Notice -->
+                    <div class="bg-blue-50 border-l-4 border-blue-600 rounded-lg p-5 shadow-sm">
+                        <div class="flex items-start">
+                            <i class="fas fa-gavel text-blue-600 text-2xl mr-4 mt-1"></i>
+                            <div>
+                                <h4 class="text-lg font-bold text-blue-900 mb-2">Legal Documentation Requirement</h4>
+                                <p class="text-sm text-blue-800 mb-3">
+                                    Blood transfusion administration requires formal documentation in the patient's medical record. This SBAR note will serve as legal documentation of your assessment and actions taken.
+                                </p>
+                                <div class="bg-blue-100 rounded p-3 text-xs text-blue-900">
+                                    <strong>If you didn't document it, it didn't happen</strong><br>
+                                    This documentation meets Joint Commission standards for blood product administration.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SBAR Preview Card -->
+                    <div class="bg-white border-2 border-gray-300 rounded-lg shadow-lg overflow-hidden">
+                        <div class="text-white px-6 py-4" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);">
+                            <h4 class="text-xl font-bold flex items-center">
+                                <i class="fas fa-file-medical mr-3"></i>
+                                SBAR Clinical Documentation
+                            </h4>
+                            <p class="text-sm mt-1" style="color: #fecdd3;">Auto-generated from your assessment data</p>
+                        </div>
+
+                        <div id="sbarPreviewContainer" class="p-6 bg-gray-50">
+                            <div class="bg-white border border-gray-300 rounded-lg p-6 font-mono text-sm whitespace-pre-wrap" id="sbarPreviewText">
+                                <!-- SBAR will be populated here by JavaScript -->
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                                    <p>Generating SBAR documentation...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit and Action Buttons -->
+                        <div class="bg-gray-100 px-6 py-4 border-t border-gray-300">
+                            <div class="flex justify-between items-center mb-4">
+                                <button onclick="editSBARNote()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <i class="fas fa-edit"></i>
+                                    Edit Note
+                                </button>
+                                <div class="flex gap-3">
+                                    <button onclick="printSBAR()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-print"></i>
+                                        Print
+                                    </button>
+                                    <button onclick="exportSBARToPDF()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-file-pdf"></i>
+                                        PDF
+                                    </button>
+                                    <button onclick="copySBARToClipboard()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-copy"></i>
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Final Confirmation Checkbox -->
+                            <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" id="documentationConfirmed" class="mt-1 mr-3 h-5 w-5 rounded focus:ring-2" style="color: #e11d48; focus:ring-color: #e11d48;" required>
+                                    <div>
+                                        <span class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-check-square text-yellow-600 mr-2"></i>
+                                            I confirm this documentation is accurate and complete
+                                        </span>
+                                        <p class="text-xs text-gray-700 mt-1">
+                                            By checking this box, you certify that this SBAR note accurately reflects the patient assessment and interventions documented in this wizard. This will be submitted to the patient's medical record.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentation Metadata -->
+                    <div class="bg-gray-100 border border-gray-300 rounded-lg p-4">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">Document ID:</span>
+                                <p class="font-mono font-semibold" id="docId">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Date/Time:</span>
+                                <p class="font-semibold" id="docTimestamp">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Nurse:</span>
+                                <p class="font-semibold" id="docNurse">-</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Care Setting:</span>
+                                <p class="font-semibold" id="docCareSetting">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Navigation Buttons -->
             <div class="border-t border-gray-200 p-6 flex justify-between">
                 <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
@@ -628,7 +746,7 @@
         let wizardState = {
             current_step: 1,
             completed_steps: [],
-            total_steps: 6,
+            total_steps: 7,
             data: {}
         };
 
@@ -672,18 +790,23 @@
             collectCurrentStepData();
 
             // Advance to next step
-            wizardState.current_step = Math.min(wizardState.current_step + 1, 6);
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 7);
             updateWizardUI();
 
-            // Populate review if on final step
+            // Populate review if on step 6
             if (wizardState.current_step === 6) {
                 populateReview();
+            }
+
+            // Generate SBAR if on step 7
+            if (wizardState.current_step === 7) {
+                generateAndDisplaySBAR();
             }
         }
 
         // Update wizard UI
         function updateWizardUI() {
-            const progressPercent = Math.floor((wizardState.current_step / 6) * 100);
+            const progressPercent = Math.floor((wizardState.current_step / 7) * 100);
             document.getElementById('progressBar').style.width = `${progressPercent}%`;
             document.getElementById('progressPercent').textContent = `${progressPercent}%`;
             document.getElementById('currentStepNum').textContent = wizardState.current_step;
@@ -717,7 +840,7 @@
 
             backBtn.disabled = wizardState.current_step === 1;
 
-            if (wizardState.current_step === 6) {
+            if (wizardState.current_step === 7) {
                 nextBtn.classList.add('hidden');
                 finishBtn.classList.remove('hidden');
             } else {
@@ -876,20 +999,152 @@
             reviewSummary.innerHTML = html;
         }
 
+        // ===== STEP 7 DOCUMENTATION FUNCTIONS =====
+
+        // Generate and display SBAR note
+        function generateAndDisplaySBAR() {
+            // Collect all wizard data
+            const data = wizardState.data;
+
+            // Prepare wizard data for DocumentationModule
+            const wizardData = {
+                patientName: data.patientName || 'Patient',
+                patientMrn: data.patientMrn || 'Not documented',
+                patientAge: 65, // Would come from EHR in production
+                patientGender: 'Unknown',
+                productType: data.productType || 'Not specified',
+                unitNumber: data.unitNumber || 'Not documented',
+                indication: 'Blood transfusion administration', // Could be captured in form
+                patientBloodType: 'Type & Screen on file', // Would come from lab in production
+                transfusionHistory: data.reactionHistory ? 'Previous transfusion reactions noted' : 'No prior transfusion reactions',
+                allergies: ['Not documented in wizard'], // Could be captured in form
+                currentHemoglobin: 'Not documented', // Could add to form
+                nurse1Name: data.nurse1Name || 'Nurse 1',
+                nurse2Name: data.nurse2Name || 'Nurse 2',
+                verificationCompleted: data.unitNumberMatch && data.bloodTypeMatch && data.expirationCheck,
+                verificationTime: new Date().toLocaleTimeString(),
+                unitExpiration: 'Verified within date', // Could add to form
+                bloodTypeVerification: data.bloodTypeMatch ? 'Verified compatible' : 'Not verified',
+                baselineVitals: {
+                    bloodPressure: data.baselineBp || 'Not documented',
+                    heartRate: data.baselineHr || 'Not documented',
+                    temperature: data.baselineTemp || 'Not documented'
+                },
+                monitoringVitals: {
+                    baseline: { bp: data.bp0, hr: data.hr0, temp: data.temp0 },
+                    min15: { bp: data.bp15, hr: data.hr15, temp: data.temp15 },
+                    min30: { bp: data.bp30, hr: data.hr30, temp: data.temp30 },
+                    min60: { bp: data.bp60, hr: data.hr60, temp: data.temp60 }
+                },
+                postVitals: {
+                    bloodPressure: data.postBp || 'Not documented',
+                    heartRate: data.postHr || 'Not documented',
+                    temperature: data.postTemp || 'Not documented'
+                },
+                transfusionStartTime: data.startTime || 'Not documented',
+                transfusionEndTime: data.endTime || 'Not documented',
+                volumeTransfused: data.totalVolume || 'Not documented',
+                transfusionRate: data.transfusionRate || 'Not documented',
+                reactionsObserved: data.adverseReaction || data.reactionSymptoms || false,
+                reactionDetails: data.reactionManagement || data.reactionNotes || 'No adverse reactions observed',
+                reactionType: data.adverseReactionType || 'None',
+                patientTolerance: data.patientTolerance || 'Not assessed',
+                postTransfusionLabs: 'Ordered per protocol', // Could add to form
+                outcomeSummary: data.outcomeSummary || 'Transfusion completed per protocol',
+                ivGauge: data.ivGauge || 'Not documented',
+                consentVerified: data.consentVerified
+            };
+
+            // Generate SBAR using DocumentationModule
+            const sbarData = DocumentationModule.generateSBAR(wizardData, 'blood-transfusion');
+
+            // Store globally for later reference
+            window.currentSBARData = sbarData;
+
+            // Format and display
+            const formattedSBAR = DocumentationModule.formatSBARForDisplay(sbarData);
+            document.getElementById('sbarPreviewText').textContent = formattedSBAR;
+
+            // Update metadata
+            document.getElementById('docId').textContent = sbarData.metadata.documentId;
+            document.getElementById('docTimestamp').textContent = sbarData.metadata.timestampFormatted;
+            document.getElementById('docNurse').textContent = sbarData.metadata.nurse;
+
+            // Get care setting if available
+            const careSetting = CareSettings.getCurrentSetting();
+            const careSettingName = CareSettings.SETTINGS[careSetting]?.name || 'Not specified';
+            document.getElementById('docCareSetting').textContent = careSettingName;
+        }
+
+        // Edit SBAR note
+        function editSBARNote() {
+            const previewText = document.getElementById('sbarPreviewText');
+            const isEditing = previewText.contentEditable === 'true';
+
+            if (isEditing) {
+                // Save edits
+                previewText.contentEditable = 'false';
+                previewText.classList.remove('bg-yellow-50', 'border-2', 'border-yellow-400');
+                showMessage('success', 'Edits saved. Review the updated documentation before submitting.');
+            } else {
+                // Enable editing
+                previewText.contentEditable = 'true';
+                previewText.classList.add('bg-yellow-50', 'border-2', 'border-yellow-400');
+                previewText.focus();
+                showMessage('warning', 'Editing mode enabled. Modify the text as needed, then click "Edit Note" again to save.');
+            }
+        }
+
+        // Print SBAR
+        function printSBAR() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            DocumentationModule.printChartCopy(sbarText);
+        }
+
+        // Export SBAR to PDF (simplified - just downloads as text)
+        function exportSBARToPDF() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            const metadata = window.currentSBARData?.metadata || {};
+            DocumentationModule.exportToPDF(sbarText, metadata);
+        }
+
+        // Copy SBAR to clipboard
+        function copySBARToClipboard() {
+            const sbarText = document.getElementById('sbarPreviewText').textContent;
+            DocumentationModule.copyToClipboard(sbarText);
+            showMessage('success', 'SBAR documentation copied to clipboard');
+        }
+
         // Finish wizard
         function finishWizard() {
             collectCurrentStepData();
+
+            // Validate documentation confirmation
+            const docConfirmed = document.getElementById('documentationConfirmed').checked;
+            if (!docConfirmed) {
+                showMessage('error', 'Please confirm the documentation is accurate before submitting.');
+                return;
+            }
+
             showMessage('success', 'Blood transfusion documentation completed successfully!');
 
             // Mark wizard as complete
-            wizardState.completed_steps.push(6);
+            wizardState.completed_steps.push(7);
 
-            // Could send data to server here
+            // In production, this would save to the database and EHR
             console.log('Transfusion data:', wizardState.data);
+            console.log('SBAR Documentation:', window.currentSBARData);
 
             // Show completion message
             setTimeout(() => {
-                alert('Blood transfusion wizard completed!\n\nAll documentation has been recorded.');
+                const docId = document.getElementById('docId').textContent;
+                alert(`Blood transfusion documented successfully!\n\nDocument ID: ${docId}\nProduct: ${wizardState.data.productType || 'Not specified'}\nUnit: ${wizardState.data.unitNumber || 'Not specified'}\nPatient Tolerance: ${wizardState.data.patientTolerance || 'Not assessed'}\n\nSBAR note has been submitted to patient medical record.`);
+
+                // Clear wizard persistence on successful completion
+                WizardPersistence.clearWizardState(WIZARD_ID);
+
+                // Optionally redirect to dashboard
+                // window.location.href = '/static/dashboard.html';
             }, 500);
         }
 

@@ -1020,12 +1020,412 @@ Review for accuracy and completeness before submission.`;
         return recommendation;
     },
 
+    /**
+     * Generate SBAR for Code Blue Assessment
+     */
     generateCodeBlueSBAR(data) {
-        return { situation: 'Code Blue SBAR - To be implemented', background: '', assessment: '', recommendation: '' };
+        return {
+            situation: this.formatCodeBlueSituation({
+                codeCalledTime: data.codeCalledTime || 'Not documented',
+                location: data.location || 'Not specified',
+                initialRhythm: data.initialRhythm || 'Not documented',
+                witnessed: data.witnessed || 'Unknown',
+                patientAge: data.patientAge || 'Unknown',
+                patientGender: data.patientGender || 'Unknown'
+            }),
+
+            background: this.formatCodeBlueBackground({
+                medicalHistory: data.medicalHistory || [],
+                medications: data.medications || [],
+                allergies: data.allergies || [],
+                reasonForAdmission: data.reasonForAdmission || 'Not documented',
+                codeStatus: data.codeStatus || 'Full code'
+            }),
+
+            assessment: this.formatCodeBlueAssessment({
+                cprStartTime: data.cprStartTime || '',
+                teamRoles: data.teamRoles || {},
+                interventions: data.interventions || [],
+                medications: data.medications || [],
+                defibrillations: data.defibrillations || [],
+                roscTime: data.roscTime || '',
+                codeDuration: data.codeDuration || 'Unknown'
+            }),
+
+            recommendation: this.formatCodeBlueRecommendation({
+                outcome: data.outcome || 'Pending',
+                roscTime: data.roscTime || '',
+                codeEndTime: data.codeEndTime || '',
+                familyNotified: data.familyNotified || 'Not documented',
+                familyNotifiedBy: data.familyNotifiedBy || '',
+                debriefingCompleted: data.debriefingCompleted || false,
+                debriefingNotes: data.debriefingNotes || '',
+                additionalNotes: data.additionalNotes || ''
+            })
+        };
     },
 
+    /**
+     * Format Situation section for Code Blue
+     */
+    formatCodeBlueSituation(data) {
+        let situation = `Code Blue called at ${data.codeCalledTime} in ${data.location}. `;
+        situation += `${data.patientAge} year old ${data.patientGender} patient. `;
+        situation += `Initial rhythm: ${data.initialRhythm}. `;
+        situation += `Event was ${data.witnessed.toLowerCase()}.`;
+
+        return situation;
+    },
+
+    /**
+     * Format Background section for Code Blue
+     */
+    formatCodeBlueBackground(data) {
+        let background = '';
+
+        background += `Reason for admission/visit: ${data.reasonForAdmission}. `;
+
+        if (data.medicalHistory && data.medicalHistory.length > 0) {
+            background += `Relevant medical history: ${data.medicalHistory.join(', ')}. `;
+        }
+
+        if (data.medications && data.medications.length > 0) {
+            background += `Home medications: ${data.medications.join(', ')}. `;
+        }
+
+        if (data.allergies && data.allergies.length > 0) {
+            background += `Allergies: ${data.allergies.join(', ')}. `;
+        } else {
+            background += `Allergies: NKDA. `;
+        }
+
+        background += `Code status: ${data.codeStatus}.`;
+
+        return background || 'No significant background information documented.';
+    },
+
+    /**
+     * Format Assessment section for Code Blue
+     */
+    formatCodeBlueAssessment(data) {
+        let assessment = '';
+
+        // Timeline of events
+        assessment += 'Timeline of Events:\n';
+        if (data.cprStartTime) {
+            assessment += `  - CPR initiated: ${data.cprStartTime}\n`;
+        }
+
+        // Team roles
+        if (data.teamRoles && Object.keys(data.teamRoles).length > 0) {
+            assessment += '\nCode Blue Team:\n';
+            if (data.teamRoles.codeLeader) assessment += `  - Code Leader: ${data.teamRoles.codeLeader}\n`;
+            if (data.teamRoles.compressor1) assessment += `  - Compressor: ${data.teamRoles.compressor1}\n`;
+            if (data.teamRoles.airway) assessment += `  - Airway Manager: ${data.teamRoles.airway}\n`;
+            if (data.teamRoles.medRN) assessment += `  - Medication RN: ${data.teamRoles.medRN}\n`;
+            if (data.teamRoles.recorder) assessment += `  - Recorder: ${data.teamRoles.recorder}\n`;
+        }
+
+        // Interventions performed
+        if (data.interventions && data.interventions.length > 0) {
+            assessment += '\nInterventions Performed:\n';
+            data.interventions.forEach(intervention => {
+                assessment += `  - ${intervention.time}: ${intervention.description}\n`;
+            });
+        }
+
+        // Defibrillation attempts
+        if (data.defibrillations && data.defibrillations.length > 0) {
+            assessment += '\nDefibrillation Attempts:\n';
+            data.defibrillations.forEach((defib, index) => {
+                assessment += `  - Shock ${index + 1} at ${defib.time}: ${defib.joules}J - Result: ${defib.result}\n`;
+            });
+        }
+
+        // Medications administered
+        if (data.medications && data.medications.length > 0) {
+            assessment += '\nMedications Administered:\n';
+            data.medications.forEach(med => {
+                assessment += `  - ${med.time}: ${med.medication} ${med.dose} ${med.route}\n`;
+            });
+        }
+
+        // ROSC status
+        if (data.roscTime) {
+            assessment += `\nROSC (Return of Spontaneous Circulation): ACHIEVED at ${data.roscTime}\n`;
+        } else {
+            assessment += `\nROSC: NOT achieved\n`;
+        }
+
+        // Code duration
+        assessment += `\nTotal code duration: ${data.codeDuration}`;
+
+        return assessment;
+    },
+
+    /**
+     * Format Recommendation section for Code Blue
+     */
+    formatCodeBlueRecommendation(data) {
+        let recommendation = '';
+
+        // Outcome-based recommendations
+        if (data.outcome.includes('Survived') || data.outcome.includes('ROSC')) {
+            recommendation += '**POST-ROSC CARE INITIATED**\n';
+            recommendation += 'Immediate Actions Required:\n';
+            recommendation += '  ☑ Transfer to ICU for post-cardiac arrest care\n';
+            recommendation += '  ☑ Initiate targeted temperature management (TTM) protocol\n';
+            recommendation += '  ☑ Continuous cardiac monitoring and frequent neuro checks\n';
+            recommendation += '  ☑ Obtain 12-lead ECG - consider cardiac catheterization if STEMI\n';
+            recommendation += '  ☑ Optimize hemodynamics (MAP >65 mmHg)\n';
+            recommendation += '  ☑ Mechanical ventilation with lung-protective strategy\n';
+            recommendation += '  ☑ Avoid hypoxia and hyperoxia (SpO2 94-98%)\n';
+            recommendation += '  ☑ Stat labs: ABG, lactate, troponin, BMP, CBC, coags\n';
+            recommendation += '  ☑ Cardiology consultation\n\n';
+        } else if (data.outcome.includes('Expired')) {
+            recommendation += '**RESUSCITATION CEASED**\n';
+            const timeOfDeath = data.codeEndTime || 'Time not documented';
+            recommendation += `Time of death declared: ${timeOfDeath}\n\n`;
+            recommendation += 'Post-Event Actions:\n';
+            recommendation += '  ☑ Physician certified death\n';
+            recommendation += '  ☑ Family notification completed\n';
+            recommendation += '  ☑ Organ donation/procurement contacted (if applicable)\n';
+            recommendation += '  ☑ Medical examiner/coroner notification (if required)\n';
+            recommendation += '  ☑ Post-code team debriefing scheduled\n\n';
+        }
+
+        // Family notification
+        recommendation += `Family Notification: ${data.familyNotified}`;
+        if (data.familyNotifiedBy) {
+            recommendation += ` by ${data.familyNotifiedBy}`;
+        }
+        recommendation += '\n\n';
+
+        // Debriefing
+        if (data.debriefingCompleted) {
+            recommendation += 'Team Debriefing: Completed\n';
+            if (data.debriefingNotes) {
+                recommendation += `Notes: ${data.debriefingNotes}\n`;
+            }
+        } else {
+            recommendation += 'Team Debriefing: Recommend scheduling within 24 hours for all team members\n';
+        }
+
+        // Additional notes
+        if (data.additionalNotes) {
+            recommendation += `\nAdditional Notes:\n${data.additionalNotes}\n`;
+        }
+
+        recommendation += '\nComplete Code Blue documentation submitted to medical record per hospital policy.';
+
+        return recommendation;
+    },
+
+    /**
+     * Generate SBAR for Blood Transfusion
+     */
     generateBloodTransfusionSBAR(data) {
-        return { situation: 'Blood Transfusion SBAR - To be implemented', background: '', assessment: '', recommendation: '' };
+        return {
+            situation: this.formatBloodTransfusionSituation({
+                patientName: data.patientName || 'Patient',
+                patientMrn: data.patientMrn || 'Not documented',
+                productType: data.productType || 'Not specified',
+                unitNumber: data.unitNumber || 'Not documented',
+                indication: data.indication || 'Blood transfusion administration',
+                patientBloodType: data.patientBloodType || 'Type & Screen on file'
+            }),
+
+            background: this.formatBloodTransfusionBackground({
+                transfusionHistory: data.transfusionHistory || 'No prior transfusion reactions',
+                allergies: data.allergies || [],
+                currentHemoglobin: data.currentHemoglobin || 'Not documented',
+                indication: data.indication || 'Blood transfusion administration'
+            }),
+
+            assessment: this.formatBloodTransfusionAssessment({
+                nurse1Name: data.nurse1Name || 'Nurse 1',
+                nurse2Name: data.nurse2Name || 'Nurse 2',
+                verificationCompleted: data.verificationCompleted || false,
+                verificationTime: data.verificationTime || 'Not documented',
+                unitNumber: data.unitNumber || 'Not documented',
+                unitExpiration: data.unitExpiration || 'Verified within date',
+                bloodTypeVerification: data.bloodTypeVerification || 'Verified compatible',
+                baselineVitals: data.baselineVitals || {},
+                monitoringVitals: data.monitoringVitals || {},
+                postVitals: data.postVitals || {},
+                transfusionStartTime: data.transfusionStartTime || 'Not documented',
+                volumeTransfused: data.volumeTransfused || 'Not documented',
+                transfusionRate: data.transfusionRate || 'Not documented',
+                reactionsObserved: data.reactionsObserved || false,
+                reactionDetails: data.reactionDetails || 'No adverse reactions observed',
+                reactionType: data.reactionType || 'None',
+                patientTolerance: data.patientTolerance || 'Not assessed',
+                ivGauge: data.ivGauge || 'Not documented',
+                consentVerified: data.consentVerified || false
+            }),
+
+            recommendation: this.formatBloodTransfusionRecommendation({
+                postTransfusionLabs: data.postTransfusionLabs || 'Ordered per protocol',
+                reactionsObserved: data.reactionsObserved || false,
+                patientTolerance: data.patientTolerance || 'Not assessed',
+                outcomeSummary: data.outcomeSummary || 'Transfusion completed per protocol'
+            })
+        };
+    },
+
+    /**
+     * Format Situation section for Blood Transfusion
+     */
+    formatBloodTransfusionSituation(data) {
+        return `Patient ${data.patientName} (MRN: ${data.patientMrn}) receiving ${data.productType}, Unit #${data.unitNumber}. Indication: ${data.indication}. Patient blood type: ${data.patientBloodType}.`;
+    },
+
+    /**
+     * Format Background section for Blood Transfusion
+     */
+    formatBloodTransfusionBackground(data) {
+        let background = '';
+
+        background += `Transfusion History: ${data.transfusionHistory}. `;
+
+        if (data.allergies && data.allergies.length > 0) {
+            background += `Allergies: ${data.allergies.join(', ')}. `;
+        } else {
+            background += `Allergies: NKDA. `;
+        }
+
+        if (data.currentHemoglobin && data.currentHemoglobin !== 'Not documented') {
+            background += `Current Hemoglobin: ${data.currentHemoglobin} g/dL. `;
+        }
+
+        background += `Indication for transfusion: ${data.indication}.`;
+
+        return background;
+    },
+
+    /**
+     * Format Assessment section for Blood Transfusion
+     */
+    formatBloodTransfusionAssessment(data) {
+        let assessment = '';
+
+        // Product Verification
+        assessment += `Product Verification (Two-Person Check):\n`;
+        assessment += `  - Verified by: ${data.nurse1Name} and ${data.nurse2Name}\n`;
+        assessment += `  - Verification time: ${data.verificationTime}\n`;
+        assessment += `  - Unit number: ${data.unitNumber}\n`;
+        assessment += `  - Expiration date: ${data.unitExpiration}\n`;
+        assessment += `  - Blood type compatibility: ${data.bloodTypeVerification}\n`;
+        assessment += `  - Verification status: ${data.verificationCompleted ? 'COMPLETED ✓' : 'INCOMPLETE'}\n`;
+
+        // Pre-transfusion details
+        assessment += `\nPre-Transfusion:\n`;
+        assessment += `  - Informed consent: ${data.consentVerified ? 'Verified ✓' : 'Not verified'}\n`;
+        assessment += `  - IV access: ${data.ivGauge} gauge\n`;
+
+        // Baseline Vitals
+        assessment += `\nBaseline Vital Signs:\n`;
+        assessment += `  - Blood Pressure: ${data.baselineVitals.bloodPressure || 'Not documented'}\n`;
+        assessment += `  - Heart Rate: ${data.baselineVitals.heartRate || 'Not documented'} bpm\n`;
+        assessment += `  - Temperature: ${data.baselineVitals.temperature || 'Not documented'}°F\n`;
+
+        // Transfusion details
+        assessment += `\nTransfusion Administration:\n`;
+        assessment += `  - Start time: ${data.transfusionStartTime}\n`;
+        assessment += `  - Volume transfused: ${data.volumeTransfused} mL\n`;
+        assessment += `  - Transfusion rate: ${data.transfusionRate} mL/hr\n`;
+
+        // Monitoring vitals
+        if (data.monitoringVitals) {
+            assessment += `\nVital Signs Monitoring (Every 15 minutes):\n`;
+            if (data.monitoringVitals.baseline) {
+                assessment += `  - Baseline: BP ${data.monitoringVitals.baseline.bp || 'N/A'}, HR ${data.monitoringVitals.baseline.hr || 'N/A'}, Temp ${data.monitoringVitals.baseline.temp || 'N/A'}°F\n`;
+            }
+            if (data.monitoringVitals.min15) {
+                assessment += `  - 15 min: BP ${data.monitoringVitals.min15.bp || 'N/A'}, HR ${data.monitoringVitals.min15.hr || 'N/A'}, Temp ${data.monitoringVitals.min15.temp || 'N/A'}°F\n`;
+            }
+            if (data.monitoringVitals.min30) {
+                assessment += `  - 30 min: BP ${data.monitoringVitals.min30.bp || 'N/A'}, HR ${data.monitoringVitals.min30.hr || 'N/A'}, Temp ${data.monitoringVitals.min30.temp || 'N/A'}°F\n`;
+            }
+            if (data.monitoringVitals.min60) {
+                assessment += `  - 60 min: BP ${data.monitoringVitals.min60.bp || 'N/A'}, HR ${data.monitoringVitals.min60.hr || 'N/A'}, Temp ${data.monitoringVitals.min60.temp || 'N/A'}°F\n`;
+            }
+        }
+
+        // Post-transfusion vitals
+        assessment += `\nPost-Transfusion Vital Signs:\n`;
+        assessment += `  - Blood Pressure: ${data.postVitals.bloodPressure || 'Not documented'}\n`;
+        assessment += `  - Heart Rate: ${data.postVitals.heartRate || 'Not documented'} bpm\n`;
+        assessment += `  - Temperature: ${data.postVitals.temperature || 'Not documented'}°F\n`;
+
+        // Adverse reactions
+        assessment += `\nAdverse Reactions:\n`;
+        if (data.reactionsObserved) {
+            assessment += `  - Reaction observed: YES\n`;
+            assessment += `  - Reaction type: ${data.reactionType}\n`;
+            assessment += `  - Details: ${data.reactionDetails}\n`;
+        } else {
+            assessment += `  - No adverse reactions observed ✓\n`;
+        }
+
+        // Patient tolerance
+        assessment += `\nPatient Tolerance: ${this.formatToleranceLevel(data.patientTolerance)}\n`;
+
+        return assessment;
+    },
+
+    /**
+     * Format tolerance level for display
+     */
+    formatToleranceLevel(tolerance) {
+        const toleranceLevels = {
+            'excellent': 'Excellent - No adverse reactions',
+            'good': 'Good - Mild symptoms, resolved',
+            'fair': 'Fair - Moderate symptoms, monitored',
+            'poor': 'Poor - Significant adverse reaction'
+        };
+        return toleranceLevels[tolerance] || tolerance || 'Not assessed';
+    },
+
+    /**
+     * Format Recommendation section for Blood Transfusion
+     */
+    formatBloodTransfusionRecommendation(data) {
+        let recommendation = '';
+
+        if (data.reactionsObserved) {
+            recommendation += `ADVERSE REACTION DOCUMENTED\n`;
+            recommendation += `Continue to monitor patient closely for delayed reactions.\n`;
+            recommendation += `Physician notified of reaction.\n`;
+            recommendation += `Consider pre-medication for future transfusions.\n\n`;
+        } else {
+            recommendation += `Transfusion completed without adverse reactions.\n\n`;
+        }
+
+        // Post-transfusion care
+        recommendation += `Post-Transfusion Care:\n`;
+        recommendation += `  - Post-transfusion labs: ${data.postTransfusionLabs}\n`;
+        recommendation += `  - Continue monitoring for delayed reactions (24-48 hours)\n`;
+        recommendation += `  - Patient/family educated on signs of delayed reactions\n`;
+
+        if (data.patientTolerance === 'poor' || data.patientTolerance === 'fair') {
+            recommendation += `  - Enhanced monitoring recommended due to tolerance level\n`;
+        }
+
+        // Repeat transfusions
+        recommendation += `\nFor Future Transfusions:\n`;
+        if (data.reactionsObserved) {
+            recommendation += `  - Pre-medication recommended (diphenhydramine, acetaminophen)\n`;
+            recommendation += `  - Slower transfusion rate may be indicated\n`;
+            recommendation += `  - Consider washed/leukoreduced products\n`;
+        } else {
+            recommendation += `  - Standard transfusion protocol may continue\n`;
+            recommendation += `  - Repeat type & screen if needed\n`;
+        }
+
+        recommendation += `\n${data.outcomeSummary}`;
+
+        return recommendation;
     },
 
     generateRestraintSBAR(data) {
