@@ -150,6 +150,19 @@ except Exception as e:
     logger.warning(f"Drug interactions router unavailable: {e}")
     ROUTERS_LOADED["drug_interactions"] = False
 
+# Wizard AI Routes with LangChain (2025-10-10)
+try:
+    from src.routers.wizard_ai import router as wizard_ai_router
+
+    api_router.include_router(wizard_ai_router)
+    logger.info(
+        "Wizard AI router registered successfully - LangChain-powered clinical wizards"
+    )
+    ROUTERS_LOADED["wizard_ai"] = True
+except Exception as e:
+    logger.warning(f"Wizard AI router unavailable: {e}")
+    ROUTERS_LOADED["wizard_ai"] = False
+
 # Patient documents router (PDF generation)
 try:
     from routers.patient_education_documents import router as patient_docs_router
