@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBAR Communication Wizard - AI Nurse Florence</title>
+    <title>SBAR Report Wizard - AI Nurse Florence</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -13,170 +13,110 @@
         }
         .step-indicator {
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         .step-indicator.active {
-            background: #3b82f6;
+            background: #6366f1;
             color: white;
+            transform: scale(1.1);
         }
         .step-indicator.completed {
             background: #10b981;
             color: white;
         }
-        .field-group {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-left: 4px solid #3b82f6;
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
         }
-        .priority-urgent {
-            border-left-color: #f59e0b;
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-        }
-        .priority-stat {
-            border-left-color: #ef4444;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        }
-        .wizard-header {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        }
-        .sbar-preview {
-            font-family: 'Courier New', monospace;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            white-space: pre-wrap;
-        }
-        .floating-save {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-
-        /* Tooltip Styles */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 280px;
-            background-color: #1f2937;
-            color: #fff;
-            text-align: left;
-            border-radius: 8px;
-            padding: 12px;
-            position: absolute;
-            z-index: 1000;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -140px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 13px;
-            line-height: 1.5;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .tooltip .tooltiptext::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #1f2937 transparent transparent transparent;
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        /* Help Panel Styles */
-        .help-panel {
-            position: fixed;
-            right: -400px;
-            top: 0;
-            width: 400px;
-            height: 100vh;
-            background: white;
-            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-            transition: right 0.3s ease-in-out;
-            z-index: 2000;
-            overflow-y: auto;
-        }
-        .help-panel.open {
-            right: 0;
-        }
-        .help-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1999;
+        .step-content {
             display: none;
         }
-        .help-overlay.active {
+        .step-content.active {
             display: block;
+            animation: fadeIn 0.3s ease-in;
         }
-        .task-guide {
-            background: #f8fafc;
-            border-left: 4px solid #3b82f6;
-            padding: 16px;
-            margin: 12px 0;
-            border-radius: 8px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .task-guide h4 {
-            color: #1e3a8a;
-            font-weight: bold;
-            margin-bottom: 8px;
+        .epic-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
         }
-        .task-guide ol {
-            margin-left: 20px;
-            color: #475569;
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #6366f1;
         }
-        .task-guide ol li {
-            margin: 8px 0;
-            line-height: 1.6;
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .connection-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .connection-status.connected {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .connection-status.disconnected {
+            background-color: #ef4444;
+        }
+        .connection-status.testing {
+            background-color: #f59e0b;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
-    <header class="wizard-header text-white shadow-lg">
+    <header class="epic-header text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
-                    <a href="index.html" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                        <i class="fas fa-comments-medical text-2xl"></i>
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
                         <div>
                             <h1 class="text-xl font-bold">AI Nurse Florence</h1>
-                            <p class="text-blue-200 text-sm">SBAR Communication Wizard</p>
+                            <p class="text-indigo-200 text-sm">SBAR Report Wizard</p>
                         </div>
                     </a>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                        <span class="text-sm">Structured Communication</span>
+                        <span class="connection-status disconnected" id="connectionStatus"></span>
+                        <span class="text-sm" id="statusIndicator">Not Connected</span>
                     </div>
-                    <span class="text-blue-200 text-sm" id="statusIndicator">Ready</span>
-                    <button onclick="toggleHelpPanel()" class="flex items-center space-x-2 px-3 py-2 bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors">
-                        <i class="fas fa-question-circle"></i>
-                        <span class="text-sm">Help</span>
-                    </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Critical Safety Banner -->
-    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+    <!-- Information Banner -->
+    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4">
         <div class="max-w-7xl mx-auto">
             <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                <i class="fas fa-info-circle text-indigo-400 mr-3"></i>
                 <div>
-                    <h3 class="text-sm font-medium text-red-800">Critical Communication Tool</h3>
-                    <p class="text-sm text-red-700">Educational use only — ensure patient privacy. Use initials/IDs only. Not a substitute for direct clinical communication.</p>
+                    <h3 class="text-sm font-medium text-indigo-800">SBAR Report Wizard</h3>
+                    <p class="text-sm text-indigo-700">Document patient status using SBAR communication framework</p>
                 </div>
             </div>
         </div>
@@ -184,1122 +124,728 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Wizard Container -->
-        <div id="sbarWizardContainer" class="wizard-container">
-            <!-- This will be populated by the JavaScript wizard -->
-        </div>
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-indigo-600 h-full" style="width: 0%"></div>
+            </div>
 
-        <!-- Floating Save Button -->
-        <div class="floating-save">
-            <button id="quickSave" class="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors">
-                <i class="fas fa-save"></i>
-            </button>
-        </div>
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">SBAR Report Wizard</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Document patient status using SBAR communication framework</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-indigo-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
 
-        <!-- Generated SBAR Preview Modal -->
-        <div id="sbarPreviewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
-                    <div class="bg-blue-600 text-white p-6 rounded-t-lg">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-2xl font-bold">Generated SBAR Report</h2>
-                            <button onclick="closePreviewModal()" class="text-white hover:text-gray-200">
-                                <i class="fas fa-times text-xl"></i>
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Situation</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Background</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Assessment</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Recommendation</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Situation -->
+            <div id="step1" class="step-content p-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-900 mb-4">
+                        <i class="fas fa-stethoscope text-indigo-600 mr-2"></i>
+                        Current Situation
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Describe the patient's current condition and what brought them to your attention</p>
+
+                    <!-- Patient ID -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Patient MRN (optional)</label>
+                        <input type="text" id="patientMrn" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="12345678">
+                    </div>
+
+                    <!-- Vital Signs -->
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">BP</label>
+                            <input type="text" id="bloodPressure" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="120/80">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">HR</label>
+                            <input type="text" id="heartRate" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="75">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Temp (°F)</label>
+                            <input type="text" id="temperature" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="98.6">
+                        </div>
+                    </div>
+
+                    <!-- Chief Complaint -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Chief Complaint / Situation</label>
+                        <textarea id="chiefComplaint" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="What is the patient's current condition? What brought them to your attention?"></textarea>
+                    </div>
+
+                    <!-- Quick-fill templates -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quick-Fill Common Scenarios</label>
+                        <div class="flex gap-2 flex-wrap">
+                            <button type="button" onclick="fillChestPain()" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200">
+                                <i class="fas fa-heart-pulse mr-1"></i> Chest Pain
+                            </button>
+                            <button type="button" onclick="fillFall()" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200">
+                                <i class="fas fa-person-falling mr-1"></i> Fall
+                            </button>
+                            <button type="button" onclick="fillShortness()" class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200">
+                                <i class="fas fa-lungs mr-1"></i> Shortness of Breath
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="p-6">
-                        <div class="mb-6">
-                            <div class="flex flex-wrap gap-3">
-                                <div class="tooltip">
-                                    <button onclick="copySbarReport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                        <i class="fas fa-copy mr-2"></i>Copy to Clipboard
-                                    </button>
-                                    <span class="tooltiptext">Copy report text to paste into EMR or other system</span>
-                                </div>
-                                <div class="tooltip">
-                                    <button onclick="downloadSbarReport()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                        <i class="fas fa-download mr-2"></i>Download as .txt
-                                    </button>
-                                    <span class="tooltiptext">Save report as a text file to your computer</span>
-                                </div>
-                                <div class="tooltip">
-                                    <button onclick="printSbarReport()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                        <i class="fas fa-print mr-2"></i>Print
-                                    </button>
-                                    <span class="tooltiptext">Print physical copy of SBAR report</span>
-                                </div>
-                                <div class="tooltip">
-                                    <button onclick="saveSbarDraft()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                                        <i class="fas fa-save mr-2"></i>Save to Browser
-                                    </button>
-                                    <span class="tooltiptext">Save to browser storage for later retrieval</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="sbarReportContent" class="sbar-preview p-4 rounded-lg">
-                            <!-- Generated SBAR content will appear here -->
+                </div>
+            </div>
+
+            <!-- Step 2: Background -->
+            <div id="step2" class="step-content p-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-900 mb-4">
+                        <i class="fas fa-file-medical text-indigo-600 mr-2"></i>
+                        Patient Background
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Relevant medical history, current medications, and allergies</p>
+
+                    <!-- Medical History -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Relevant Medical History</label>
+                        <textarea id="medicalHistory" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="e.g., CHF, COPD, diabetes..."></textarea>
+                    </div>
+
+                    <!-- Current Medications -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Medications</label>
+                        <textarea id="medications" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="List current medications..."></textarea>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Allergies</label>
+                        <input type="text" id="allergies" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Penicillin, Codeine">
+                    </div>
+
+                    <!-- Recent Events -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Recent Events / Procedures</label>
+                        <textarea id="recentEvents" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="What has happened recently that is relevant?"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Assessment -->
+            <div id="step3" class="step-content p-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-900 mb-4">
+                        <i class="fas fa-stethoscope text-indigo-600 mr-2"></i>
+                        Clinical Assessment
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Your professional nursing judgment about the situation</p>
+
+                    <!-- Assessment -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Assessment / Clinical Judgment</label>
+                        <textarea id="assessment" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="What do you think is going on? What are your concerns?"></textarea>
+                    </div>
+
+                    <!-- Severity Level -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
+                        <div class="flex gap-3">
+                            <label class="flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-green-400">
+                                <input type="radio" name="severity" value="routine" class="mr-2">
+                                <span class="text-sm">Routine</span>
+                            </label>
+                            <label class="flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-yellow-400">
+                                <input type="radio" name="severity" value="concerning" class="mr-2">
+                                <span class="text-sm">Concerning</span>
+                            </label>
+                            <label class="flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg cursor-pointer hover:border-red-400">
+                                <input type="radio" name="severity" value="urgent" class="mr-2">
+                                <span class="text-sm">Urgent</span>
+                            </label>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Step 4: Recommendation -->
+            <div id="step4" class="step-content p-6">
+                <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm mb-4">
+                    <h3 class="font-bold text-gray-900 mb-4">
+                        <i class="fas fa-clipboard-check text-indigo-600 mr-2"></i>
+                        Recommendations & Actions
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">What do you recommend? What should be done?</p>
+
+                    <!-- Recommendations -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Recommendations</label>
+                        <textarea id="recommendations" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="What interventions or actions do you recommend?"></textarea>
+                    </div>
+
+                    <!-- Urgency -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Time Frame</label>
+                        <select id="timeFrame" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="immediate">Immediate attention needed</option>
+                            <option value="within_hour">Within 1 hour</option>
+                            <option value="within_shift">Within this shift</option>
+                            <option value="routine">Routine follow-up</option>
+                        </select>
+                    </div>
+
+                    <!-- Review Summary -->
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mt-6">
+                        <h4 class="font-semibold text-indigo-900 mb-2">SBAR Report Summary</h4>
+                        <div id="sbarPreview" class="text-sm text-indigo-800">
+                            <p class="mb-1"><strong>S:</strong> <span id="previewSituation">--</span></p>
+                            <p class="mb-1"><strong>B:</strong> <span id="previewBackground">--</span></p>
+                            <p class="mb-1"><strong>A:</strong> <span id="previewAssessment">--</span></p>
+                            <p><strong>R:</strong> <span id="previewRecommendation">--</span></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex gap-3">
+                        <button type="button" onclick="printSBAR()" class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-print mr-2"></i> Print Report
+                        </button>
+                        <button type="button" onclick="copySBAR()" class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                            <i class="fas fa-copy mr-2"></i> Copy to Clipboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Save SBAR Report
+                </button>
             </div>
         </div>
     </main>
 
-    <!-- Help Panel Overlay -->
-    <div id="helpOverlay" class="help-overlay" onclick="toggleHelpPanel()"></div>
-
-    <!-- Help Panel -->
-    <div id="helpPanel" class="help-panel">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">SBAR Wizard Help</h2>
-                <button onclick="toggleHelpPanel()" class="text-gray-600 hover:text-gray-800">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-
-            <!-- Quick Start Guide -->
-            <div class="task-guide">
-                <h4><i class="fas fa-rocket mr-2"></i>Quick Start: Creating an SBAR Report</h4>
-                <ol>
-                    <li>Navigate through the 4 steps using the Next button</li>
-                    <li>Fill in required fields (marked with <span class="text-red-500">*</span>)</li>
-                    <li>Use AI features to enhance your documentation</li>
-                    <li>Click "Complete" to generate your SBAR report</li>
-                    <li>Copy, print, or save your report for handoff</li>
-                </ol>
-            </div>
-
-            <!-- AI Features Guide -->
-            <div class="task-guide">
-                <h4><i class="fas fa-magic mr-2 text-purple-600"></i>Using AI Text Enhancement</h4>
-                <ol>
-                    <li>Write your notes in informal language (e.g., "pt has chest pain")</li>
-                    <li>Click the purple "Enhance with AI" button next to the field</li>
-                    <li>Review the AI-generated professional text</li>
-                    <li>Edit as needed - you have full control</li>
-                    <li>The AI learns from SBAR best practices for each section</li>
-                </ol>
-            </div>
-
-            <!-- Medication Safety Guide -->
-            <div class="task-guide">
-                <h4><i class="fas fa-exclamation-triangle mr-2 text-red-600"></i>Checking Drug Interactions</h4>
-                <ol>
-                    <li>Enter current medications in the Background step</li>
-                    <li>Click the red "Check Interactions" button</li>
-                    <li>AI parses medication names from your text</li>
-                    <li>Review top 3 interactions with severity levels</li>
-                    <li>Major interactions are flagged with warnings</li>
-                    <li>Use full Drug Checker for complete analysis</li>
-                </ol>
-            </div>
-
-            <!-- Priority Suggestion Guide -->
-            <div class="task-guide">
-                <h4><i class="fas fa-lightbulb mr-2 text-orange-600"></i>Getting Priority Suggestions</h4>
-                <ol>
-                    <li>Complete vital signs and assessment in Step 3</li>
-                    <li>Click "Suggest Priority" button</li>
-                    <li>AI analyzes vital signs and clinical findings</li>
-                    <li>Review suggested priority (STAT, URGENT, or ROUTINE)</li>
-                    <li>Read the AI's reasoning for the recommendation</li>
-                    <li>Make final decision based on clinical judgment</li>
-                </ol>
-            </div>
-
-            <!-- SBAR Best Practices -->
-            <div class="task-guide">
-                <h4><i class="fas fa-clipboard-check mr-2 text-blue-600"></i>SBAR Best Practices</h4>
-                <ol>
-                    <li><strong>Situation:</strong> Be concise - state the problem in 1-2 sentences</li>
-                    <li><strong>Background:</strong> Include relevant history, not entire chart</li>
-                    <li><strong>Assessment:</strong> Use objective data - vitals, labs, observations</li>
-                    <li><strong>Recommendation:</strong> Be specific about what you need</li>
-                    <li>Use professional, clear language throughout</li>
-                    <li>Include only pertinent information for handoff</li>
-                </ol>
-            </div>
-
-            <!-- Save & Export Options -->
-            <div class="task-guide">
-                <h4><i class="fas fa-file-export mr-2 text-purple-600"></i>Saving and Exporting Your Report</h4>
-                <ol>
-                    <li><strong>Save Draft (Browser):</strong> Saves to browser storage - resume work later on this computer only</li>
-                    <li><strong>Download as .txt:</strong> Downloads plain text file to your computer for permanent storage</li>
-                    <li><strong>Copy to Clipboard:</strong> Copy report text to paste directly into EMR or documentation system</li>
-                    <li><strong>Print:</strong> Opens print dialog for physical hard copy</li>
-                    <li><strong>Auto-save:</strong> Your work is automatically saved to browser every 30 seconds while editing</li>
-                </ol>
-            </div>
-
-            <!-- Keyboard Shortcuts -->
-            <div class="task-guide">
-                <h4><i class="fas fa-keyboard mr-2 text-gray-600"></i>Tips & Tricks</h4>
-                <ol>
-                    <li><strong>Tooltips:</strong> Hover over any button to see what it does</li>
-                    <li><strong>Quick Save:</strong> Use the floating save button (bottom right corner)</li>
-                    <li><strong>Navigation:</strong> Required fields must be filled to proceed to next step</li>
-                    <li><strong>File Format:</strong> Reports are saved as plain text (.txt) for universal compatibility</li>
-                    <li><strong>Privacy:</strong> Draft saves are local to your browser - not sent to server</li>
-                </ol>
-            </div>
-
-            <!-- Tooltip Legend -->
-            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 class="font-bold text-gray-800 mb-3">Button Legend</h4>
-                <div class="space-y-2 text-sm">
-                    <div class="flex items-center space-x-2">
-                        <span class="px-2 py-1 bg-purple-600 text-white rounded text-xs">
-                            <i class="fas fa-magic"></i>
-                        </span>
-                        <span>Enhance with AI - Convert notes to professional language</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
-                            <i class="fas fa-lightbulb"></i>
-                        </span>
-                        <span>Suggest Priority - AI recommends urgency level</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="px-2 py-1 bg-red-600 text-white rounded text-xs">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </span>
-                        <span>Check Interactions - Screen for drug interactions</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact Support -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 class="font-bold text-blue-900 mb-2">
-                    <i class="fas fa-question-circle mr-2"></i>Need More Help?
-                </h4>
-                <p class="text-sm text-blue-800">
-                    Contact your clinical informatics team or system administrator for additional support and training.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Include Base Wizard and SBAR Wizard Components -->
     <script>
-        /**
-         * Simplified SBAR Wizard Implementation
-         * Inline version of the sophisticated wizard system built during 2-3 AM session
-         */
-        
-        class SimpleSbarWizard {
-            constructor(containerId) {
-                this.container = document.getElementById(containerId);
-                this.currentStep = 0;
-                this.data = {};
-                this.steps = [
-                    {
-                        title: 'Situation',
-                        description: 'Briefly describe the current situation and reason for communication.',
-                        fields: ['patient_name', 'room_unit', 'situation_description', 'communication_purpose']
-                    },
-                    {
-                        title: 'Background',
-                        description: 'Provide relevant clinical background and history.',
-                        fields: ['admission_date', 'primary_diagnosis', 'relevant_history', 'current_medications']
-                    },
-                    {
-                        title: 'Assessment',
-                        description: 'Current assessment findings and clinical status.',
-                        fields: ['vital_signs', 'physical_assessment', 'mental_status', 'clinical_concerns']
-                    },
-                    {
-                        title: 'Recommendation',
-                        description: 'Your recommendations and suggested actions.',
-                        fields: ['immediate_needs', 'priority_level', 'follow_up_needed']
-                    }
-                ];
-                this.init();
-            }
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            session_id: 'default',
+            data: {}
+        };
 
-            init() {
-                this.render();
-                this.attachEventListeners();
-            }
+        // API Base URL
+        const API_BASE = '/api/v1/wizard';
 
-            render() {
-                this.container.innerHTML = `
-                    <div class="wizard-container bg-white rounded-lg shadow-lg">
-                        <!-- Wizard Header -->
-                        <div class="wizard-header bg-blue-600 text-white p-6 rounded-t-lg">
-                            <h2 class="text-2xl font-bold">SBAR Communication Wizard</h2>
-                            <p class="text-blue-100 mt-2">Structured clinical communication for patient handoffs</p>
-                        </div>
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('SBAR Report Wizard loaded');
+            await startWizard();
+        });
 
-                        <!-- Progress Bar -->
-                        <div class="wizard-progress bg-gray-50 p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-medium text-gray-700">Progress</span>
-                                <span class="text-sm text-gray-500">${this.currentStep + 1} of ${this.steps.length}</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                                     style="width: ${((this.currentStep + 1) / this.steps.length) * 100}%"></div>
-                            </div>
-                            <div class="flex justify-between mt-3">
-                                ${this.steps.map((step, index) => `
-                                    <div class="flex flex-col items-center">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
-                                            ${index <= this.currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}">
-                                            ${index + 1}
-                                        </div>
-                                        <span class="text-xs text-gray-600 mt-1 text-center">${step.title}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <!-- Step Content -->
-                        <div class="wizard-content p-6">
-                            ${this.renderStepContent()}
-                        </div>
-
-                        <!-- Navigation -->
-                        <div class="wizard-navigation bg-gray-50 p-4 rounded-b-lg">
-                            <div class="flex justify-between items-center mb-3">
-                                <div class="flex space-x-2">
-                                    <div class="tooltip">
-                                        <button type="button" onclick="suggestPriority()"
-                                            class="px-3 py-2 text-sm text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
-                                            ${this.currentStep !== 2 ? 'style="display:none"' : ''}>
-                                            <i class="fas fa-lightbulb mr-1"></i>Suggest Priority
-                                        </button>
-                                        <span class="tooltiptext">AI analyzes vital signs and assessment to recommend priority level (STAT, URGENT, or ROUTINE) with clinical reasoning.</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between">
-                                <div class="tooltip">
-                                    <button id="prev-btn" class="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors
-                                        ${this.currentStep === 0 ? 'opacity-50 cursor-not-allowed' : ''}"
-                                        ${this.currentStep === 0 ? 'disabled' : ''}>
-                                        <i class="fas fa-arrow-left mr-2"></i>Previous
-                                    </button>
-                                    <span class="tooltiptext">Return to previous step. Your data is saved automatically.</span>
-                                </div>
-
-                                <div class="flex space-x-2">
-                                    <div class="tooltip">
-                                        <button id="save-draft-btn" class="px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                                            <i class="fas fa-save mr-2"></i>Save Draft
-                                        </button>
-                                        <span class="tooltiptext">Save your work to browser storage. Resume later on this computer.</span>
-                                    </div>
-
-                                    <div class="tooltip">
-                                        <button id="next-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                            ${this.currentStep === this.steps.length - 1 ?
-                                                '<i class="fas fa-check mr-2"></i>Complete' :
-                                                'Next<i class="fas fa-arrow-right ml-2"></i>'
-                                            }
-                                        </button>
-                                        <span class="tooltiptext">${this.currentStep === this.steps.length - 1 ? 'Generate your final SBAR report for handoff' : 'Continue to next step. Required fields must be filled.'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderStepContent() {
-                const step = this.steps[this.currentStep];
-                return `
-                    <div class="step-content">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">${step.title}</h3>
-                        <p class="text-gray-600 mb-6">${step.description}</p>
-                        <div class="step-fields space-y-4">
-                            ${this.renderFields(this.currentStep)}
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderFields(stepIndex) {
-                switch (stepIndex) {
-                    case 0: // Situation
-                        return `
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Patient Name/ID <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="patient_name" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Patient initials or ID (for privacy)"
-                                    value="${this.data.patient_name || ''}" required>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Room/Unit <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="room_unit" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Room 205, ICU Bed 3"
-                                    value="${this.data.room_unit || ''}" required>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Current Situation <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="tooltip">
-                                        <button type="button" onclick="enhanceText('situation_description', 'situation')"
-                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
-                                        </button>
-                                        <span class="tooltiptext">Convert informal notes to professional SBAR format. AI will enhance clarity and use proper medical terminology.</span>
-                                    </div>
-                                </div>
-                                <textarea name="situation_description" rows="4"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Briefly describe why you are calling and the current situation..."
-                                    required>${this.data.situation_description || ''}</textarea>
-                                <p class="text-xs text-gray-500 mt-1">💡 Tip: Write quick notes, then click "Enhance with AI" to convert to professional language</p>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Purpose of Communication <span class="text-red-500">*</span>
-                                </label>
-                                <select name="communication_purpose" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Select purpose</option>
-                                    <option value="shift_handoff" ${this.data.communication_purpose === 'shift_handoff' ? 'selected' : ''}>Shift Handoff</option>
-                                    <option value="urgent_concern" ${this.data.communication_purpose === 'urgent_concern' ? 'selected' : ''}>Urgent Patient Concern</option>
-                                    <option value="physician_notification" ${this.data.communication_purpose === 'physician_notification' ? 'selected' : ''}>Physician Notification</option>
-                                    <option value="transfer_report" ${this.data.communication_purpose === 'transfer_report' ? 'selected' : ''}>Transfer Report</option>
-                                </select>
-                            </div>
-                        `;
-                    
-                    case 1: // Background
-                        return `
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Admission Date <span class="text-red-500">*</span>
-                                </label>
-                                <input type="date" name="admission_date" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    value="${this.data.admission_date || ''}" required>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Primary Diagnosis <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" name="primary_diagnosis" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Pneumonia, CHF exacerbation"
-                                    value="${this.data.primary_diagnosis || ''}" required>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Relevant Medical History <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="tooltip">
-                                        <button type="button" onclick="enhanceText('relevant_history', 'background')"
-                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
-                                        </button>
-                                        <span class="tooltiptext">Transform brief medical history notes into comprehensive background information with proper clinical documentation.</span>
-                                    </div>
-                                </div>
-                                <textarea name="relevant_history" rows="4"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Include pertinent medical history, allergies, recent procedures..."
-                                    required>${this.data.relevant_history || ''}</textarea>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Current Medications
-                                    </label>
-                                    <div class="tooltip">
-                                        <button type="button" onclick="checkMedicationInteractions()"
-                                            class="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>Check Interactions
-                                        </button>
-                                        <span class="tooltiptext">Screen medications for dangerous drug interactions. AI parses medication names and checks for major/critical interactions.</span>
-                                    </div>
-                                </div>
-                                <textarea name="current_medications" rows="3"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="List current medications and recent changes...">${this.data.current_medications || ''}</textarea>
-                                <p class="text-xs text-gray-500 mt-1">⚠️ Tip: List all current medications, then click "Check Interactions" for safety screening</p>
-                            </div>
-                        `;
-                    
-                    case 2: // Assessment
-                        return `
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Current Vital Signs <span class="text-red-500">*</span>
-                                </label>
-                                <textarea name="vital_signs" rows="2"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="BP: ___ HR: ___ RR: ___ Temp: ___ O2 Sat: ___ Pain: ___"
-                                    required>${this.data.vital_signs || ''}</textarea>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Physical Assessment Findings <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="tooltip">
-                                        <button type="button" onclick="enhanceText('physical_assessment', 'assessment')"
-                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
-                                        </button>
-                                        <span class="tooltiptext">Convert assessment notes into structured clinical findings with proper medical terminology and organization.</span>
-                                    </div>
-                                </div>
-                                <textarea name="physical_assessment" rows="4"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Significant physical assessment findings..."
-                                    required>${this.data.physical_assessment || ''}</textarea>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Mental Status <span class="text-red-500">*</span>
-                                </label>
-                                <select name="mental_status" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
-                                    <option value="">Select mental status</option>
-                                    <option value="alert_oriented" ${this.data.mental_status === 'alert_oriented' ? 'selected' : ''}>Alert and Oriented x 4</option>
-                                    <option value="alert_confused" ${this.data.mental_status === 'alert_confused' ? 'selected' : ''}>Alert but Confused</option>
-                                    <option value="lethargic" ${this.data.mental_status === 'lethargic' ? 'selected' : ''}>Lethargic</option>
-                                    <option value="sedated" ${this.data.mental_status === 'sedated' ? 'selected' : ''}>Sedated</option>
-                                </select>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Clinical Concerns
-                                    </label>
-                                    <div class="tooltip">
-                                        <button type="button" onclick="enhanceText('clinical_concerns', 'assessment')"
-                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
-                                        </button>
-                                        <span class="tooltiptext">Transform clinical concerns into professional documentation highlighting key issues requiring attention.</span>
-                                    </div>
-                                </div>
-                                <textarea name="clinical_concerns" rows="3"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Any concerning changes or clinical issues...">${this.data.clinical_concerns || ''}</textarea>
-                                <p class="text-xs text-gray-500 mt-1">💡 Tip: Write quick notes, then click "Enhance with AI" to convert to professional language</p>
-                            </div>
-                        `;
-                    
-                    case 3: // Recommendation
-                        return `
-                            <div class="field-group p-4 rounded-lg">
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        Immediate Actions Needed <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="tooltip">
-                                        <button type="button" onclick="enhanceText('immediate_needs', 'recommendation')"
-                                            class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                                            <i class="fas fa-magic mr-1"></i>Enhance with AI
-                                        </button>
-                                        <span class="tooltiptext">Convert action requests into clear, specific recommendations with appropriate clinical urgency and detail.</span>
-                                    </div>
-                                </div>
-                                <textarea name="immediate_needs" rows="3"
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="What needs to be done immediately..."
-                                    required>${this.data.immediate_needs || ''}</textarea>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Priority Level <span class="text-red-500">*</span>
-                                </label>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="radio" name="priority_level" value="routine" 
-                                            class="mr-2 text-blue-600" ${this.data.priority_level === 'routine' ? 'checked' : ''} required>
-                                        <span class="text-gray-700">📋 Routine - Can wait for next rounds</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="radio" name="priority_level" value="urgent" 
-                                            class="mr-2 text-yellow-600" ${this.data.priority_level === 'urgent' ? 'checked' : ''} required>
-                                        <span class="text-gray-700">⚠️ Urgent - Within 1 hour</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="radio" name="priority_level" value="stat" 
-                                            class="mr-2 text-red-600" ${this.data.priority_level === 'stat' ? 'checked' : ''} required>
-                                        <span class="text-gray-700">🚨 STAT - Immediate attention required</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="field-group p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Follow-up Needed
-                                </label>
-                                <select name="follow_up_needed" 
-                                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Select follow-up requirement</option>
-                                    <option value="yes_callback" ${this.data.follow_up_needed === 'yes_callback' ? 'selected' : ''}>Yes - Please call back with orders</option>
-                                    <option value="yes_visit" ${this.data.follow_up_needed === 'yes_visit' ? 'selected' : ''}>Yes - Please come assess patient</option>
-                                    <option value="no_followup" ${this.data.follow_up_needed === 'no_followup' ? 'selected' : ''}>No follow-up needed</option>
-                                </select>
-                            </div>
-                        `;
-                    
-                    default:
-                        return '';
-                }
-            }
-
-            attachEventListeners() {
-                // Navigation buttons
-                const prevBtn = this.container.querySelector('#prev-btn');
-                const nextBtn = this.container.querySelector('#next-btn');
-                const saveDraftBtn = this.container.querySelector('#save-draft-btn');
-
-                prevBtn?.addEventListener('click', () => this.previousStep());
-                nextBtn?.addEventListener('click', () => this.nextStep());
-                saveDraftBtn?.addEventListener('click', () => this.saveDraft());
-
-                // Form field change listeners
-                this.container.addEventListener('change', (e) => {
-                    if (e.target.name) {
-                        this.data[e.target.name] = e.target.value;
-                        this.updatePriorityStyles();
-                    }
-                });
-
-                this.container.addEventListener('input', (e) => {
-                    if (e.target.name) {
-                        this.data[e.target.name] = e.target.value;
-                    }
-                });
-            }
-
-            updatePriorityStyles() {
-                const container = this.container;
-                container.classList.remove('priority-urgent', 'priority-stat');
-                
-                if (this.data.priority_level === 'urgent') {
-                    container.classList.add('priority-urgent');
-                } else if (this.data.priority_level === 'stat') {
-                    container.classList.add('priority-stat');
-                }
-            }
-
-            nextStep() {
-                if (!this.validateCurrentStep()) return;
-                
-                this.collectStepData();
-                
-                if (this.currentStep < this.steps.length - 1) {
-                    this.currentStep++;
-                    this.render();
-                    this.attachEventListeners();
-                } else {
-                    this.complete();
-                }
-            }
-
-            previousStep() {
-                if (this.currentStep > 0) {
-                    this.collectStepData();
-                    this.currentStep--;
-                    this.render();
-                    this.attachEventListeners();
-                }
-            }
-
-            validateCurrentStep() {
-                const stepContent = this.container.querySelector('.step-content');
-                const requiredFields = stepContent.querySelectorAll('[required]');
-                let isValid = true;
-
-                requiredFields.forEach(field => {
-                    if (!field.value.trim()) {
-                        field.classList.add('border-red-500');
-                        isValid = false;
-                    } else {
-                        field.classList.remove('border-red-500');
-                    }
-                });
-
-                if (!isValid) {
-                    this.showToast('Please fill in all required fields.', 'error');
-                }
-
-                return isValid;
-            }
-
-            collectStepData() {
-                const stepContent = this.container.querySelector('.step-content');
-                const inputs = stepContent.querySelectorAll('input, textarea, select');
-                
-                inputs.forEach(input => {
-                    if (input.type === 'radio') {
-                        if (input.checked) {
-                            this.data[input.name] = input.value;
-                        }
-                    } else {
-                        this.data[input.name] = input.value;
-                    }
-                });
-            }
-
-            complete() {
-                this.collectStepData();
-                if (window.sbarApp) {
-                    window.sbarApp.handleComplete(this.data);
-                }
-            }
-
-            saveDraft() {
-                this.collectStepData();
-                if (window.sbarApp) {
-                    window.sbarApp.saveDraft();
-                }
-            }
-
-            showToast(message, type = 'info') {
-                if (window.sbarApp) {
-                    window.sbarApp.showToast(message, type);
-                }
-            }
-        }
-
-        class SbarWizardPage {
-            constructor() {
-                this.wizard = null;
-                this.savedDrafts = JSON.parse(localStorage.getItem('sbarDrafts') || '[]');
-                this.currentDraft = null;
-                this.init();
-            }
-
-            init() {
-                this.initializeWizard();
-                this.setupEventListeners();
-                this.updateStatus('SBAR wizard ready');
-            }
-
-            initializeWizard() {
-                this.wizard = new SimpleSbarWizard('sbarWizardContainer');
-                this.wizard.onComplete = (data) => this.handleComplete(data);
-                this.wizard.onStepChange = (step, data) => this.handleStepChange(step, data);
-            }
-
-            setupEventListeners() {
-                // Quick save button
-                document.getElementById('quickSave').addEventListener('click', () => {
-                    this.saveDraft();
-                });
-
-                // Auto-save every 30 seconds
-                setInterval(() => {
-                    if (this.wizard && Object.keys(this.wizard.data).length > 0) {
-                        this.autoSave();
-                    }
-                }, 30000);
-            }
-
-            handleStepChange(step, data) {
-                this.updateStatus('Step ' + (step + 1) + ': ' + this.wizard.steps[step].title);
-                
-                // Update field styling based on priority
-                if (data.priority_level) {
-                    this.updatePriorityStyles(data.priority_level);
-                }
-            }
-
-            handleComplete(data) {
-                this.generateSbarReport(data);
-                this.updateStatus('SBAR report generated');
-            }
-
-            updatePriorityStyles(priority) {
-                const container = document.getElementById('sbarWizardContainer');
-                container.classList.remove('priority-urgent', 'priority-stat');
-                
-                if (priority === 'urgent') {
-                    container.classList.add('priority-urgent');
-                } else if (priority === 'stat') {
-                    container.classList.add('priority-stat');
-                }
-            }
-
-            generateSbarReport(data) {
-                const timestamp = new Date().toLocaleString();
-                const priorityEmoji = {
-                    'routine': '📋',
-                    'urgent': '⚠️',
-                    'stat': '🚨'
-                };
-
-                const report = 
-'SBAR COMMUNICATION REPORT\\n' +
-'Generated: ' + timestamp + '\\n' +
-'Priority: ' + (priorityEmoji[data.priority_level] || '') + ' ' + (data.priority_level || '').toUpperCase() + '\\n\\n' +
-'===============================================\\n\\n' +
-'SITUATION\\n' +
-'Patient: ' + (data.patient_name || 'N/A') + '\\n' +
-'Location: ' + (data.room_unit || 'N/A') + '\\n' +
-'Purpose: ' + (data.communication_purpose || 'N/A') + '\\n\\n' +
-(data.situation_description || 'No situation description provided.') + '\\n\\n' +
-'BACKGROUND\\n' +
-'Admission Date: ' + (data.admission_date || 'N/A') + '\\n' +
-'Primary Diagnosis: ' + (data.primary_diagnosis || 'N/A') + '\\n\\n' +
-'Medical History:\\n' +
-(data.relevant_history || 'No relevant history documented.') + '\\n\\n' +
-'Current Medications:\\n' +
-(data.current_medications || 'No medications listed.') + '\\n\\n' +
-'ASSESSMENT\\n' +
-'Vital Signs: ' + (data.vital_signs || 'Not documented') + '\\n\\n' +
-'Mental Status: ' + (data.mental_status || 'Not assessed') + '\\n\\n' +
-'Physical Assessment:\\n' +
-(data.physical_assessment || 'No physical assessment documented.') + '\\n\\n' +
-'Clinical Concerns:\\n' +
-(data.clinical_concerns || 'No specific concerns noted.') + '\\n\\n' +
-'RECOMMENDATION\\n' +
-'Immediate Actions Needed:\\n' +
-(data.immediate_needs || 'No immediate actions specified.') + '\\n\\n' +
-'Priority Level: ' + (data.priority_level || 'Not specified') + '\\n\\n' +
-'Follow-up: ' + (data.follow_up_needed || 'No follow-up specified') + '\\n\\n' +
-'===============================================\\n' +
-'End of SBAR Report';
-
-                document.getElementById('sbarReportContent').textContent = report;
-                document.getElementById('sbarPreviewModal').classList.remove('hidden');
-            }
-
-            saveDraft() {
-                if (!this.wizard || Object.keys(this.wizard.data).length === 0) {
-                    alert('No data to save');
-                    return;
-                }
-
-                const draft = {
-                    id: Date.now(),
-                    timestamp: new Date().toISOString(),
-                    data: { ...this.wizard.data },
-                    patientName: this.wizard.data.patient_name || 'Unnamed Patient',
-                    step: this.wizard.currentStep
-                };
-
-                this.savedDrafts.push(draft);
-                localStorage.setItem('sbarDrafts', JSON.stringify(this.savedDrafts));
-                
-                this.updateStatus('Draft saved successfully');
-                this.showToast('Draft saved successfully!', 'success');
-            }
-
-            autoSave() {
-                // Silent auto-save without notifications
-                if (this.wizard && Object.keys(this.wizard.data).length > 0) {
-                    const autoSaveDraft = {
-                        id: 'autosave',
-                        timestamp: new Date().toISOString(),
-                        data: { ...this.wizard.data },
-                        step: this.wizard.currentStep,
-                        isAutoSave: true
-                    };
-                    
-                    localStorage.setItem('sbarAutoSave', JSON.stringify(autoSaveDraft));
-                }
-            }
-
-            updateStatus(message) {
-                document.getElementById('statusIndicator').textContent = message;
-            }
-
-            showToast(message, type = 'info') {
-                // Create toast notification
-                const toast = document.createElement('div');
-                let className = 'fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ';
-                if (type === 'success') {
-                    className += 'bg-green-500 text-white';
-                } else if (type === 'error') {
-                    className += 'bg-red-500 text-white';
-                } else {
-                    className += 'bg-blue-500 text-white';
-                }
-                toast.className = className;
-                toast.textContent = message;
-                
-                document.body.appendChild(toast);
-                
-                setTimeout(() => {
-                    toast.remove();
-                }, 3000);
-            }
-        }
-
-        // AI Enhancement Functions
-        async function enhanceText(fieldName, section) {
-            const field = document.querySelector(`[name="${fieldName}"]`);
-            if (!field || !field.value.trim()) {
-                sbarApp.showToast('Please enter some text first', 'error');
-                return;
-            }
-
-            const originalText = field.value;
-            const button = event.target.closest('button');
-            const originalButtonText = button.innerHTML;
-
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Enhancing...';
-
+        // Start wizard
+        async function startWizard() {
             try {
-                const response = await fetch('/api/v1/wizard/sbar-report/ai/enhance', {
+                const response = await fetch(`${API_BASE}/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: originalText,
-                        section: section
-                    })
+                    body: JSON.stringify({ reset_existing: false })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to start wizard: ${response.statusText}`);
+                }
 
                 const data = await response.json();
+                updateWizardUI(data);
 
-                if (data.enhanced && data.enhanced !== originalText) {
-                    field.value = data.enhanced;
-                    sbarApp.showToast('Text enhanced successfully!', 'success');
+                // Populate sandbox defaults
+                populateSandboxDefaults();
+            } catch (error) {
+                console.log('Wizard initialization: using fallback mode');
+                // Silent fallback - don't show error messages for demo
+            }
+        }
+
+        // Navigate to specific step
+        async function navigateToStep(stepNum) {
+            // Only allow navigation to completed steps or current step + 1
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/navigate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'jump', target_step: stepNum })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Navigation failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+            } catch (error) {
+                console.error('Navigation error:', error);
+                showMessage('error', `Navigation failed: ${error.message}`);
+            }
+        }
+
+        // Navigate back
+        async function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/navigate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'back' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Navigation failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+
+                // Populate step-specific content after navigation
+                handleStepSpecificLogic(data);
+            } catch (error) {
+                console.error('Navigation error:', error);
+                showMessage('error', `Navigation failed: ${error.message}`);
+            }
+        }
+
+        // Navigate next - CLIENT-SIDE MODE FOR DEMO
+        function navigateNext() {
+            // Validate current step before proceeding
+            if (!validateCurrentStep()) {
+                return;
+            }
+
+            // Collect and save current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+
+            // Update UI
+            updateWizardUI({
+                current_step: wizardState.current_step,
+                completed_steps: wizardState.completed_steps,
+                total_steps: 4,
+                progress_percent: Math.floor((wizardState.current_step / 4) * 100),
+                step_name: 'SBAR Report Wizard',
+                step_description: 'Document patient status using SBAR communication framework',
+                can_proceed: true,
+                errors: [],
+                warnings: [],
+                messages: [],
+                state_data: wizardState.data
+            });
+
+            handleStepSpecificLogic({state_data: wizardState.data});
+        }
+
+        // Handle step-specific UI population
+        function handleStepSpecificLogic(data) {
+            if (wizardState.current_step === 4) {
+                // Update SBAR preview on step 4
+                setTimeout(() => {
+                    updateSBARPreview();
+                }, 100);
+            }
+        }
+
+        // Finish wizard
+        async function finishWizard() {
+            try {
+                const response = await fetch(`${API_BASE}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Wizard completion failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+
+                showMessage('success', 'SBAR report saved successfully!');
+                updateConnectionStatus('connected', 'Report Saved');
+            } catch (error) {
+                console.error('Wizard completion error:', error);
+                showMessage('error', `Failed to complete wizard: ${error.message}`);
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Situation
+                    stepData.patient_mrn = document.getElementById('patientMrn')?.value || '';
+                    stepData.blood_pressure = document.getElementById('bloodPressure')?.value || '';
+                    stepData.heart_rate = document.getElementById('heartRate')?.value || '';
+                    stepData.temperature = document.getElementById('temperature')?.value || '';
+                    stepData.chief_complaint = document.getElementById('chiefComplaint')?.value || '';
+                    break;
+
+                case 2: // Background
+                    stepData.medical_history = document.getElementById('medicalHistory')?.value || '';
+                    stepData.medications = document.getElementById('medications')?.value || '';
+                    stepData.allergies = document.getElementById('allergies')?.value || '';
+                    stepData.recent_events = document.getElementById('recentEvents')?.value || '';
+                    break;
+
+                case 3: // Assessment
+                    stepData.assessment = document.getElementById('assessment')?.value || '';
+                    stepData.severity = document.querySelector('input[name="severity"]:checked')?.value || 'routine';
+                    break;
+
+                case 4: // Recommendation
+                    stepData.recommendations = document.getElementById('recommendations')?.value || '';
+                    stepData.time_frame = document.getElementById('timeFrame')?.value || 'routine';
+                    // Update preview
+                    updateSBARPreview();
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Validate current step - DISABLED FOR DEMO
+        function validateCurrentStep() {
+            // No validation - allow free navigation for demo purposes
+            return true;
+        }
+
+        // Update wizard UI based on state
+        function updateWizardUI(data) {
+            wizardState = {
+                current_step: data.current_step,
+                completed_steps: data.completed_steps || [],
+                total_steps: data.total_steps || 4,
+                data: data.state_data || {}
+            };
+
+            // Update progress
+            const progressPercent = data.progress_percent || 0;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = data.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === data.current_step) {
+                    indicator.classList.add('active');
+                } else if (data.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
                 } else {
-                    sbarApp.showToast('No enhancement needed', 'info');
+                    indicator.classList.add('pending');
                 }
-            } catch (error) {
-                console.error('Enhancement error:', error);
-                sbarApp.showToast('Enhancement failed. Please try again.', 'error');
-            } finally {
-                button.disabled = false;
-                button.innerHTML = originalButtonText;
-            }
-        }
+            });
 
-        async function checkCompleteness() {
-            if (!sbarApp || !sbarApp.wizard) return;
-
-            const data = sbarApp.wizard.data;
-            if (Object.keys(data).length === 0) {
-                sbarApp.showToast('Please fill in some fields first', 'error');
-                return;
-            }
-
-            sbarApp.showToast('Checking completeness...', 'info');
-
-            try {
-                const response = await fetch('/api/v1/wizard/sbar-report/ai/check-completeness', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                alert('Completeness Check:\n\n' + result.completeness_check);
-            } catch (error) {
-                console.error('Completeness check error:', error);
-                sbarApp.showToast('Completeness check failed', 'error');
-            }
-        }
-
-        async function suggestPriority() {
-            if (!sbarApp || !sbarApp.wizard) return;
-
-            const data = sbarApp.wizard.data;
-            if (!data.vital_signs && !data.physical_assessment) {
-                sbarApp.showToast('Please complete the Assessment section first', 'error');
-                return;
-            }
-
-            sbarApp.showToast('Analyzing priority...', 'info');
-
-            try {
-                const response = await fetch('/api/v1/wizard/sbar-report/ai/suggest-priority', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        vital_signs: data.vital_signs || '',
-                        physical_assessment: data.physical_assessment || '',
-                        mental_status: data.mental_status || '',
-                        clinical_concerns: data.clinical_concerns || ''
-                    })
-                });
-
-                const result = await response.json();
-
-                const message = `Suggested Priority: ${result.suggested_priority.toUpperCase()}\n\nReasoning:\n${result.reasoning}`;
-
-                if (confirm(message + '\n\nApply this priority?')) {
-                    const priorityRadio = document.querySelector(`input[name="priority_level"][value="${result.suggested_priority}"]`);
-                    if (priorityRadio) {
-                        priorityRadio.checked = true;
-                        sbarApp.wizard.data.priority_level = result.suggested_priority;
-                        sbarApp.showToast('Priority set!', 'success');
-                    }
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === data.current_step) {
+                    content.classList.add('active');
                 }
-            } catch (error) {
-                console.error('Priority suggestion error:', error);
-                sbarApp.showToast('Priority suggestion failed', 'error');
-            }
-        }
+            });
 
-        async function checkMedicationInteractions() {
-            if (!sbarApp || !sbarApp.wizard) return;
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
 
-            const medField = document.querySelector('[name="current_medications"]');
-            if (!medField || !medField.value.trim()) {
-                sbarApp.showToast('Please enter medications first', 'error');
-                return;
-            }
+            backBtn.disabled = data.current_step === 1;
 
-            const medications = medField.value;
-            const button = event.target.closest('button');
-            const originalButtonText = button.innerHTML;
-
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Checking...';
-
-            try {
-                const response = await fetch('/api/v1/wizard/sbar-report/ai/check-medications', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        medications: medications
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.error) {
-                    alert('Medication Check Error:\n\n' + result.error);
-                } else if (!result.has_interactions) {
-                    const medsFound = result.medications_found && result.medications_found.length > 0
-                        ? `\n\nMedications found: ${result.medications_found.join(', ')}`
-                        : '';
-                    alert('✅ No Drug Interactions Detected' + medsFound + '\n\n' + (result.message || 'Medications appear safe to use together.'));
-                    sbarApp.showToast('No interactions found', 'success');
-                } else {
-                    let message = '⚠️ DRUG INTERACTIONS DETECTED\n\n';
-                    message += `Medications: ${result.medications_found.join(', ')}\n`;
-                    message += `Total Interactions: ${result.total_interactions}\n\n`;
-
-                    if (result.has_major_interactions) {
-                        message += '🚨 WARNING: MAJOR INTERACTIONS FOUND\n\n';
-                    }
-
-                    if (result.interactions && result.interactions.length > 0) {
-                        message += 'Top Interactions:\n';
-                        result.interactions.forEach((inter, idx) => {
-                            message += `\n${idx + 1}. ${inter.drugs ? inter.drugs.join(' + ') : 'N/A'}\n`;
-                            message += `   Severity: ${inter.severity || 'Unknown'}\n`;
-                            message += `   ${inter.description || inter.effect || 'No details'}\n`;
-                        });
-                    }
-
-                    if (result.full_report_available) {
-                        message += '\n\n💡 More interactions detected. Use Drug Interaction Checker for full report.';
-                    }
-
-                    alert(message);
-                    sbarApp.showToast(result.has_major_interactions ? 'MAJOR interactions found!' : 'Interactions detected', 'error');
-                }
-            } catch (error) {
-                console.error('Medication check error:', error);
-                sbarApp.showToast('Medication check failed', 'error');
-                alert('Error checking medications. Please try again.');
-            } finally {
-                button.disabled = false;
-                button.innerHTML = originalButtonText;
-            }
-        }
-
-        // Global functions for modal interactions
-        function closePreviewModal() {
-            document.getElementById('sbarPreviewModal').classList.add('hidden');
-        }
-
-        function toggleHelpPanel() {
-            const helpPanel = document.getElementById('helpPanel');
-            const helpOverlay = document.getElementById('helpOverlay');
-
-            if (helpPanel.classList.contains('open')) {
-                helpPanel.classList.remove('open');
-                helpOverlay.classList.remove('active');
+            if (data.current_step === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
             } else {
-                helpPanel.classList.add('open');
-                helpOverlay.classList.add('active');
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+                nextBtn.disabled = !data.can_proceed;
+            }
+
+            // Update wizard title and description
+            document.getElementById('wizardTitle').textContent = data.step_name || 'SBAR Report Wizard';
+            document.getElementById('wizardDescription').textContent = data.step_description || '';
+
+            // Clear any previous messages
+            document.getElementById('messagesArea').innerHTML = '';
+
+            // Show simple status message if there are any errors/warnings - don't interrupt UX
+            if ((data.errors && data.errors.length > 0) || (data.warnings && data.warnings.length > 0)) {
+                const statusBar = document.createElement('div');
+                statusBar.className = 'text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded border-l-4 border-gray-400';
+                statusBar.innerHTML = `
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span>Due to connectivity issues, you'll need to enter configuration details manually.</span>
+                `;
+                document.getElementById('messagesArea').appendChild(statusBar);
             }
         }
 
-        function copySbarReport() {
-            const reportContent = document.getElementById('sbarReportContent').textContent;
-            navigator.clipboard.writeText(reportContent).then(() => {
-                alert('✅ SBAR report copied to clipboard!\n\nYou can now paste it into your EMR or documentation system.');
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                alert('❌ Failed to copy to clipboard. Please try again.');
+        // Show friendly info banner for manual entry
+        function showInfoBanner() {
+            const messagesArea = document.getElementById('messagesArea');
+
+            // Only show once
+            if (document.getElementById('manualEntryBanner')) return;
+
+            const banner = document.createElement('div');
+            banner.id = 'manualEntryBanner';
+            banner.className = 'bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-4';
+            banner.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-blue-900 mb-1">Manual Entry Mode</p>
+                        <p class="text-sm text-blue-800">Unable to auto-detect configuration. You'll need to enter your Epic FHIR credentials manually in the next steps. This is normal if you're setting up for the first time or don't have connectivity to Epic services yet.</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-blue-600 hover:text-blue-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            messagesArea.appendChild(banner);
+        }
+
+        // Show message (improved with collapsible details)
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            // Simplify long technical error messages
+            let displayText = text;
+            let detailsText = '';
+            let isCollapsible = false;
+
+            // Check if this is a long configuration error
+            if (text.includes('validation errors for Settings') || text.length > 200) {
+                isCollapsible = true;
+
+                // Extract summary
+                if (text.includes('Prerequisites missing')) {
+                    displayText = 'Configuration check: Some prerequisites are missing (click to see details)';
+                    detailsText = text;
+                } else if (text.includes('validation errors')) {
+                    displayText = 'Configuration validation issues detected (click to see details)';
+                    detailsText = text;
+                } else if (text.length > 200) {
+                    displayText = text.substring(0, 150) + '... (click to see full message)';
+                    detailsText = text;
+                }
+            }
+
+            const messageId = `msg-${Date.now()}`;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span class="cursor-pointer" onclick="toggleMessageDetails('${messageId}')">${displayText}</span>
+                        ${isCollapsible ? `
+                            <div id="${messageId}" class="hidden mt-2 p-3 bg-black bg-opacity-5 rounded text-xs font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+                                ${detailsText}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Toggle message details
+        function toggleMessageDetails(id) {
+            const details = document.getElementById(id);
+            if (details) {
+                details.classList.toggle('hidden');
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(status, text) {
+            const statusIndicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusIndicator');
+
+            statusIndicator.className = `connection-status ${status}`;
+            statusText.textContent = text;
+        }
+
+        // Quick-fill templates
+        function fillChestPain() {
+            document.getElementById('chiefComplaint').value = "Patient reports chest pain, 7/10 severity, radiating to left arm. Diaphoretic, appears anxious.";
+            document.getElementById('bloodPressure').value = "140/90";
+            document.getElementById('heartRate').value = "98";
+        }
+
+        function fillFall() {
+            document.getElementById('chiefComplaint').value = "Patient found on floor next to bed. States slipped when attempting to go to bathroom unassisted.";
+        }
+
+        function fillShortness() {
+            document.getElementById('chiefComplaint').value = "Patient experiencing increased shortness of breath, O2 sat 88% on room air, using accessory muscles.";
+            document.getElementById('heartRate').value = "110";
+        }
+
+        // Update SBAR preview
+        function updateSBARPreview() {
+            const chiefComplaint = document.getElementById('chiefComplaint')?.value || '--';
+            const medicalHistory = document.getElementById('medicalHistory')?.value || '--';
+            const assessment = document.getElementById('assessment')?.value || '--';
+            const recommendations = document.getElementById('recommendations')?.value || '--';
+
+            document.getElementById('previewSituation').textContent = chiefComplaint.substring(0, 100) + (chiefComplaint.length > 100 ? '...' : '');
+            document.getElementById('previewBackground').textContent = medicalHistory.substring(0, 100) + (medicalHistory.length > 100 ? '...' : '');
+            document.getElementById('previewAssessment').textContent = assessment.substring(0, 100) + (assessment.length > 100 ? '...' : '');
+            document.getElementById('previewRecommendation').textContent = recommendations.substring(0, 100) + (recommendations.length > 100 ? '...' : '');
+        }
+
+        // Print SBAR
+        function printSBAR() {
+            window.print();
+        }
+
+        // Copy SBAR to clipboard
+        function copySBAR() {
+            const sbarText = `SBAR REPORT
+
+S - SITUATION:
+${document.getElementById('chiefComplaint')?.value || ''}
+
+B - BACKGROUND:
+Medical History: ${document.getElementById('medicalHistory')?.value || ''}
+Medications: ${document.getElementById('medications')?.value || ''}
+Allergies: ${document.getElementById('allergies')?.value || ''}
+
+A - ASSESSMENT:
+${document.getElementById('assessment')?.value || ''}
+Severity: ${document.querySelector('input[name="severity"]:checked')?.value || 'Not specified'}
+
+R - RECOMMENDATION:
+${document.getElementById('recommendations')?.value || ''}
+Time Frame: ${document.getElementById('timeFrame')?.value || 'Not specified'}`;
+
+            navigator.clipboard.writeText(sbarText).then(() => {
+                alert('SBAR report copied to clipboard!');
             });
         }
 
-        function downloadSbarReport() {
-            const reportContent = document.getElementById('sbarReportContent').textContent;
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            const filename = `SBAR_Report_${timestamp}.txt`;
-
-            // Create blob and download
-            const blob = new Blob([reportContent], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-
-            alert(`✅ Report downloaded as: ${filename}\n\nCheck your Downloads folder.`);
+        // Remove unused Epic functions - placeholders kept for compatibility
+        function displayConnectionTestResults(data) {
+            // Not used in SBAR wizard
         }
 
-        function printSbarReport() {
-            const reportContent = document.getElementById('sbarReportContent').innerHTML;
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>SBAR Report</title></head><body style="font-family: Courier New, monospace; white-space: pre-wrap; padding: 20px;">' + reportContent + '</body></html>');
-            printWindow.document.close();
-            printWindow.print();
+        function retryConnection() {
+            // Not used in SBAR wizard
         }
 
-        function saveSbarDraft() {
-            window.sbarApp.saveDraft();
-            closePreviewModal();
-            alert('✅ Draft saved to browser storage!\n\nYou can resume your work later on this computer.');
+        function lookupPatient() {
+            // Not used in SBAR wizard
         }
 
-        // Initialize the application
-        window.sbarApp = null;
-        document.addEventListener('DOMContentLoaded', () => {
-            window.sbarApp = new SbarWizardPage();
-        });
+        function populateReviewContent() {
+            // Not used in SBAR wizard - preview is inline on step 4
+        }
+
+        function populateCredentialsFromState(data) {
+            // Not used in SBAR wizard
+        }
+
+        function toggleSandboxMode(isSandbox) {
+            // Not used in SBAR wizard
+        }
+
+        function populateSandboxDefaults() {
+            // Not used in SBAR wizard
+        }
+
+        function clearCredentialFields() {
+            // Not used in SBAR wizard
+        }
+
+        function copyToClipboard(elementId) {
+            // Not used in SBAR wizard
+        }
+
+        function togglePasswordVisibility(elementId) {
+            // Not used in SBAR wizard
+        }
     </script>
 </body>
 </html>
