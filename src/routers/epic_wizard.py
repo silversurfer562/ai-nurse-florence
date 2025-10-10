@@ -200,15 +200,46 @@ async def submit_wizard_step(step_number: int, input_data: Dict[str, Any]):
     # Update state with input data
     state.update(input_data)
 
-    # Run wizard graph to process step
-    epic_wizard_graph, _, _ = get_wizard_imports()
+    # Import step functions
+    from agents.epic_integration_wizard import (
+        step_1_prerequisites,
+        step_2_credentials,
+        step_3_connection_test,
+        step_4_resource_permissions,
+        step_5_test_patient_lookup,
+        step_6_review_confirm,
+        step_7_complete,
+    )
+
+    # Map step numbers to their handler functions
+    step_handlers = {
+        1: step_1_prerequisites,
+        2: step_2_credentials,
+        3: step_3_connection_test,
+        4: step_4_resource_permissions,
+        5: step_5_test_patient_lookup,
+        6: step_6_review_confirm,
+        7: step_7_complete,
+    }
 
     try:
-        result = await epic_wizard_graph.ainvoke(state)
-        session["state"] = result
-        session["last_updated"] = datetime.utcnow().isoformat()
+        # Execute only the current step's handler (don't run full graph)
+        if step_number in step_handlers:
+            handler = step_handlers[step_number]
+            result = await handler(state)
 
-        return _build_state_response(result)
+            # Advance to next step if current step was completed successfully
+            if step_number in result.get("completed_steps", []):
+                result["current_step"] = min(step_number + 1, 7)
+
+            session["state"] = result
+            session["last_updated"] = datetime.utcnow().isoformat()
+
+            return _build_state_response(result)
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid step number: {step_number}"
+            )
 
     except Exception as e:
         logger.error(f"Step {step_number} processing failed: {e}", exc_info=True)

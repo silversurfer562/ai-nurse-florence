@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic Integration Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .epic-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #6366f1;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .connection-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .connection-status.connected {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .connection-status.disconnected {
+            background-color: #ef4444;
+        }
+        .connection-status.testing {
+            background-color: #f59e0b;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="epic-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-indigo-200 text-sm">Epic Integration Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="connection-status disconnected" id="connectionStatus"></span>
+                        <span class="text-sm" id="statusIndicator">Not Connected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-indigo-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-indigo-800">Epic FHIR Integration Setup</h3>
+                    <p class="text-sm text-indigo-700">This wizard will guide you through connecting AI Nurse Florence to your Epic FHIR endpoint. Requires Epic OAuth credentials.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-indigo-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Epic Integration Setup</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to configure Epic FHIR integration</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 7</div>
+                        <div class="text-lg font-semibold text-indigo-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="6" onclick="navigateToStep(6)">
+                        <span>6</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="7" onclick="navigateToStep(7)">
+                        <span>7</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Prerequisites</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Credentials</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Test</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Resources</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Patient</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Review</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Complete</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Prerequisites -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-list text-indigo-600 mr-2"></i>
+                    Prerequisites
+                </h3>
+                <p class="text-gray-700 mb-6">Before proceeding with Epic integration, ensure you have the following:</p>
+
+                <div class="space-y-4">
+                    <div class="form-field p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Epic FHIR Access</h4>
+                                <p class="text-sm text-gray-600">You must have an Epic FHIR app registered through Epic's App Orchard or your Epic instance administrator.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">OAuth 2.0 Credentials</h4>
+                                <p class="text-sm text-gray-600">Client ID and Client Secret from Epic (or use Epic Sandbox for testing).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">FHIR Endpoint URL</h4>
+                                <p class="text-sm text-gray-600">Base URL for your Epic FHIR R4 API endpoint.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Network Access</h4>
+                                <p class="text-sm text-gray-600">Ensure your server can reach the Epic FHIR endpoint (check firewalls, proxies, etc.).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="fas fa-lightbulb text-blue-400 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-blue-900">Testing with Epic Sandbox</h4>
+                            <p class="text-sm text-blue-800">Don't have production credentials? Use Epic's public sandbox for testing. <a href="https://fhir.epic.com/Documentation" target="_blank" class="underline">View Epic Documentation</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Credentials -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-key text-indigo-600 mr-2"></i>
+                    Epic FHIR Credentials
+                </h3>
+                <p class="text-gray-700 mb-6">Enter your Epic FHIR OAuth credentials and endpoint information.</p>
+
+                <form id="credentialsForm" class="space-y-6">
+                    <!-- Sandbox Mode Toggle -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-flask text-indigo-600 mr-2"></i>
+                            Environment Mode
+                        </label>
+                        <div class="flex items-center space-x-6 bg-gray-50 p-4 rounded-lg">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="radio" name="sandboxMode" value="true" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" onchange="toggleSandboxMode(true)">
+                                <span class="ml-3 text-sm font-medium text-gray-700 group-hover:text-indigo-600">
+                                    <i class="fas fa-vial mr-1"></i> Sandbox (Testing)
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="radio" name="sandboxMode" value="false" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500" onchange="toggleSandboxMode(false)">
+                                <span class="ml-3 text-sm font-medium text-gray-700 group-hover:text-indigo-600">
+                                    <i class="fas fa-building mr-1"></i> Production
+                                </span>
+                            </label>
+                        </div>
+                        <div id="sandboxNotice" class="mt-3 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                            <p class="text-xs text-yellow-800">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Sandbox mode uses Epic's public test endpoint. Credentials will auto-fill for quick testing.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- FHIR Base URL -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="fhirBaseUrl" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-link text-indigo-600 mr-2"></i>
+                            FHIR Base URL <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="url"
+                                   id="fhirBaseUrl"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono"
+                                   placeholder="https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4"
+                                   required>
+                            <button type="button" onclick="copyToClipboard('fhirBaseUrl')" class="absolute right-3 top-3 text-gray-400 hover:text-indigo-600" title="Copy URL">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Epic FHIR R4 endpoint base URL (supports copy/paste)
+                        </p>
+                    </div>
+
+                    <!-- Client ID -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="clientId" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-id-card text-indigo-600 mr-2"></i>
+                            Client ID <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="clientId"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono"
+                                   placeholder="your-client-id"
+                                   required>
+                            <button type="button" onclick="copyToClipboard('clientId')" class="absolute right-3 top-3 text-gray-400 hover:text-indigo-600" title="Copy Client ID">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            OAuth 2.0 Client ID from Epic App Orchard
+                        </p>
+                    </div>
+
+                    <!-- Client Secret -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="clientSecret" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-lock text-indigo-600 mr-2"></i>
+                            Client Secret <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="password"
+                                   id="clientSecret"
+                                   autocomplete="off"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono"
+                                   placeholder="•••••••••••••••"
+                                   required>
+                            <button type="button" onclick="togglePasswordVisibility('clientSecret')" class="absolute right-12 top-3 text-gray-400 hover:text-indigo-600" title="Show/Hide">
+                                <i class="fas fa-eye" id="clientSecret-eye"></i>
+                            </button>
+                            <button type="button" onclick="copyToClipboard('clientSecret')" class="absolute right-3 top-3 text-gray-400 hover:text-indigo-600" title="Copy Secret">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            OAuth 2.0 Client Secret (kept secure, not logged)
+                        </p>
+                    </div>
+
+                    <!-- OAuth Token URL -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="tokenUrl" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-exchange-alt text-indigo-600 mr-2"></i>
+                            OAuth Token URL <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="url"
+                                   id="tokenUrl"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono"
+                                   placeholder="https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token"
+                                   required>
+                            <button type="button" onclick="copyToClipboard('tokenUrl')" class="absolute right-3 top-3 text-gray-400 hover:text-indigo-600" title="Copy URL">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Epic OAuth 2.0 token endpoint URL
+                        </p>
+                    </div>
+
+                    <!-- Quick Fill Tip -->
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-indigo-600 mt-1 mr-3"></i>
+                            <div class="text-sm text-indigo-800">
+                                <p class="font-semibold mb-1">Quick Fill Tip</p>
+                                <p>Using sandbox mode? Fields will auto-populate with Epic's test credentials. You can also paste your own credentials at any time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Connection Test -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-plug text-indigo-600 mr-2"></i>
+                    Connection Test
+                </h3>
+                <p class="text-gray-700 mb-6">Testing connection to Epic FHIR API and OAuth authentication...</p>
+
+                <div class="space-y-4">
+                    <div id="connectionTestResult" class="form-field p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-indigo-600 mr-3"></i>
+                            <span class="text-gray-700">Initiating connection test...</span>
+                        </div>
+                    </div>
+
+                    <div id="oauthTestResult" class="form-field p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-spinner fa-spin text-indigo-600 mr-3"></i>
+                            <span class="text-gray-700">Testing OAuth token acquisition...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="retryConnectionBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hidden" onclick="retryConnection()">
+                        <i class="fas fa-redo mr-2"></i>Retry Connection Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Resource Permissions -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-shield-alt text-indigo-600 mr-2"></i>
+                    FHIR Resource Permissions
+                </h3>
+                <p class="text-gray-700 mb-6">Select which FHIR resources you want to access. Only select resources your app has been granted access to.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" class="resource-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Patient" checked>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-user-circle text-indigo-600 mr-2"></i>Patient
+                                </div>
+                                <div class="text-sm text-gray-600">Demographics and patient information</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">patient/Patient.read</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" class="resource-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Condition" checked>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-heartbeat text-indigo-600 mr-2"></i>Condition
+                                </div>
+                                <div class="text-sm text-gray-600">Diagnoses and health conditions</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">patient/Condition.read</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" class="resource-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="MedicationRequest" checked>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-pills text-indigo-600 mr-2"></i>MedicationRequest
+                                </div>
+                                <div class="text-sm text-gray-600">Medication orders and prescriptions</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">patient/MedicationRequest.read</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" class="resource-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Observation">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-chart-line text-indigo-600 mr-2"></i>Observation
+                                </div>
+                                <div class="text-sm text-gray-600">Vital signs, lab results, measurements</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">patient/Observation.read</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" class="resource-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="AllergyIntolerance">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-allergies text-indigo-600 mr-2"></i>AllergyIntolerance
+                                </div>
+                                <div class="text-sm text-gray-600">Allergies and adverse reactions</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">patient/AllergyIntolerance.read</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" class="resource-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Encounter">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-hospital text-indigo-600 mr-2"></i>Encounter
+                                </div>
+                                <div class="text-sm text-gray-600">Patient visits and encounters</div>
+                                <div class="text-xs text-gray-500 mt-1 font-mono">patient/Encounter.read</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-600 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-blue-900 mb-1">Resource Scope Information</p>
+                            <p class="text-sm text-blue-800">Only select resources that your Epic app has been granted read access to. Requesting unauthorized resources will cause connection failures. The scope strings shown will be used for OAuth authentication.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Test Patient Lookup -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-check text-indigo-600 mr-2"></i>
+                    Test Patient Lookup
+                </h3>
+                <p class="text-gray-700 mb-6">Test the integration by looking up a patient using their MRN (Medical Record Number).</p>
+
+                <div class="space-y-6">
+                    <!-- MRN Input Card -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="testMrn" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-id-badge text-indigo-600 mr-2"></i>
+                            Test Patient MRN <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="testMrn"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono"
+                                   placeholder="Enter patient MRN or FHIR ID"
+                                   required>
+                            <button type="button" onclick="copyToClipboard('testMrn')" class="absolute right-3 top-3 text-gray-400 hover:text-indigo-600" title="Copy MRN">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Use a test patient MRN from your Epic sandbox or test environment
+                        </p>
+                    </div>
+
+                    <!-- Lookup Button -->
+                    <div>
+                        <button id="lookupPatientBtn" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm" onclick="lookupPatient()">
+                            <i class="fas fa-search mr-2"></i>Lookup Patient
+                        </button>
+                    </div>
+
+                    <!-- Patient Lookup Result (initially hidden) -->
+                    <div id="patientLookupResult" class="hidden bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <!-- Patient data will appear here dynamically -->
+                    </div>
+                </div>
+
+                <!-- Epic Sandbox Test Patient Info -->
+                <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-flask text-yellow-600 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-semibold text-yellow-900 mb-2">Epic Sandbox Test Patients</h4>
+                            <p class="text-sm text-yellow-800 mb-2">If using Epic sandbox, try one of these test patient IDs:</p>
+                            <div class="space-y-2">
+                                <div class="bg-white rounded p-2 flex items-center justify-between">
+                                    <code class="text-xs font-mono text-gray-800">Tbt3KuCY0B5PSrJvCu2j-PlK.aiHsu2xUjUM8bWpetXoB</code>
+                                    <button onclick="document.getElementById('testMrn').value='Tbt3KuCY0B5PSrJvCu2j-PlK.aiHsu2xUjUM8bWpetXoB'" class="ml-2 text-yellow-700 hover:text-yellow-900 text-xs">
+                                        <i class="fas fa-arrow-up"></i> Use
+                                    </button>
+                                </div>
+                                <p class="text-xs text-yellow-700 mt-1">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    <a href="https://fhir.epic.com/Documentation?docId=testpatients" target="_blank" class="underline hover:text-yellow-900">View more test patients</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Review & Confirm -->
+            <div id="step6" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-indigo-600 mr-2"></i>
+                    Review Configuration
+                </h3>
+                <p class="text-gray-700 mb-6">Review your Epic FHIR integration configuration before finalizing.</p>
+
+                <div class="space-y-4" id="reviewContent">
+                    <!-- Review content will be populated dynamically -->
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-400 mr-3 mt-1"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-blue-900">Ready to Complete</h4>
+                            <p class="text-sm text-blue-800">Once you click "Complete Setup", your Epic FHIR integration will be saved and activated. You can modify these settings later in the application settings.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7: Complete -->
+            <div id="step7" class="step-content p-6">
+                <div class="text-center py-8">
+                    <div class="mb-6">
+                        <i class="fas fa-check-circle text-green-500 text-6xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Epic Integration Complete!</h3>
+                    <p class="text-gray-700 mb-6">Your Epic FHIR integration has been successfully configured and is ready to use.</p>
+
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded text-left max-w-2xl mx-auto mb-6">
+                        <h4 class="font-semibold text-green-900 mb-2">What's Next?</h4>
+                        <ul class="text-sm text-green-800 space-y-2">
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Epic FHIR connection is active</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>OAuth authentication configured</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Resource permissions set</li>
+                            <li><i class="fas fa-check text-green-600 mr-2"></i>Ready to access patient data</li>
+                        </ul>
+                    </div>
+
+                    <div class="flex justify-center space-x-4">
+                        <a href="/static/epic-integration.html" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                            <i class="fas fa-rocket mr-2"></i>Go to Epic Integration Dashboard
+                        </a>
+                        <a href="/" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-home mr-2"></i>Return to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Setup
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 7,
+            session_id: 'default',
+            data: {}
+        };
+
+        // API Base URL
+        const API_BASE = '/api/v1/wizard';
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Epic Integration Wizard loaded');
+            await startWizard();
+        });
+
+        // Start wizard
+        async function startWizard() {
+            try {
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reset_existing: false })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to start wizard: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+
+                // Populate sandbox defaults
+                populateSandboxDefaults();
+            } catch (error) {
+                console.error('Error starting wizard:', error);
+                showMessage('error', `Failed to initialize wizard: ${error.message}`);
+            }
+        }
+
+        // Navigate to specific step
+        async function navigateToStep(stepNum) {
+            // Only allow navigation to completed steps or current step + 1
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/navigate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'jump', target_step: stepNum })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Navigation failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+            } catch (error) {
+                console.error('Navigation error:', error);
+                showMessage('error', `Navigation failed: ${error.message}`);
+            }
+        }
+
+        // Navigate back
+        async function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/navigate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'back' })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Navigation failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+
+                // Populate step-specific content after navigation
+                handleStepSpecificLogic(data);
+            } catch (error) {
+                console.error('Navigation error:', error);
+                showMessage('error', `Navigation failed: ${error.message}`);
+            }
+        }
+
+        // Navigate next
+        async function navigateNext() {
+            // Validate current step before proceeding
+            if (!validateCurrentStep()) {
+                return;
+            }
+
+            // Submit current step data
+            const stepData = collectCurrentStepData();
+
+            try {
+                const response = await fetch(`${API_BASE}/step/${wizardState.current_step}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(stepData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Step submission failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+
+                // Handle step-specific logic after submission
+                handleStepSpecificLogic(data);
+
+            } catch (error) {
+                console.error('Step submission error:', error);
+                showMessage('error', `Failed to proceed: ${error.message}`);
+            }
+        }
+
+        // Handle step-specific UI population
+        function handleStepSpecificLogic(data) {
+            if (wizardState.current_step === 2) {
+                // Credentials step - populate form fields from state if available
+                // Wait a tick for DOM to render
+                setTimeout(() => {
+                    populateCredentialsFromState(data);
+                    // If no credentials in state, populate sandbox defaults
+                    if (!data.state_data?.epic_fhir_base_url) {
+                        populateSandboxDefaults();
+                    }
+                }, 100);
+            } else if (wizardState.current_step === 3) {
+                // Connection test step - show results
+                displayConnectionTestResults(data);
+            } else if (wizardState.current_step === 6) {
+                // Review step - populate review content
+                populateReviewContent();
+            }
+        }
+
+        // Finish wizard
+        async function finishWizard() {
+            try {
+                const response = await fetch(`${API_BASE}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Wizard completion failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateWizardUI(data);
+
+                showMessage('success', 'Epic integration setup completed successfully!');
+                updateConnectionStatus('connected', 'Connected to Epic FHIR');
+            } catch (error) {
+                console.error('Wizard completion error:', error);
+                showMessage('error', `Failed to complete wizard: ${error.message}`);
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Prerequisites - no data to collect
+                    break;
+
+                case 2: // Credentials
+                    stepData.epic_sandbox_mode = document.querySelector('input[name="sandboxMode"]:checked').value === 'true';
+                    stepData.epic_fhir_base_url = document.getElementById('fhirBaseUrl').value;
+                    stepData.epic_client_id = document.getElementById('clientId').value;
+                    stepData.epic_client_secret = document.getElementById('clientSecret').value;
+                    stepData.epic_oauth_token_url = document.getElementById('tokenUrl').value;
+                    break;
+
+                case 3: // Connection test - handled by backend
+                    break;
+
+                case 4: // Resource permissions
+                    const selectedResources = [];
+                    document.querySelectorAll('.resource-checkbox:checked').forEach(cb => {
+                        selectedResources.push(cb.value);
+                    });
+                    stepData.selected_resources = selectedResources;
+                    stepData.resource_scopes = selectedResources.map(r => `patient/${r}.read`);
+                    break;
+
+                case 5: // Test patient lookup
+                    stepData.test_mrn = document.getElementById('testMrn').value;
+                    break;
+
+                case 6: // Review - no additional data
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Validate current step - DISABLED FOR DEMO
+        function validateCurrentStep() {
+            // No validation - allow free navigation for demo purposes
+            return true;
+        }
+
+        // Update wizard UI based on state
+        function updateWizardUI(data) {
+            wizardState = {
+                current_step: data.current_step,
+                completed_steps: data.completed_steps || [],
+                total_steps: data.total_steps || 7,
+                data: data.state_data || {}
+            };
+
+            // Update progress
+            const progressPercent = data.progress_percent || 0;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = data.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === data.current_step) {
+                    indicator.classList.add('active');
+                } else if (data.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === data.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = data.current_step === 1;
+
+            if (data.current_step === 7) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+                nextBtn.disabled = !data.can_proceed;
+            }
+
+            // Update wizard title and description
+            document.getElementById('wizardTitle').textContent = data.step_name || 'Epic Integration Setup';
+            document.getElementById('wizardDescription').textContent = data.step_description || '';
+
+            // Clear any previous messages
+            document.getElementById('messagesArea').innerHTML = '';
+
+            // Show simple status message if there are any errors/warnings - don't interrupt UX
+            if ((data.errors && data.errors.length > 0) || (data.warnings && data.warnings.length > 0)) {
+                const statusBar = document.createElement('div');
+                statusBar.className = 'text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded border-l-4 border-gray-400';
+                statusBar.innerHTML = `
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span>Due to connectivity issues, you'll need to enter configuration details manually.</span>
+                `;
+                document.getElementById('messagesArea').appendChild(statusBar);
+            }
+        }
+
+        // Show friendly info banner for manual entry
+        function showInfoBanner() {
+            const messagesArea = document.getElementById('messagesArea');
+
+            // Only show once
+            if (document.getElementById('manualEntryBanner')) return;
+
+            const banner = document.createElement('div');
+            banner.id = 'manualEntryBanner';
+            banner.className = 'bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg mb-4';
+            banner.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-600 mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-blue-900 mb-1">Manual Entry Mode</p>
+                        <p class="text-sm text-blue-800">Unable to auto-detect configuration. You'll need to enter your Epic FHIR credentials manually in the next steps. This is normal if you're setting up for the first time or don't have connectivity to Epic services yet.</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-blue-600 hover:text-blue-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            messagesArea.appendChild(banner);
+        }
+
+        // Show message (improved with collapsible details)
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            // Simplify long technical error messages
+            let displayText = text;
+            let detailsText = '';
+            let isCollapsible = false;
+
+            // Check if this is a long configuration error
+            if (text.includes('validation errors for Settings') || text.length > 200) {
+                isCollapsible = true;
+
+                // Extract summary
+                if (text.includes('Prerequisites missing')) {
+                    displayText = 'Configuration check: Some prerequisites are missing (click to see details)';
+                    detailsText = text;
+                } else if (text.includes('validation errors')) {
+                    displayText = 'Configuration validation issues detected (click to see details)';
+                    detailsText = text;
+                } else if (text.length > 200) {
+                    displayText = text.substring(0, 150) + '... (click to see full message)';
+                    detailsText = text;
+                }
+            }
+
+            const messageId = `msg-${Date.now()}`;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span class="cursor-pointer" onclick="toggleMessageDetails('${messageId}')">${displayText}</span>
+                        ${isCollapsible ? `
+                            <div id="${messageId}" class="hidden mt-2 p-3 bg-black bg-opacity-5 rounded text-xs font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+                                ${detailsText}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Toggle message details
+        function toggleMessageDetails(id) {
+            const details = document.getElementById(id);
+            if (details) {
+                details.classList.toggle('hidden');
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(status, text) {
+            const statusIndicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusIndicator');
+
+            statusIndicator.className = `connection-status ${status}`;
+            statusText.textContent = text;
+        }
+
+        // Display connection test results
+        function displayConnectionTestResults(data) {
+            const connectionResult = document.getElementById('connectionTestResult');
+            const oauthResult = document.getElementById('oauthTestResult');
+
+            if (data.state_data.connection_test_passed) {
+                connectionResult.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <span class="text-gray-700">Connection to Epic FHIR endpoint successful</span>
+                    </div>
+                `;
+            } else {
+                connectionResult.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-times-circle text-red-600 mr-3"></i>
+                        <span class="text-gray-700">Connection failed: ${data.state_data.connection_test_error || 'Unknown error'}</span>
+                    </div>
+                `;
+                document.getElementById('retryConnectionBtn').classList.remove('hidden');
+            }
+
+            if (data.state_data.oauth_token_obtained) {
+                oauthResult.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <span class="text-gray-700">OAuth token obtained successfully</span>
+                    </div>
+                `;
+                updateConnectionStatus('connected', 'Connected to Epic FHIR');
+            } else {
+                oauthResult.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-times-circle text-red-600 mr-3"></i>
+                        <span class="text-gray-700">OAuth authentication failed</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Retry connection test
+        async function retryConnection() {
+            wizardState.current_step = 2; // Go back to credentials step
+            await navigateToStep(2);
+        }
+
+        // Lookup patient
+        async function lookupPatient() {
+            const mrn = document.getElementById('testMrn').value;
+            if (!mrn) {
+                showMessage('error', 'Please enter a patient MRN.');
+                return;
+            }
+
+            const lookupBtn = document.getElementById('lookupPatientBtn');
+            lookupBtn.disabled = true;
+            lookupBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Looking up patient...';
+
+            try {
+                // Submit step with MRN
+                const response = await fetch(`${API_BASE}/step/5`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test_mrn: mrn })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Patient lookup failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('patientLookupResult');
+                if (data.state_data.patient_data_retrieved) {
+                    resultDiv.className = 'message-success p-4 rounded-lg';
+                    resultDiv.innerHTML = `
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-green-900">Patient Found</h4>
+                                <p class="text-sm text-green-800">Name: ${data.state_data.retrieved_patient_name || 'Unknown'}</p>
+                                <p class="text-sm text-green-800">MRN: ${mrn}</p>
+                            </div>
+                        </div>
+                    `;
+                    showMessage('success', 'Patient data retrieved successfully!');
+                } else {
+                    resultDiv.className = 'message-error p-4 rounded-lg';
+                    resultDiv.innerHTML = `
+                        <div class="flex items-start">
+                            <i class="fas fa-times-circle text-red-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-red-900">Patient Not Found</h4>
+                                <p class="text-sm text-red-800">Unable to retrieve patient data for MRN: ${mrn}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                resultDiv.classList.remove('hidden');
+                updateWizardUI(data);
+
+            } catch (error) {
+                console.error('Patient lookup error:', error);
+                showMessage('error', `Patient lookup failed: ${error.message}`);
+            } finally {
+                lookupBtn.disabled = false;
+                lookupBtn.innerHTML = '<i class="fas fa-search mr-2"></i>Lookup Patient';
+            }
+        }
+
+        // Populate review content
+        function populateReviewContent() {
+            const reviewContent = document.getElementById('reviewContent');
+            const data = wizardState.data;
+
+            const connectionIcon = data.connection_test_passed ? 'fa-check-circle text-green-600' : 'fa-times-circle text-gray-400';
+            const oauthIcon = data.oauth_token_obtained ? 'fa-check-circle text-green-600' : 'fa-times-circle text-gray-400';
+            const patientIcon = data.patient_data_retrieved ? 'fa-check-circle text-green-600' : 'fa-times-circle text-gray-400';
+
+            reviewContent.innerHTML = `
+                <!-- Environment Mode -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-flask text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-2">Environment Mode</h4>
+                            <div class="text-sm text-gray-700">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${data.epic_sandbox_mode ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                                    <i class="fas ${data.epic_sandbox_mode ? 'fa-vial' : 'fa-building'} mr-1"></i>
+                                    ${data.epic_sandbox_mode ? 'Sandbox (Testing)' : 'Production'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection Details -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-link text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Connection Details</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">FHIR Endpoint:</span>
+                                    <span class="text-gray-900 font-mono text-xs break-all">${data.epic_fhir_base_url || '<span class="text-gray-400">Not set</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">OAuth Token URL:</span>
+                                    <span class="text-gray-900 font-mono text-xs break-all">${data.epic_oauth_token_url || '<span class="text-gray-400">Not set</span>'}</span>
+                                </div>
+                                <div class="flex items-center pt-2 border-t border-gray-100">
+                                    <i class="fas ${connectionIcon} mr-2"></i>
+                                    <span class="text-gray-700">${data.connection_test_passed ? 'Connection test passed' : 'Connection not tested'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authentication -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-key text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Authentication</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Client ID:</span>
+                                    <span class="text-gray-900 font-mono text-xs">${data.epic_client_id || '<span class="text-gray-400">Not set</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Client Secret:</span>
+                                    <span class="text-gray-900">${data.epic_client_secret ? '••••••••••••' : '<span class="text-gray-400">Not set</span>'}</span>
+                                </div>
+                                <div class="flex items-center pt-2 border-t border-gray-100">
+                                    <i class="fas ${oauthIcon} mr-2"></i>
+                                    <span class="text-gray-700">${data.oauth_token_obtained ? 'OAuth token obtained' : 'OAuth not authenticated'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FHIR Resources -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-shield-alt text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">FHIR Resources & Scopes</h4>
+                            ${(data.selected_resources && data.selected_resources.length > 0) ? `
+                                <div class="grid grid-cols-2 gap-2">
+                                    ${data.selected_resources.map(r => `
+                                        <div class="flex items-center bg-indigo-50 rounded px-3 py-2">
+                                            <i class="fas fa-check-circle text-indigo-600 mr-2 text-xs"></i>
+                                            <span class="text-sm font-medium text-indigo-900">${r}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                    <p class="text-xs text-gray-500 font-medium mb-1">OAuth Scopes:</p>
+                                    <div class="text-xs font-mono text-gray-700 bg-gray-50 rounded p-2">
+                                        ${(data.resource_scopes || []).join(', ')}
+                                    </div>
+                                </div>
+                            ` : '<p class="text-sm text-gray-400">No resources selected</p>'}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patient Data Test -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-user-check text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Patient Lookup Test</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Test MRN:</span>
+                                    <span class="text-gray-900 font-mono text-xs">${data.test_mrn || '<span class="text-gray-400">Not tested</span>'}</span>
+                                </div>
+                                ${data.retrieved_patient_name ? `
+                                    <div class="flex items-start">
+                                        <span class="text-gray-500 font-medium w-32 flex-shrink-0">Patient Name:</span>
+                                        <span class="text-gray-900">${data.retrieved_patient_name}</span>
+                                    </div>
+                                ` : ''}
+                                <div class="flex items-center pt-2 border-t border-gray-100">
+                                    <i class="fas ${patientIcon} mr-2"></i>
+                                    <span class="text-gray-700">${data.patient_data_retrieved ? 'Patient data retrieved successfully' : 'Patient lookup not performed'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Populate credentials from wizard state
+        function populateCredentialsFromState(data) {
+            const stateData = data.state_data || {};
+
+            // Only populate if fields exist and we have data
+            const fhirUrlField = document.getElementById('fhirBaseUrl');
+            const clientIdField = document.getElementById('clientId');
+            const clientSecretField = document.getElementById('clientSecret');
+            const tokenUrlField = document.getElementById('tokenUrl');
+
+            if (fhirUrlField && stateData.epic_fhir_base_url) {
+                fhirUrlField.value = stateData.epic_fhir_base_url;
+            }
+            if (clientIdField && stateData.epic_client_id) {
+                clientIdField.value = stateData.epic_client_id;
+            }
+            if (clientSecretField && stateData.epic_client_secret) {
+                clientSecretField.value = stateData.epic_client_secret;
+            }
+            if (tokenUrlField && stateData.epic_oauth_token_url) {
+                tokenUrlField.value = stateData.epic_oauth_token_url;
+            }
+
+            // Set sandbox mode radio button
+            if (stateData.epic_sandbox_mode !== undefined) {
+                const sandboxRadio = document.querySelector(`input[name="sandboxMode"][value="${stateData.epic_sandbox_mode}"]`);
+                if (sandboxRadio) {
+                    sandboxRadio.checked = true;
+                    toggleSandboxMode(stateData.epic_sandbox_mode);
+                }
+            }
+        }
+
+        // Toggle sandbox mode
+        function toggleSandboxMode(isSandbox) {
+            const sandboxNotice = document.getElementById('sandboxNotice');
+
+            if (isSandbox) {
+                sandboxNotice.classList.remove('hidden');
+                // Only populate sandbox defaults if fields are empty
+                if (!document.getElementById('fhirBaseUrl').value) {
+                    populateSandboxDefaults();
+                }
+            } else {
+                sandboxNotice.classList.add('hidden');
+                // Don't auto-clear fields - let user decide
+            }
+        }
+
+        // Populate sandbox default values
+        function populateSandboxDefaults() {
+            if (document.querySelector('input[name="sandboxMode"]:checked')?.value === 'true') {
+                document.getElementById('fhirBaseUrl').value = 'https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4';
+                document.getElementById('tokenUrl').value = 'https://fhir.epic.com/interconnect-fhir-oauth/oauth2/token';
+                document.getElementById('clientId').value = 'demo_client_id';
+                document.getElementById('clientSecret').value = 'demo_client_secret';
+            }
+        }
+
+        // Clear credential fields
+        function clearCredentialFields() {
+            document.getElementById('fhirBaseUrl').value = '';
+            document.getElementById('tokenUrl').value = '';
+            document.getElementById('clientId').value = '';
+            document.getElementById('clientSecret').value = '';
+        }
+
+        // Copy to clipboard helper
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element || !element.value) {
+                showMessage('warning', 'No value to copy');
+                return;
+            }
+
+            // Use modern clipboard API
+            navigator.clipboard.writeText(element.value).then(() => {
+                showMessage('success', 'Copied to clipboard!');
+
+                // Visual feedback on the button
+                const btn = event.target.closest('button');
+                const icon = btn.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'fas fa-check';
+                setTimeout(() => {
+                    icon.className = originalClass;
+                }, 1000);
+            }).catch(err => {
+                // Fallback for older browsers
+                element.select();
+                document.execCommand('copy');
+                showMessage('success', 'Copied to clipboard!');
+            });
+        }
+
+        // Toggle password visibility
+        function togglePasswordVisibility(elementId) {
+            const element = document.getElementById(elementId);
+            const eyeIcon = document.getElementById(elementId + '-eye');
+
+            if (element.type === 'password') {
+                element.type = 'text';
+                eyeIcon.className = 'fas fa-eye-slash';
+            } else {
+                element.type = 'password';
+                eyeIcon.className = 'fas fa-eye';
+            }
+        }
+    </script>
+</body>
+</html>

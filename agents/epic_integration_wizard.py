@@ -148,17 +148,21 @@ async def step_1_prerequisites(state: WizardState) -> WizardState:
     state["missing_prerequisites"] = missing
     state["completed_steps"].append(1)
 
+    # Always allow proceeding to Step 2 for manual credential entry
+    # Even if automated prerequisites fail, user can still configure Epic manually
     if state["prerequisites_passed"]:
         state["messages"].append(
             AIMessage(
                 content="✅ All prerequisites met. Ready to configure Epic integration."
             )
         )
-        state["current_step"] = 2
     else:
-        state["errors"].append(f"Prerequisites missing: {', '.join(missing)}")
+        # Don't block progression - just warn user
+        state["warnings"].append(
+            f"Some automated prerequisites missing: {', '.join(missing)}"
+        )
         state["messages"].append(
-            AIMessage(content=f"❌ Missing prerequisites: {', '.join(missing)}")
+            AIMessage(content=f"⚠️  Manual entry mode: {', '.join(missing)}")
         )
 
     return state
