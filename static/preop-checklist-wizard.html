@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Operative Checklist Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #0078d4;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .preop-header {
+            background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #0078d4;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .checklist-item {
+            transition: all 0.2s ease;
+        }
+        .checklist-item:hover {
+            background-color: #f0f9ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="preop-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-blue-200 text-sm">Pre-Operative Checklist Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-clipboard-check text-xl"></i>
+                        <span class="text-sm">Surgical Safety</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-blue-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-blue-800">Pre-Operative Safety Checklist</h3>
+                    <p class="text-sm text-blue-700">Complete all verification steps before patient transport to OR. Based on WHO Surgical Safety Checklist.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-blue-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Pre-Operative Checklist</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to ensure patient safety</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-blue-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Patient ID</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Assessment</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">NPO/Meds</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Site Marking</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Final Check</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Patient Identification & Consent -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-check text-blue-600 mr-2"></i>
+                    Patient Identification & Consent
+                </h3>
+                <p class="text-gray-700 mb-6">Verify patient identity using two identifiers and confirm surgical consent.</p>
+
+                <div class="space-y-4">
+                    <!-- Patient Name -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="patientName" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user text-blue-600 mr-2"></i>
+                            Patient Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="patientName"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               placeholder="Last, First Middle"
+                               required>
+                    </div>
+
+                    <!-- Medical Record Number -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="mrn" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-id-card text-blue-600 mr-2"></i>
+                            Medical Record Number (MRN) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="mrn"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono"
+                               placeholder="MRN-######"
+                               required>
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="dob" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-birthday-cake text-blue-600 mr-2"></i>
+                            Date of Birth <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date"
+                               id="dob"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               required>
+                    </div>
+
+                    <!-- Procedure -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="procedure" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-procedures text-blue-600 mr-2"></i>
+                            Planned Procedure <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="procedure"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               placeholder="e.g., Laparoscopic Cholecystectomy"
+                               required>
+                    </div>
+
+                    <!-- Surgeon -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="surgeon" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user-md text-blue-600 mr-2"></i>
+                            Surgeon <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="surgeon"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               placeholder="Dr. Last Name"
+                               required>
+                    </div>
+
+                    <!-- Verification Checklist -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                        <h4 class="font-semibold text-blue-900 mb-3">Identity Verification</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="identityVerified">
+                                <span class="text-sm">Patient identity verified using two identifiers (name + MRN/DOB)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="procedureConfirmed">
+                                <span class="text-sm">Procedure confirmed with patient/family</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="consentSigned">
+                                <span class="text-sm">Surgical consent signed and in chart</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Quick Fill -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-blue-600 mt-1 mr-3"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-2">Quick Fill Demo Data</p>
+                                <div class="flex space-x-2">
+                                    <button onclick="fillRoutineSurgery()" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                                        Routine Surgery
+                                    </button>
+                                    <button onclick="fillEmergencySurgery()" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700">
+                                        Emergency Surgery
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Pre-Op Assessment -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-heartbeat text-blue-600 mr-2"></i>
+                    Pre-Operative Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Document baseline vital signs, allergies, and required lab results.</p>
+
+                <div class="space-y-4">
+                    <!-- Vital Signs -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-stethoscope text-blue-600 mr-2"></i>
+                            Vital Signs
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="bp" class="block text-sm font-medium text-gray-700 mb-1">Blood Pressure</label>
+                                <input type="text" id="bp" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="120/80">
+                            </div>
+                            <div>
+                                <label for="hr" class="block text-sm font-medium text-gray-700 mb-1">Heart Rate</label>
+                                <input type="text" id="hr" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="72 bpm">
+                            </div>
+                            <div>
+                                <label for="rr" class="block text-sm font-medium text-gray-700 mb-1">Respiratory Rate</label>
+                                <input type="text" id="rr" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="16/min">
+                            </div>
+                            <div>
+                                <label for="temp" class="block text-sm font-medium text-gray-700 mb-1">Temperature</label>
+                                <input type="text" id="temp" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="98.6 F">
+                            </div>
+                            <div>
+                                <label for="spo2" class="block text-sm font-medium text-gray-700 mb-1">SpO2</label>
+                                <input type="text" id="spo2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="98%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="allergies" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-allergies text-blue-600 mr-2"></i>
+                            Allergies <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="allergies"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                  placeholder="List all known allergies or type 'NKDA' for No Known Drug Allergies"
+                                  required></textarea>
+                        <label class="flex items-center mt-2">
+                            <input type="checkbox" class="mr-2" id="allergiesVerified">
+                            <span class="text-sm text-gray-700">Allergies verified with patient</span>
+                        </label>
+                    </div>
+
+                    <!-- Pregnancy Test -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-vial text-blue-600 mr-2"></i>
+                            Pregnancy Status (if applicable)
+                        </h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-gray-50 rounded cursor-pointer">
+                                <input type="radio" name="pregnancyTest" value="not-applicable" class="mr-3" checked>
+                                <span class="text-sm">Not applicable (male/post-menopausal)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded cursor-pointer">
+                                <input type="radio" name="pregnancyTest" value="negative" class="mr-3">
+                                <span class="text-sm">Pregnancy test: Negative</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded cursor-pointer">
+                                <input type="radio" name="pregnancyTest" value="positive" class="mr-3">
+                                <span class="text-sm">Pregnancy test: Positive (procedure reviewed)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Baseline Labs -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                        <h4 class="font-semibold text-blue-900 mb-3">Baseline Labs Review</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="cbcReviewed">
+                                <span class="text-sm">CBC reviewed (if ordered)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="bmpReviewed">
+                                <span class="text-sm">BMP/CMP reviewed (if ordered)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="coagsReviewed">
+                                <span class="text-sm">Coagulation studies reviewed (if ordered)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="abnormalFlagged">
+                                <span class="text-sm">Abnormal results flagged to surgeon/anesthesia</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: NPO Status & Medication Review -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-utensils text-blue-600 mr-2"></i>
+                    NPO Status & Medication Review
+                </h3>
+                <p class="text-gray-700 mb-6">Verify NPO compliance and document pre-operative medication administration.</p>
+
+                <div class="space-y-4">
+                    <!-- NPO Compliance Calculator -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-calculator text-blue-600 mr-2"></i>
+                            NPO Compliance Calculator
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="npoSince" class="block text-sm font-medium text-gray-700 mb-1">NPO Since (Date/Time)</label>
+                                <input type="datetime-local" id="npoSince" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" onchange="calculateNPOCompliance()">
+                            </div>
+                            <div>
+                                <label for="surgeryTime" class="block text-sm font-medium text-gray-700 mb-1">Scheduled Surgery Time</label>
+                                <input type="datetime-local" id="surgeryTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" onchange="calculateNPOCompliance()">
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm font-medium text-gray-700">NPO Status:</div>
+                            <div id="npoStatus" class="text-lg font-semibold text-gray-500 mt-1">Enter times to calculate</div>
+                        </div>
+                    </div>
+
+                    <!-- Last Oral Intake -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="lastIntake" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-glass-water text-blue-600 mr-2"></i>
+                            Last Oral Intake Details
+                        </label>
+                        <textarea id="lastIntake"
+                                  rows="2"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                  placeholder="Describe what was consumed and when (e.g., 'Water at 11pm, light meal at 7pm')"></textarea>
+                    </div>
+
+                    <!-- Pre-Op Medications -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                        <h4 class="font-semibold text-blue-900 mb-3">Pre-Operative Medications Administered</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="antibioticGiven">
+                                <span class="text-sm">Prophylactic antibiotic (if ordered)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="anxiolyticGiven">
+                                <span class="text-sm">Pre-operative anxiolytic (if ordered)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="homeMedsReviewed">
+                                <span class="text-sm">Home medications reviewed and held/given per protocol</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="dvtProphylaxis">
+                                <span class="text-sm">DVT prophylaxis administered (if ordered)</span>
+                            </label>
+                        </div>
+                        <div class="mt-3">
+                            <label for="additionalMeds" class="block text-sm font-medium text-gray-700 mb-1">Additional Medications/Notes</label>
+                            <textarea id="additionalMeds"
+                                      rows="2"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                      placeholder="Document any additional pre-op medications or special instructions"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Site Marking & Safety Checklist -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                    Site Marking & Safety Checklist
+                </h3>
+                <p class="text-gray-700 mb-6">Verify surgical site marking and ensure patient preparation is complete.</p>
+
+                <div class="space-y-4">
+                    <!-- Surgical Site Marking -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-crosshairs text-blue-600 mr-2"></i>
+                            Surgical Site Verification
+                        </h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="siteMarked">
+                                <span class="text-sm font-semibold">Surgical site marked by surgeon (if applicable)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="lateralityConfirmed">
+                                <span class="text-sm">Laterality confirmed (Left/Right) with patient</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="siteVisible">
+                                <span class="text-sm">Site marking visible after prep and draping area identified</span>
+                            </label>
+                        </div>
+                        <div class="mt-3">
+                            <label for="siteLocation" class="block text-sm font-medium text-gray-700 mb-1">Site/Laterality Details</label>
+                            <input type="text" id="siteLocation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="e.g., Right knee, Left breast, N/A for midline">
+                        </div>
+                    </div>
+
+                    <!-- Personal Items & Belongings -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                        <h4 class="font-semibold text-blue-900 mb-3">Personal Items Secured</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="jewelryRemoved">
+                                <span class="text-sm">Jewelry removed (including piercings)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="denturesRemoved">
+                                <span class="text-sm">Dentures/partials/hearing aids removed</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="contactsRemoved">
+                                <span class="text-sm">Contact lenses removed</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-white rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="valuablesSecured">
+                                <span class="text-sm">Valuables and belongings secured with family/in safe</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pre-Op Preparation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-check-double text-blue-600 mr-2"></i>
+                            Pre-Operative Preparation
+                        </h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="gownApplied">
+                                <span class="text-sm">Hospital gown applied, belongings secured</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="ivPlaced">
+                                <span class="text-sm">IV access established and functioning</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="voidedOrCath">
+                                <span class="text-sm">Patient voided or catheter placed (if applicable)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded checklist-item cursor-pointer">
+                                <input type="checkbox" class="mr-3" id="makeupNailRemoved">
+                                <span class="text-sm">Makeup and nail polish removed</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Ready for OR - Final Verification -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-blue-600 mr-2"></i>
+                    Ready for OR - Final Verification
+                </h3>
+                <p class="text-gray-700 mb-6">Complete final surgical safety checklist before patient transport to OR.</p>
+
+                <div class="space-y-4">
+                    <!-- WHO Surgical Safety Checklist -->
+                    <div class="bg-white border-2 border-blue-300 rounded-lg p-5 shadow-md">
+                        <h4 class="font-bold text-blue-900 mb-4 text-lg">
+                            <i class="fas fa-shield-alt text-blue-600 mr-2"></i>
+                            WHO Surgical Safety Checklist - Sign In
+                        </h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="patientConfirmed">
+                                <span class="text-sm font-medium">Patient identity confirmed (name, DOB, MRN)</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="siteMarkedFinal">
+                                <span class="text-sm font-medium">Surgical site marked and verified</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="consentSignedFinal">
+                                <span class="text-sm font-medium">Consent obtained and signed</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="anesthesiaReady">
+                                <span class="text-sm font-medium">Anesthesia safety check completed</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="pulseOxWorking">
+                                <span class="text-sm font-medium">Pulse oximeter on patient and functioning</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="allergiesConfirmed">
+                                <span class="text-sm font-medium">Known allergies confirmed</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="difficultAirway">
+                                <span class="text-sm font-medium">Difficult airway/aspiration risk assessed</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-blue-50 rounded checklist-item cursor-pointer border border-blue-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="bloodLoss">
+                                <span class="text-sm font-medium">Risk of significant blood loss discussed (>500mL)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Final Timeout -->
+                    <div class="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-5">
+                        <h4 class="font-bold text-yellow-900 mb-3">
+                            <i class="fas fa-hand-paper text-yellow-600 mr-2"></i>
+                            Final Timeout Documentation
+                        </h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-2 bg-white rounded cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="timeoutCompleted">
+                                <span class="text-sm font-semibold">Final timeout completed with team</span>
+                            </label>
+                            <div>
+                                <label for="timeoutTime" class="block text-sm font-medium text-gray-700 mb-1">Timeout Completion Time</label>
+                                <input type="time" id="timeoutTime" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                            </div>
+                            <div>
+                                <label for="nurseName" class="block text-sm font-medium text-gray-700 mb-1">Pre-Op Nurse Name</label>
+                                <input type="text" id="nurseName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" placeholder="RN Name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ready for Transport -->
+                    <div class="bg-green-50 border-2 border-green-400 rounded-lg p-5">
+                        <h4 class="font-bold text-green-900 mb-3">
+                            <i class="fas fa-ambulance text-green-600 mr-2"></i>
+                            Ready for Transport to OR
+                        </h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-3 bg-white rounded cursor-pointer border border-green-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="chartComplete">
+                                <span class="text-sm font-medium">Chart complete and accompanying patient</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-white rounded cursor-pointer border border-green-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="imagingAvailable">
+                                <span class="text-sm font-medium">Required imaging available (if applicable)</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-white rounded cursor-pointer border border-green-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="familyNotified">
+                                <span class="text-sm font-medium">Family notified and in waiting area</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-white rounded cursor-pointer border border-green-200">
+                                <input type="checkbox" class="mr-3 h-5 w-5" id="readyForTransport">
+                                <span class="text-sm font-semibold text-green-800">Patient ready for safe transport to OR</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Final Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="finalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-blue-600 mr-2"></i>
+                            Additional Notes/Concerns
+                        </label>
+                        <textarea id="finalNotes"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                  placeholder="Document any special considerations, patient concerns, or handoff information for OR team"></textarea>
+                    </div>
+
+                    <!-- Completion Status -->
+                    <div id="completionStatus" class="hidden message-success p-5 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-600 text-3xl mr-4"></i>
+                            <div>
+                                <h4 class="font-bold text-green-900 text-lg">Pre-Operative Checklist Complete!</h4>
+                                <p class="text-sm text-green-800 mt-1">Patient is cleared and ready for safe transport to OR.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Checklist
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Pre-Op Checklist Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Collect current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            updateWizardUI();
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            // Collect final step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Mark as completed
+            if (!wizardState.completed_steps.includes(5)) {
+                wizardState.completed_steps.push(5);
+            }
+
+            // Show completion status
+            document.getElementById('completionStatus').classList.remove('hidden');
+            showMessage('success', 'Pre-operative checklist completed successfully! Patient is ready for OR.');
+
+            // Disable finish button
+            document.getElementById('finishBtn').disabled = true;
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Patient Identification
+                    stepData.patient_name = document.getElementById('patientName').value;
+                    stepData.mrn = document.getElementById('mrn').value;
+                    stepData.dob = document.getElementById('dob').value;
+                    stepData.procedure = document.getElementById('procedure').value;
+                    stepData.surgeon = document.getElementById('surgeon').value;
+                    stepData.identity_verified = document.getElementById('identityVerified').checked;
+                    stepData.procedure_confirmed = document.getElementById('procedureConfirmed').checked;
+                    stepData.consent_signed = document.getElementById('consentSigned').checked;
+                    break;
+
+                case 2: // Pre-Op Assessment
+                    stepData.bp = document.getElementById('bp').value;
+                    stepData.hr = document.getElementById('hr').value;
+                    stepData.rr = document.getElementById('rr').value;
+                    stepData.temp = document.getElementById('temp').value;
+                    stepData.spo2 = document.getElementById('spo2').value;
+                    stepData.allergies = document.getElementById('allergies').value;
+                    stepData.allergies_verified = document.getElementById('allergiesVerified').checked;
+                    stepData.pregnancy_test = document.querySelector('input[name="pregnancyTest"]:checked').value;
+                    break;
+
+                case 3: // NPO & Medications
+                    stepData.npo_since = document.getElementById('npoSince').value;
+                    stepData.surgery_time = document.getElementById('surgeryTime').value;
+                    stepData.last_intake = document.getElementById('lastIntake').value;
+                    stepData.antibiotic_given = document.getElementById('antibioticGiven').checked;
+                    stepData.additional_meds = document.getElementById('additionalMeds').value;
+                    break;
+
+                case 4: // Site Marking
+                    stepData.site_marked = document.getElementById('siteMarked').checked;
+                    stepData.site_location = document.getElementById('siteLocation').value;
+                    stepData.jewelry_removed = document.getElementById('jewelryRemoved').checked;
+                    stepData.iv_placed = document.getElementById('ivPlaced').checked;
+                    break;
+
+                case 5: // Final Verification
+                    stepData.patient_confirmed = document.getElementById('patientConfirmed').checked;
+                    stepData.site_marked_final = document.getElementById('siteMarkedFinal').checked;
+                    stepData.consent_signed_final = document.getElementById('consentSignedFinal').checked;
+                    stepData.anesthesia_ready = document.getElementById('anesthesiaReady').checked;
+                    stepData.timeout_completed = document.getElementById('timeoutCompleted').checked;
+                    stepData.ready_for_transport = document.getElementById('readyForTransport').checked;
+                    stepData.nurse_name = document.getElementById('nurseName').value;
+                    stepData.final_notes = document.getElementById('finalNotes').value;
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 5) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Calculate NPO Compliance
+        function calculateNPOCompliance() {
+            const npoSince = new Date(document.getElementById('npoSince').value);
+            const surgeryTime = new Date(document.getElementById('surgeryTime').value);
+
+            if (!npoSince || !surgeryTime || isNaN(npoSince) || isNaN(surgeryTime)) {
+                document.getElementById('npoStatus').textContent = 'Enter times to calculate';
+                document.getElementById('npoStatus').className = 'text-lg font-semibold text-gray-500 mt-1';
+                return;
+            }
+
+            const hoursDiff = (surgeryTime - npoSince) / (1000 * 60 * 60);
+            const compliant = hoursDiff >= 8;
+
+            document.getElementById('npoStatus').textContent = compliant ?
+                '✓ NPO Compliant (' + hoursDiff.toFixed(1) + ' hours)' :
+                '⚠ NPO Non-Compliant (< 8 hours)';
+            document.getElementById('npoStatus').className = compliant ?
+                'text-green-600 font-semibold text-lg mt-1' : 'text-red-600 font-semibold text-lg mt-1';
+        }
+
+        // Quick-fill functions
+        function fillRoutineSurgery() {
+            document.getElementById('patientName').value = 'Doe, John Michael';
+            document.getElementById('mrn').value = 'MRN-123456';
+            document.getElementById('dob').value = '1975-06-15';
+            document.getElementById('procedure').value = 'Laparoscopic Cholecystectomy';
+            document.getElementById('surgeon').value = 'Dr. Smith';
+            document.getElementById('identityVerified').checked = true;
+            document.getElementById('procedureConfirmed').checked = true;
+            document.getElementById('consentSigned').checked = true;
+            showMessage('success', 'Routine surgery data filled');
+        }
+
+        function fillEmergencySurgery() {
+            document.getElementById('patientName').value = 'Smith, Jane Ann';
+            document.getElementById('mrn').value = 'MRN-789012';
+            document.getElementById('dob').value = '1988-03-22';
+            document.getElementById('procedure').value = 'Emergency Appendectomy';
+            document.getElementById('surgeon').value = 'Dr. Johnson';
+            document.getElementById('identityVerified').checked = true;
+            document.getElementById('procedureConfirmed').checked = true;
+            document.getElementById('consentSigned').checked = true;
+
+            // Set NPO note for emergency
+            const today = new Date();
+            const npoTime = new Date(today.getTime() - (4 * 60 * 60 * 1000)); // 4 hours ago
+            document.getElementById('lastIntake').value = 'Emergency case - NPO x 4 hours since ED arrival';
+
+            showMessage('warning', 'Emergency surgery data filled - verify NPO compliance');
+        }
+    </script>
+</body>
+</html>

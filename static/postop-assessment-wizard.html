@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post-Operative Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #059669;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .postop-header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 4px solid #10b981;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .vital-signs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .score-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #059669;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="postop-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-green-200 text-sm">Post-Operative Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <i class="fas fa-procedures mr-2"></i>
+                        <span>PACU Assessment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-green-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-green-800">Post-Anesthesia Care Unit Assessment</h3>
+                    <p class="text-sm text-green-700">Complete all assessment steps to evaluate patient recovery and discharge readiness using the Aldrete Score.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-green-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Post-Operative Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps for comprehensive PACU assessment</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-green-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Arrival</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Airway</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Circulation</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Pain</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Discharge</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: PACU Arrival & Initial Assessment -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-list text-green-600 mr-2"></i>
+                    PACU Arrival & Initial Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Document patient arrival and initial post-operative status.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="arrivalTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-green-600 mr-2"></i>
+                            PACU Arrival Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" id="arrivalTime" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="procedurePerformed" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-green-600 mr-2"></i>
+                            Procedure Performed <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="procedurePerformed" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="e.g., Laparoscopic cholecystectomy" required>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="anesthesiaType" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-syringe text-green-600 mr-2"></i>
+                            Anesthesia Type <span class="text-red-500">*</span>
+                        </label>
+                        <select id="anesthesiaType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                            <option value="">Select anesthesia type</option>
+                            <option value="general">General Anesthesia</option>
+                            <option value="spinal">Spinal/Epidural</option>
+                            <option value="regional">Regional Block</option>
+                            <option value="mac">MAC (Monitored Anesthesia Care)</option>
+                            <option value="local">Local Anesthesia</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="reportReceived" class="mr-3 h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <div>
+                                <div class="font-bold text-gray-900">
+                                    <i class="fas fa-file-medical text-green-600 mr-2"></i>Report Received from OR
+                                </div>
+                                <div class="text-sm text-gray-600">Handoff report obtained from OR nurse/anesthesia</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="fas fa-lightbulb text-blue-400 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-blue-900">Quick Fill Available</h4>
+                            <p class="text-sm text-blue-800">Use the quick-fill buttons at the top right to populate with common scenarios.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Airway & Respiratory Status -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-lungs text-green-600 mr-2"></i>
+                    Airway & Respiratory Status
+                </h3>
+                <p class="text-gray-700 mb-6">Assess airway patency and respiratory function.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="airwayPatent" class="mr-3 h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <div>
+                                <div class="font-bold text-gray-900">
+                                    <i class="fas fa-check-circle text-green-600 mr-2"></i>Airway Patent
+                                </div>
+                                <div class="text-sm text-gray-600">Patient maintaining own airway without obstruction</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="oxygenDelivery" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-wind text-green-600 mr-2"></i>
+                            Oxygen Delivery Method
+                        </label>
+                        <select id="oxygenDelivery" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="room-air">Room Air</option>
+                            <option value="nasal-cannula">Nasal Cannula</option>
+                            <option value="simple-mask">Simple Face Mask</option>
+                            <option value="non-rebreather">Non-Rebreather Mask</option>
+                            <option value="bipap">BiPAP/CPAP</option>
+                            <option value="ventilator">Mechanical Ventilator</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="spo2" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-heartbeat text-green-600 mr-2"></i>
+                            SpO2 (%) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" id="spo2" min="0" max="100" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="e.g., 97" required>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="breathSounds" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-stethoscope text-green-600 mr-2"></i>
+                            Breath Sounds
+                        </label>
+                        <select id="breathSounds" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="clear">Clear and Equal Bilaterally</option>
+                            <option value="diminished">Diminished</option>
+                            <option value="rhonchi">Rhonchi</option>
+                            <option value="wheezing">Wheezing</option>
+                            <option value="crackles">Crackles</option>
+                            <option value="absent">Absent</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Circulation & Surgical Site -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-heart text-green-600 mr-2"></i>
+                    Circulation & Surgical Site
+                </h3>
+                <p class="text-gray-700 mb-6">Assess cardiovascular status and surgical site condition.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-heartbeat text-green-600 mr-2"></i>
+                            Vital Signs
+                        </h4>
+                        <div class="vital-signs-grid">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Blood Pressure</label>
+                                <input type="text" id="bp" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500" placeholder="120/80">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Heart Rate</label>
+                                <input type="number" id="hr" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500" placeholder="72">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Respiratory Rate</label>
+                                <input type="number" id="rr" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500" placeholder="16">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Temperature (°F)</label>
+                                <input type="number" id="temp" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500" placeholder="98.6">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="peripheralPulses" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hand-holding-medical text-green-600 mr-2"></i>
+                            Peripheral Pulses
+                        </label>
+                        <select id="peripheralPulses" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="strong">Strong and Equal</option>
+                            <option value="weak">Weak</option>
+                            <option value="diminished">Diminished</option>
+                            <option value="absent">Absent</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="dressingIntact" class="mr-3 h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <div>
+                                <div class="font-bold text-gray-900">
+                                    <i class="fas fa-band-aid text-green-600 mr-2"></i>Dressing Dry and Intact
+                                </div>
+                                <div class="text-sm text-gray-600">No signs of bleeding or drainage</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="drainageOutput" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-tint text-green-600 mr-2"></i>
+                            Drainage Output (if applicable)
+                        </label>
+                        <textarea id="drainageOutput" rows="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Describe any drainage: type, amount, color"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Pain & Comfort Management -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-notes-medical text-green-600 mr-2"></i>
+                    Pain & Comfort Management
+                </h3>
+                <p class="text-gray-700 mb-6">Assess pain level and post-operative nausea/vomiting.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="painScore" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-thermometer-half text-green-600 mr-2"></i>
+                            Pain Score (0-10) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="range" id="painScore" min="0" max="10" value="0" class="w-full" oninput="document.getElementById('painValue').textContent = this.value">
+                        <div class="flex justify-between text-sm text-gray-600 mt-2">
+                            <span>0 (No Pain)</span>
+                            <span class="font-bold text-lg text-green-600" id="painValue">0</span>
+                            <span>10 (Worst Pain)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="ponv" class="mr-3 h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <div>
+                                <div class="font-bold text-gray-900">
+                                    <i class="fas fa-dizzy text-green-600 mr-2"></i>PONV (Post-Operative Nausea/Vomiting)
+                                </div>
+                                <div class="text-sm text-gray-600">Patient experiencing nausea or vomiting</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="comfortMeasures" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hand-holding-heart text-green-600 mr-2"></i>
+                            Comfort Measures Provided
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 h-4 w-4 text-green-600 rounded" value="pain-meds">
+                                <span class="text-sm">Pain Medication Administered</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 h-4 w-4 text-green-600 rounded" value="antiemetic">
+                                <span class="text-sm">Antiemetic Given</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 h-4 w-4 text-green-600 rounded" value="warming">
+                                <span class="text-sm">Warming Blanket Applied</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 h-4 w-4 text-green-600 rounded" value="positioning">
+                                <span class="text-sm">Positioning for Comfort</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Discharge Readiness (Aldrete Score) -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-green-600 mr-2"></i>
+                    Discharge Readiness (Aldrete Score)
+                </h3>
+                <p class="text-gray-700 mb-6">Calculate Aldrete Score to determine discharge readiness from PACU.</p>
+
+                <div class="space-y-4">
+                    <div class="border border-gray-300 rounded-lg p-3">
+                        <label class="block font-semibold text-sm mb-2">Activity (2=moves all extremities, 1=moves 2 extremities, 0=unable to move)</label>
+                        <select id="activity" onchange="calculateAldreteScore()" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500">
+                            <option value="0">0 - Unable to move extremities</option>
+                            <option value="1">1 - Moves 2 extremities</option>
+                            <option value="2">2 - Moves all 4 extremities</option>
+                        </select>
+                    </div>
+
+                    <div class="border border-gray-300 rounded-lg p-3">
+                        <label class="block font-semibold text-sm mb-2">Respiration (2=breathes deeply/coughs, 1=dyspnea/shallow, 0=apneic)</label>
+                        <select id="respiration" onchange="calculateAldreteScore()" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500">
+                            <option value="0">0 - Apneic</option>
+                            <option value="1">1 - Dyspnea or shallow breathing</option>
+                            <option value="2">2 - Breathes deeply and coughs freely</option>
+                        </select>
+                    </div>
+
+                    <div class="border border-gray-300 rounded-lg p-3">
+                        <label class="block font-semibold text-sm mb-2">Circulation (2=BP ±20% pre-op, 1=BP ±20-50% pre-op, 0=BP ±50% pre-op)</label>
+                        <select id="circulation" onchange="calculateAldreteScore()" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500">
+                            <option value="0">0 - BP ±50% of pre-op level</option>
+                            <option value="1">1 - BP ±20-50% of pre-op level</option>
+                            <option value="2">2 - BP ±20% of pre-op level</option>
+                        </select>
+                    </div>
+
+                    <div class="border border-gray-300 rounded-lg p-3">
+                        <label class="block font-semibold text-sm mb-2">Consciousness (2=fully awake, 1=arousable, 0=not responding)</label>
+                        <select id="consciousness" onchange="calculateAldreteScore()" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500">
+                            <option value="0">0 - Not responding</option>
+                            <option value="1">1 - Arousable on calling</option>
+                            <option value="2">2 - Fully awake</option>
+                        </select>
+                    </div>
+
+                    <div class="border border-gray-300 rounded-lg p-3">
+                        <label class="block font-semibold text-sm mb-2">O2 Saturation (2=SpO2>92% on room air, 1=needs O2 to maintain >90%, 0=SpO2<90% with O2)</label>
+                        <select id="o2satScore" onchange="calculateAldreteScore()" class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-green-500">
+                            <option value="0">0 - SpO2 <90% even with O2</option>
+                            <option value="1">1 - Needs O2 to maintain SpO2 >90%</option>
+                            <option value="2">2 - SpO2 >92% on room air</option>
+                        </select>
+                    </div>
+
+                    <!-- Score Display -->
+                    <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6 text-center">
+                        <div class="text-sm text-gray-600 mb-2">Aldrete Score</div>
+                        <div class="score-display" id="aldreteTotal">0/10</div>
+                        <div class="mt-3" id="dischargeReady">
+                            <span class="text-yellow-600 font-bold text-lg">⚠ Continue Monitoring (&lt;9)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                        <div class="flex">
+                            <i class="fas fa-info-circle text-blue-400 mr-3"></i>
+                            <div>
+                                <h4 class="text-sm font-semibold text-blue-900">Aldrete Score Interpretation</h4>
+                                <p class="text-sm text-blue-800">Score ≥9 indicates readiness for discharge from PACU. Score <9 requires continued monitoring and reassessment.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <div class="flex space-x-3">
+                    <button onclick="fillStablePostOp()" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm">
+                        <i class="fas fa-check-circle mr-2"></i>Fill: Stable Post-Op
+                    </button>
+                    <button onclick="fillDelayedRecovery()" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors text-sm">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Fill: Delayed Recovery
+                    </button>
+                </div>
+                <button id="nextBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Post-Op Assessment Wizard loaded');
+            updateWizardUI();
+            // Set current time as arrival time
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('arrivalTime').value = now.toISOString().slice(0, 16);
+        });
+
+        // Calculate Aldrete Score
+        function calculateAldreteScore() {
+            const activity = parseInt(document.getElementById('activity').value) || 0;
+            const respiration = parseInt(document.getElementById('respiration').value) || 0;
+            const circulation = parseInt(document.getElementById('circulation').value) || 0;
+            const consciousness = parseInt(document.getElementById('consciousness').value) || 0;
+            const o2sat = parseInt(document.getElementById('o2satScore').value) || 0;
+
+            const total = activity + respiration + circulation + consciousness + o2sat;
+            document.getElementById('aldreteTotal').textContent = total + '/10';
+
+            const readyForDischarge = total >= 9;
+            const dischargeReadyEl = document.getElementById('dischargeReady');
+            dischargeReadyEl.innerHTML = readyForDischarge ?
+                '<span class="text-green-600 font-bold text-lg">✓ Ready for Discharge (≥9)</span>' :
+                '<span class="text-yellow-600 font-bold text-lg">⚠ Continue Monitoring (&lt;9)</span>';
+        }
+
+        // Quick-fill: Stable Post-Op
+        function fillStablePostOp() {
+            document.getElementById('bp').value = '118/72';
+            document.getElementById('hr').value = '68';
+            document.getElementById('rr').value = '14';
+            document.getElementById('temp').value = '98.2';
+            document.getElementById('spo2').value = '97';
+            document.getElementById('painScore').value = '3';
+            document.getElementById('painValue').textContent = '3';
+            document.getElementById('activity').value = '2';
+            document.getElementById('respiration').value = '2';
+            document.getElementById('circulation').value = '2';
+            document.getElementById('consciousness').value = '2';
+            document.getElementById('o2satScore').value = '2';
+            document.getElementById('airwayPatent').checked = true;
+            document.getElementById('dressingIntact').checked = true;
+            calculateAldreteScore();
+        }
+
+        // Quick-fill: Delayed Recovery
+        function fillDelayedRecovery() {
+            document.getElementById('activity').value = '0';
+            document.getElementById('consciousness').value = '0';
+            document.getElementById('respiration').value = '1';
+            document.getElementById('ponv').checked = true;
+            document.getElementById('painScore').value = '7';
+            document.getElementById('painValue').textContent = '7';
+            calculateAldreteScore();
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                return;
+            }
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            updateWizardUI();
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            alert('Post-Operative Assessment Complete!\n\nAldrete Score: ' + document.getElementById('aldreteTotal').textContent + '\n\nAssessment has been saved.');
+            window.location.href = '/';
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 5) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+
+            // Update titles
+            const titles = [
+                { name: 'PACU Arrival & Initial Assessment', desc: 'Document patient arrival and initial post-operative status' },
+                { name: 'Airway & Respiratory Status', desc: 'Assess airway patency and respiratory function' },
+                { name: 'Circulation & Surgical Site', desc: 'Assess cardiovascular status and surgical site condition' },
+                { name: 'Pain & Comfort Management', desc: 'Assess pain level and post-operative nausea/vomiting' },
+                { name: 'Discharge Readiness (Aldrete Score)', desc: 'Calculate Aldrete Score to determine discharge readiness' }
+            ];
+
+            document.getElementById('wizardTitle').textContent = titles[wizardState.current_step - 1].name;
+            document.getElementById('wizardDescription').textContent = titles[wizardState.current_step - 1].desc;
+        }
+    </script>
+</body>
+</html>

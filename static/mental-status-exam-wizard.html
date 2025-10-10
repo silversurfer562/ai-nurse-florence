@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Status Examination Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #7c3aed;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .mse-header {
+            background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #7c3aed;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="mse-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-brain text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-purple-200 text-sm">Mental Status Examination Wizard</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-purple-50 border-l-4 border-purple-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-purple-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-purple-800">Mental Status Examination Assessment</h3>
+                    <p class="text-sm text-purple-700">Comprehensive psychiatric and cognitive assessment including Mini-Cog screening and safety evaluation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-purple-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Mental Status Examination</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete comprehensive psychiatric assessment</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-purple-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Appearance</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Speech</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Mood</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Cognitive</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Safety</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Appearance & Behavior -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-tie text-purple-600 mr-2"></i>
+                    Appearance & Behavior
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's general appearance, grooming, and behavior.</p>
+
+                <div class="space-y-6">
+                    <!-- Appearance -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="appearance" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user-circle text-purple-600 mr-2"></i>
+                            General Appearance
+                        </label>
+                        <textarea
+                            id="appearance"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Describe grooming, hygiene, dress, overall appearance..."></textarea>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="document.getElementById('appearance').value='Well-groomed, appropriate dress'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Well-groomed</button>
+                            <button onclick="document.getElementById('appearance').value='Disheveled, poor hygiene'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Disheveled</button>
+                            <button onclick="document.getElementById('appearance').value='Appropriate for age and weather'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Appropriate</button>
+                        </div>
+                    </div>
+
+                    <!-- Eye Contact -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="eyeContact" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-eye text-purple-600 mr-2"></i>
+                            Eye Contact
+                        </label>
+                        <select id="eyeContact" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select...</option>
+                            <option value="Appropriate">Appropriate</option>
+                            <option value="Good">Good</option>
+                            <option value="Poor, avoidant">Poor, avoidant</option>
+                            <option value="Intense, staring">Intense, staring</option>
+                            <option value="Intermittent">Intermittent</option>
+                        </select>
+                    </div>
+
+                    <!-- Psychomotor Activity -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="psychomotor" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-running text-purple-600 mr-2"></i>
+                            Psychomotor Activity
+                        </label>
+                        <select id="psychomotor" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select...</option>
+                            <option value="Normal">Normal</option>
+                            <option value="Agitated, restless">Agitated, restless</option>
+                            <option value="Retarded, slowed">Retarded, slowed</option>
+                            <option value="Hyperactive">Hyperactive</option>
+                            <option value="Catatonic">Catatonic</option>
+                        </select>
+                    </div>
+
+                    <!-- Behavior Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="behaviorNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-purple-600 mr-2"></i>
+                            Additional Behavioral Observations
+                        </label>
+                        <textarea
+                            id="behaviorNotes"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Cooperative, anxious, guarded, aggressive, etc..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Speech & Thought Process -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-comments text-purple-600 mr-2"></i>
+                    Speech & Thought Process
+                </h3>
+                <p class="text-gray-700 mb-6">Assess speech characteristics and thought patterns.</p>
+
+                <div class="space-y-6">
+                    <!-- Speech -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="speech" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-microphone text-purple-600 mr-2"></i>
+                            Speech Characteristics
+                        </label>
+                        <textarea
+                            id="speech"
+                            rows="2"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Describe rate, volume, tone, fluency..."></textarea>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="document.getElementById('speech').value='Normal rate, volume, and tone'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Normal</button>
+                            <button onclick="document.getElementById('speech').value='Rapid, pressured speech'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Pressured</button>
+                            <button onclick="document.getElementById('speech').value='Slow, soft, monotone'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Slow</button>
+                            <button onclick="document.getElementById('speech').value='Loud, intrusive'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Loud</button>
+                        </div>
+                    </div>
+
+                    <!-- Thought Process -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="thoughtProcess" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-project-diagram text-purple-600 mr-2"></i>
+                            Thought Process
+                        </label>
+                        <textarea
+                            id="thoughtProcess"
+                            rows="2"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Describe organization, flow, coherence..."></textarea>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="document.getElementById('thoughtProcess').value='Logical and goal-directed'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Logical</button>
+                            <button onclick="document.getElementById('thoughtProcess').value='Tangential, wandering'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Tangential</button>
+                            <button onclick="document.getElementById('thoughtProcess').value='Flight of ideas, racing thoughts'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Flight of Ideas</button>
+                            <button onclick="document.getElementById('thoughtProcess').value='Circumstantial, excessive detail'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Circumstantial</button>
+                            <button onclick="document.getElementById('thoughtProcess').value='Disorganized, incoherent'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Disorganized</button>
+                        </div>
+                    </div>
+
+                    <!-- Thought Content -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-exclamation-triangle text-purple-600 mr-2"></i>
+                            Thought Content Concerns
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="delusions" class="mr-2 h-4 w-4 text-purple-600 rounded">
+                                <span class="text-sm">Delusions (paranoid, grandiose, somatic, etc.)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="hallucinations" class="mr-2 h-4 w-4 text-purple-600 rounded">
+                                <span class="text-sm">Hallucinations (auditory, visual, tactile, etc.)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="obsessions" class="mr-2 h-4 w-4 text-purple-600 rounded">
+                                <span class="text-sm">Obsessions or compulsions</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="phobias" class="mr-2 h-4 w-4 text-purple-600 rounded">
+                                <span class="text-sm">Phobias or irrational fears</span>
+                            </label>
+                        </div>
+                        <textarea
+                            id="thoughtContentNotes"
+                            rows="2"
+                            class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Describe any specific thought content concerns..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Mood & Affect -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-heart text-purple-600 mr-2"></i>
+                    Mood & Affect
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's emotional state and expression.</p>
+
+                <div class="space-y-6">
+                    <!-- Mood (Patient's Words) -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="mood" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-quote-left text-purple-600 mr-2"></i>
+                            Mood (Patient's Subjective Report)
+                        </label>
+                        <input
+                            type="text"
+                            id="mood"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Use patient's own words (e.g., 'good', 'depressed', 'anxious')">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Ask: "How would you describe your mood today?"
+                        </p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="document.getElementById('mood').value='Good'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Good</button>
+                            <button onclick="document.getElementById('mood').value='Depressed'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Depressed</button>
+                            <button onclick="document.getElementById('mood').value='Anxious'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Anxious</button>
+                            <button onclick="document.getElementById('mood').value='Irritable'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Irritable</button>
+                            <button onclick="document.getElementById('mood').value='Okay'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Okay</button>
+                        </div>
+                    </div>
+
+                    <!-- Affect (Observed) -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="affect" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-smile text-purple-600 mr-2"></i>
+                            Affect (Observed Expression)
+                        </label>
+                        <textarea
+                            id="affect"
+                            rows="2"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Describe observed emotional expression..."></textarea>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="document.getElementById('affect').value='Appropriate, full range'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Appropriate</button>
+                            <button onclick="document.getElementById('affect').value='Flat, minimal emotional expression'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Flat</button>
+                            <button onclick="document.getElementById('affect').value='Blunted, reduced range'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Blunted</button>
+                            <button onclick="document.getElementById('affect').value='Labile, rapidly shifting'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Labile</button>
+                            <button onclick="document.getElementById('affect').value='Restricted, limited range'" class="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Restricted</button>
+                        </div>
+                    </div>
+
+                    <!-- Congruence -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-balance-scale text-purple-600 mr-2"></i>
+                            Mood-Affect Congruence
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="congruent" class="mr-2 h-4 w-4 text-purple-600 rounded">
+                            <span class="text-sm font-medium">Affect is congruent with stated mood</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-2 ml-6">
+                            Check if the patient's observable emotional expression matches their reported mood
+                        </p>
+                    </div>
+
+                    <!-- Anxiety Level -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="anxietyLevel" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-thermometer-half text-purple-600 mr-2"></i>
+                            Anxiety Level
+                        </label>
+                        <select id="anxietyLevel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select...</option>
+                            <option value="None">None</option>
+                            <option value="Mild">Mild</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Severe">Severe</option>
+                            <option value="Panic">Panic</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Cognitive Assessment (Mini-Cog) -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-brain text-purple-600 mr-2"></i>
+                    Cognitive Assessment (Mini-Cog)
+                </h3>
+                <p class="text-gray-700 mb-6">Brief cognitive screening for dementia using the Mini-Cog test.</p>
+
+                <div class="space-y-6">
+                    <!-- Mini-Cog Test -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold mb-3">Mini-Cog Test</h4>
+
+                        <div class="mb-4">
+                            <p class="text-sm mb-2"><strong>Step 1:</strong> Ask patient to remember 3 words (e.g., "apple, table, penny")</p>
+                            <input type="text" id="testWords" placeholder="Enter 3 words used" class="w-full px-3 py-2 border rounded text-sm">
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-sm mb-2"><strong>Step 2:</strong> Ask patient to draw clock showing 11:10</p>
+                            <label class="flex items-center mt-2">
+                                <input type="checkbox" id="clockNormal" onchange="scoreMiniCog()" class="mr-2">
+                                <span class="text-sm">Clock drawing normal (all numbers present, hands show 11:10)</span>
+                            </label>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-sm mb-2"><strong>Step 3:</strong> Ask patient to recall the 3 words</p>
+                            <select id="wordRecall" onchange="scoreMiniCog()" class="w-full px-3 py-2 border rounded">
+                                <option value="0">0 words recalled</option>
+                                <option value="1">1 word recalled</option>
+                                <option value="2">2 words recalled</option>
+                                <option value="3">3 words recalled</option>
+                            </select>
+                        </div>
+
+                        <div class="bg-white border border-blue-300 rounded p-3">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold">Mini-Cog Score:</span>
+                                <span id="miniCogScore" class="text-xl font-bold">0/5</span>
+                            </div>
+                            <p id="miniCogResult" class="text-sm mt-2"></p>
+                        </div>
+                    </div>
+
+                    <!-- Orientation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-compass text-purple-600 mr-2"></i>
+                            Orientation
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="orientedPerson" class="mr-2 h-4 w-4 text-purple-600 rounded" checked>
+                                <span class="text-sm">Oriented to Person</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="orientedPlace" class="mr-2 h-4 w-4 text-purple-600 rounded" checked>
+                                <span class="text-sm">Oriented to Place</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="orientedTime" class="mr-2 h-4 w-4 text-purple-600 rounded" checked>
+                                <span class="text-sm">Oriented to Time</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="orientedSituation" class="mr-2 h-4 w-4 text-purple-600 rounded" checked>
+                                <span class="text-sm">Oriented to Situation</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Attention & Concentration -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="attention" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-bullseye text-purple-600 mr-2"></i>
+                            Attention & Concentration
+                        </label>
+                        <select id="attention" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select...</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor, easily distracted">Poor, easily distracted</option>
+                            <option value="Unable to maintain">Unable to maintain</option>
+                        </select>
+                    </div>
+
+                    <!-- Memory -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="memory" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-archive text-purple-600 mr-2"></i>
+                            Memory Assessment
+                        </label>
+                        <textarea
+                            id="memory"
+                            rows="2"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Note immediate, recent, and remote memory findings..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Insight, Judgment & Safety -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-shield-alt text-purple-600 mr-2"></i>
+                    Insight, Judgment & Safety
+                </h3>
+                <p class="text-gray-700 mb-6">Assess patient insight, judgment, and critical safety concerns.</p>
+
+                <div class="space-y-6">
+                    <!-- Insight -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="insight" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-lightbulb text-purple-600 mr-2"></i>
+                            Insight Level
+                        </label>
+                        <select id="insight" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select...</option>
+                            <option value="Good - full awareness of condition">Good - full awareness of condition</option>
+                            <option value="Fair - partial awareness">Fair - partial awareness</option>
+                            <option value="Limited - minimal awareness">Limited - minimal awareness</option>
+                            <option value="Poor - no awareness of condition">Poor - no awareness of condition</option>
+                            <option value="Absent - denies any problems">Absent - denies any problems</option>
+                        </select>
+                        <textarea
+                            id="insightNotes"
+                            rows="2"
+                            class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Additional insight observations..."></textarea>
+                    </div>
+
+                    <!-- Judgment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="judgment" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-gavel text-purple-600 mr-2"></i>
+                            Judgment Assessment
+                        </label>
+                        <select id="judgment" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select...</option>
+                            <option value="Good - appropriate decision-making">Good - appropriate decision-making</option>
+                            <option value="Fair - some questionable decisions">Fair - some questionable decisions</option>
+                            <option value="Poor - impaired decision-making">Poor - impaired decision-making</option>
+                            <option value="Severely impaired">Severely impaired</option>
+                        </select>
+                        <textarea
+                            id="judgmentNotes"
+                            rows="2"
+                            class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Describe judgment scenarios or observations..."></textarea>
+                    </div>
+
+                    <!-- Safety Assessment -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-red-900 mb-3">Safety Screening</h4>
+
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="si" onchange="checkSafety()" class="mr-2">
+                                <span class="text-sm font-semibold text-red-800">Suicidal Ideation (SI)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="hi" onchange="checkSafety()" class="mr-2">
+                                <span class="text-sm font-semibold text-red-800">Homicidal Ideation (HI)</span>
+                            </label>
+                        </div>
+
+                        <div id="safetyAlert" class="hidden mt-3 p-3 bg-red-100 border border-red-400 rounded">
+                            <p class="text-red-900 font-bold">SAFETY CONCERN IDENTIFIED</p>
+                            <p class="text-sm text-red-800 mt-1">Immediate intervention required. Notify provider and implement safety precautions.</p>
+                        </div>
+
+                        <textarea
+                            id="safetyDetails"
+                            rows="3"
+                            class="mt-3 w-full px-3 py-2 border border-red-300 rounded text-sm focus:ring-2 focus:ring-red-500"
+                            placeholder="Document safety details: plan, intent, means, timeline, protective factors..."></textarea>
+                    </div>
+
+                    <!-- Intervention Plan -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="interventionPlan" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clipboard-check text-purple-600 mr-2"></i>
+                            Intervention Plan
+                        </label>
+                        <textarea
+                            id="interventionPlan"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                            placeholder="Document recommended interventions, referrals, follow-up plans..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Quick Fill Buttons -->
+                <div class="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-purple-900 mb-3">Quick Fill Templates</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="fillNormalExam()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm">
+                            <i class="fas fa-check-circle mr-1"></i>Normal Mental Status
+                        </button>
+                        <button onclick="fillAlteredMental()" class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 text-sm">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Altered Mental Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Mental Status Exam Wizard loaded');
+            updateWizardUI({
+                current_step: 1,
+                completed_steps: [],
+                total_steps: 5,
+                progress_percent: 0,
+                can_proceed: true
+            });
+        });
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI({
+                current_step: stepNum,
+                completed_steps: wizardState.completed_steps,
+                total_steps: 5,
+                progress_percent: Math.floor((stepNum / 5) * 100),
+                can_proceed: true
+            });
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            wizardState.current_step = Math.max(wizardState.current_step - 1, 1);
+            updateWizardUI({
+                current_step: wizardState.current_step,
+                completed_steps: wizardState.completed_steps,
+                total_steps: 5,
+                progress_percent: Math.floor((wizardState.current_step / 5) * 100),
+                can_proceed: true
+            });
+        }
+
+        // Navigate next
+        function navigateNext() {
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+
+            updateWizardUI({
+                current_step: wizardState.current_step,
+                completed_steps: wizardState.completed_steps,
+                total_steps: 5,
+                progress_percent: Math.floor((wizardState.current_step / 5) * 100),
+                can_proceed: true
+            });
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            console.log('Mental Status Exam completed:', wizardState.data);
+            showMessage('success', 'Mental Status Examination completed successfully!');
+
+            // Could send data to backend here
+            alert('Assessment Complete!\n\nData has been collected. In production, this would be saved to the patient record.');
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Appearance & Behavior
+                    stepData.appearance = document.getElementById('appearance').value;
+                    stepData.eyeContact = document.getElementById('eyeContact').value;
+                    stepData.psychomotor = document.getElementById('psychomotor').value;
+                    stepData.behaviorNotes = document.getElementById('behaviorNotes').value;
+                    break;
+
+                case 2: // Speech & Thought Process
+                    stepData.speech = document.getElementById('speech').value;
+                    stepData.thoughtProcess = document.getElementById('thoughtProcess').value;
+                    stepData.delusions = document.getElementById('delusions').checked;
+                    stepData.hallucinations = document.getElementById('hallucinations').checked;
+                    stepData.obsessions = document.getElementById('obsessions').checked;
+                    stepData.phobias = document.getElementById('phobias').checked;
+                    stepData.thoughtContentNotes = document.getElementById('thoughtContentNotes').value;
+                    break;
+
+                case 3: // Mood & Affect
+                    stepData.mood = document.getElementById('mood').value;
+                    stepData.affect = document.getElementById('affect').value;
+                    stepData.congruent = document.getElementById('congruent').checked;
+                    stepData.anxietyLevel = document.getElementById('anxietyLevel').value;
+                    break;
+
+                case 4: // Cognitive Assessment
+                    stepData.testWords = document.getElementById('testWords').value;
+                    stepData.clockNormal = document.getElementById('clockNormal').checked;
+                    stepData.wordRecall = document.getElementById('wordRecall').value;
+                    stepData.miniCogScore = document.getElementById('miniCogScore').textContent;
+                    stepData.orientedPerson = document.getElementById('orientedPerson').checked;
+                    stepData.orientedPlace = document.getElementById('orientedPlace').checked;
+                    stepData.orientedTime = document.getElementById('orientedTime').checked;
+                    stepData.orientedSituation = document.getElementById('orientedSituation').checked;
+                    stepData.attention = document.getElementById('attention').value;
+                    stepData.memory = document.getElementById('memory').value;
+                    break;
+
+                case 5: // Insight, Judgment & Safety
+                    stepData.insight = document.getElementById('insight').value;
+                    stepData.insightNotes = document.getElementById('insightNotes').value;
+                    stepData.judgment = document.getElementById('judgment').value;
+                    stepData.judgmentNotes = document.getElementById('judgmentNotes').value;
+                    stepData.si = document.getElementById('si').checked;
+                    stepData.hi = document.getElementById('hi').checked;
+                    stepData.safetyDetails = document.getElementById('safetyDetails').value;
+                    stepData.interventionPlan = document.getElementById('interventionPlan').value;
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Update wizard UI based on state
+        function updateWizardUI(data) {
+            wizardState.current_step = data.current_step;
+            wizardState.completed_steps = data.completed_steps || [];
+
+            // Update progress
+            const progressPercent = data.progress_percent || 0;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = data.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === data.current_step) {
+                    indicator.classList.add('active');
+                } else if (data.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === data.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = data.current_step === 1;
+
+            if (data.current_step === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Mini-Cog Scoring Function
+        function scoreMiniCog() {
+            const recall = parseInt(document.getElementById('wordRecall').value) || 0;
+            const clockNormal = document.getElementById('clockNormal').checked;
+
+            let score = recall;
+            if (clockNormal) score += 2;
+
+            document.getElementById('miniCogScore').textContent = score + '/5';
+
+            let interpretation;
+            if (score >= 3) {
+                interpretation = 'Negative Screen - Dementia unlikely';
+                document.getElementById('miniCogResult').className = 'text-green-600 font-semibold text-sm mt-2';
+            } else {
+                interpretation = 'Positive Screen - Further evaluation recommended';
+                document.getElementById('miniCogResult').className = 'text-red-600 font-semibold text-sm mt-2';
+            }
+
+            document.getElementById('miniCogResult').textContent = interpretation;
+        }
+
+        // Check Safety Function
+        function checkSafety() {
+            const si = document.getElementById('si').checked;
+            const hi = document.getElementById('hi').checked;
+
+            if (si || hi) {
+                document.getElementById('safetyAlert').classList.remove('hidden');
+            } else {
+                document.getElementById('safetyAlert').classList.add('hidden');
+            }
+        }
+
+        // Quick Fill Normal Exam
+        function fillNormalExam() {
+            document.getElementById('appearance').value = 'Well-groomed, appropriate dress';
+            document.getElementById('eyeContact').value = 'Appropriate';
+            document.getElementById('psychomotor').value = 'Normal';
+            document.getElementById('speech').value = 'Normal rate, volume, and tone';
+            document.getElementById('thoughtProcess').value = 'Logical and goal-directed';
+            document.getElementById('mood').value = 'Good';
+            document.getElementById('affect').value = 'Appropriate, full range';
+            document.getElementById('congruent').checked = true;
+            document.getElementById('anxietyLevel').value = 'None';
+            document.getElementById('wordRecall').value = '3';
+            document.getElementById('clockNormal').checked = true;
+            document.getElementById('orientedPerson').checked = true;
+            document.getElementById('orientedPlace').checked = true;
+            document.getElementById('orientedTime').checked = true;
+            document.getElementById('orientedSituation').checked = true;
+            document.getElementById('attention').value = 'Good';
+            document.getElementById('insight').value = 'Good - full awareness of condition';
+            document.getElementById('judgment').value = 'Good - appropriate decision-making';
+            scoreMiniCog();
+            showMessage('success', 'Normal mental status exam template applied');
+        }
+
+        // Quick Fill Altered Mental Status
+        function fillAlteredMental() {
+            document.getElementById('appearance').value = 'Disheveled, poor hygiene';
+            document.getElementById('eyeContact').value = 'Poor, avoidant';
+            document.getElementById('psychomotor').value = 'Agitated, restless';
+            document.getElementById('speech').value = 'Rapid, pressured speech';
+            document.getElementById('thoughtProcess').value = 'Tangential, disorganized';
+            document.getElementById('mood').value = 'Anxious';
+            document.getElementById('affect').value = 'Labile, rapidly shifting';
+            document.getElementById('congruent').checked = false;
+            document.getElementById('anxietyLevel').value = 'Severe';
+            document.getElementById('wordRecall').value = '0';
+            document.getElementById('clockNormal').checked = false;
+            document.getElementById('orientedTime').checked = false;
+            document.getElementById('attention').value = 'Poor, easily distracted';
+            document.getElementById('insight').value = 'Limited - minimal awareness';
+            document.getElementById('judgment').value = 'Poor - impaired decision-making';
+            scoreMiniCog();
+            showMessage('warning', 'Altered mental status template applied - further evaluation needed');
+        }
+    </script>
+</body>
+</html>

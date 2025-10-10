@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Blue Documentation Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #dc2626;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .code-blue-header {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #dc2626;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .timer-display {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc2626;
+            text-align: center;
+            padding: 1rem;
+            background: #fef2f2;
+            border: 2px solid #dc2626;
+            border-radius: 0.5rem;
+        }
+        .timeline-entry {
+            border-left: 4px solid #dc2626;
+            background: #f9fafb;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .med-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .med-table th {
+            background: #dc2626;
+            color: white;
+            padding: 0.75rem;
+            font-weight: 600;
+            text-align: left;
+        }
+        .med-table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+        }
+        .med-table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="code-blue-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-heartbeat text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-red-200 text-sm">Code Blue Documentation Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="headerTimer" class="text-right bg-red-800 px-4 py-2 rounded">
+                        <div class="text-xs text-red-200">Elapsed Time</div>
+                        <div class="text-lg font-bold font-mono" id="headerElapsedTime">--:--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Critical Alert Banner -->
+    <div class="bg-red-50 border-l-4 border-red-600 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-600 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-900">Code Blue Documentation</h3>
+                    <p class="text-sm text-red-800">Complete all required fields for accurate cardiac arrest documentation. This wizard includes running timer and intervention logging.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-red-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Code Blue Documentation</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Document cardiac arrest event details</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-20">Event Details</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Timeline</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Medications</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Outcome</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Event Details & Initial Response -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-list text-red-600 mr-2"></i>
+                    Event Details & Initial Response
+                </h3>
+                <p class="text-gray-700 mb-6">Document the initial details of the cardiac arrest event.</p>
+
+                <!-- Running Timer -->
+                <div class="mb-6 bg-red-50 border-2 border-red-600 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-red-900 mb-1">Code Timer</h4>
+                            <p class="text-xs text-red-700">Start: <span id="codeStartTimeDisplay">Not started</span></p>
+                        </div>
+                        <div class="timer-display" id="elapsedTime">00:00</div>
+                        <button onclick="startCodeTimer()" id="startTimerBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+                            <i class="fas fa-play mr-2"></i>Start Timer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Code Called Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="codeCalledTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-red-600 mr-2"></i>
+                            Code Called Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local"
+                               id="codeCalledTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                               required>
+                        <button onclick="setCurrentTime('codeCalledTime')" class="mt-2 text-sm text-red-600 hover:text-red-800">
+                            <i class="fas fa-clock mr-1"></i>Use Current Time
+                        </button>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="location" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                            Location <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="location"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                               placeholder="e.g., ICU Room 4, ER Bay 3"
+                               required>
+                    </div>
+
+                    <!-- Initial Rhythm -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="initialRhythm" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-heartbeat text-red-600 mr-2"></i>
+                            Initial Rhythm <span class="text-red-500">*</span>
+                        </label>
+                        <select id="initialRhythm"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                required>
+                            <option value="">Select rhythm...</option>
+                            <option value="Ventricular Fibrillation">Ventricular Fibrillation (VF)</option>
+                            <option value="Pulseless Ventricular Tachycardia">Pulseless Ventricular Tachycardia (VT)</option>
+                            <option value="PEA (Pulseless Electrical Activity)">PEA (Pulseless Electrical Activity)</option>
+                            <option value="Asystole">Asystole</option>
+                        </select>
+                    </div>
+
+                    <!-- First Responder -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="firstResponder" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user-md text-red-600 mr-2"></i>
+                            First Responder
+                        </label>
+                        <input type="text"
+                               id="firstResponder"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                               placeholder="Name of first responder">
+                    </div>
+
+                    <!-- Witnessed/Unwitnessed -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="witnessed" class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-eye text-red-600 mr-2"></i>
+                            Event Status
+                        </label>
+                        <select id="witnessed"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select...</option>
+                            <option value="Yes - monitored patient">Witnessed - Monitored Patient</option>
+                            <option value="Yes - staff/family present">Witnessed - Staff/Family Present</option>
+                            <option value="No">Unwitnessed</option>
+                        </select>
+                    </div>
+
+                    <!-- Quick Fill Buttons -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-yellow-600 mr-3 mt-1"></i>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-yellow-900 mb-2">Quick Fill Templates</h4>
+                                <div class="flex space-x-2">
+                                    <button onclick="fillVFibCode()" class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">
+                                        V-Fib Scenario
+                                    </button>
+                                    <button onclick="fillPEACode()" class="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">
+                                        PEA Scenario
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Timeline & Interventions -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-timeline text-red-600 mr-2"></i>
+                    Timeline & Interventions
+                </h3>
+                <p class="text-gray-700 mb-6">Document CPR start time, team roles, and rhythm checks.</p>
+
+                <div class="space-y-6">
+                    <!-- CPR Start Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="cprStartTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hands-helping text-red-600 mr-2"></i>
+                            CPR Start Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local"
+                               id="cprStartTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                               required>
+                        <button onclick="setCurrentTime('cprStartTime')" class="mt-2 text-sm text-red-600 hover:text-red-800">
+                            <i class="fas fa-clock mr-1"></i>Use Current Time
+                        </button>
+                    </div>
+
+                    <!-- Team Member Roles -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-bold text-gray-900 mb-3">
+                            <i class="fas fa-users text-red-600 mr-2"></i>
+                            Team Member Roles
+                        </h4>
+                        <table class="w-full border-collapse border border-gray-300">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="border border-gray-300 px-3 py-2 text-left">Role</th>
+                                    <th class="border border-gray-300 px-3 py-2 text-left">Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border border-gray-300 px-3 py-2 font-semibold">Code Leader</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <input type="text" id="roleLeader" class="w-full px-2 py-1 border border-gray-200 rounded" placeholder="Name">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 px-3 py-2 font-semibold">Compressor 1</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <input type="text" id="roleCompressor1" class="w-full px-2 py-1 border border-gray-200 rounded" placeholder="Name">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 px-3 py-2 font-semibold">Airway</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <input type="text" id="roleAirway" class="w-full px-2 py-1 border border-gray-200 rounded" placeholder="Name">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 px-3 py-2 font-semibold">Medication RN</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <input type="text" id="roleMedRN" class="w-full px-2 py-1 border border-gray-200 rounded" placeholder="Name">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="border border-gray-300 px-3 py-2 font-semibold">Recorder</td>
+                                    <td class="border border-gray-300 px-3 py-2">
+                                        <input type="text" id="roleRecorder" class="w-full px-2 py-1 border border-gray-200 rounded" placeholder="Name">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Intervention Timeline -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-bold text-gray-900 mb-3">
+                            <i class="fas fa-list text-red-600 mr-2"></i>
+                            Intervention Timeline
+                        </h4>
+                        <div id="interventionLog" class="space-y-2 mb-3 max-h-96 overflow-y-auto">
+                            <!-- Timeline entries added dynamically -->
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="addIntervention()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Log Intervention
+                            </button>
+                            <button onclick="addRhythmCheck()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-heartbeat mr-2"></i>Log Rhythm Check
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Medications & Defibrillation -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-pills text-red-600 mr-2"></i>
+                    Medications & Defibrillation
+                </h3>
+                <p class="text-gray-700 mb-6">Document all medications administered and defibrillation attempts.</p>
+
+                <div class="space-y-6">
+                    <!-- Medication Log -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-bold text-gray-900 mb-3">
+                            <i class="fas fa-syringe text-red-600 mr-2"></i>
+                            Medication Log
+                        </h4>
+                        <div class="overflow-x-auto">
+                            <table class="med-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Medication</th>
+                                        <th>Dose</th>
+                                        <th>Route</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="medLogBody">
+                                    <!-- Rows added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button onclick="addMedication()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Medication
+                        </button>
+                    </div>
+
+                    <!-- Defibrillation Log -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-bold text-gray-900 mb-3">
+                            <i class="fas fa-bolt text-red-600 mr-2"></i>
+                            Defibrillation Log
+                        </h4>
+                        <div class="overflow-x-auto">
+                            <table class="med-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Energy (Joules)</th>
+                                        <th>Result</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="defibLogBody">
+                                    <!-- Rows added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button onclick="addDefibrillation()" class="mt-3 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Defibrillation
+                        </button>
+                    </div>
+
+                    <!-- Total Doses Summary -->
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                        <h4 class="font-bold text-blue-900 mb-2">
+                            <i class="fas fa-calculator text-blue-600 mr-2"></i>
+                            Medication Summary
+                        </h4>
+                        <div id="medSummary" class="text-sm text-blue-800">
+                            <p>Total medications: <span id="totalMeds" class="font-bold">0</span></p>
+                            <p>Total defibrillations: <span id="totalDefibs" class="font-bold">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Outcome & Post-Event Summary -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-red-600 mr-2"></i>
+                    Outcome & Post-Event Summary
+                </h3>
+                <p class="text-gray-700 mb-6">Document the final outcome and post-event procedures.</p>
+
+                <div class="space-y-6">
+                    <!-- ROSC Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="roscTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-heartbeat text-green-600 mr-2"></i>
+                            ROSC (Return of Spontaneous Circulation) Time
+                        </label>
+                        <input type="datetime-local"
+                               id="roscTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <button onclick="setCurrentTime('roscTime')" class="mt-2 text-sm text-red-600 hover:text-red-800">
+                            <i class="fas fa-clock mr-1"></i>Use Current Time
+                        </button>
+                        <p class="text-xs text-gray-500 mt-2">Leave blank if ROSC not achieved</p>
+                    </div>
+
+                    <!-- Outcome -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="outcome" class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-flag-checkered text-red-600 mr-2"></i>
+                            Final Outcome <span class="text-red-500">*</span>
+                        </label>
+                        <select id="outcome"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                required
+                                onchange="handleOutcomeChange()">
+                            <option value="">Select outcome...</option>
+                            <option value="Survived - ROSC achieved">Survived - ROSC Achieved</option>
+                            <option value="Survived - Transferred to ICU">Survived - Transferred to ICU</option>
+                            <option value="Expired - Resuscitation ceased">Expired - Resuscitation Ceased</option>
+                            <option value="Expired - Terminal rhythm">Expired - Terminal Rhythm</option>
+                        </select>
+                    </div>
+
+                    <!-- Code End Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="codeEndTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-stop-circle text-red-600 mr-2"></i>
+                            Code End Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local"
+                               id="codeEndTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                               required>
+                        <button onclick="setCurrentTimeAndStopTimer('codeEndTime')" class="mt-2 text-sm text-red-600 hover:text-red-800">
+                            <i class="fas fa-clock mr-1"></i>Use Current Time & Stop Timer
+                        </button>
+                    </div>
+
+                    <!-- Family Notification -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-users text-red-600 mr-2"></i>
+                            Family Notification
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="familyNotified" value="Yes" class="mr-2">
+                                <span>Yes - Family notified</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="familyNotified" value="No - No family available" class="mr-2">
+                                <span>No - No family available</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="familyNotified" value="Pending" class="mr-2">
+                                <span>Pending notification</span>
+                            </label>
+                        </div>
+                        <div class="mt-3">
+                            <label for="familyNotifiedBy" class="block text-sm text-gray-700 mb-1">Notified by:</label>
+                            <input type="text" id="familyNotifiedBy" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="Name of person who notified family">
+                        </div>
+                    </div>
+
+                    <!-- Debriefing -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="debriefingCompleted" class="mr-3 h-5 w-5 text-red-600 rounded">
+                            <span class="font-bold text-gray-800">
+                                <i class="fas fa-comments text-red-600 mr-2"></i>
+                                Team Debriefing Completed
+                            </span>
+                        </label>
+                        <div class="mt-3">
+                            <label for="debriefingNotes" class="block text-sm text-gray-700 mb-1">Debriefing notes:</label>
+                            <textarea id="debriefingNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded" placeholder="Key discussion points, lessons learned..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-red-600 mr-2"></i>
+                            Additional Notes
+                        </label>
+                        <textarea id="additionalNotes"
+                                  rows="4"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                  placeholder="Any additional relevant information about the code event..."></textarea>
+                    </div>
+
+                    <!-- Summary Display -->
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                        <h4 class="font-bold text-green-900 mb-2">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            Documentation Complete
+                        </h4>
+                        <p class="text-sm text-green-800">Review all entries before finalizing. Total code duration: <span id="totalDuration" class="font-bold">--:--</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Documentation
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {
+                medications: [],
+                defibrillations: [],
+                interventions: []
+            }
+        };
+
+        // Code Timer State
+        let codeStartTime = null;
+        let timerInterval = null;
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Code Blue Documentation Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Start Code Timer
+        function startCodeTimer() {
+            if (codeStartTime) {
+                showMessage('warning', 'Timer already started');
+                return;
+            }
+
+            codeStartTime = new Date();
+            const timeStr = codeStartTime.toLocaleTimeString();
+            document.getElementById('codeStartTimeDisplay').textContent = timeStr;
+
+            // Auto-fill code called time if empty
+            if (!document.getElementById('codeCalledTime').value) {
+                setCurrentTime('codeCalledTime');
+            }
+
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((new Date() - codeStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const timeDisplay = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('elapsedTime').textContent = timeDisplay;
+                document.getElementById('headerElapsedTime').textContent = timeDisplay;
+            }, 1000);
+
+            document.getElementById('startTimerBtn').disabled = true;
+            document.getElementById('startTimerBtn').innerHTML = '<i class="fas fa-check mr-2"></i>Timer Running';
+            showMessage('success', 'Code timer started');
+        }
+
+        // Stop Code Timer
+        function stopCodeTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+
+                // Calculate total duration
+                if (codeStartTime) {
+                    const elapsed = Math.floor((new Date() - codeStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    const duration = `${minutes} minutes ${seconds} seconds`;
+                    document.getElementById('totalDuration').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    wizardState.data.code_duration = duration;
+                }
+            }
+        }
+
+        // Add Intervention to Timeline
+        function addIntervention() {
+            const timestamp = new Date().toLocaleTimeString();
+            const intervention = prompt('Enter intervention description:');
+            if (intervention && intervention.trim()) {
+                const entry = document.createElement('div');
+                entry.className = 'timeline-entry';
+                entry.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-semibold text-red-600">${timestamp}</span>
+                            <span class="ml-2 text-gray-700">${intervention}</span>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                document.getElementById('interventionLog').appendChild(entry);
+                wizardState.data.interventions.push({ time: timestamp, description: intervention });
+            }
+        }
+
+        // Add Rhythm Check
+        function addRhythmCheck() {
+            const timestamp = new Date().toLocaleTimeString();
+            const rhythm = prompt('Enter rhythm observed:');
+            if (rhythm && rhythm.trim()) {
+                const entry = document.createElement('div');
+                entry.className = 'timeline-entry';
+                entry.style.borderLeftColor = '#3b82f6';
+                entry.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-semibold text-blue-600">${timestamp}</span>
+                            <span class="ml-2"><i class="fas fa-heartbeat text-blue-600 mr-1"></i>Rhythm Check: ${rhythm}</span>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                document.getElementById('interventionLog').appendChild(entry);
+                wizardState.data.interventions.push({ time: timestamp, description: `Rhythm Check: ${rhythm}` });
+            }
+        }
+
+        // Add Medication
+        function addMedication() {
+            const timestamp = new Date().toLocaleTimeString();
+            const medication = prompt('Medication name:');
+            if (!medication || !medication.trim()) return;
+
+            const dose = prompt('Dose:');
+            if (!dose || !dose.trim()) return;
+
+            const route = prompt('Route (IV, IO, ET):');
+            if (!route || !route.trim()) return;
+
+            addMedicationQuick(medication, dose, route, timestamp);
+        }
+
+        // Add Medication Quick (helper)
+        function addMedicationQuick(medication, dose, route, timestamp = null) {
+            const time = timestamp || new Date().toLocaleTimeString();
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${time}</td>
+                <td>${medication}</td>
+                <td>${dose}</td>
+                <td>${route}</td>
+                <td>
+                    <button onclick="this.closest('tr').remove(); updateMedSummary()" class="text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            document.getElementById('medLogBody').appendChild(row);
+            wizardState.data.medications.push({ time, medication, dose, route });
+            updateMedSummary();
+        }
+
+        // Add Defibrillation
+        function addDefibrillation() {
+            const timestamp = new Date().toLocaleTimeString();
+            const joules = prompt('Energy in Joules (e.g., 200):');
+            if (!joules || !joules.trim()) return;
+
+            const result = prompt('Result (e.g., No change, VF continues, ROSC):');
+            if (!result || !result.trim()) return;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${timestamp}</td>
+                <td>${joules} J</td>
+                <td>${result}</td>
+                <td>
+                    <button onclick="this.closest('tr').remove(); updateMedSummary()" class="text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            document.getElementById('defibLogBody').appendChild(row);
+            wizardState.data.defibrillations.push({ time: timestamp, joules, result });
+            updateMedSummary();
+        }
+
+        // Update Medication Summary
+        function updateMedSummary() {
+            const medCount = document.getElementById('medLogBody').children.length;
+            const defibCount = document.getElementById('defibLogBody').children.length;
+            document.getElementById('totalMeds').textContent = medCount;
+            document.getElementById('totalDefibs').textContent = defibCount;
+        }
+
+        // Quick Fill V-Fib Scenario
+        function fillVFibCode() {
+            document.getElementById('initialRhythm').value = 'Ventricular Fibrillation';
+            document.getElementById('witnessed').value = 'Yes - monitored patient';
+            document.getElementById('location').value = 'ICU Room 4';
+            setCurrentTime('codeCalledTime');
+            showMessage('success', 'V-Fib scenario template applied');
+        }
+
+        // Quick Fill PEA Scenario
+        function fillPEACode() {
+            document.getElementById('initialRhythm').value = 'PEA (Pulseless Electrical Activity)';
+            document.getElementById('witnessed').value = 'No';
+            document.getElementById('location').value = 'Medical Floor Room 312';
+            setCurrentTime('codeCalledTime');
+            showMessage('success', 'PEA scenario template applied');
+        }
+
+        // Set Current Time
+        function setCurrentTime(fieldId) {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const localTime = new Date(now - offset);
+            document.getElementById(fieldId).value = localTime.toISOString().slice(0, 16);
+        }
+
+        // Set Current Time and Stop Timer
+        function setCurrentTimeAndStopTimer(fieldId) {
+            setCurrentTime(fieldId);
+            stopCodeTimer();
+        }
+
+        // Handle Outcome Change
+        function handleOutcomeChange() {
+            const outcome = document.getElementById('outcome').value;
+            if (outcome.includes('Expired')) {
+                // Suggest stopping timer
+                if (timerInterval) {
+                    if (confirm('Patient expired. Stop code timer?')) {
+                        setCurrentTimeAndStopTimer('codeEndTime');
+                    }
+                }
+            }
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum < 1 || stepNum > 4) return;
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            if (wizardState.current_step >= 4) return;
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            wizardState.current_step++;
+            updateWizardUI();
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const progressPercent = Math.floor((currentStep / 4) * 100);
+
+            // Update progress bar
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+
+            // Update titles
+            const titles = [
+                'Event Details & Initial Response',
+                'Timeline & Interventions',
+                'Medications & Defibrillation',
+                'Outcome & Post-Event Summary'
+            ];
+            document.getElementById('wizardTitle').textContent = titles[currentStep - 1];
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            // Stop timer if still running
+            stopCodeTimer();
+
+            // Collect all data
+            const documentation = {
+                event_details: {
+                    code_called_time: document.getElementById('codeCalledTime').value,
+                    location: document.getElementById('location').value,
+                    initial_rhythm: document.getElementById('initialRhythm').value,
+                    first_responder: document.getElementById('firstResponder').value,
+                    witnessed: document.getElementById('witnessed').value
+                },
+                timeline: {
+                    cpr_start_time: document.getElementById('cprStartTime').value,
+                    team_roles: {
+                        code_leader: document.getElementById('roleLeader').value,
+                        compressor1: document.getElementById('roleCompressor1').value,
+                        airway: document.getElementById('roleAirway').value,
+                        med_rn: document.getElementById('roleMedRN').value,
+                        recorder: document.getElementById('roleRecorder').value
+                    },
+                    interventions: wizardState.data.interventions
+                },
+                medications: wizardState.data.medications,
+                defibrillations: wizardState.data.defibrillations,
+                outcome: {
+                    rosc_time: document.getElementById('roscTime').value,
+                    final_outcome: document.getElementById('outcome').value,
+                    code_end_time: document.getElementById('codeEndTime').value,
+                    family_notified: document.querySelector('input[name="familyNotified"]:checked')?.value,
+                    family_notified_by: document.getElementById('familyNotifiedBy').value,
+                    debriefing_completed: document.getElementById('debriefingCompleted').checked,
+                    debriefing_notes: document.getElementById('debriefingNotes').value,
+                    additional_notes: document.getElementById('additionalNotes').value,
+                    code_duration: wizardState.data.code_duration
+                }
+            };
+
+            console.log('Code Blue Documentation:', documentation);
+
+            // Show success message
+            showMessage('success', 'Code Blue documentation completed successfully! Data saved to console.');
+
+            // Optional: Send to backend
+            // fetch('/api/v1/code-blue/save', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(documentation)
+            // });
+
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>

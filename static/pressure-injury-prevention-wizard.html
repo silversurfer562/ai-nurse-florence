@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pressure Injury Prevention Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #f97316;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .prevention-header {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #f97316;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .risk-badge-high {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #dc2626;
+        }
+        .risk-badge-moderate {
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+        .risk-badge-low {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        .braden-subscale {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+        .braden-subscale:hover {
+            border-color: #f97316;
+            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1);
+        }
+        .body-diagram {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+        }
+        .intervention-checkbox {
+            transition: all 0.2s ease;
+        }
+        .intervention-checkbox:hover {
+            background-color: #fff7ed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="prevention-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-orange-200 text-sm">Pressure Injury Prevention Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        <span>Prevention Care</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-orange-50 border-l-4 border-orange-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-orange-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-orange-800">Pressure Injury Prevention Assessment</h3>
+                    <p class="text-sm text-orange-700">This wizard guides you through the Braden Scale assessment, skin evaluation, intervention planning, and care plan documentation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-orange-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Pressure Injury Prevention</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to create a comprehensive prevention plan</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-orange-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Braden</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Skin</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Interventions</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Review</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Braden Scale Assessment -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-list text-orange-600 mr-2"></i>
+                    Braden Scale Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's risk for pressure injury development using the Braden Scale (6 subscales).</p>
+
+                <!-- Quick Fill Buttons -->
+                <div class="mb-6 flex space-x-3">
+                    <button onclick="fillHighRisk()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                        <i class="fas fa-bolt mr-2"></i>Quick Fill: High Risk
+                    </button>
+                    <button onclick="fillModerateRisk()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>Quick Fill: Moderate Risk
+                    </button>
+                    <button onclick="clearBraden()" class="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors text-sm">
+                        <i class="fas fa-eraser mr-2"></i>Clear All
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    <!-- Sensory Perception -->
+                    <div class="braden-subscale">
+                        <label class="block font-semibold text-sm mb-2 text-gray-800">
+                            <i class="fas fa-hand-paper text-orange-600 mr-2"></i>
+                            Sensory Perception
+                        </label>
+                        <select id="sensory" onchange="calculateBradenScore()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            <option value="0">Select...</option>
+                            <option value="1">1 - Completely Limited</option>
+                            <option value="2">2 - Very Limited</option>
+                            <option value="3">3 - Slightly Limited</option>
+                            <option value="4">4 - No Impairment</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Ability to respond meaningfully to pressure-related discomfort</p>
+                    </div>
+
+                    <!-- Moisture -->
+                    <div class="braden-subscale">
+                        <label class="block font-semibold text-sm mb-2 text-gray-800">
+                            <i class="fas fa-tint text-orange-600 mr-2"></i>
+                            Moisture
+                        </label>
+                        <select id="moisture" onchange="calculateBradenScore()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            <option value="0">Select...</option>
+                            <option value="1">1 - Constantly Moist</option>
+                            <option value="2">2 - Very Moist</option>
+                            <option value="3">3 - Occasionally Moist</option>
+                            <option value="4">4 - Rarely Moist</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Degree to which skin is exposed to moisture</p>
+                    </div>
+
+                    <!-- Activity -->
+                    <div class="braden-subscale">
+                        <label class="block font-semibold text-sm mb-2 text-gray-800">
+                            <i class="fas fa-walking text-orange-600 mr-2"></i>
+                            Activity
+                        </label>
+                        <select id="activity" onchange="calculateBradenScore()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            <option value="0">Select...</option>
+                            <option value="1">1 - Bedfast</option>
+                            <option value="2">2 - Chairfast</option>
+                            <option value="3">3 - Walks Occasionally</option>
+                            <option value="4">4 - Walks Frequently</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Degree of physical activity</p>
+                    </div>
+
+                    <!-- Mobility -->
+                    <div class="braden-subscale">
+                        <label class="block font-semibold text-sm mb-2 text-gray-800">
+                            <i class="fas fa-wheelchair text-orange-600 mr-2"></i>
+                            Mobility
+                        </label>
+                        <select id="mobility" onchange="calculateBradenScore()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            <option value="0">Select...</option>
+                            <option value="1">1 - Completely Immobile</option>
+                            <option value="2">2 - Very Limited</option>
+                            <option value="3">3 - Slightly Limited</option>
+                            <option value="4">4 - No Limitation</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Ability to change and control body position</p>
+                    </div>
+
+                    <!-- Nutrition -->
+                    <div class="braden-subscale">
+                        <label class="block font-semibold text-sm mb-2 text-gray-800">
+                            <i class="fas fa-utensils text-orange-600 mr-2"></i>
+                            Nutrition
+                        </label>
+                        <select id="nutrition" onchange="calculateBradenScore()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            <option value="0">Select...</option>
+                            <option value="1">1 - Very Poor</option>
+                            <option value="2">2 - Probably Inadequate</option>
+                            <option value="3">3 - Adequate</option>
+                            <option value="4">4 - Excellent</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Usual food intake pattern</p>
+                    </div>
+
+                    <!-- Friction & Shear -->
+                    <div class="braden-subscale">
+                        <label class="block font-semibold text-sm mb-2 text-gray-800">
+                            <i class="fas fa-arrows-alt text-orange-600 mr-2"></i>
+                            Friction & Shear
+                        </label>
+                        <select id="friction" onchange="calculateBradenScore()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                            <option value="0">Select...</option>
+                            <option value="1">1 - Problem</option>
+                            <option value="2">2 - Potential Problem</option>
+                            <option value="3">3 - No Apparent Problem</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Ability to move without friction against sheets</p>
+                    </div>
+                </div>
+
+                <!-- Braden Score Display -->
+                <div class="mt-6 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-2">Total Braden Score</h4>
+                            <div class="text-4xl font-bold text-orange-600" id="bradenTotal">0/23</div>
+                        </div>
+                        <div class="text-right">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Risk Level</h4>
+                            <div id="riskBadge" class="px-4 py-2 rounded-lg font-bold text-center">
+                                <span id="riskLevel">Not Assessed</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-orange-200">
+                        <h5 class="text-sm font-semibold text-gray-700 mb-2">Recommended Interventions:</h5>
+                        <p class="text-sm text-gray-800" id="recommendedInterventions">Complete assessment to see recommendations</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="fas fa-info-circle text-blue-400 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-blue-900">Braden Scale Scoring</h4>
+                            <p class="text-sm text-blue-800">Score ranges: High Risk (≤12), Moderate Risk (13-18), Low Risk (19-23)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Skin Assessment & Documentation -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-md text-orange-600 mr-2"></i>
+                    Skin Assessment & Documentation
+                </h3>
+                <p class="text-gray-700 mb-6">Document skin condition and identify high-risk areas for pressure injury development.</p>
+
+                <!-- Body Diagram for At-Risk Areas -->
+                <div class="body-diagram rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-4 text-center text-gray-800">
+                        <i class="fas fa-map-marked-alt text-orange-600 mr-2"></i>
+                        Mark High-Risk Body Areas
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="sacrum">
+                                <span class="text-sm font-medium text-gray-700">Sacrum/Coccyx</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="heels">
+                                <span class="text-sm font-medium text-gray-700">Heels (bilateral)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="hips">
+                                <span class="text-sm font-medium text-gray-700">Hips (bilateral)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="ankles">
+                                <span class="text-sm font-medium text-gray-700">Ankles (bilateral)</span>
+                            </label>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="elbows">
+                                <span class="text-sm font-medium text-gray-700">Elbows (bilateral)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="shoulders">
+                                <span class="text-sm font-medium text-gray-700">Shoulders (bilateral)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="occiput">
+                                <span class="text-sm font-medium text-gray-700">Occiput (back of head)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="scapulae">
+                                <span class="text-sm font-medium text-gray-700">Scapulae (shoulder blades)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skin Condition Assessment -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-4 text-gray-800">
+                        <i class="fas fa-eye text-orange-600 mr-2"></i>
+                        Skin Condition
+                    </h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinIntact">
+                            <span class="text-sm text-gray-700">Skin intact</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinDry">
+                            <span class="text-sm text-gray-700">Dry skin</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinRedness">
+                            <span class="text-sm text-gray-700">Redness/erythema</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinFragile">
+                            <span class="text-sm text-gray-700">Fragile/thin skin</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinEdema">
+                            <span class="text-sm text-gray-700">Edema present</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinDiscoloration">
+                            <span class="text-sm text-gray-700">Discoloration</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Existing Pressure Injuries -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5">
+                    <h4 class="font-semibold mb-4 text-gray-800">
+                        <i class="fas fa-exclamation-circle text-orange-600 mr-2"></i>
+                        Existing Pressure Injuries
+                    </h4>
+                    <div class="mb-4">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="hasExistingPI" onchange="togglePIDetails()">
+                            <span class="text-sm font-semibold text-gray-700">Patient has existing pressure injury/injuries</span>
+                        </label>
+                    </div>
+                    <div id="piDetails" class="hidden space-y-3">
+                        <div>
+                            <label for="piLocation" class="block text-sm font-medium text-gray-700 mb-2">Location(s):</label>
+                            <input type="text" id="piLocation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm" placeholder="e.g., Sacrum, left heel">
+                        </div>
+                        <div>
+                            <label for="piStage" class="block text-sm font-medium text-gray-700 mb-2">Stage:</label>
+                            <select id="piStage" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                                <option value="">Select stage...</option>
+                                <option value="Stage 1">Stage 1 - Non-blanchable erythema</option>
+                                <option value="Stage 2">Stage 2 - Partial thickness skin loss</option>
+                                <option value="Stage 3">Stage 3 - Full thickness skin loss</option>
+                                <option value="Stage 4">Stage 4 - Full thickness tissue loss</option>
+                                <option value="Unstageable">Unstageable</option>
+                                <option value="DTI">Deep Tissue Injury (DTI)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="piNotes" class="block text-sm font-medium text-gray-700 mb-2">Additional notes:</label>
+                            <textarea id="piNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm" placeholder="Size, drainage, treatment..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="fas fa-lightbulb text-yellow-400 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-yellow-900">Documentation Tip</h4>
+                            <p class="text-sm text-yellow-800">Focus on bony prominences and areas with prolonged pressure. Document baseline skin condition for comparison during reassessment.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Prevention Interventions -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-hands-helping text-orange-600 mr-2"></i>
+                    Prevention Interventions
+                </h3>
+                <p class="text-gray-700 mb-6">Select interventions based on the patient's risk level and assessment findings.</p>
+
+                <!-- Current Risk Level Display -->
+                <div class="mb-6 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-sm font-semibold text-gray-700">Current Risk Level:</span>
+                            <span class="ml-3 text-lg font-bold" id="interventionRiskLevel">Complete Braden assessment</span>
+                        </div>
+                        <div>
+                            <span class="text-sm font-semibold text-gray-700">Braden Score:</span>
+                            <span class="ml-2 text-lg font-bold text-orange-600" id="interventionBradenScore">0/23</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repositioning Schedule -->
+                <div class="intervention-checkbox bg-white border border-gray-200 rounded-lg p-5 mb-4">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-sync-alt text-orange-600 mr-2"></i>
+                        Repositioning Schedule
+                    </h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="radio" name="repositioning" value="Q2H" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                            <span class="text-sm text-gray-700">Turn every 2 hours (Q2H) - High risk</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="radio" name="repositioning" value="Q4H" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                            <span class="text-sm text-gray-700">Turn every 4 hours (Q4H) - Moderate risk</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="radio" name="repositioning" value="Q6H" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                            <span class="text-sm text-gray-700">Turn every 6 hours (Q6H) - Low risk</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="radio" name="repositioning" value="PRN" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                            <span class="text-sm text-gray-700">PRN/As needed</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Support Surfaces -->
+                <div class="intervention-checkbox bg-white border border-gray-200 rounded-lg p-5 mb-4">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-bed text-orange-600 mr-2"></i>
+                        Support Surfaces
+                    </h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="specialtyMattress">
+                            <span class="text-sm text-gray-700">Specialty mattress (e.g., low air loss, alternating pressure)</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="foamOverlay">
+                            <span class="text-sm text-gray-700">Foam overlay/mattress topper</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="heelProtectors">
+                            <span class="text-sm text-gray-700">Heel protectors/boots</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="positioningPillows">
+                            <span class="text-sm text-gray-700">Positioning pillows/wedges</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="chairCushion">
+                            <span class="text-sm text-gray-700">Pressure-relieving chair cushion</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Nutritional Support -->
+                <div class="intervention-checkbox bg-white border border-gray-200 rounded-lg p-5 mb-4">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-apple-alt text-orange-600 mr-2"></i>
+                        Nutritional Support
+                    </h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="nutritionConsult">
+                            <span class="text-sm text-gray-700">Nutrition/Dietitian consult</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="proteinSupplement">
+                            <span class="text-sm text-gray-700">High-protein supplements</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="hydrationPlan">
+                            <span class="text-sm text-gray-700">Hydration plan</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="vitaminSupplements">
+                            <span class="text-sm text-gray-700">Vitamin/mineral supplements (e.g., Vitamin C, Zinc)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Moisture Management -->
+                <div class="intervention-checkbox bg-white border border-gray-200 rounded-lg p-5 mb-4">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-water text-orange-600 mr-2"></i>
+                        Moisture Management
+                    </h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="moistureBarrier">
+                            <span class="text-sm text-gray-700">Moisture barrier cream/ointment</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="incontinenceCare">
+                            <span class="text-sm text-gray-700">Incontinence care plan</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="absorbentProducts">
+                            <span class="text-sm text-gray-700">Absorbent underpad/briefs</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinCleanser">
+                            <span class="text-sm text-gray-700">pH-balanced skin cleanser</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Skin Care -->
+                <div class="intervention-checkbox bg-white border border-gray-200 rounded-lg p-5 mb-4">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-hand-sparkles text-orange-600 mr-2"></i>
+                        Skin Care & Monitoring
+                    </h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinAssessmentDaily">
+                            <span class="text-sm text-gray-700">Skin assessment daily</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinAssessmentQShift">
+                            <span class="text-sm text-gray-700">Skin assessment every shift</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinMoisturizer">
+                            <span class="text-sm text-gray-700">Skin moisturizer application</span>
+                        </label>
+                        <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                            <input type="checkbox" class="mr-3 h-4 w-4 text-orange-600 rounded focus:ring-orange-500" id="skinProtectant">
+                            <span class="text-sm text-gray-700">Skin protectant/sealant</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="fas fa-lightbulb text-blue-400 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-blue-900">Intervention Selection</h4>
+                            <p class="text-sm text-blue-800">Select all interventions appropriate for this patient's risk level and clinical situation. Evidence-based bundles reduce pressure injury incidence.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Review & Care Plan -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical-alt text-orange-600 mr-2"></i>
+                    Review & Care Plan
+                </h3>
+                <p class="text-gray-700 mb-6">Review the complete assessment and finalize the pressure injury prevention care plan.</p>
+
+                <!-- Risk Summary -->
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg p-6 mb-6">
+                    <h4 class="text-lg font-bold text-gray-900 mb-4">
+                        <i class="fas fa-chart-bar text-orange-600 mr-2"></i>
+                        Risk Assessment Summary
+                    </h4>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-1">Braden Scale Score</div>
+                            <div class="text-3xl font-bold text-orange-600" id="reviewBradenScore">0/23</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-2">Risk Level</div>
+                            <div id="reviewRiskBadge" class="px-4 py-2 rounded-lg font-bold text-center inline-block">
+                                <span id="reviewRiskLevel">Not Assessed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Braden Subscale Details -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-4 text-gray-800">
+                        <i class="fas fa-list-ul text-orange-600 mr-2"></i>
+                        Braden Scale Details
+                    </h4>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="flex justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-gray-700">Sensory Perception:</span>
+                            <span class="font-semibold" id="reviewSensory">-</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-gray-700">Moisture:</span>
+                            <span class="font-semibold" id="reviewMoisture">-</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-gray-700">Activity:</span>
+                            <span class="font-semibold" id="reviewActivity">-</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-gray-700">Mobility:</span>
+                            <span class="font-semibold" id="reviewMobility">-</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-gray-700">Nutrition:</span>
+                            <span class="font-semibold" id="reviewNutrition">-</span>
+                        </div>
+                        <div class="flex justify-between p-2 bg-gray-50 rounded">
+                            <span class="text-gray-700">Friction & Shear:</span>
+                            <span class="font-semibold" id="reviewFriction">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High-Risk Areas -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-map-pin text-orange-600 mr-2"></i>
+                        Identified High-Risk Body Areas
+                    </h4>
+                    <div id="reviewHighRiskAreas" class="text-sm text-gray-600">
+                        No areas marked
+                    </div>
+                </div>
+
+                <!-- Selected Interventions -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-tasks text-orange-600 mr-2"></i>
+                        Prevention Interventions
+                    </h4>
+                    <div id="reviewInterventions" class="space-y-2">
+                        No interventions selected
+                    </div>
+                </div>
+
+                <!-- Reassessment Schedule -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-calendar-check text-orange-600 mr-2"></i>
+                        Reassessment Frequency
+                    </h4>
+                    <div id="reviewReassessment" class="text-sm">
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="radio" name="reassessment" value="daily" checked class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <span class="text-gray-700">Daily (recommended for high risk)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="radio" name="reassessment" value="weekly" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <span class="text-gray-700">Weekly (moderate/low risk)</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="radio" name="reassessment" value="admission" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <span class="text-gray-700">On admission/transfer only</span>
+                            </label>
+                            <label class="flex items-center p-2 rounded hover:bg-orange-50 cursor-pointer">
+                                <input type="radio" name="reassessment" value="prn" class="mr-3 h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <span class="text-gray-700">PRN/As condition changes</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Care Plan Notes -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 mb-6">
+                    <h4 class="font-semibold mb-3 text-gray-800">
+                        <i class="fas fa-sticky-note text-orange-600 mr-2"></i>
+                        Additional Care Plan Notes
+                    </h4>
+                    <textarea id="carePlanNotes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm" placeholder="Document any additional considerations, patient/family education provided, or special circumstances..."></textarea>
+                </div>
+
+                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                    <div class="flex">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-green-900">Ready to Complete</h4>
+                            <p class="text-sm text-green-800">Review all sections above. Click "Complete Assessment" to finalize the pressure injury prevention care plan.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {
+                bradenScore: 0,
+                riskLevel: 'Not Assessed',
+                sensory: 0,
+                moisture: 0,
+                activity: 0,
+                mobility: 0,
+                nutrition: 0,
+                friction: 0
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Pressure Injury Prevention Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Calculate Braden Score
+        function calculateBradenScore() {
+            const sensory = parseInt(document.getElementById('sensory').value) || 0;
+            const moisture = parseInt(document.getElementById('moisture').value) || 0;
+            const activity = parseInt(document.getElementById('activity').value) || 0;
+            const mobility = parseInt(document.getElementById('mobility').value) || 0;
+            const nutrition = parseInt(document.getElementById('nutrition').value) || 0;
+            const friction = parseInt(document.getElementById('friction').value) || 0;
+
+            const total = sensory + moisture + activity + mobility + nutrition + friction;
+
+            // Store in wizard state
+            wizardState.data.bradenScore = total;
+            wizardState.data.sensory = sensory;
+            wizardState.data.moisture = moisture;
+            wizardState.data.activity = activity;
+            wizardState.data.mobility = mobility;
+            wizardState.data.nutrition = nutrition;
+            wizardState.data.friction = friction;
+
+            document.getElementById('bradenTotal').textContent = total + '/23';
+
+            let riskLevel, riskClass, interventions;
+            if (total <= 12) {
+                riskLevel = 'High Risk';
+                riskClass = 'risk-badge-high';
+                interventions = 'Turn Q2H, specialty mattress (low air loss or alternating pressure), nutritional consult, moisture barrier cream, skin assessment every shift, heel protectors';
+            } else if (total <= 18) {
+                riskLevel = 'Moderate Risk';
+                riskClass = 'risk-badge-moderate';
+                interventions = 'Turn Q4H, foam overlay/pressure-relieving mattress, skin assessment every shift, moisture management as needed';
+            } else {
+                riskLevel = 'Low Risk';
+                riskClass = 'risk-badge-low';
+                interventions = 'Standard precautions, turn Q6H or PRN, skin assessment daily, maintain adequate nutrition and hydration';
+            }
+
+            wizardState.data.riskLevel = riskLevel;
+
+            const riskBadge = document.getElementById('riskBadge');
+            riskBadge.className = riskClass + ' px-4 py-2 rounded-lg font-bold text-center';
+            document.getElementById('riskLevel').textContent = riskLevel;
+            document.getElementById('recommendedInterventions').textContent = interventions;
+        }
+
+        // Quick fill functions
+        function fillHighRisk() {
+            document.getElementById('sensory').value = '1';
+            document.getElementById('moisture').value = '1';
+            document.getElementById('activity').value = '1';
+            document.getElementById('mobility').value = '1';
+            document.getElementById('nutrition').value = '2';
+            document.getElementById('friction').value = '1';
+            calculateBradenScore();
+
+            // Auto-mark high-risk areas
+            document.getElementById('sacrum').checked = true;
+            document.getElementById('heels').checked = true;
+
+            showMessage('success', 'High risk scenario loaded - Braden score indicates significant pressure injury risk');
+        }
+
+        function fillModerateRisk() {
+            document.getElementById('sensory').value = '3';
+            document.getElementById('moisture').value = '3';
+            document.getElementById('activity').value = '2';
+            document.getElementById('mobility').value = '2';
+            document.getElementById('nutrition').value = '3';
+            document.getElementById('friction').value = '2';
+            calculateBradenScore();
+
+            showMessage('success', 'Moderate risk scenario loaded');
+        }
+
+        function clearBraden() {
+            document.getElementById('sensory').value = '0';
+            document.getElementById('moisture').value = '0';
+            document.getElementById('activity').value = '0';
+            document.getElementById('mobility').value = '0';
+            document.getElementById('nutrition').value = '0';
+            document.getElementById('friction').value = '0';
+            calculateBradenScore();
+        }
+
+        // Toggle PI details
+        function togglePIDetails() {
+            const checkbox = document.getElementById('hasExistingPI');
+            const details = document.getElementById('piDetails');
+            if (checkbox.checked) {
+                details.classList.remove('hidden');
+            } else {
+                details.classList.add('hidden');
+            }
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            // Update step 3 with current risk level
+            if (stepNum === 3) {
+                updateInterventionRiskDisplay();
+            }
+
+            // Populate review step
+            if (stepNum === 4) {
+                populateReviewStep();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+            updateWizardUI();
+
+            // Update step 3 with current risk level
+            if (wizardState.current_step === 3) {
+                updateInterventionRiskDisplay();
+            }
+
+            // Populate review step
+            if (wizardState.current_step === 4) {
+                populateReviewStep();
+            }
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 4) * 100);
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+            document.getElementById('progressPercent').textContent = progressPercent + '%';
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Update intervention risk display
+        function updateInterventionRiskDisplay() {
+            const riskLevel = wizardState.data.riskLevel || 'Not Assessed';
+            const bradenScore = wizardState.data.bradenScore || 0;
+
+            document.getElementById('interventionRiskLevel').textContent = riskLevel;
+            document.getElementById('interventionBradenScore').textContent = bradenScore + '/23';
+        }
+
+        // Populate review step
+        function populateReviewStep() {
+            // Braden score and risk level
+            const bradenScore = wizardState.data.bradenScore || 0;
+            const riskLevel = wizardState.data.riskLevel || 'Not Assessed';
+
+            document.getElementById('reviewBradenScore').textContent = bradenScore + '/23';
+            document.getElementById('reviewRiskLevel').textContent = riskLevel;
+
+            // Set risk badge class
+            let riskClass;
+            if (bradenScore <= 12) {
+                riskClass = 'risk-badge-high';
+            } else if (bradenScore <= 18) {
+                riskClass = 'risk-badge-moderate';
+            } else {
+                riskClass = 'risk-badge-low';
+            }
+            const reviewRiskBadge = document.getElementById('reviewRiskBadge');
+            reviewRiskBadge.className = riskClass + ' px-4 py-2 rounded-lg font-bold text-center inline-block';
+
+            // Subscale details
+            document.getElementById('reviewSensory').textContent = wizardState.data.sensory || '-';
+            document.getElementById('reviewMoisture').textContent = wizardState.data.moisture || '-';
+            document.getElementById('reviewActivity').textContent = wizardState.data.activity || '-';
+            document.getElementById('reviewMobility').textContent = wizardState.data.mobility || '-';
+            document.getElementById('reviewNutrition').textContent = wizardState.data.nutrition || '-';
+            document.getElementById('reviewFriction').textContent = wizardState.data.friction || '-';
+
+            // High-risk areas
+            const highRiskAreas = [];
+            const areaCheckboxes = ['sacrum', 'heels', 'hips', 'ankles', 'elbows', 'shoulders', 'occiput', 'scapulae'];
+            const areaLabels = {
+                'sacrum': 'Sacrum/Coccyx',
+                'heels': 'Heels',
+                'hips': 'Hips',
+                'ankles': 'Ankles',
+                'elbows': 'Elbows',
+                'shoulders': 'Shoulders',
+                'occiput': 'Occiput',
+                'scapulae': 'Scapulae'
+            };
+
+            areaCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox && checkbox.checked) {
+                    highRiskAreas.push(areaLabels[id]);
+                }
+            });
+
+            const highRiskAreasDiv = document.getElementById('reviewHighRiskAreas');
+            if (highRiskAreas.length > 0) {
+                highRiskAreasDiv.innerHTML = '<div class="flex flex-wrap gap-2">' +
+                    highRiskAreas.map(area => `<span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">${area}</span>`).join('') +
+                    '</div>';
+            } else {
+                highRiskAreasDiv.innerHTML = '<span class="text-gray-500">No areas marked</span>';
+            }
+
+            // Selected interventions
+            const interventions = [];
+
+            // Repositioning
+            const repositioning = document.querySelector('input[name="repositioning"]:checked');
+            if (repositioning) {
+                interventions.push(`Repositioning: ${repositioning.value}`);
+            }
+
+            // Support surfaces
+            if (document.getElementById('specialtyMattress')?.checked) interventions.push('Specialty mattress');
+            if (document.getElementById('foamOverlay')?.checked) interventions.push('Foam overlay');
+            if (document.getElementById('heelProtectors')?.checked) interventions.push('Heel protectors');
+            if (document.getElementById('positioningPillows')?.checked) interventions.push('Positioning pillows');
+            if (document.getElementById('chairCushion')?.checked) interventions.push('Pressure-relieving chair cushion');
+
+            // Nutrition
+            if (document.getElementById('nutritionConsult')?.checked) interventions.push('Nutrition consult');
+            if (document.getElementById('proteinSupplement')?.checked) interventions.push('High-protein supplements');
+            if (document.getElementById('hydrationPlan')?.checked) interventions.push('Hydration plan');
+            if (document.getElementById('vitaminSupplements')?.checked) interventions.push('Vitamin supplements');
+
+            // Moisture
+            if (document.getElementById('moistureBarrier')?.checked) interventions.push('Moisture barrier cream');
+            if (document.getElementById('incontinenceCare')?.checked) interventions.push('Incontinence care plan');
+            if (document.getElementById('absorbentProducts')?.checked) interventions.push('Absorbent products');
+            if (document.getElementById('skinCleanser')?.checked) interventions.push('pH-balanced cleanser');
+
+            // Skin care
+            if (document.getElementById('skinAssessmentDaily')?.checked) interventions.push('Skin assessment daily');
+            if (document.getElementById('skinAssessmentQShift')?.checked) interventions.push('Skin assessment every shift');
+            if (document.getElementById('skinMoisturizer')?.checked) interventions.push('Skin moisturizer');
+            if (document.getElementById('skinProtectant')?.checked) interventions.push('Skin protectant');
+
+            const interventionsDiv = document.getElementById('reviewInterventions');
+            if (interventions.length > 0) {
+                interventionsDiv.innerHTML = interventions.map(int =>
+                    `<div class="flex items-center p-2 bg-green-50 rounded">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        <span class="text-sm text-gray-700">${int}</span>
+                    </div>`
+                ).join('');
+            } else {
+                interventionsDiv.innerHTML = '<span class="text-gray-500">No interventions selected</span>';
+            }
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            showMessage('success', 'Pressure injury prevention care plan completed successfully!');
+
+            // Mark final step as completed
+            if (!wizardState.completed_steps.includes(4)) {
+                wizardState.completed_steps.push(4);
+            }
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>

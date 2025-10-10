@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutrition Screening Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #059669;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nutrition-header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-left: 4px solid #10b981;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .bmi-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .risk-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .risk-low {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .risk-high {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="nutrition-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-green-200 text-sm">Nutrition Screening Wizard</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-green-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-green-800">Comprehensive Nutrition Screening</h3>
+                    <p class="text-sm text-green-700">This wizard will guide you through a complete nutritional assessment including anthropometric measurements, dietary intake, and malnutrition risk screening.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-green-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Nutrition Screening Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps for comprehensive nutritional evaluation</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-green-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Measurements</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Dietary</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">MST</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Plan</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Anthropometric Measurements -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-ruler-vertical text-green-600 mr-2"></i>
+                    Anthropometric Measurements
+                </h3>
+                <p class="text-gray-700 mb-6">Record patient height, weight, and calculate BMI.</p>
+
+                <div class="space-y-6">
+                    <!-- Quick Fill Buttons -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-blue-600 mt-1 mr-3"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-blue-900 mb-2">Quick Fill Examples</p>
+                                <div class="flex space-x-3">
+                                    <button onclick="fillAtRisk()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i> At Risk Patient
+                                    </button>
+                                    <button onclick="fillNormal()" class="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                                        <i class="fas fa-check mr-1"></i> Normal Patient
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Height -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="height" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-arrows-alt-v text-green-600 mr-2"></i>
+                            Height (cm) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number"
+                               id="height"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="170"
+                               min="50"
+                               max="250"
+                               step="0.1"
+                               oninput="calculateBMI(); calculateIdealBodyWeight()"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Patient's height in centimeters
+                        </p>
+                    </div>
+
+                    <!-- Weight -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="weight" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-weight text-green-600 mr-2"></i>
+                            Current Weight (kg) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number"
+                               id="weight"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="70"
+                               min="20"
+                               max="300"
+                               step="0.1"
+                               oninput="calculateBMI(); calculateWeightLoss(); calculateIdealBodyWeight()"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Patient's current weight in kilograms
+                        </p>
+                    </div>
+
+                    <!-- BMI Display -->
+                    <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-300 rounded-lg p-6">
+                        <h4 class="text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-calculator text-green-600 mr-2"></i>
+                            Body Mass Index (BMI)
+                        </h4>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="bmi-display text-green-700" id="bmiValue">--</div>
+                                <div class="text-sm font-semibold mt-2">
+                                    <span id="bmiCategory" class="text-gray-600">Enter height and weight</span>
+                                </div>
+                            </div>
+                            <div class="text-right text-xs text-gray-600">
+                                <div>Underweight: &lt; 18.5</div>
+                                <div>Normal: 18.5 - 24.9</div>
+                                <div>Overweight: 25 - 29.9</div>
+                                <div>Obese: ≥ 30</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Usual Weight -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="usualWeight" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-history text-green-600 mr-2"></i>
+                            Usual Weight (kg)
+                        </label>
+                        <input type="number"
+                               id="usualWeight"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="75"
+                               min="20"
+                               max="300"
+                               step="0.1"
+                               oninput="calculateWeightLoss()">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Patient's usual/baseline weight before recent changes
+                        </p>
+                    </div>
+
+                    <!-- Weight Loss Percentage Display -->
+                    <div id="weightLossDisplay" class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 hidden">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="font-semibold text-gray-800">Recent Weight Loss:</span>
+                                <span id="weightLossPercent" class="text-2xl font-bold text-yellow-700 ml-3">0%</span>
+                            </div>
+                        </div>
+                        <div id="weightLossAlert" class="mt-3 text-sm text-red-600 font-semibold hidden">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Significant weight loss detected (>10%) - High nutritional risk
+                        </div>
+                    </div>
+
+                    <!-- Ideal Body Weight Display -->
+                    <div id="ibwDisplay" class="bg-blue-50 border border-blue-300 rounded-lg p-4 hidden">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="font-semibold text-gray-800">Ideal Body Weight (IBW):</span>
+                                <span id="ibwValue" class="text-2xl font-bold text-blue-700 ml-3">-- kg</span>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <span id="ibwComparison"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Dietary Intake & Appetite Assessment -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-utensils text-green-600 mr-2"></i>
+                    Dietary Intake & Appetite Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Evaluate patient's appetite, dietary restrictions, and recent intake patterns.</p>
+
+                <div class="space-y-6">
+                    <!-- Appetite Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="appetite" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-smile text-green-600 mr-2"></i>
+                            Appetite Level <span class="text-red-500">*</span>
+                        </label>
+                        <select id="appetite" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                            <option value="">Select appetite level...</option>
+                            <option value="good">Good - Normal appetite</option>
+                            <option value="fair">Fair - Slightly decreased</option>
+                            <option value="poor">Poor - Significantly decreased</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Patient's overall appetite over the past week
+                        </p>
+                    </div>
+
+                    <!-- Recent Intake Percentage -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="intakePercent" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-percentage text-green-600 mr-2"></i>
+                            Estimated Intake (% of usual)
+                        </label>
+                        <input type="number"
+                               id="intakePercent"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="100"
+                               min="0"
+                               max="150"
+                               step="5">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Percentage of usual food intake (100% = normal, &lt;75% concerning)
+                        </p>
+                    </div>
+
+                    <!-- Dietary Restrictions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="dietaryRestrictions" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-ban text-green-600 mr-2"></i>
+                            Dietary Restrictions/Special Diet
+                        </label>
+                        <textarea id="dietaryRestrictions"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  placeholder="e.g., NPO, low sodium, diabetic diet, texture modifications..."
+                                  rows="3"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Any dietary restrictions, therapeutic diets, or special nutritional needs
+                        </p>
+                    </div>
+
+                    <!-- Swallowing Difficulties -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox"
+                                   id="swallowingDifficulty"
+                                   class="h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <span class="ml-3 text-sm font-bold text-gray-800">
+                                <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>
+                                Swallowing difficulties or dysphagia present
+                            </span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-2 ml-8">
+                            Check if patient reports difficulty swallowing or has documented dysphagia
+                        </p>
+                    </div>
+
+                    <!-- Nausea/Vomiting -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox"
+                                   id="nauseaVomiting"
+                                   class="h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <span class="ml-3 text-sm font-bold text-gray-800">
+                                <i class="fas fa-dizzy text-orange-600 mr-2"></i>
+                                Nausea or vomiting
+                            </span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-2 ml-8">
+                            Check if patient experiencing nausea or vomiting affecting intake
+                        </p>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="dietaryNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-green-600 mr-2"></i>
+                            Additional Dietary Notes
+                        </label>
+                        <textarea id="dietaryNotes"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  placeholder="Any additional relevant dietary information..."
+                                  rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Nutritional Risk Screening (MST) -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-green-600 mr-2"></i>
+                    Malnutrition Screening Tool (MST)
+                </h3>
+                <p class="text-gray-700 mb-6">Complete the validated MST questionnaire to determine nutritional risk.</p>
+
+                <div class="space-y-6">
+                    <!-- MST Question 1 -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <p class="font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-question-circle text-green-600 mr-2"></i>
+                            Have you lost weight recently without trying?
+                        </p>
+                        <select id="mst1" onchange="calculateMST()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="0">No (0 points)</option>
+                            <option value="1">Unsure (1 point)</option>
+                            <option value="2">Yes, 1-5 kg (2 points)</option>
+                            <option value="3">Yes, 6-10 kg (3 points)</option>
+                            <option value="4">Yes, 11-15 kg (4 points)</option>
+                            <option value="5">Yes, >15 kg (5 points)</option>
+                        </select>
+                    </div>
+
+                    <!-- MST Question 2 -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <p class="font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-question-circle text-green-600 mr-2"></i>
+                            Have you been eating poorly because of decreased appetite?
+                        </p>
+                        <select id="mst2" onchange="calculateMST()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="0">No (0 points)</option>
+                            <option value="1">Yes (1 point)</option>
+                        </select>
+                    </div>
+
+                    <!-- MST Score Display -->
+                    <div class="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-300 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-lg font-bold text-gray-900">
+                                <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
+                                MST Score:
+                            </span>
+                            <span id="mstScore" class="text-4xl font-bold text-blue-700">0</span>
+                        </div>
+                        <div class="mt-2 p-4 bg-white rounded-lg">
+                            <span id="mstRisk" class="text-sm text-gray-600">Complete the questions above to calculate risk</span>
+                        </div>
+                    </div>
+
+                    <!-- MST Interpretation Guide -->
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            MST Score Interpretation
+                        </h4>
+                        <div class="text-sm text-blue-800 space-y-1">
+                            <p><strong>Score 0-1:</strong> Not at nutritional risk - Continue routine monitoring</p>
+                            <p><strong>Score ≥2:</strong> At nutritional risk - Dietitian referral recommended</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Recommendations & Referral -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-stethoscope text-green-600 mr-2"></i>
+                    Recommendations & Referral Plan
+                </h3>
+                <p class="text-gray-700 mb-6">Review screening results and generate intervention recommendations.</p>
+
+                <div class="space-y-6">
+                    <!-- Screening Summary -->
+                    <div id="screeningSummary" class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="font-bold text-gray-900 mb-3">
+                            <i class="fas fa-clipboard-list text-green-600 mr-2"></i>
+                            Screening Summary
+                        </h4>
+                        <div id="summaryContent" class="space-y-2 text-sm text-gray-700">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Dietitian Referral -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox"
+                                   id="referralRecommended"
+                                   class="h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500 mt-1">
+                            <div class="ml-3">
+                                <span class="text-sm font-bold text-gray-800">
+                                    <i class="fas fa-user-md text-green-600 mr-2"></i>
+                                    Refer to Registered Dietitian
+                                </span>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Recommend comprehensive nutritional assessment by RD
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Intervention Recommendations -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="interventions" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-tasks text-green-600 mr-2"></i>
+                            Recommended Interventions
+                        </label>
+                        <textarea id="interventions"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  placeholder="e.g., High-protein supplements, small frequent meals, nutritional monitoring..."
+                                  rows="4"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Document specific nutritional interventions and recommendations
+                        </p>
+                    </div>
+
+                    <!-- Follow-up Plan -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="followUp" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar-check text-green-600 mr-2"></i>
+                            Follow-up Plan
+                        </label>
+                        <select id="followUp" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="">Select follow-up timeframe...</option>
+                            <option value="24hrs">Re-screen in 24 hours</option>
+                            <option value="48hrs">Re-screen in 48 hours</option>
+                            <option value="1week">Re-screen in 1 week</option>
+                            <option value="2weeks">Re-screen in 2 weeks</option>
+                            <option value="monthly">Monthly monitoring</option>
+                            <option value="as-needed">As needed based on condition changes</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            When to reassess patient's nutritional status
+                        </p>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="clinicalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-medical text-green-600 mr-2"></i>
+                            Clinical Notes
+                        </label>
+                        <textarea id="clinicalNotes"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  placeholder="Additional clinical observations or concerns..."
+                                  rows="3"></textarea>
+                    </div>
+
+                    <!-- Complete Screening Button -->
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-semibold text-green-900">Ready to Complete</h4>
+                                <p class="text-sm text-green-800">Review all information and click Complete to finalize the screening.</p>
+                            </div>
+                            <button id="completeScreeningBtn" onclick="completeScreening()" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-check-circle mr-2"></i>Complete Screening
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Nutrition Screening Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+            handleStepSpecificLogic();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            wizardState.current_step--;
+            updateWizardUI();
+            handleStepSpecificLogic();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect and save current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+
+            // Update UI
+            updateWizardUI();
+            handleStepSpecificLogic();
+        }
+
+        // Handle step-specific UI logic
+        function handleStepSpecificLogic() {
+            if (wizardState.current_step === 4) {
+                populateSummary();
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Anthropometric Measurements
+                    stepData.height = document.getElementById('height').value;
+                    stepData.weight = document.getElementById('weight').value;
+                    stepData.usualWeight = document.getElementById('usualWeight').value;
+                    stepData.bmi = document.getElementById('bmiValue').textContent;
+                    stepData.bmiCategory = document.getElementById('bmiCategory').textContent;
+                    break;
+
+                case 2: // Dietary Intake
+                    stepData.appetite = document.getElementById('appetite').value;
+                    stepData.intakePercent = document.getElementById('intakePercent').value;
+                    stepData.dietaryRestrictions = document.getElementById('dietaryRestrictions').value;
+                    stepData.swallowingDifficulty = document.getElementById('swallowingDifficulty').checked;
+                    stepData.nauseaVomiting = document.getElementById('nauseaVomiting').checked;
+                    stepData.dietaryNotes = document.getElementById('dietaryNotes').value;
+                    break;
+
+                case 3: // MST
+                    stepData.mst1 = document.getElementById('mst1').value;
+                    stepData.mst2 = document.getElementById('mst2').value;
+                    stepData.mstScore = document.getElementById('mstScore').textContent;
+                    stepData.mstRisk = document.getElementById('mstRisk').textContent;
+                    break;
+
+                case 4: // Recommendations
+                    stepData.referralRecommended = document.getElementById('referralRecommended').checked;
+                    stepData.interventions = document.getElementById('interventions').value;
+                    stepData.followUp = document.getElementById('followUp').value;
+                    stepData.clinicalNotes = document.getElementById('clinicalNotes').value;
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 4) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 4) {
+                nextBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'block';
+            }
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Calculate BMI
+        function calculateBMI() {
+            const heightCm = parseFloat(document.getElementById('height').value);
+            const weightKg = parseFloat(document.getElementById('weight').value);
+
+            if (heightCm && weightKg) {
+                const heightM = heightCm / 100;
+                const bmi = (weightKg / (heightM * heightM)).toFixed(1);
+
+                document.getElementById('bmiValue').textContent = bmi;
+
+                let category, color;
+                if (bmi < 18.5) {
+                    category = 'Underweight';
+                    color = 'red';
+                } else if (bmi < 25) {
+                    category = 'Normal';
+                    color = 'green';
+                } else if (bmi < 30) {
+                    category = 'Overweight';
+                    color = 'yellow';
+                } else {
+                    category = 'Obese';
+                    color = 'red';
+                }
+
+                document.getElementById('bmiCategory').textContent = category;
+                document.getElementById('bmiCategory').className = `text-${color}-600 font-semibold`;
+            }
+        }
+
+        // Calculate Weight Loss
+        function calculateWeightLoss() {
+            const currentWeight = parseFloat(document.getElementById('weight').value);
+            const usualWeight = parseFloat(document.getElementById('usualWeight').value);
+
+            if (currentWeight && usualWeight) {
+                const loss = ((usualWeight - currentWeight) / usualWeight * 100).toFixed(1);
+                document.getElementById('weightLossPercent').textContent = loss + '%';
+                document.getElementById('weightLossDisplay').classList.remove('hidden');
+
+                if (loss > 10) {
+                    document.getElementById('weightLossAlert').classList.remove('hidden');
+                } else {
+                    document.getElementById('weightLossAlert').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('weightLossDisplay').classList.add('hidden');
+            }
+        }
+
+        // Calculate Ideal Body Weight (Hamwi formula)
+        function calculateIdealBodyWeight() {
+            const heightCm = parseFloat(document.getElementById('height').value);
+            const weightKg = parseFloat(document.getElementById('weight').value);
+
+            if (heightCm) {
+                // Simplified Hamwi formula (assumes male, medium frame)
+                const heightInches = heightCm / 2.54;
+                const ibwKg = (48 + 2.7 * (heightInches - 60)) || 0;
+
+                if (ibwKg > 0) {
+                    document.getElementById('ibwValue').textContent = ibwKg.toFixed(1) + ' kg';
+                    document.getElementById('ibwDisplay').classList.remove('hidden');
+
+                    if (weightKg) {
+                        const percentIBW = ((weightKg / ibwKg) * 100).toFixed(0);
+                        let comparison = '';
+
+                        if (percentIBW < 80) {
+                            comparison = `${percentIBW}% of IBW - Significantly below ideal`;
+                        } else if (percentIBW < 90) {
+                            comparison = `${percentIBW}% of IBW - Below ideal`;
+                        } else if (percentIBW <= 110) {
+                            comparison = `${percentIBW}% of IBW - Within normal range`;
+                        } else if (percentIBW <= 120) {
+                            comparison = `${percentIBW}% of IBW - Above ideal`;
+                        } else {
+                            comparison = `${percentIBW}% of IBW - Significantly above ideal`;
+                        }
+
+                        document.getElementById('ibwComparison').textContent = comparison;
+                    }
+                }
+            } else {
+                document.getElementById('ibwDisplay').classList.add('hidden');
+            }
+        }
+
+        // Calculate MST Score
+        function calculateMST() {
+            const q1 = parseInt(document.getElementById('mst1').value) || 0;
+            const q2 = parseInt(document.getElementById('mst2').value) || 0;
+            const total = q1 + q2;
+
+            document.getElementById('mstScore').textContent = total;
+
+            const riskElement = document.getElementById('mstRisk');
+
+            if (total >= 2) {
+                riskElement.innerHTML = '<i class="fas fa-exclamation-triangle text-red-600 mr-2"></i><strong>At Risk</strong> - Dietitian referral recommended';
+                riskElement.className = 'text-sm text-red-600 font-semibold';
+                document.getElementById('referralRecommended').checked = true;
+            } else {
+                riskElement.innerHTML = '<i class="fas fa-check-circle text-green-600 mr-2"></i><strong>Not at Risk</strong> - Continue routine monitoring';
+                riskElement.className = 'text-sm text-green-600';
+            }
+        }
+
+        // Quick Fill: At Risk Patient
+        function fillAtRisk() {
+            document.getElementById('height').value = '170';
+            document.getElementById('weight').value = '52';
+            document.getElementById('usualWeight').value = '68';
+            calculateBMI();
+            calculateWeightLoss();
+            calculateIdealBodyWeight();
+
+            document.getElementById('appetite').value = 'poor';
+            document.getElementById('intakePercent').value = '50';
+            document.getElementById('swallowingDifficulty').checked = true;
+
+            document.getElementById('mst1').value = '3';
+            document.getElementById('mst2').value = '1';
+            calculateMST();
+
+            showMessage('success', 'At-risk patient data filled - high nutritional risk profile');
+        }
+
+        // Quick Fill: Normal Patient
+        function fillNormal() {
+            document.getElementById('height').value = '165';
+            document.getElementById('weight').value = '62';
+            document.getElementById('usualWeight').value = '62';
+            calculateBMI();
+            calculateWeightLoss();
+            calculateIdealBodyWeight();
+
+            document.getElementById('appetite').value = 'good';
+            document.getElementById('intakePercent').value = '100';
+            document.getElementById('swallowingDifficulty').checked = false;
+            document.getElementById('nauseaVomiting').checked = false;
+
+            document.getElementById('mst1').value = '0';
+            document.getElementById('mst2').value = '0';
+            calculateMST();
+
+            showMessage('success', 'Normal patient data filled - low nutritional risk profile');
+        }
+
+        // Populate Summary in Step 4
+        function populateSummary() {
+            const data = wizardState.data;
+            const summaryContent = document.getElementById('summaryContent');
+
+            let html = '<div class="space-y-3">';
+
+            // Anthropometric Data
+            if (data.height || data.weight) {
+                html += '<div class="border-l-4 border-green-500 pl-3">';
+                html += '<h5 class="font-semibold text-gray-900 mb-1">Anthropometric Measurements</h5>';
+                if (data.height) html += `<p>Height: ${data.height} cm</p>`;
+                if (data.weight) html += `<p>Weight: ${data.weight} kg</p>`;
+                if (data.bmi && data.bmi !== '--') html += `<p>BMI: ${data.bmi} (${data.bmiCategory})</p>`;
+                html += '</div>';
+            }
+
+            // Dietary Assessment
+            if (data.appetite) {
+                html += '<div class="border-l-4 border-blue-500 pl-3">';
+                html += '<h5 class="font-semibold text-gray-900 mb-1">Dietary Assessment</h5>';
+                html += `<p>Appetite: ${data.appetite}</p>`;
+                if (data.intakePercent) html += `<p>Intake: ${data.intakePercent}% of usual</p>`;
+                if (data.swallowingDifficulty) html += '<p class="text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>Swallowing difficulties present</p>';
+                html += '</div>';
+            }
+
+            // MST Score
+            if (data.mstScore) {
+                html += '<div class="border-l-4 border-purple-500 pl-3">';
+                html += '<h5 class="font-semibold text-gray-900 mb-1">Malnutrition Screening (MST)</h5>';
+                html += `<p>Score: ${data.mstScore}</p>`;
+                html += `<p>${data.mstRisk}</p>`;
+                html += '</div>';
+            }
+
+            html += '</div>';
+            summaryContent.innerHTML = html;
+        }
+
+        // Complete Screening
+        function completeScreening() {
+            // Collect final data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            showMessage('success', 'Nutrition screening completed successfully! Data has been saved.');
+
+            // Could add API call here to save to backend
+            console.log('Complete screening data:', wizardState.data);
+
+            // Disable the button
+            document.getElementById('completeScreeningBtn').disabled = true;
+            document.getElementById('completeScreeningBtn').innerHTML = '<i class="fas fa-check-circle mr-2"></i>Screening Completed';
+        }
+    </script>
+</body>
+</html>

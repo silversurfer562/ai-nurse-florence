@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Transfusion Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #dc2626;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .blood-header {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #dc2626;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .verification-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .monitoring-grid {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        .monitoring-grid input {
+            font-family: monospace;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="blood-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-tint text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-red-200 text-sm">Blood Transfusion Wizard</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800">Critical Blood Product Administration Protocol</h3>
+                    <p class="text-sm text-red-700">This wizard guides you through safe blood transfusion procedures. Two-person verification required.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-red-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Blood Transfusion Protocol</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps for safe blood product administration</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 6</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="6" onclick="navigateToStep(6)">
+                        <span>6</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Pre-Assess</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Verify</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Baseline</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Monitor</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Post-Assess</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Document</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Pre-Transfusion Assessment -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-red-600 mr-2"></i>
+                    Pre-Transfusion Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Verify patient readiness and consent for blood transfusion.</p>
+
+                <div class="space-y-4">
+                    <div class="form-field p-4 rounded-lg">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="consentVerified" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Informed Consent Verified</h4>
+                                <p class="text-sm text-gray-600">Patient has signed consent for blood transfusion</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <label class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-syringe text-red-600 mr-2"></i>
+                            IV Access Gauge
+                        </label>
+                        <select id="ivGauge" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select IV gauge...</option>
+                            <option value="14G">14 Gauge</option>
+                            <option value="16G">16 Gauge</option>
+                            <option value="18G">18 Gauge</option>
+                            <option value="20G">20 Gauge</option>
+                            <option value="22G">22 Gauge</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">18G or larger recommended for red blood cells</p>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="patientIdBand" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Patient ID Band Verified</h4>
+                                <p class="text-sm text-gray-600">Name and MRN match on patient identification band</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <label for="patientName" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user text-red-600 mr-2"></i>
+                            Patient Name
+                        </label>
+                        <input type="text" id="patientName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Enter patient name">
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <label for="patientMrn" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-id-badge text-red-600 mr-2"></i>
+                            Patient MRN
+                        </label>
+                        <input type="text" id="patientMrn" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono" placeholder="Enter MRN">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Product Verification -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-shield-alt text-red-600 mr-2"></i>
+                    Product Verification
+                </h3>
+                <p class="text-gray-700 mb-6">Two-person verification required for all blood products.</p>
+
+                <div class="space-y-6">
+                    <!-- Two-Person Verification -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-5">
+                        <h4 class="font-bold text-red-900 mb-4">
+                            <i class="fas fa-user-friends mr-2"></i>
+                            Two-Person Verification
+                        </h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="nurse1Name" class="block text-sm font-bold text-gray-800 mb-2">Nurse 1 Name</label>
+                                <input type="text" id="nurse1Name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Enter first nurse name">
+                            </div>
+                            <div>
+                                <label for="nurse2Name" class="block text-sm font-bold text-gray-800 mb-2">Nurse 2 Name</label>
+                                <input type="text" id="nurse2Name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Enter second nurse name">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Details -->
+                    <div class="form-field p-4 rounded-lg">
+                        <label for="productType" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-tint text-red-600 mr-2"></i>
+                            Blood Product Type
+                        </label>
+                        <select id="productType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select product type...</option>
+                            <option value="Packed Red Blood Cells">Packed Red Blood Cells (PRBC)</option>
+                            <option value="Fresh Frozen Plasma">Fresh Frozen Plasma (FFP)</option>
+                            <option value="Platelets">Platelets</option>
+                            <option value="Cryoprecipitate">Cryoprecipitate</option>
+                            <option value="Whole Blood">Whole Blood</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field p-4 rounded-lg">
+                        <label for="unitNumber" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-barcode text-red-600 mr-2"></i>
+                            Unit Number
+                        </label>
+                        <input type="text" id="unitNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono" placeholder="Scan or enter unit number">
+                    </div>
+
+                    <!-- Verification Checklist -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Verification Checklist</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="unitNumberMatch" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded" onchange="verifyBloodProduct()">
+                                <div>
+                                    <span class="font-semibold text-gray-900">Unit number matches order</span>
+                                    <p class="text-sm text-gray-600">Verified by both nurses</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="bloodTypeMatch" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded" onchange="verifyBloodProduct()">
+                                <div>
+                                    <span class="font-semibold text-gray-900">Blood type/Rh compatible</span>
+                                    <p class="text-sm text-gray-600">Patient and product ABO/Rh verified</p>
+                                </div>
+                            </label>
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="expirationCheck" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <span class="font-semibold text-gray-900">Expiration date valid</span>
+                                    <p class="text-sm text-gray-600">Product not expired and properly stored</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="verificationBadge" class="verification-badge hidden">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        Verified
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Baseline Vitals & Patient Education -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-heartbeat text-red-600 mr-2"></i>
+                    Baseline Vitals & Patient Education
+                </h3>
+                <p class="text-gray-700 mb-6">Obtain baseline vital signs and educate patient on transfusion process.</p>
+
+                <div class="space-y-6">
+                    <!-- Baseline Vitals -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Baseline Vital Signs</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="baselineBp" class="block text-sm font-bold text-gray-800 mb-2">Blood Pressure</label>
+                                <input type="text" id="baselineBp" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="120/80">
+                            </div>
+                            <div>
+                                <label for="baselineHr" class="block text-sm font-bold text-gray-800 mb-2">Heart Rate</label>
+                                <input type="text" id="baselineHr" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="72">
+                            </div>
+                            <div>
+                                <label for="baselineTemp" class="block text-sm font-bold text-gray-800 mb-2">Temperature (°F)</label>
+                                <input type="text" id="baselineTemp" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="98.6">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transfusion Reaction History -->
+                    <div class="form-field p-4 rounded-lg">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="reactionHistory" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                            <div>
+                                <h4 class="font-semibold text-gray-900">Previous Transfusion Reaction History</h4>
+                                <p class="text-sm text-gray-600">Patient has had reactions to previous transfusions</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Patient Education -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Patient Education Checklist</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="eduPurpose" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <span class="text-sm text-gray-700">Explained purpose of transfusion</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="eduSymptoms" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <span class="text-sm text-gray-700">Instructed to report symptoms (chills, fever, itching, shortness of breath)</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="eduDuration" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <span class="text-sm text-gray-700">Explained expected duration and monitoring process</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Transfusion Monitoring -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-red-600 mr-2"></i>
+                    Transfusion Monitoring
+                </h3>
+                <p class="text-gray-700 mb-6">Monitor vital signs at regular intervals during transfusion.</p>
+
+                <div class="space-y-6">
+                    <!-- Monitoring Timeline -->
+                    <div class="monitoring-grid">
+                        <div class="grid grid-cols-5 gap-2 mb-2">
+                            <div class="text-center font-semibold text-sm">Time Point</div>
+                            <div class="text-center font-semibold text-sm">BP</div>
+                            <div class="text-center font-semibold text-sm">HR</div>
+                            <div class="text-center font-semibold text-sm">Temp</div>
+                            <div class="text-center font-semibold text-sm">Status</div>
+                        </div>
+
+                        <!-- Baseline -->
+                        <div class="grid grid-cols-5 gap-2 mb-2">
+                            <div class="text-sm font-medium">Baseline</div>
+                            <div><input type="text" id="bp0" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="hr0" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="temp0" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div class="text-center"><span class="text-green-600">✓</span></div>
+                        </div>
+
+                        <!-- 15 minutes -->
+                        <div class="grid grid-cols-5 gap-2 mb-2">
+                            <div class="text-sm font-medium">15 min</div>
+                            <div><input type="text" id="bp15" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="hr15" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="temp15" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div class="text-center"><span class="text-gray-400">-</span></div>
+                        </div>
+
+                        <!-- 30 minutes -->
+                        <div class="grid grid-cols-5 gap-2 mb-2">
+                            <div class="text-sm font-medium">30 min</div>
+                            <div><input type="text" id="bp30" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="hr30" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="temp30" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div class="text-center"><span class="text-gray-400">-</span></div>
+                        </div>
+
+                        <!-- 60 minutes -->
+                        <div class="grid grid-cols-5 gap-2">
+                            <div class="text-sm font-medium">60 min</div>
+                            <div><input type="text" id="bp60" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="hr60" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div><input type="text" id="temp60" class="w-full px-2 py-1 border rounded text-sm font-mono"></div>
+                            <div class="text-center"><span class="text-gray-400">-</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Reaction Symptoms -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-5">
+                        <h4 class="font-bold text-red-900 mb-4">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Reaction Symptoms Assessment
+                        </h4>
+                        <div class="space-y-3">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="reactionSymptoms" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <span class="font-semibold text-gray-900">Adverse reaction symptoms present</span>
+                                    <p class="text-sm text-gray-600">Fever, chills, rash, difficulty breathing, or other concerning symptoms</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div id="reactionDetails" class="mt-4 hidden">
+                            <label for="reactionNotes" class="block text-sm font-bold text-gray-800 mb-2">Reaction Details</label>
+                            <textarea id="reactionNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Describe symptoms and interventions..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Quick Fill Buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="fillNormalTransfusion()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                            <i class="fas fa-check-circle mr-2"></i>Fill Normal Transfusion
+                        </button>
+                        <button onclick="fillReactionScenario()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+                            <i class="fas fa-exclamation-circle mr-2"></i>Fill Reaction Scenario
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Post-Transfusion Assessment -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-stethoscope text-red-600 mr-2"></i>
+                    Post-Transfusion Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Assess patient condition after transfusion completion.</p>
+
+                <div class="space-y-6">
+                    <!-- Post-Transfusion Vitals -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Post-Transfusion Vital Signs</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="postBp" class="block text-sm font-bold text-gray-800 mb-2">Blood Pressure</label>
+                                <input type="text" id="postBp" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="120/80">
+                            </div>
+                            <div>
+                                <label for="postHr" class="block text-sm font-bold text-gray-800 mb-2">Heart Rate</label>
+                                <input type="text" id="postHr" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="72">
+                            </div>
+                            <div>
+                                <label for="postTemp" class="block text-sm font-bold text-gray-800 mb-2">Temperature (°F)</label>
+                                <input type="text" id="postTemp" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="98.6">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Tolerance -->
+                    <div class="form-field p-4 rounded-lg">
+                        <label for="patientTolerance" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-check-circle text-red-600 mr-2"></i>
+                            Patient Tolerance Assessment
+                        </label>
+                        <select id="patientTolerance" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select tolerance level...</option>
+                            <option value="excellent">Excellent - No adverse reactions</option>
+                            <option value="good">Good - Mild symptoms, resolved</option>
+                            <option value="fair">Fair - Moderate symptoms, monitored</option>
+                            <option value="poor">Poor - Significant adverse reaction</option>
+                        </select>
+                    </div>
+
+                    <!-- Adverse Reaction Documentation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Adverse Reaction Documentation</h4>
+                        <label class="flex items-start cursor-pointer mb-4">
+                            <input type="checkbox" id="adverseReaction" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded" onchange="toggleAdverseReactionDetails()">
+                            <span class="font-semibold text-gray-900">Adverse reaction occurred</span>
+                        </label>
+                        <div id="adverseReactionDetails" class="hidden">
+                            <label for="adverseReactionType" class="block text-sm font-bold text-gray-800 mb-2">Reaction Type</label>
+                            <select id="adverseReactionType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 mb-4">
+                                <option value="">Select reaction type...</option>
+                                <option value="febrile">Febrile Non-Hemolytic</option>
+                                <option value="allergic">Allergic</option>
+                                <option value="hemolytic">Hemolytic</option>
+                                <option value="trali">TRALI (Transfusion-Related Acute Lung Injury)</option>
+                                <option value="taco">TACO (Transfusion-Associated Circulatory Overload)</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <label for="reactionManagement" class="block text-sm font-bold text-gray-800 mb-2">Management Actions</label>
+                            <textarea id="reactionManagement" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Document interventions and physician notification..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Documentation & Review -->
+            <div id="step6" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical text-red-600 mr-2"></i>
+                    Documentation & Review
+                </h3>
+                <p class="text-gray-700 mb-6">Complete transfusion documentation and review all data.</p>
+
+                <div class="space-y-6">
+                    <!-- Transfusion Summary -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Transfusion Summary</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="totalVolume" class="block text-sm font-bold text-gray-800 mb-2">Total Volume Transfused (mL)</label>
+                                <input type="text" id="totalVolume" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="350">
+                            </div>
+                            <div>
+                                <label for="transfusionRate" class="block text-sm font-bold text-gray-800 mb-2">Transfusion Rate (mL/hr)</label>
+                                <input type="text" id="transfusionRate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 font-mono" placeholder="125">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Documentation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Time Documentation</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="startTime" class="block text-sm font-bold text-gray-800 mb-2">Start Time</label>
+                                <input type="time" id="startTime" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                            </div>
+                            <div>
+                                <label for="endTime" class="block text-sm font-bold text-gray-800 mb-2">End Time</label>
+                                <input type="time" id="endTime" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Outcome Summary -->
+                    <div class="form-field p-4 rounded-lg">
+                        <label for="outcomeSummary" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-red-600 mr-2"></i>
+                            Outcome Summary
+                        </label>
+                        <textarea id="outcomeSummary" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Document overall transfusion outcome, patient response, and any follow-up required..."></textarea>
+                    </div>
+
+                    <!-- Review Content -->
+                    <div id="reviewContent" class="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                        <h4 class="font-bold text-gray-900 mb-4">Transfusion Record Summary</h4>
+                        <div id="reviewSummary" class="text-sm text-gray-700 space-y-2">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Documentation
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 6,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Blood Transfusion Wizard loaded');
+            updateWizardUI();
+
+            // Add event listener for reaction symptoms checkbox
+            document.getElementById('reactionSymptoms').addEventListener('change', function() {
+                document.getElementById('reactionDetails').classList.toggle('hidden', !this.checked);
+            });
+        });
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Collect step data
+            collectCurrentStepData();
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 6);
+            updateWizardUI();
+
+            // Populate review if on final step
+            if (wizardState.current_step === 6) {
+                populateReview();
+            }
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 6) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 6) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            switch (wizardState.current_step) {
+                case 1: // Pre-Assessment
+                    wizardState.data.consentVerified = document.getElementById('consentVerified').checked;
+                    wizardState.data.ivGauge = document.getElementById('ivGauge').value;
+                    wizardState.data.patientIdBand = document.getElementById('patientIdBand').checked;
+                    wizardState.data.patientName = document.getElementById('patientName').value;
+                    wizardState.data.patientMrn = document.getElementById('patientMrn').value;
+                    break;
+
+                case 2: // Product Verification
+                    wizardState.data.nurse1Name = document.getElementById('nurse1Name').value;
+                    wizardState.data.nurse2Name = document.getElementById('nurse2Name').value;
+                    wizardState.data.productType = document.getElementById('productType').value;
+                    wizardState.data.unitNumber = document.getElementById('unitNumber').value;
+                    wizardState.data.unitNumberMatch = document.getElementById('unitNumberMatch').checked;
+                    wizardState.data.bloodTypeMatch = document.getElementById('bloodTypeMatch').checked;
+                    wizardState.data.expirationCheck = document.getElementById('expirationCheck').checked;
+                    break;
+
+                case 3: // Baseline Vitals
+                    wizardState.data.baselineBp = document.getElementById('baselineBp').value;
+                    wizardState.data.baselineHr = document.getElementById('baselineHr').value;
+                    wizardState.data.baselineTemp = document.getElementById('baselineTemp').value;
+                    wizardState.data.reactionHistory = document.getElementById('reactionHistory').checked;
+                    break;
+
+                case 4: // Monitoring
+                    wizardState.data.bp0 = document.getElementById('bp0').value;
+                    wizardState.data.hr0 = document.getElementById('hr0').value;
+                    wizardState.data.temp0 = document.getElementById('temp0').value;
+                    wizardState.data.bp15 = document.getElementById('bp15').value;
+                    wizardState.data.hr15 = document.getElementById('hr15').value;
+                    wizardState.data.temp15 = document.getElementById('temp15').value;
+                    wizardState.data.bp30 = document.getElementById('bp30').value;
+                    wizardState.data.hr30 = document.getElementById('hr30').value;
+                    wizardState.data.temp30 = document.getElementById('temp30').value;
+                    wizardState.data.bp60 = document.getElementById('bp60').value;
+                    wizardState.data.hr60 = document.getElementById('hr60').value;
+                    wizardState.data.temp60 = document.getElementById('temp60').value;
+                    wizardState.data.reactionSymptoms = document.getElementById('reactionSymptoms').checked;
+                    break;
+
+                case 5: // Post-Assessment
+                    wizardState.data.postBp = document.getElementById('postBp').value;
+                    wizardState.data.postHr = document.getElementById('postHr').value;
+                    wizardState.data.postTemp = document.getElementById('postTemp').value;
+                    wizardState.data.patientTolerance = document.getElementById('patientTolerance').value;
+                    wizardState.data.adverseReaction = document.getElementById('adverseReaction').checked;
+                    break;
+
+                case 6: // Documentation
+                    wizardState.data.totalVolume = document.getElementById('totalVolume').value;
+                    wizardState.data.transfusionRate = document.getElementById('transfusionRate').value;
+                    wizardState.data.startTime = document.getElementById('startTime').value;
+                    wizardState.data.endTime = document.getElementById('endTime').value;
+                    wizardState.data.outcomeSummary = document.getElementById('outcomeSummary').value;
+                    break;
+            }
+        }
+
+        // Verify blood product (two-person verification)
+        function verifyBloodProduct() {
+            const nurse1 = document.getElementById('nurse1Name').value;
+            const nurse2 = document.getElementById('nurse2Name').value;
+            const unitMatch = document.getElementById('unitNumberMatch').checked;
+            const typeMatch = document.getElementById('bloodTypeMatch').checked;
+
+            const badge = document.getElementById('verificationBadge');
+            if (nurse1 && nurse2 && unitMatch && typeMatch) {
+                badge.classList.remove('hidden');
+                badge.innerHTML = `<i class="fas fa-check-circle mr-2"></i>✓ Verified by ${nurse1} & ${nurse2}`;
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Fill normal transfusion data
+        function fillNormalTransfusion() {
+            document.getElementById('productType').value = 'Packed Red Blood Cells';
+            document.getElementById('unitNumber').value = 'PRBC-456789';
+            document.getElementById('bp0').value = '128/82';
+            document.getElementById('hr0').value = '76';
+            document.getElementById('temp0').value = '98.4';
+            document.getElementById('bp15').value = '126/80';
+            document.getElementById('hr15').value = '74';
+            document.getElementById('temp15').value = '98.6';
+            document.getElementById('bp30').value = '130/84';
+            document.getElementById('hr30').value = '78';
+            document.getElementById('temp30').value = '98.5';
+            document.getElementById('bp60').value = '128/80';
+            document.getElementById('hr60').value = '76';
+            document.getElementById('temp60').value = '98.6';
+            showMessage('success', 'Normal transfusion values filled');
+        }
+
+        // Fill reaction scenario data
+        function fillReactionScenario() {
+            document.getElementById('bp15').value = '142/90';
+            document.getElementById('hr15').value = '102';
+            document.getElementById('temp15').value = '100.2';
+            document.getElementById('reactionSymptoms').checked = true;
+            document.getElementById('reactionDetails').classList.remove('hidden');
+            document.getElementById('reactionNotes').value = 'Patient developed fever and chills at 15 minutes. Transfusion stopped, physician notified.';
+            showMessage('warning', 'Reaction scenario values filled');
+        }
+
+        // Toggle adverse reaction details
+        function toggleAdverseReactionDetails() {
+            const checkbox = document.getElementById('adverseReaction');
+            const details = document.getElementById('adverseReactionDetails');
+            details.classList.toggle('hidden', !checkbox.checked);
+        }
+
+        // Populate review content
+        function populateReview() {
+            const data = wizardState.data;
+            const reviewSummary = document.getElementById('reviewSummary');
+
+            let html = `
+                <div class="mb-3">
+                    <strong>Patient:</strong> ${data.patientName || 'Not provided'} (MRN: ${data.patientMrn || 'Not provided'})
+                </div>
+                <div class="mb-3">
+                    <strong>Product:</strong> ${data.productType || 'Not provided'} - Unit ${data.unitNumber || 'Not provided'}
+                </div>
+                <div class="mb-3">
+                    <strong>Verified By:</strong> ${data.nurse1Name || 'Nurse 1'} & ${data.nurse2Name || 'Nurse 2'}
+                </div>
+                <div class="mb-3">
+                    <strong>Baseline Vitals:</strong> BP ${data.baselineBp || 'N/A'}, HR ${data.baselineHr || 'N/A'}, Temp ${data.baselineTemp || 'N/A'}°F
+                </div>
+                <div class="mb-3">
+                    <strong>Post Vitals:</strong> BP ${data.postBp || 'N/A'}, HR ${data.postHr || 'N/A'}, Temp ${data.postTemp || 'N/A'}°F
+                </div>
+                <div class="mb-3">
+                    <strong>Patient Tolerance:</strong> ${data.patientTolerance || 'Not assessed'}
+                </div>
+                <div class="mb-3">
+                    <strong>Adverse Reaction:</strong> ${data.adverseReaction ? 'Yes - See documentation' : 'No'}
+                </div>
+                <div class="mb-3">
+                    <strong>Duration:</strong> ${data.startTime || 'N/A'} to ${data.endTime || 'N/A'}
+                </div>
+            `;
+
+            reviewSummary.innerHTML = html;
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+            showMessage('success', 'Blood transfusion documentation completed successfully!');
+
+            // Mark wizard as complete
+            wizardState.completed_steps.push(6);
+
+            // Could send data to server here
+            console.log('Transfusion data:', wizardState.data);
+
+            // Show completion message
+            setTimeout(() => {
+                alert('Blood transfusion wizard completed!\n\nAll documentation has been recorded.');
+            }, 500);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>

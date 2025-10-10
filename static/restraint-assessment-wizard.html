@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restraint Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #7c3aed;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .restraint-header {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #7c3aed;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .monitoring-table {
+            overflow-x: auto;
+        }
+        .alert-box {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="restraint-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-purple-200 text-sm">Restraint Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-purple-900 bg-opacity-50 px-4 py-2 rounded-lg">
+                        <span class="text-sm font-semibold">
+                            <i class="fas fa-exclamation-triangle text-amber-300 mr-2"></i>
+                            Safety Protocol Active
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-amber-50 border-l-4 border-amber-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-amber-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-amber-800">Restraint Use Documentation Required</h3>
+                    <p class="text-sm text-amber-700">Complete all 5 steps to document restraint assessment, application, monitoring, and discontinuation per regulatory requirements.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-purple-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Restraint Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps for restraint documentation</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-purple-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Alternatives</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Order</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Application</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Monitoring</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">D/C Review</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Least Restrictive Alternatives Tried -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-list-check text-purple-600 mr-2"></i>
+                    Step 1: Least Restrictive Alternatives Tried
+                </h3>
+                <p class="text-gray-700 mb-6">Document all less restrictive interventions attempted before restraint use.</p>
+
+                <div class="space-y-6">
+                    <!-- Quick Fill Templates -->
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-lg">
+                        <h4 class="text-sm font-semibold text-purple-900 mb-3">
+                            <i class="fas fa-magic mr-2"></i>Quick Fill Templates
+                        </h4>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="fillAgitatedPatient()" class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-bolt mr-1"></i>Agitated Patient
+                            </button>
+                            <button onclick="fillConfusedFallRisk()" class="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-user-injured mr-1"></i>Confused/Fall Risk
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Alternatives Attempted -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-check-square text-purple-600 mr-2"></i>
+                            Alternatives Attempted <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-purple-600" id="altReorientation">
+                                <span class="text-sm">Frequent reorientation attempted</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-purple-600" id="altFamily">
+                                <span class="text-sm">Family/sitter presence offered</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-purple-600" id="altDiversion">
+                                <span class="text-sm">Diversional activities provided</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-purple-600" id="altMedication">
+                                <span class="text-sm">PRN medication offered/given</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-purple-600" id="altEnvironment">
+                                <span class="text-sm">Environmental modifications (lighting, noise reduction)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 h-4 w-4 text-purple-600" id="altBedAlarm">
+                                <span class="text-sm">Bed/chair alarm placement</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Reason Alternatives Failed -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clipboard-question text-purple-600 mr-2"></i>
+                            Why Alternatives Failed <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="alternativesFailure" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Describe why less restrictive alternatives were ineffective and restraints are necessary..."></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Document specific behaviors and safety concerns
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Restraint Justification & Order -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical text-purple-600 mr-2"></i>
+                    Step 2: Restraint Justification & Physician Order
+                </h3>
+                <p class="text-gray-700 mb-6">Document restraint type, physician order, and automatic expiration (24 hours).</p>
+
+                <div class="space-y-6">
+                    <!-- Restraint Type -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="restraintType" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hand text-purple-600 mr-2"></i>
+                            Restraint Type <span class="text-red-500">*</span>
+                        </label>
+                        <select id="restraintType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select restraint type...</option>
+                            <option value="Soft wrist restraints (bilateral)">Soft wrist restraints (bilateral)</option>
+                            <option value="Soft wrist restraint (left)">Soft wrist restraint (left)</option>
+                            <option value="Soft wrist restraint (right)">Soft wrist restraint (right)</option>
+                            <option value="Soft ankle restraints (bilateral)">Soft ankle restraints (bilateral)</option>
+                            <option value="Vest restraint">Vest restraint</option>
+                            <option value="Mitt restraints (bilateral)">Mitt restraints (bilateral)</option>
+                            <option value="Four-point restraints">Four-point restraints</option>
+                        </select>
+                    </div>
+
+                    <!-- Physician Order Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="orderTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-purple-600 mr-2"></i>
+                            Physician Order Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" id="orderTime" onchange="calculateExpiration()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Time physician order was obtained
+                        </p>
+                    </div>
+
+                    <!-- Ordering Physician -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="orderingPhysician" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user-md text-purple-600 mr-2"></i>
+                            Ordering Physician <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="orderingPhysician" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Dr. Last Name, First Name">
+                    </div>
+
+                    <!-- Expiration Display -->
+                    <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-hourglass-half text-amber-600 mr-3 mt-1"></i>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-amber-900 mb-1">Order Expiration (Auto-calculated)</h4>
+                                <p class="text-sm text-amber-800">
+                                    <span class="font-semibold">Expires:</span> <span id="expirationTime" class="font-mono">--</span>
+                                </p>
+                                <p class="text-xs text-amber-700 mt-1">Restraint orders expire after 24 hours and must be renewed</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Renewal Alert (hidden until approaching expiration) -->
+                    <div id="renewalAlert" class="hidden message-error p-4 rounded-lg alert-box">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="font-semibold text-red-900">Order Renewal Required</h4>
+                                <p class="text-sm text-red-800">This restraint order is approaching expiration. Contact physician for renewal order.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restraint Indication -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="restraintIndication" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-exclamation-circle text-purple-600 mr-2"></i>
+                            Restraint Indication <span class="text-red-500">*</span>
+                        </label>
+                        <select id="restraintIndication" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select indication...</option>
+                            <option value="Risk of self-harm">Risk of self-harm (pulling lines/tubes)</option>
+                            <option value="Risk to others">Risk to others (aggressive behavior)</option>
+                            <option value="Fall prevention">Fall prevention (confused/impaired judgment)</option>
+                            <option value="Medical necessity">Medical necessity (treatment interference)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Restraint Application & Patient Assessment -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-hand-holding-medical text-purple-600 mr-2"></i>
+                    Step 3: Restraint Application & Initial Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Document restraint application time and initial patient assessment.</p>
+
+                <div class="space-y-6">
+                    <!-- Application Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="applicationTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-purple-600 mr-2"></i>
+                            Restraint Application Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" id="applicationTime" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Time restraints were applied to patient
+                        </p>
+                    </div>
+
+                    <!-- Circulation Check -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-heartbeat text-purple-600 mr-2"></i>
+                            Circulation Check <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-gray-50 rounded">
+                                <input type="radio" name="circulation" value="Adequate" class="mr-3" id="circAdequate">
+                                <span class="text-sm">Adequate circulation (pink, warm, capillary refill &lt;2 sec)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded">
+                                <input type="radio" name="circulation" value="Adequate with monitoring" class="mr-3">
+                                <span class="text-sm">Adequate with monitoring (mild coolness/pallor)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded">
+                                <input type="radio" name="circulation" value="Impaired" class="mr-3">
+                                <span class="text-sm text-red-600 font-semibold">Impaired (cyanosis, numbness - LOOSEN IMMEDIATELY)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Skin Integrity Check -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-hand-sparkles text-purple-600 mr-2"></i>
+                            Skin Integrity at Restraint Sites <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center p-2 bg-gray-50 rounded">
+                                <input type="radio" name="skinIntegrity" value="Intact" class="mr-3" id="skinIntact">
+                                <span class="text-sm">Skin intact, no redness or breakdown</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded">
+                                <input type="radio" name="skinIntegrity" value="Mild redness" class="mr-3">
+                                <span class="text-sm">Mild redness present (increase padding)</span>
+                            </label>
+                            <label class="flex items-center p-2 bg-gray-50 rounded">
+                                <input type="radio" name="skinIntegrity" value="Skin breakdown" class="mr-3">
+                                <span class="text-sm text-red-600 font-semibold">Skin breakdown/injury present (notify physician)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Patient Understanding -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="patientUnderstanding" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-purple-600 mr-2"></i>
+                            Patient/Family Education Documented <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="patientUnderstanding" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Document patient/family understanding of restraint use, safety rationale, and monitoring plan..."></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Include patient response and understanding
+                        </p>
+                    </div>
+
+                    <!-- Initial Behavioral Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="initialBehavior" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-brain text-purple-600 mr-2"></i>
+                            Initial Behavioral Assessment
+                        </label>
+                        <select id="initialBehavior" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select behavior...</option>
+                            <option value="Calm, cooperative">Calm, cooperative</option>
+                            <option value="Agitated">Agitated</option>
+                            <option value="Combative">Combative</option>
+                            <option value="Confused">Confused</option>
+                            <option value="Sedated">Sedated</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Ongoing Monitoring (Q15min) -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-notes-medical text-purple-600 mr-2"></i>
+                    Step 4: Ongoing Monitoring (Every 15 Minutes)
+                </h3>
+                <p class="text-gray-700 mb-6">Document Q15min monitoring and Q2hr release with ROM exercises.</p>
+
+                <div class="space-y-6">
+                    <!-- Q15min Monitoring Instructions -->
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-lg">
+                        <h4 class="text-sm font-semibold text-purple-900 mb-2">
+                            <i class="fas fa-clipboard-check mr-2"></i>Monitoring Requirements
+                        </h4>
+                        <ul class="text-sm text-purple-800 space-y-1">
+                            <li><i class="fas fa-check text-purple-600 mr-2"></i>Check circulation and skin integrity every 15 minutes</li>
+                            <li><i class="fas fa-check text-purple-600 mr-2"></i>Document behavior and patient response</li>
+                            <li><i class="fas fa-check text-purple-600 mr-2"></i>Release restraints and perform ROM every 2 hours</li>
+                            <li><i class="fas fa-check text-purple-600 mr-2"></i>Offer toileting, hydration, and comfort measures</li>
+                        </ul>
+                    </div>
+
+                    <!-- Monitoring Table -->
+                    <div class="monitoring-table bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-table text-purple-600 mr-2"></i>
+                            Monitoring Log
+                        </label>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-300 text-sm">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="border border-gray-300 px-3 py-2">Time</th>
+                                        <th class="border border-gray-300 px-3 py-2">Circulation</th>
+                                        <th class="border border-gray-300 px-3 py-2">Skin</th>
+                                        <th class="border border-gray-300 px-3 py-2">Behavior</th>
+                                        <th class="border border-gray-300 px-3 py-2">ROM/Release</th>
+                                        <th class="border border-gray-300 px-3 py-2">Initials</th>
+                                        <th class="border border-gray-300 px-3 py-2">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monitoringLog">
+                                    <!-- Rows added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button onclick="addMonitoringEntry()" class="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Q15min Check
+                        </button>
+                    </div>
+
+                    <!-- ROM Documentation -->
+                    <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-running text-amber-600 mr-3 mt-1"></i>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-amber-900 mb-1">Q2hr Release & ROM Reminder</h4>
+                                <p class="text-sm text-amber-800">Document restraint release and range of motion exercises every 2 hours in the monitoring log above. Check the "ROM/Release" column when performed.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Restraint Discontinuation & Review -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-purple-600 mr-2"></i>
+                    Step 5: Restraint Discontinuation & Review
+                </h3>
+                <p class="text-gray-700 mb-6">Document restraint removal and final patient assessment.</p>
+
+                <div class="space-y-6">
+                    <!-- Discontinuation Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="discontinuationTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-purple-600 mr-2"></i>
+                            Restraint Discontinuation Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" id="discontinuationTime" onchange="calculateDuration()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-mono">
+                    </div>
+
+                    <!-- Total Duration Display -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hourglass-end text-purple-600 mr-2"></i>
+                            Total Restraint Duration
+                        </label>
+                        <div class="text-lg font-semibold text-purple-600" id="totalDuration">--</div>
+                        <p class="text-xs text-gray-500 mt-1">Auto-calculated from application to discontinuation</p>
+                    </div>
+
+                    <!-- Reason for Discontinuation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="discontinuationReason" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-check-circle text-purple-600 mr-2"></i>
+                            Reason for Discontinuation <span class="text-red-500">*</span>
+                        </label>
+                        <select id="discontinuationReason" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                            <option value="">Select reason...</option>
+                            <option value="Patient calm, no longer a safety risk">Patient calm, no longer a safety risk</option>
+                            <option value="Alternative interventions now effective">Alternative interventions now effective</option>
+                            <option value="Order expired (24 hours)">Order expired (24 hours)</option>
+                            <option value="Physician order to discontinue">Physician order to discontinue</option>
+                            <option value="Patient discharge">Patient discharge</option>
+                        </select>
+                    </div>
+
+                    <!-- Patient Condition on Removal -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-user-check text-purple-600 mr-2"></i>
+                            Patient Condition on Removal <span class="text-red-500">*</span>
+                        </label>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Circulation:</label>
+                                <select id="finalCirculation" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">Select...</option>
+                                    <option value="Intact">Intact</option>
+                                    <option value="Impaired - documented">Impaired - documented and treated</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Skin Integrity:</label>
+                                <select id="finalSkin" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">Select...</option>
+                                    <option value="Intact">Intact, no injury</option>
+                                    <option value="Redness">Mild redness - documented</option>
+                                    <option value="Breakdown">Skin breakdown - wound care initiated</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Behavior:</label>
+                                <select id="finalBehavior" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="">Select...</option>
+                                    <option value="Calm, cooperative">Calm, cooperative</option>
+                                    <option value="Improved">Improved from baseline</option>
+                                    <option value="Unchanged">Unchanged</option>
+                                    <option value="Agitated">Still agitated</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Re-education Completed -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="reeducationCompleted" class="mr-3 h-5 w-5 text-purple-600">
+                            <span class="text-sm font-bold text-gray-800">
+                                <i class="fas fa-graduation-cap text-purple-600 mr-2"></i>
+                                Patient/family re-education completed regarding restraint discontinuation <span class="text-red-500">*</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Final Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="finalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-dots text-purple-600 mr-2"></i>
+                            Final Assessment Notes
+                        </label>
+                        <textarea id="finalNotes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Document final patient status, any complications, follow-up care needed..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Documentation
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Restraint Assessment Wizard loaded');
+            updateWizardUI();
+
+            // Set current time as default for order time
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('orderTime').value = now.toISOString().slice(0, 16);
+            calculateExpiration();
+        });
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum < 1 || stepNum > 5) return;
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            if (wizardState.current_step >= 5) return;
+
+            // Collect and save current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            wizardState.current_step++;
+            updateWizardUI();
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            // Update progress
+            const progressPercent = Math.floor((wizardState.current_step / 5) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Alternatives
+                    stepData.altReorientation = document.getElementById('altReorientation').checked;
+                    stepData.altFamily = document.getElementById('altFamily').checked;
+                    stepData.altDiversion = document.getElementById('altDiversion').checked;
+                    stepData.altMedication = document.getElementById('altMedication').checked;
+                    stepData.altEnvironment = document.getElementById('altEnvironment').checked;
+                    stepData.altBedAlarm = document.getElementById('altBedAlarm').checked;
+                    stepData.alternativesFailure = document.getElementById('alternativesFailure').value;
+                    break;
+
+                case 2: // Order
+                    stepData.restraintType = document.getElementById('restraintType').value;
+                    stepData.orderTime = document.getElementById('orderTime').value;
+                    stepData.orderingPhysician = document.getElementById('orderingPhysician').value;
+                    stepData.restraintIndication = document.getElementById('restraintIndication').value;
+                    break;
+
+                case 3: // Application
+                    stepData.applicationTime = document.getElementById('applicationTime').value;
+                    stepData.circulation = document.querySelector('input[name="circulation"]:checked')?.value;
+                    stepData.skinIntegrity = document.querySelector('input[name="skinIntegrity"]:checked')?.value;
+                    stepData.patientUnderstanding = document.getElementById('patientUnderstanding').value;
+                    stepData.initialBehavior = document.getElementById('initialBehavior').value;
+                    break;
+
+                case 4: // Monitoring
+                    // Monitoring data stored in table
+                    break;
+
+                case 5: // Discontinuation
+                    stepData.discontinuationTime = document.getElementById('discontinuationTime').value;
+                    stepData.discontinuationReason = document.getElementById('discontinuationReason').value;
+                    stepData.finalCirculation = document.getElementById('finalCirculation').value;
+                    stepData.finalSkin = document.getElementById('finalSkin').value;
+                    stepData.finalBehavior = document.getElementById('finalBehavior').value;
+                    stepData.reeducationCompleted = document.getElementById('reeducationCompleted').checked;
+                    stepData.finalNotes = document.getElementById('finalNotes').value;
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Calculate order expiration (24 hours from order time)
+        function calculateExpiration() {
+            const orderTime = new Date(document.getElementById('orderTime').value);
+            if (isNaN(orderTime)) return;
+
+            const expiration = new Date(orderTime.getTime() + (24 * 60 * 60 * 1000));
+            document.getElementById('expirationTime').textContent = expiration.toLocaleString();
+
+            // Alert if approaching expiration
+            const now = new Date();
+            const hoursRemaining = (expiration - now) / (1000 * 60 * 60);
+
+            if (hoursRemaining < 2 && hoursRemaining > 0) {
+                document.getElementById('renewalAlert').classList.remove('hidden');
+            } else {
+                document.getElementById('renewalAlert').classList.add('hidden');
+            }
+        }
+
+        // Calculate total duration
+        function calculateDuration() {
+            const applicationTime = wizardState.data.applicationTime || document.getElementById('applicationTime')?.value;
+            const discontinuationTime = document.getElementById('discontinuationTime').value;
+
+            if (!applicationTime || !discontinuationTime) {
+                document.getElementById('totalDuration').textContent = '--';
+                return;
+            }
+
+            const start = new Date(applicationTime);
+            const end = new Date(discontinuationTime);
+            const diffMs = end - start;
+
+            if (diffMs < 0) {
+                document.getElementById('totalDuration').textContent = 'Invalid (discontinuation before application)';
+                return;
+            }
+
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            document.getElementById('totalDuration').textContent = `${hours} hours, ${minutes} minutes`;
+        }
+
+        // Add monitoring entry
+        function addMonitoringEntry() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            const tbody = document.getElementById('monitoringLog');
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td class="border border-gray-300 px-2 py-2 text-center font-mono text-sm">${timeStr}</td>
+                <td class="border border-gray-300 px-2 py-2">
+                    <select class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
+                        <option value="">--</option>
+                        <option value="Adequate">Adequate</option>
+                        <option value="Monitored">Monitored</option>
+                        <option value="Impaired">Impaired</option>
+                    </select>
+                </td>
+                <td class="border border-gray-300 px-2 py-2">
+                    <select class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
+                        <option value="">--</option>
+                        <option value="Intact">Intact</option>
+                        <option value="Redness">Redness</option>
+                        <option value="Breakdown">Breakdown</option>
+                    </select>
+                </td>
+                <td class="border border-gray-300 px-2 py-2">
+                    <select class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
+                        <option value="">--</option>
+                        <option value="Calm">Calm</option>
+                        <option value="Agitated">Agitated</option>
+                        <option value="Combative">Combative</option>
+                        <option value="Sedated">Sedated</option>
+                    </select>
+                </td>
+                <td class="border border-gray-300 px-2 py-2 text-center">
+                    <input type="checkbox" class="h-4 w-4 text-purple-600" title="Check if ROM/release performed">
+                </td>
+                <td class="border border-gray-300 px-2 py-2">
+                    <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded text-xs text-center" placeholder="RN" maxlength="5">
+                </td>
+                <td class="border border-gray-300 px-2 py-2 text-center">
+                    <button onclick="this.closest('tr').remove()" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+        }
+
+        // Quick fill: Agitated Patient
+        function fillAgitatedPatient() {
+            document.getElementById('altReorientation').checked = true;
+            document.getElementById('altMedication').checked = true;
+            document.getElementById('altFamily').checked = true;
+            document.getElementById('alternativesFailure').value = 'Patient remains agitated despite Ativan 1mg IV given 30 minutes ago. Attempting to pull IV lines and disconnect telemetry. Reorientation and family presence ineffective. Risk of self-harm and interference with medical treatment.';
+            showMessage('success', 'Agitated patient template applied');
+        }
+
+        // Quick fill: Confused Fall Risk
+        function fillConfusedFallRisk() {
+            document.getElementById('altReorientation').checked = true;
+            document.getElementById('altFamily').checked = true;
+            document.getElementById('altBedAlarm').checked = true;
+            document.getElementById('altEnvironment').checked = true;
+            document.getElementById('alternativesFailure').value = 'Patient confused and disoriented to place/time. Repeatedly attempting to climb out of bed despite bed alarm, low bed position, and family presence. High fall risk due to impaired judgment and unsteady gait.';
+            showMessage('success', 'Confused/fall risk template applied');
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 3000);
+            }
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            // Collect final step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            showMessage('success', 'Restraint assessment documentation completed successfully!');
+
+            // Could POST to backend API here
+            console.log('Final restraint assessment data:', wizardState.data);
+
+            setTimeout(() => {
+                if (confirm('Restraint documentation complete. Return to dashboard?')) {
+                    window.location.href = '/';
+                }
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
