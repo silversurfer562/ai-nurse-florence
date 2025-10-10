@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pain Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pain-header {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #dc2626;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .pain-scale {
+            position: relative;
+            padding: 0.5rem 0;
+        }
+        .pain-scale-emoji {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        .body-diagram {
+            max-width: 300px;
+            margin: 0 auto;
+            cursor: crosshair;
+        }
+        .pain-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #dc2626;
+            border-radius: 50%;
+            border: 2px solid white;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        .quality-checkbox {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .quality-checkbox:checked {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="pain-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-red-200 text-sm">Pain Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-heartbeat text-red-200"></i>
+                        <span class="text-sm">Comprehensive Pain Assessment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-red-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800">Comprehensive Pain Assessment</h3>
+                    <p class="text-sm text-red-700">This wizard guides you through a complete pain assessment including rating, location, characteristics, interventions, and reassessment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-red-600 h-full" style="width: 25%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Pain Assessment Wizard</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete comprehensive pain assessment and documentation</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">25%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator active rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-24">Rating & Location</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-24">Characteristics</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-24">Interventions</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-24">Documentation</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Quick Fill Buttons -->
+            <div class="px-6 pt-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-magic text-blue-600 mr-3"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold">Quick Fill Examples:</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="fillChestPain()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-heart-pulse mr-1"></i>Chest Pain
+                            </button>
+                            <button onclick="fillPostOpPain()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-band-aid mr-1"></i>Post-Op Pain
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Pain Rating & Location -->
+            <div id="step1" class="step-content active p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-red-600 mr-2"></i>
+                    Pain Rating & Location
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's pain level and identify the location of discomfort.</p>
+
+                <div class="space-y-6">
+                    <!-- Pain Scale with Emojis -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-gauge text-red-600 mr-2"></i>
+                            Pain Level (0-10) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="pain-scale">
+                            <div class="pain-scale-emoji">
+                                <span class="text-3xl">😊</span>
+                                <span class="text-3xl">😐</span>
+                                <span class="text-3xl">😣</span>
+                                <span class="text-3xl">😭</span>
+                            </div>
+                            <input type="range" id="painScale" min="0" max="10" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600" oninput="updatePainValue()">
+                        </div>
+                        <div class="flex justify-between items-center mt-8">
+                            <span class="text-sm text-gray-600">No Pain (0)</span>
+                            <div class="text-center">
+                                <span class="text-3xl font-bold text-red-600" id="painValue">0</span>
+                                <p class="text-xs text-gray-500 mt-1">Current Pain Level</p>
+                            </div>
+                            <span class="text-sm text-gray-600">Worst Pain (10)</span>
+                        </div>
+                    </div>
+
+                    <!-- Pain Location -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="painLocation" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-location-dot text-red-600 mr-2"></i>
+                            Pain Location <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="painLocation"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="e.g., Chest - substernal, Right lower quadrant, Left shoulder"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Describe the specific anatomical location of the pain
+                        </p>
+                    </div>
+
+                    <!-- Body Diagram -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-user text-red-600 mr-2"></i>
+                            Body Diagram (Optional)
+                        </label>
+                        <div class="relative body-diagram" id="bodyDiagram" onclick="markPainLocation(event)">
+                            <svg viewBox="0 0 200 400" class="w-full border border-gray-300 rounded-lg bg-gray-50">
+                                <!-- Simple body outline -->
+                                <ellipse cx="100" cy="40" rx="30" ry="35" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <rect x="75" y="70" width="50" height="80" rx="10" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <rect x="40" y="75" width="35" height="60" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <rect x="125" y="75" width="35" height="60" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <rect x="75" y="150" width="20" height="100" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <rect x="105" y="150" width="20" height="100" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <circle cx="80" cy="290" r="12" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <circle cx="120" cy="290" r="12" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                            </svg>
+                            <div id="painMarkers"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">
+                            <i class="fas fa-hand-pointer mr-1"></i>
+                            Click on the body diagram to mark pain location
+                        </p>
+                    </div>
+
+                    <!-- Onset Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="onset" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-red-600 mr-2"></i>
+                            Pain Onset <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="onset"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="e.g., 30 minutes ago, 2 hours ago, Since surgery"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            When did the pain begin?
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Pain Characteristics -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-stethoscope text-red-600 mr-2"></i>
+                    Pain Characteristics
+                </h3>
+                <p class="text-gray-700 mb-6">Describe the quality and factors affecting the pain.</p>
+
+                <div class="space-y-6">
+                    <!-- Pain Quality -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list-check text-red-600 mr-2"></i>
+                            Pain Quality (Select all that apply) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Sharp">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-bolt mr-1"></i>Sharp
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Dull">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-circle mr-1"></i>Dull
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Burning">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-fire mr-1"></i>Burning
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Aching">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-wave-square mr-1"></i>Aching
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Throbbing">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-heart-pulse mr-1"></i>Throbbing
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Stabbing">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-slash mr-1"></i>Stabbing
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Cramping">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-compress mr-1"></i>Cramping
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Radiating">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-arrows-alt mr-1"></i>Radiating
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Pressure">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-hand-fist mr-1"></i>Pressure
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Aggravating Factors -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="aggravatingFactors" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-arrow-up text-red-600 mr-2"></i>
+                            Aggravating Factors
+                        </label>
+                        <textarea id="aggravatingFactors"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="e.g., Movement, Deep breathing, Coughing, Walking"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            What makes the pain worse?
+                        </p>
+                    </div>
+
+                    <!-- Alleviating Factors -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="alleviatingFactors" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-arrow-down text-green-600 mr-2"></i>
+                            Alleviating Factors
+                        </label>
+                        <textarea id="alleviatingFactors"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                  placeholder="e.g., Rest, Positioning, Previous medication"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            What makes the pain better?
+                        </p>
+                    </div>
+
+                    <!-- Associated Symptoms -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="associatedSymptoms" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-red-600 mr-2"></i>
+                            Associated Symptoms
+                        </label>
+                        <textarea id="associatedSymptoms"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="e.g., Nausea, Shortness of breath, Dizziness, Sweating"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Any other symptoms accompanying the pain?
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Interventions & Reassessment -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-hand-holding-medical text-red-600 mr-2"></i>
+                    Interventions & Reassessment
+                </h3>
+                <p class="text-gray-700 mb-6">Document pain management interventions and plan for reassessment.</p>
+
+                <div class="space-y-6">
+                    <!-- Interventions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-briefcase-medical text-red-600 mr-2"></i>
+                            Pain Interventions (Select all that apply) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Medication - Opioid">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-pills mr-1"></i>Medication - Opioid
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Medication - Non-Opioid">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-tablets mr-1"></i>Medication - Non-Opioid
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Ice Application">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-snowflake mr-1"></i>Ice Application
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Heat Application">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-fire-flame-simple mr-1"></i>Heat Application
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Repositioning">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-bed mr-1"></i>Repositioning
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Relaxation Techniques">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-spa mr-1"></i>Relaxation Techniques
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Distraction">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-tv mr-1"></i>Distraction
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Deep Breathing">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-wind mr-1"></i>Deep Breathing
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Medication Details -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="medicationDetails" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-prescription text-red-600 mr-2"></i>
+                            Medication Details
+                        </label>
+                        <textarea id="medicationDetails"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="e.g., Morphine 2mg IV, Acetaminophen 650mg PO"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Specify medication name, dose, route, and time administered
+                        </p>
+                    </div>
+
+                    <!-- Reassessment Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="reassessmentTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock-rotate-left text-red-600 mr-2"></i>
+                            Planned Reassessment Time <span class="text-red-500">*</span>
+                        </label>
+                        <select id="reassessmentTime"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                required>
+                            <option value="">Select reassessment timeframe...</option>
+                            <option value="15">15 minutes (IV opioid)</option>
+                            <option value="30">30 minutes (IM/SC medication)</option>
+                            <option value="60">1 hour (PO medication)</option>
+                            <option value="120">2 hours (routine)</option>
+                            <option value="240">4 hours (mild pain)</option>
+                            <option value="custom">Custom time</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            When should pain be reassessed?
+                        </p>
+                    </div>
+
+                    <!-- Custom Reassessment Time -->
+                    <div id="customReassessmentDiv" class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hidden">
+                        <label for="customReassessmentTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar-days text-red-600 mr-2"></i>
+                            Custom Reassessment Time
+                        </label>
+                        <input type="datetime-local"
+                               id="customReassessmentTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Documentation & Review -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical text-red-600 mr-2"></i>
+                    Documentation & Review
+                </h3>
+                <p class="text-gray-700 mb-6">Review the pain assessment and add final documentation.</p>
+
+                <div class="space-y-6">
+                    <!-- Pain Assessment Summary -->
+                    <div class="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-600 rounded-lg p-6 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-clipboard-check text-red-600 mr-2"></i>
+                            Pain Assessment Summary
+                        </h4>
+                        <div id="summaryContent" class="space-y-4">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Pain Score Trend Chart -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-chart-line text-red-600 mr-2"></i>
+                            Pain Score Trend
+                        </h4>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <canvas id="painTrendChart" width="400" height="200"></canvas>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-center">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Visual representation of current pain assessment
+                        </p>
+                    </div>
+
+                    <!-- Additional Documentation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-red-600 mr-2"></i>
+                            Additional Clinical Notes
+                        </label>
+                        <textarea id="additionalNotes"
+                                  rows="5"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="Add any additional clinical observations, patient responses, or care plan modifications..."></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Include patient education provided, emotional response, or other relevant details
+                        </p>
+                    </div>
+
+                    <!-- Nurse Signature -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="nurseSignature" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-signature text-red-600 mr-2"></i>
+                            Nurse Signature <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="nurseSignature"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="Enter your name to sign assessment"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            By entering your name, you certify the accuracy of this assessment
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {
+                painScale: 0,
+                painLocation: '',
+                onset: '',
+                qualities: [],
+                aggravatingFactors: '',
+                alleviatingFactors: '',
+                associatedSymptoms: '',
+                interventions: [],
+                medicationDetails: '',
+                reassessmentTime: '',
+                additionalNotes: '',
+                nurseSignature: ''
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Pain Assessment Wizard loaded');
+            updatePainValue();
+
+            // Add reassessment time change listener
+            document.getElementById('reassessmentTime').addEventListener('change', function() {
+                const customDiv = document.getElementById('customReassessmentDiv');
+                if (this.value === 'custom') {
+                    customDiv.classList.remove('hidden');
+                } else {
+                    customDiv.classList.add('hidden');
+                }
+            });
+        });
+
+        // Update pain value display
+        function updatePainValue() {
+            const painScale = document.getElementById('painScale');
+            const painValue = document.getElementById('painValue');
+            painValue.textContent = painScale.value;
+        }
+
+        // Mark pain location on body diagram
+        function markPainLocation(event) {
+            const diagram = document.getElementById('bodyDiagram');
+            const markers = document.getElementById('painMarkers');
+            const rect = diagram.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Create pain marker
+            const marker = document.createElement('div');
+            marker.className = 'pain-marker';
+            marker.style.left = x + 'px';
+            marker.style.top = y + 'px';
+            marker.onclick = function() { this.remove(); };
+
+            markers.appendChild(marker);
+        }
+
+        // Quick fill functions
+        function fillChestPain() {
+            document.getElementById('painScale').value = '7';
+            document.getElementById('painLocation').value = 'Chest - substernal';
+            document.getElementById('onset').value = '30 minutes ago';
+            updatePainValue();
+
+            // Auto-check qualities
+            const qualities = ['Sharp', 'Pressure', 'Radiating'];
+            document.querySelectorAll('.quality-checkbox').forEach(cb => {
+                if (qualities.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+
+            document.getElementById('aggravatingFactors').value = 'Deep breathing, movement';
+            document.getElementById('associatedSymptoms').value = 'Shortness of breath, diaphoresis, anxiety';
+
+            showMessage('success', 'Chest pain scenario populated');
+        }
+
+        function fillPostOpPain() {
+            document.getElementById('painScale').value = '5';
+            document.getElementById('painLocation').value = 'Surgical site - right lower quadrant';
+            document.getElementById('onset').value = 'Since surgery (2 hours ago)';
+            updatePainValue();
+
+            // Auto-check qualities
+            const qualities = ['Sharp', 'Aching'];
+            document.querySelectorAll('.quality-checkbox').forEach(cb => {
+                if (qualities.includes(cb.value)) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+
+            document.getElementById('aggravatingFactors').value = 'Movement, coughing';
+            document.getElementById('alleviatingFactors').value = 'Splinting with pillow';
+
+            showMessage('success', 'Post-operative pain scenario populated');
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step && !wizardState.completed_steps.includes(stepNum - 1)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            // Populate summary if on step 4
+            if (stepNum === 4) {
+                populateSummary();
+                drawPainChart();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect current step data
+            collectCurrentStepData();
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+
+            updateWizardUI();
+
+            // Populate summary if on step 4
+            if (wizardState.current_step === 4) {
+                populateSummary();
+                drawPainChart();
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            switch (wizardState.current_step) {
+                case 1:
+                    wizardState.data.painScale = document.getElementById('painScale').value;
+                    wizardState.data.painLocation = document.getElementById('painLocation').value;
+                    wizardState.data.onset = document.getElementById('onset').value;
+                    break;
+
+                case 2:
+                    const qualities = [];
+                    document.querySelectorAll('.quality-checkbox:checked').forEach(cb => {
+                        qualities.push(cb.value);
+                    });
+                    wizardState.data.qualities = qualities;
+                    wizardState.data.aggravatingFactors = document.getElementById('aggravatingFactors').value;
+                    wizardState.data.alleviatingFactors = document.getElementById('alleviatingFactors').value;
+                    wizardState.data.associatedSymptoms = document.getElementById('associatedSymptoms').value;
+                    break;
+
+                case 3:
+                    const interventions = [];
+                    document.querySelectorAll('#step3 .quality-checkbox:checked').forEach(cb => {
+                        interventions.push(cb.value);
+                    });
+                    wizardState.data.interventions = interventions;
+                    wizardState.data.medicationDetails = document.getElementById('medicationDetails').value;
+                    wizardState.data.reassessmentTime = document.getElementById('reassessmentTime').value;
+                    break;
+
+                case 4:
+                    wizardState.data.additionalNotes = document.getElementById('additionalNotes').value;
+                    wizardState.data.nurseSignature = document.getElementById('nurseSignature').value;
+                    break;
+            }
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const progressPercent = Math.floor((currentStep / 4) * 100);
+
+            // Update progress
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Populate summary
+        function populateSummary() {
+            const data = wizardState.data;
+            const summaryContent = document.getElementById('summaryContent');
+
+            summaryContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-gauge text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Pain Level</span>
+                        </div>
+                        <div class="text-3xl font-bold text-red-600">${data.painScale}/10</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-location-dot text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Location</span>
+                        </div>
+                        <div class="text-sm text-gray-900">${data.painLocation || 'Not specified'}</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-clock text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Onset</span>
+                        </div>
+                        <div class="text-sm text-gray-900">${data.onset || 'Not specified'}</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-list-check text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Quality</span>
+                        </div>
+                        <div class="text-sm text-gray-900">${data.qualities.length > 0 ? data.qualities.join(', ') : 'Not specified'}</div>
+                    </div>
+                </div>
+
+                ${data.aggravatingFactors ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-arrow-up text-red-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Aggravating Factors</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${data.aggravatingFactors}</div>
+                </div>
+                ` : ''}
+
+                ${data.alleviatingFactors ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-arrow-down text-green-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Alleviating Factors</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${data.alleviatingFactors}</div>
+                </div>
+                ` : ''}
+
+                ${data.interventions.length > 0 ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-briefcase-medical text-red-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Interventions</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${data.interventions.join(', ')}</div>
+                    ${data.medicationDetails ? `<div class="text-sm text-gray-600 mt-2"><strong>Details:</strong> ${data.medicationDetails}</div>` : ''}
+                </div>
+                ` : ''}
+
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-clock-rotate-left text-red-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Reassessment Plan</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${getReassessmentLabel(data.reassessmentTime)}</div>
+                </div>
+            `;
+        }
+
+        // Get reassessment label
+        function getReassessmentLabel(value) {
+            const options = {
+                '15': '15 minutes (IV opioid)',
+                '30': '30 minutes (IM/SC medication)',
+                '60': '1 hour (PO medication)',
+                '120': '2 hours (routine)',
+                '240': '4 hours (mild pain)',
+                'custom': 'Custom time'
+            };
+            return options[value] || 'Not specified';
+        }
+
+        // Draw pain trend chart
+        function drawPainChart() {
+            const canvas = document.getElementById('painTrendChart');
+            const ctx = canvas.getContext('2d');
+            const painScore = parseInt(wizardState.data.painScale);
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw simple bar chart
+            const barWidth = 60;
+            const barHeight = (painScore / 10) * 150;
+            const x = (canvas.width - barWidth) / 2;
+            const y = canvas.height - barHeight - 20;
+
+            // Draw bar
+            ctx.fillStyle = painScore >= 7 ? '#dc2626' : painScore >= 4 ? '#f59e0b' : '#10b981';
+            ctx.fillRect(x, y, barWidth, barHeight);
+
+            // Draw score text
+            ctx.fillStyle = '#1f2937';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(painScore + '/10', canvas.width / 2, y - 10);
+
+            // Draw label
+            ctx.font = '14px sans-serif';
+            ctx.fillText('Current Pain', canvas.width / 2, canvas.height - 5);
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+
+            // Validate required fields
+            if (!wizardState.data.nurseSignature) {
+                showMessage('error', 'Please provide your signature to complete the assessment.');
+                return;
+            }
+
+            showMessage('success', 'Pain assessment completed successfully!');
+
+            // In production, this would save to the database
+            console.log('Pain Assessment Data:', wizardState.data);
+
+            // Show completion message
+            setTimeout(() => {
+                alert('Pain assessment documented successfully!\n\nAssessment ID: PA-' + Date.now() + '\nNurse: ' + wizardState.data.nurseSignature);
+                // Optionally redirect to dashboard
+                // window.location.href = '/';
+            }, 500);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admission Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .epic-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #6366f1;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="epic-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-indigo-200 text-sm">Admission Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-indigo-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-indigo-800">Complete Admission Assessment</h3>
+                    <p class="text-sm text-indigo-700">This wizard will guide you through completing a comprehensive admission assessment for a new patient.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-indigo-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Admission Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to document patient admission</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-indigo-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Demographics</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Vitals</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">History</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Psychosocial</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Review</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Patient Demographics & Chief Complaint -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-circle text-indigo-600 mr-2"></i>
+                    Patient Demographics & Chief Complaint
+                </h3>
+                <p class="text-gray-700 mb-6">Enter patient identification and reason for admission.</p>
+
+                <div class="space-y-6">
+                    <!-- Quick Fill Button -->
+                    <div class="flex justify-end">
+                        <button type="button" onclick="fillSampleAdmission()" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-magic mr-2"></i>Quick Fill Sample Data
+                        </button>
+                    </div>
+
+                    <!-- Patient Name -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="patientName" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-user text-indigo-600 mr-2"></i>
+                            Patient Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="patientName"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                               placeholder="Last, First Middle"
+                               required>
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="dob" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar text-indigo-600 mr-2"></i>
+                            Date of Birth <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date"
+                               id="dob"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                               required>
+                    </div>
+
+                    <!-- Medical Record Number -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="mrn" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-id-badge text-indigo-600 mr-2"></i>
+                            Medical Record Number (MRN) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="mrn"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-mono"
+                               placeholder="MRN-######"
+                               required>
+                    </div>
+
+                    <!-- Chief Complaint -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="chiefComplaint" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clipboard-list text-indigo-600 mr-2"></i>
+                            Chief Complaint <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            id="chiefComplaint"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="Primary reason for admission (symptoms, duration, severity)..."
+                            required></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Include onset, duration, and relevant details
+                        </p>
+                    </div>
+
+                    <!-- Admission Source -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="admissionSource" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-ambulance text-indigo-600 mr-2"></i>
+                            Admission Source <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="admissionSource"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            required>
+                            <option value="">Select admission source...</option>
+                            <option value="ED">Emergency Department</option>
+                            <option value="Transfer">Transfer from Another Facility</option>
+                            <option value="Direct">Direct Admission</option>
+                            <option value="Clinic">Clinic/Physician Office</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Vital Signs & Physical Assessment -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-heartbeat text-indigo-600 mr-2"></i>
+                    Vital Signs & Physical Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Document initial vital signs and basic physical assessment.</p>
+
+                <div class="space-y-6">
+                    <!-- Quick Fill Button -->
+                    <div class="flex justify-end">
+                        <button type="button" onclick="fillNormalVitals()" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-magic mr-2"></i>Quick Fill Normal Vitals
+                        </button>
+                    </div>
+
+                    <!-- Vitals Grid -->
+                    <div class="vitals-grid">
+                        <!-- Blood Pressure -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label for="bp" class="block text-xs font-bold text-gray-800 mb-2">
+                                <i class="fas fa-tachometer-alt text-indigo-600 mr-1"></i>
+                                Blood Pressure <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text"
+                                   id="bp"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                   placeholder="120/80"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">mmHg</p>
+                        </div>
+
+                        <!-- Heart Rate -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label for="hr" class="block text-xs font-bold text-gray-800 mb-2">
+                                <i class="fas fa-heartbeat text-indigo-600 mr-1"></i>
+                                Heart Rate <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   id="hr"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                   placeholder="72"
+                                   min="0"
+                                   max="300"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">bpm</p>
+                        </div>
+
+                        <!-- Temperature -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label for="temp" class="block text-xs font-bold text-gray-800 mb-2">
+                                <i class="fas fa-thermometer-half text-indigo-600 mr-1"></i>
+                                Temperature <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   id="temp"
+                                   step="0.1"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                   placeholder="98.6"
+                                   min="90"
+                                   max="110"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">°F</p>
+                        </div>
+
+                        <!-- Respiratory Rate -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label for="rr" class="block text-xs font-bold text-gray-800 mb-2">
+                                <i class="fas fa-lungs text-indigo-600 mr-1"></i>
+                                Respiratory Rate <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   id="rr"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                   placeholder="16"
+                                   min="0"
+                                   max="100"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">breaths/min</p>
+                        </div>
+
+                        <!-- Oxygen Saturation -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label for="o2sat" class="block text-xs font-bold text-gray-800 mb-2">
+                                <i class="fas fa-wind text-indigo-600 mr-1"></i>
+                                O2 Saturation <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   id="o2sat"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                   placeholder="98"
+                                   min="0"
+                                   max="100"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">%</p>
+                        </div>
+
+                        <!-- Pain Scale -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label for="pain" class="block text-xs font-bold text-gray-800 mb-2">
+                                <i class="fas fa-hand-paper text-indigo-600 mr-1"></i>
+                                Pain Scale <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number"
+                                   id="pain"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                                   placeholder="0"
+                                   min="0"
+                                   max="10"
+                                   required>
+                            <p class="text-xs text-gray-500 mt-1">0-10</p>
+                        </div>
+                    </div>
+
+                    <!-- Physical Assessment Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="physicalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-stethoscope text-indigo-600 mr-2"></i>
+                            Physical Assessment Notes
+                        </label>
+                        <textarea
+                            id="physicalNotes"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="General appearance, skin condition, respiratory status, cardiovascular assessment, etc."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Medical History & Allergies -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-history text-indigo-600 mr-2"></i>
+                    Medical History & Allergies
+                </h3>
+                <p class="text-gray-700 mb-6">Document patient's medical history and known allergies.</p>
+
+                <div class="space-y-6">
+                    <!-- Common Conditions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-notes-medical text-indigo-600 mr-2"></i>
+                            Past Medical History
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Hypertension">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Hypertension (HTN)</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Diabetes">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Diabetes Mellitus (DM)</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="COPD">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">COPD</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="CHF">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Congestive Heart Failure (CHF)</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="CAD">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Coronary Artery Disease (CAD)</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Asthma">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Asthma</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="CKD">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Chronic Kidney Disease (CKD)</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-indigo-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="condition-checkbox mr-3 h-4 w-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" value="Cancer">
+                                <span class="text-sm text-gray-700 group-hover:text-indigo-700">Cancer History</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Additional Medical History -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalHistory" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-medical text-indigo-600 mr-2"></i>
+                            Additional Medical History
+                        </label>
+                        <textarea
+                            id="additionalHistory"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="Other medical conditions, surgical history, etc."></textarea>
+                    </div>
+
+                    <!-- Current Medications -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="medications" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-pills text-indigo-600 mr-2"></i>
+                            Current Medications
+                        </label>
+                        <textarea
+                            id="medications"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="List all current medications, dosages, and frequency"></textarea>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="allergies" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-allergies text-indigo-600 mr-2"></i>
+                            Allergies <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="allergies"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                               placeholder="Enter allergies or type 'NKDA' for no known drug allergies"
+                               required>
+                    </div>
+
+                    <!-- Allergy Severity -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="allergySeverity" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-exclamation-triangle text-indigo-600 mr-2"></i>
+                            Allergy Severity
+                        </label>
+                        <select
+                            id="allergySeverity"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            <option value="">Select severity if allergies present...</option>
+                            <option value="Mild">Mild (rash, itching)</option>
+                            <option value="Moderate">Moderate (hives, swelling)</option>
+                            <option value="Severe">Severe (anaphylaxis, difficulty breathing)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Psychosocial Assessment -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-brain text-indigo-600 mr-2"></i>
+                    Psychosocial Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Evaluate patient's social situation, support system, and safety risks.</p>
+
+                <div class="space-y-6">
+                    <!-- Living Situation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="livingSituation" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-home text-indigo-600 mr-2"></i>
+                            Living Situation <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="livingSituation"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            required>
+                            <option value="">Select living situation...</option>
+                            <option value="Alone">Lives alone</option>
+                            <option value="Family">Lives with family/spouse</option>
+                            <option value="Assisted">Assisted living facility</option>
+                            <option value="Nursing">Nursing home</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Support System -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="supportSystem" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-users text-indigo-600 mr-2"></i>
+                            Support System
+                        </label>
+                        <textarea
+                            id="supportSystem"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="Family members, caregivers, emergency contacts, etc."></textarea>
+                    </div>
+
+                    <!-- Mobility Status -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="mobilityStatus" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-walking text-indigo-600 mr-2"></i>
+                            Mobility Status
+                        </label>
+                        <select
+                            id="mobilityStatus"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            <option value="">Select mobility status...</option>
+                            <option value="Independent">Independent</option>
+                            <option value="Cane">Ambulatory with cane</option>
+                            <option value="Walker">Ambulatory with walker</option>
+                            <option value="Wheelchair">Wheelchair</option>
+                            <option value="Bedbound">Bedbound</option>
+                        </select>
+                    </div>
+
+                    <!-- Fall Risk Factors -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-exclamation-circle text-indigo-600 mr-2"></i>
+                            Fall Risk Factors
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group hover:bg-red-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="fallrisk-checkbox mr-3 h-4 w-4 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="History of falls">
+                                <span class="text-sm text-gray-700 group-hover:text-red-700">History of falls</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-red-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="fallrisk-checkbox mr-3 h-4 w-4 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Gait instability">
+                                <span class="text-sm text-gray-700 group-hover:text-red-700">Gait instability</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-red-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="fallrisk-checkbox mr-3 h-4 w-4 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Dizziness">
+                                <span class="text-sm text-gray-700 group-hover:text-red-700">Dizziness/vertigo</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-red-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="fallrisk-checkbox mr-3 h-4 w-4 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Vision impairment">
+                                <span class="text-sm text-gray-700 group-hover:text-red-700">Vision impairment</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-red-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="fallrisk-checkbox mr-3 h-4 w-4 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Age over 65">
+                                <span class="text-sm text-gray-700 group-hover:text-red-700">Age over 65</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group hover:bg-red-50 p-2 rounded transition-colors">
+                                <input type="checkbox" class="fallrisk-checkbox mr-3 h-4 w-4 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Medications">
+                                <span class="text-sm text-gray-700 group-hover:text-red-700">High-risk medications</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Mental Status -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="mentalStatus" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-brain text-indigo-600 mr-2"></i>
+                            Mental Status
+                        </label>
+                        <select
+                            id="mentalStatus"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                            <option value="">Select mental status...</option>
+                            <option value="Alert and oriented x4">Alert and oriented x4</option>
+                            <option value="Alert and oriented x3">Alert and oriented x3</option>
+                            <option value="Confused">Confused</option>
+                            <option value="Lethargic">Lethargic</option>
+                            <option value="Altered">Altered mental status</option>
+                        </select>
+                    </div>
+
+                    <!-- Psychosocial Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="psychosocialNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-indigo-600 mr-2"></i>
+                            Additional Psychosocial Notes
+                        </label>
+                        <textarea
+                            id="psychosocialNotes"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                            placeholder="Emotional state, coping mechanisms, discharge planning considerations, etc."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Review & Submit -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-indigo-600 mr-2"></i>
+                    Review & Submit Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Review all collected data before submitting the admission assessment.</p>
+
+                <div class="space-y-4" id="reviewContent">
+                    <!-- Review content will be populated dynamically -->
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-400 mr-3 mt-1"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-blue-900">Ready to Submit</h4>
+                            <p class="text-sm text-blue-800">Once you click "Submit Assessment", this admission assessment will be saved to the patient's medical record.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Submit Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Admission Assessment Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Quick fill functions
+        function fillNormalVitals() {
+            document.getElementById('bp').value = '120/80';
+            document.getElementById('hr').value = '72';
+            document.getElementById('temp').value = '98.6';
+            document.getElementById('rr').value = '16';
+            document.getElementById('o2sat').value = '98';
+            document.getElementById('pain').value = '0';
+            showMessage('success', 'Normal vital signs filled');
+        }
+
+        function fillSampleAdmission() {
+            document.getElementById('patientName').value = 'Smith, Jane Marie';
+            document.getElementById('dob').value = '1955-03-15';
+            document.getElementById('mrn').value = 'MRN-789456';
+            document.getElementById('chiefComplaint').value = 'Shortness of breath, productive cough x 3 days. Patient reports increased difficulty breathing with minimal exertion and wheezing.';
+            document.getElementById('admissionSource').value = 'ED';
+            showMessage('success', 'Sample patient data filled');
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            // Only allow navigation to completed steps or current step + 1
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            // Collect current step data before navigating away
+            if (stepNum !== wizardState.current_step) {
+                const stepData = collectCurrentStepData();
+                Object.assign(wizardState.data, stepData);
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            // Handle step-specific logic
+            if (wizardState.current_step === 5) {
+                populateReviewContent();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            // Collect current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect and save current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            updateWizardUI();
+
+            // Handle step-specific logic
+            if (wizardState.current_step === 5) {
+                populateReviewContent();
+            }
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            showMessage('success', 'Admission assessment submitted successfully!');
+
+            // Simulate submission delay
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Demographics
+                    stepData.patientName = document.getElementById('patientName').value;
+                    stepData.dob = document.getElementById('dob').value;
+                    stepData.mrn = document.getElementById('mrn').value;
+                    stepData.chiefComplaint = document.getElementById('chiefComplaint').value;
+                    stepData.admissionSource = document.getElementById('admissionSource').value;
+                    break;
+
+                case 2: // Vital Signs
+                    stepData.bp = document.getElementById('bp').value;
+                    stepData.hr = document.getElementById('hr').value;
+                    stepData.temp = document.getElementById('temp').value;
+                    stepData.rr = document.getElementById('rr').value;
+                    stepData.o2sat = document.getElementById('o2sat').value;
+                    stepData.pain = document.getElementById('pain').value;
+                    stepData.physicalNotes = document.getElementById('physicalNotes').value;
+                    break;
+
+                case 3: // Medical History
+                    const selectedConditions = [];
+                    document.querySelectorAll('.condition-checkbox:checked').forEach(cb => {
+                        selectedConditions.push(cb.value);
+                    });
+                    stepData.conditions = selectedConditions;
+                    stepData.additionalHistory = document.getElementById('additionalHistory').value;
+                    stepData.medications = document.getElementById('medications').value;
+                    stepData.allergies = document.getElementById('allergies').value;
+                    stepData.allergySeverity = document.getElementById('allergySeverity').value;
+                    break;
+
+                case 4: // Psychosocial
+                    stepData.livingSituation = document.getElementById('livingSituation').value;
+                    stepData.supportSystem = document.getElementById('supportSystem').value;
+                    stepData.mobilityStatus = document.getElementById('mobilityStatus').value;
+                    const fallRisks = [];
+                    document.querySelectorAll('.fallrisk-checkbox:checked').forEach(cb => {
+                        fallRisks.push(cb.value);
+                    });
+                    stepData.fallRisks = fallRisks;
+                    stepData.mentalStatus = document.getElementById('mentalStatus').value;
+                    stepData.psychosocialNotes = document.getElementById('psychosocialNotes').value;
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const totalSteps = wizardState.total_steps;
+
+            // Update progress
+            const progressPercent = Math.floor((currentStep / totalSteps) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Populate review content
+        function populateReviewContent() {
+            const reviewContent = document.getElementById('reviewContent');
+            const data = wizardState.data;
+
+            reviewContent.innerHTML = `
+                <!-- Patient Demographics -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-user-circle text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Patient Demographics</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Name:</span>
+                                    <span class="text-gray-900">${data.patientName || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Date of Birth:</span>
+                                    <span class="text-gray-900">${data.dob || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">MRN:</span>
+                                    <span class="text-gray-900 font-mono">${data.mrn || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Admission Source:</span>
+                                    <span class="text-gray-900">${data.admissionSource || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                <div class="flex items-start pt-2 border-t border-gray-100">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Chief Complaint:</span>
+                                    <span class="text-gray-900">${data.chiefComplaint || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vital Signs -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-heartbeat text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Vital Signs</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div>
+                                    <span class="text-xs text-gray-500 block">Blood Pressure</span>
+                                    <span class="text-sm font-semibold text-gray-900">${data.bp || 'N/A'} mmHg</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500 block">Heart Rate</span>
+                                    <span class="text-sm font-semibold text-gray-900">${data.hr || 'N/A'} bpm</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500 block">Temperature</span>
+                                    <span class="text-sm font-semibold text-gray-900">${data.temp || 'N/A'} °F</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500 block">Respiratory Rate</span>
+                                    <span class="text-sm font-semibold text-gray-900">${data.rr || 'N/A'} /min</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500 block">O2 Saturation</span>
+                                    <span class="text-sm font-semibold text-gray-900">${data.o2sat || 'N/A'}%</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs text-gray-500 block">Pain Scale</span>
+                                    <span class="text-sm font-semibold text-gray-900">${data.pain || 'N/A'}/10</span>
+                                </div>
+                            </div>
+                            ${data.physicalNotes ? `
+                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                    <span class="text-xs text-gray-500 block mb-1">Physical Assessment Notes:</span>
+                                    <span class="text-sm text-gray-900">${data.physicalNotes}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medical History -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-history text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Medical History & Allergies</h4>
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <span class="text-gray-500 font-medium block mb-1">Past Medical History:</span>
+                                    ${(data.conditions && data.conditions.length > 0) ? `
+                                        <div class="flex flex-wrap gap-2">
+                                            ${data.conditions.map(c => `
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>${c}
+                                                </span>
+                                            `).join('')}
+                                        </div>
+                                    ` : '<span class="text-gray-400">None selected</span>'}
+                                </div>
+                                ${data.additionalHistory ? `
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <span class="text-gray-500 font-medium block mb-1">Additional History:</span>
+                                        <span class="text-gray-900">${data.additionalHistory}</span>
+                                    </div>
+                                ` : ''}
+                                ${data.medications ? `
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <span class="text-gray-500 font-medium block mb-1">Current Medications:</span>
+                                        <span class="text-gray-900">${data.medications}</span>
+                                    </div>
+                                ` : ''}
+                                <div class="pt-2 border-t border-gray-100">
+                                    <span class="text-gray-500 font-medium block mb-1">Allergies:</span>
+                                    <span class="text-gray-900 font-semibold ${data.allergies && data.allergies.toUpperCase() !== 'NKDA' ? 'text-red-600' : ''}">${data.allergies || '<span class="text-gray-400">Not provided</span>'}</span>
+                                    ${data.allergySeverity ? `<span class="ml-2 text-xs text-gray-600">(${data.allergySeverity})</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Psychosocial -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-brain text-indigo-600 text-xl mr-4 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 mb-3">Psychosocial Assessment</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Living Situation:</span>
+                                    <span class="text-gray-900">${data.livingSituation || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Mobility Status:</span>
+                                    <span class="text-gray-900">${data.mobilityStatus || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                <div class="flex items-start">
+                                    <span class="text-gray-500 font-medium w-32 flex-shrink-0">Mental Status:</span>
+                                    <span class="text-gray-900">${data.mentalStatus || '<span class="text-gray-400">Not provided</span>'}</span>
+                                </div>
+                                ${(data.fallRisks && data.fallRisks.length > 0) ? `
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <span class="text-gray-500 font-medium block mb-1">Fall Risk Factors:</span>
+                                        <div class="flex flex-wrap gap-2">
+                                            ${data.fallRisks.map(r => `
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                                                    <i class="fas fa-exclamation-triangle mr-1"></i>${r}
+                                                </span>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                ${data.supportSystem ? `
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <span class="text-gray-500 font-medium block mb-1">Support System:</span>
+                                        <span class="text-gray-900">${data.supportSystem}</span>
+                                    </div>
+                                ` : ''}
+                                ${data.psychosocialNotes ? `
+                                    <div class="pt-2 border-t border-gray-100">
+                                        <span class="text-gray-500 font-medium block mb-1">Additional Notes:</span>
+                                        <span class="text-gray-900">${data.psychosocialNotes}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 3000);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wound Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .wound-header {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .body-diagram {
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            background: white;
+            cursor: pointer;
+        }
+        .stage-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .stage-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .stage-card.selected {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        .stage-1 { border-left-color: #fbbf24; }
+        .stage-2 { border-left-color: #f59e0b; }
+        .stage-3 { border-left-color: #dc2626; }
+        .stage-4 { border-left-color: #991b1b; }
+        .stage-unstageable { border-left-color: #6b7280; }
+        .stage-dti { border-left-color: #7c3aed; }
+        .measurement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="wound-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-notes-medical text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-red-200 text-sm">Wound Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-red-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800">Comprehensive Wound Assessment</h3>
+                    <p class="text-sm text-red-700">This wizard guides you through a complete wound assessment including location, measurements, staging, wound bed characteristics, and treatment planning.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-red-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Wound Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps for comprehensive wound documentation</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Location</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Measurements</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Wound Bed</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Treatment</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Photo</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Wound Location & Type -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                    Wound Location & Type
+                </h3>
+                <p class="text-gray-700 mb-6">Identify the wound location and classify the wound type.</p>
+
+                <div class="space-y-6">
+                    <!-- Quick Fill Buttons -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-blue-600 mt-1 mr-3"></i>
+                            <div class="flex-1">
+                                <p class="font-semibold text-blue-900 mb-3">Quick Fill Examples</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="fillPressureInjury()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        <i class="fas fa-bolt mr-1"></i>Pressure Injury
+                                    </button>
+                                    <button onclick="fillSurgicalWound()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                        <i class="fas fa-bolt mr-1"></i>Surgical Wound
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wound Type -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="woundType" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-tag text-red-600 mr-2"></i>
+                            Wound Type <span class="text-red-500">*</span>
+                        </label>
+                        <select id="woundType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" required>
+                            <option value="">Select wound type...</option>
+                            <option value="Pressure Injury">Pressure Injury</option>
+                            <option value="Surgical">Surgical</option>
+                            <option value="Trauma">Trauma</option>
+                            <option value="Diabetic Ulcer">Diabetic Ulcer</option>
+                            <option value="Venous Ulcer">Venous Ulcer</option>
+                            <option value="Arterial Ulcer">Arterial Ulcer</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Wound Location -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="location" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-crosshairs text-red-600 mr-2"></i>
+                            Wound Location <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="location" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="e.g., Sacrum, Right heel, Abdominal midline incision" required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Be specific about anatomical location and laterality
+                        </p>
+                    </div>
+
+                    <!-- Body Diagram -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-user text-red-600 mr-2"></i>
+                            Body Diagram Reference
+                        </label>
+                        <div class="body-diagram bg-gray-50" onclick="showMessage('info', 'Body diagram for precise location mapping')">
+                            <div class="text-center py-8">
+                                <i class="fas fa-male text-6xl text-gray-400"></i>
+                                <p class="text-sm text-gray-600 mt-2">Click to select location on body diagram</p>
+                                <p class="text-xs text-gray-500 mt-1">(Interactive diagram placeholder)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Wound Measurements & Stage -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-ruler text-red-600 mr-2"></i>
+                    Wound Measurements & Stage
+                </h3>
+                <p class="text-gray-700 mb-6">Measure the wound dimensions and determine staging for pressure injuries.</p>
+
+                <div class="space-y-6">
+                    <!-- Measurements Grid -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-ruler-combined text-red-600 mr-2"></i>
+                            Wound Dimensions
+                        </label>
+                        <div class="measurement-grid">
+                            <div>
+                                <label for="length" class="block text-xs font-medium text-gray-700 mb-1">Length (cm) *</label>
+                                <input type="number" id="length" step="0.1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="0.0" oninput="validateMeasurements()" required>
+                            </div>
+                            <div>
+                                <label for="width" class="block text-xs font-medium text-gray-700 mb-1">Width (cm) *</label>
+                                <input type="number" id="width" step="0.1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="0.0" oninput="validateMeasurements()" required>
+                            </div>
+                            <div>
+                                <label for="depth" class="block text-xs font-medium text-gray-700 mb-1">Depth (cm)</label>
+                                <input type="number" id="depth" step="0.1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="0.0" oninput="validateMeasurements()">
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-blue-50 rounded">
+                            <p class="text-sm text-blue-900">
+                                <span class="font-semibold">Calculated Area:</span>
+                                <span id="woundArea" class="font-mono">0 cm²</span>
+                            </p>
+                        </div>
+                        <div id="underminingAlert" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded hidden">
+                            <p class="text-xs text-yellow-800">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                Depth detected - assess for undermining and tunneling
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Pressure Injury Stage -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-layer-group text-red-600 mr-2"></i>
+                            Pressure Injury Stage (if applicable)
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="stage-card p-4 border-2 border-gray-200 rounded-lg border-l-4 stage-1" onclick="selectStage('Stage I')">
+                                <div class="font-bold text-gray-900">Stage I</div>
+                                <div class="text-xs text-gray-600 mt-1">Intact skin with non-blanchable redness</div>
+                            </div>
+                            <div class="stage-card p-4 border-2 border-gray-200 rounded-lg border-l-4 stage-2" onclick="selectStage('Stage II')">
+                                <div class="font-bold text-gray-900">Stage II</div>
+                                <div class="text-xs text-gray-600 mt-1">Partial-thickness skin loss with exposed dermis</div>
+                            </div>
+                            <div class="stage-card p-4 border-2 border-gray-200 rounded-lg border-l-4 stage-3" onclick="selectStage('Stage III')">
+                                <div class="font-bold text-gray-900">Stage III</div>
+                                <div class="text-xs text-gray-600 mt-1">Full-thickness skin loss</div>
+                            </div>
+                            <div class="stage-card p-4 border-2 border-gray-200 rounded-lg border-l-4 stage-4" onclick="selectStage('Stage IV')">
+                                <div class="font-bold text-gray-900">Stage IV</div>
+                                <div class="text-xs text-gray-600 mt-1">Full-thickness with exposed muscle/bone</div>
+                            </div>
+                            <div class="stage-card p-4 border-2 border-gray-200 rounded-lg border-l-4 stage-unstageable" onclick="selectStage('Unstageable')">
+                                <div class="font-bold text-gray-900">Unstageable</div>
+                                <div class="text-xs text-gray-600 mt-1">Obscured by slough or eschar</div>
+                            </div>
+                            <div class="stage-card p-4 border-2 border-gray-200 rounded-lg border-l-4 stage-dti" onclick="selectStage('Deep Tissue Injury')">
+                                <div class="font-bold text-gray-900">Deep Tissue Injury</div>
+                                <div class="text-xs text-gray-600 mt-1">Purple or maroon discoloration</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="stage" value="">
+                        <p class="text-xs text-gray-500 mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Select stage only for pressure injuries (leave blank for other wound types)
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Wound Bed & Drainage -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-eye text-red-600 mr-2"></i>
+                    Wound Bed & Drainage
+                </h3>
+                <p class="text-gray-700 mb-6">Assess wound bed characteristics and drainage amount/type.</p>
+
+                <div class="space-y-6">
+                    <!-- Wound Bed Percentages -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-chart-pie text-red-600 mr-2"></i>
+                            Wound Bed Tissue Percentages
+                        </label>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="granulation" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Granulation (red, healthy tissue) %
+                                </label>
+                                <input type="number" id="granulation" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="0" oninput="validateWoundBed()">
+                            </div>
+                            <div>
+                                <label for="slough" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Slough (yellow/tan tissue) %
+                                </label>
+                                <input type="number" id="slough" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="0" oninput="validateWoundBed()">
+                            </div>
+                            <div>
+                                <label for="eschar" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Eschar (black/brown necrotic tissue) %
+                                </label>
+                                <input type="number" id="eschar" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="0" oninput="validateWoundBed()">
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-blue-50 rounded">
+                            <p class="text-sm text-blue-900">
+                                <span class="font-semibold">Total:</span>
+                                <span id="woundBedTotal" class="font-mono">0%</span>
+                            </p>
+                        </div>
+                        <div id="woundBedWarning" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded hidden">
+                            <p class="text-xs text-yellow-800">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                Total should equal 100%
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Drainage Amount -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="drainageAmount" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-tint text-red-600 mr-2"></i>
+                            Drainage Amount
+                        </label>
+                        <select id="drainageAmount" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select drainage amount...</option>
+                            <option value="None">None</option>
+                            <option value="Scant">Scant</option>
+                            <option value="Small">Small</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Large">Large</option>
+                            <option value="Copious">Copious</option>
+                        </select>
+                    </div>
+
+                    <!-- Drainage Type -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="drainage" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-droplet text-red-600 mr-2"></i>
+                            Drainage Type
+                        </label>
+                        <select id="drainage" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select drainage type...</option>
+                            <option value="Serous">Serous (clear, watery)</option>
+                            <option value="Serosanguinous">Serosanguinous (pink, watery)</option>
+                            <option value="Sanguinous">Sanguinous (bloody)</option>
+                            <option value="Purulent">Purulent (thick, pus-like)</option>
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+
+                    <!-- Periwound Skin -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="periwound" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-circle-notch text-red-600 mr-2"></i>
+                            Periwound Skin Condition
+                        </label>
+                        <select id="periwound" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select periwound condition...</option>
+                            <option value="Intact">Intact</option>
+                            <option value="Erythema">Erythema (redness)</option>
+                            <option value="Macerated">Macerated (overly moist)</option>
+                            <option value="Indurated">Indurated (hardened)</option>
+                            <option value="Edematous">Edematous (swollen)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Treatment & Dressing -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-medkit text-red-600 mr-2"></i>
+                    Treatment & Dressing
+                </h3>
+                <p class="text-gray-700 mb-6">Document wound cleansing, dressing selections, and change frequency.</p>
+
+                <div class="space-y-6">
+                    <!-- Cleansing Solution -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="cleansing" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-spray-can text-red-600 mr-2"></i>
+                            Cleansing Solution
+                        </label>
+                        <select id="cleansing" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select cleansing solution...</option>
+                            <option value="Normal Saline">Normal Saline</option>
+                            <option value="Sterile Water">Sterile Water</option>
+                            <option value="Wound Cleanser">Commercial Wound Cleanser</option>
+                            <option value="Antiseptic">Antiseptic Solution</option>
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+
+                    <!-- Primary Dressing -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="primaryDressing" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-band-aid text-red-600 mr-2"></i>
+                            Primary Dressing
+                        </label>
+                        <select id="primaryDressing" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select primary dressing...</option>
+                            <option value="Hydrocolloid">Hydrocolloid</option>
+                            <option value="Hydrogel">Hydrogel</option>
+                            <option value="Foam">Foam</option>
+                            <option value="Alginate">Alginate</option>
+                            <option value="Gauze">Gauze (dry)</option>
+                            <option value="Gauze Moist">Gauze (moist)</option>
+                            <option value="Transparent Film">Transparent Film</option>
+                            <option value="Collagen">Collagen</option>
+                            <option value="Silver">Silver-impregnated</option>
+                            <option value="None">None</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Dressing directly in contact with wound bed
+                        </p>
+                    </div>
+
+                    <!-- Secondary Dressing -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="secondaryDressing" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-layer-group text-red-600 mr-2"></i>
+                            Secondary Dressing
+                        </label>
+                        <select id="secondaryDressing" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select secondary dressing...</option>
+                            <option value="ABD Pad">ABD Pad</option>
+                            <option value="Gauze Wrap">Gauze Wrap</option>
+                            <option value="Foam">Foam</option>
+                            <option value="Transparent Film">Transparent Film</option>
+                            <option value="Tape">Tape</option>
+                            <option value="None">None</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Cover dressing to secure and protect
+                        </p>
+                    </div>
+
+                    <!-- Dressing Change Frequency -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="frequency" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-red-600 mr-2"></i>
+                            Dressing Change Frequency
+                        </label>
+                        <select id="frequency" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Select frequency...</option>
+                            <option value="Every shift">Every shift</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Every 2 days">Every 2 days</option>
+                            <option value="Every 3 days">Every 3 days</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="PRN">PRN (as needed)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Photo Upload & Documentation -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-camera text-red-600 mr-2"></i>
+                    Photo Upload & Documentation
+                </h3>
+                <p class="text-gray-700 mb-6">Upload wound photo and add clinical notes.</p>
+
+                <div class="space-y-6">
+                    <!-- Photo Upload -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-image text-red-600 mr-2"></i>
+                            Wound Photo
+                        </label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-red-400 transition-colors cursor-pointer" onclick="document.getElementById('photoInput').click()">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-sm text-gray-600 mb-2">Click to upload wound photo</p>
+                            <p class="text-xs text-gray-500">Supports JPG, PNG (max 10MB)</p>
+                            <input type="file" id="photoInput" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+                        </div>
+                        <div id="photoPreview" class="mt-4 hidden">
+                            <img id="previewImage" class="max-w-full h-auto rounded-lg border border-gray-300" alt="Wound photo preview">
+                            <button onclick="clearPhoto()" class="mt-2 text-sm text-red-600 hover:text-red-800">
+                                <i class="fas fa-times mr-1"></i>Remove photo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Wound Description -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="woundDescription" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-medical-alt text-red-600 mr-2"></i>
+                            Wound Description
+                        </label>
+                        <textarea id="woundDescription" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Describe wound appearance, edges, surrounding tissue, odor, etc."></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Include clinical observations not captured in other fields
+                        </p>
+                    </div>
+
+                    <!-- Healing Progress Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="healingProgress" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-chart-line text-red-600 mr-2"></i>
+                            Healing Progress & Plan
+                        </label>
+                        <textarea id="healingProgress" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Document healing trends, changes since last assessment, and care plan updates"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Note improvement, deterioration, or stability
+                        </p>
+                    </div>
+
+                    <!-- Assessment Summary -->
+                    <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                        <h4 class="font-semibold text-green-900 mb-2">Assessment Complete</h4>
+                        <p class="text-sm text-green-800">Review all previous steps before finalizing. Click "Complete Assessment" to save documentation.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {}
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Wound Assessment Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step = Math.max(1, wizardState.current_step - 1);
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect current step data
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            updateWizardUI();
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            const stepData = collectCurrentStepData();
+            Object.assign(wizardState.data, stepData);
+
+            console.log('Wound Assessment Complete:', wizardState.data);
+            showMessage('success', 'Wound assessment completed successfully! Data ready for submission.');
+
+            // In production, this would POST to /api/v1/wound-assessment
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            const stepData = {};
+
+            switch (wizardState.current_step) {
+                case 1: // Location & Type
+                    stepData.wound_type = document.getElementById('woundType').value;
+                    stepData.location = document.getElementById('location').value;
+                    break;
+
+                case 2: // Measurements & Stage
+                    stepData.length = parseFloat(document.getElementById('length').value) || 0;
+                    stepData.width = parseFloat(document.getElementById('width').value) || 0;
+                    stepData.depth = parseFloat(document.getElementById('depth').value) || 0;
+                    stepData.stage = document.getElementById('stage').value;
+                    stepData.area = stepData.length * stepData.width;
+                    break;
+
+                case 3: // Wound Bed & Drainage
+                    stepData.granulation = parseInt(document.getElementById('granulation').value) || 0;
+                    stepData.slough = parseInt(document.getElementById('slough').value) || 0;
+                    stepData.eschar = parseInt(document.getElementById('eschar').value) || 0;
+                    stepData.drainage_amount = document.getElementById('drainageAmount').value;
+                    stepData.drainage = document.getElementById('drainage').value;
+                    stepData.periwound = document.getElementById('periwound').value;
+                    break;
+
+                case 4: // Treatment & Dressing
+                    stepData.cleansing = document.getElementById('cleansing').value;
+                    stepData.primary_dressing = document.getElementById('primaryDressing').value;
+                    stepData.secondary_dressing = document.getElementById('secondaryDressing').value;
+                    stepData.frequency = document.getElementById('frequency').value;
+                    break;
+
+                case 5: // Photo & Documentation
+                    stepData.wound_description = document.getElementById('woundDescription').value;
+                    stepData.healing_progress = document.getElementById('healingProgress').value;
+                    break;
+            }
+
+            return stepData;
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 5) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Validate measurements
+        function validateMeasurements() {
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const depth = parseFloat(document.getElementById('depth').value);
+
+            if (length && width) {
+                const area = (length * width).toFixed(2);
+                document.getElementById('woundArea').textContent = area + ' cm²';
+            }
+
+            if (depth > 0) {
+                document.getElementById('underminingAlert').classList.remove('hidden');
+            } else {
+                document.getElementById('underminingAlert').classList.add('hidden');
+            }
+        }
+
+        // Validate wound bed percentages
+        function validateWoundBed() {
+            const granulation = parseInt(document.getElementById('granulation').value) || 0;
+            const slough = parseInt(document.getElementById('slough').value) || 0;
+            const eschar = parseInt(document.getElementById('eschar').value) || 0;
+
+            const total = granulation + slough + eschar;
+            document.getElementById('woundBedTotal').textContent = total + '%';
+
+            const warning = document.getElementById('woundBedWarning');
+            if (total > 0 && total !== 100) {
+                warning.classList.remove('hidden');
+            } else {
+                warning.classList.add('hidden');
+            }
+        }
+
+        // Select pressure injury stage
+        function selectStage(stageName) {
+            // Remove selected class from all cards
+            document.querySelectorAll('.stage-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selected class to clicked card
+            event.currentTarget.classList.add('selected');
+
+            // Set hidden input value
+            document.getElementById('stage').value = stageName;
+        }
+
+        // Quick fill - Pressure Injury
+        function fillPressureInjury() {
+            document.getElementById('woundType').value = 'Pressure Injury';
+            document.getElementById('location').value = 'Sacrum';
+
+            // Navigate to step 2 and fill measurements
+            setTimeout(() => {
+                document.getElementById('length').value = '3.5';
+                document.getElementById('width').value = '2.8';
+                document.getElementById('depth').value = '0.5';
+                validateMeasurements();
+
+                // Select Stage III
+                const stageCards = document.querySelectorAll('.stage-card');
+                stageCards.forEach(card => {
+                    if (card.textContent.includes('Stage III')) {
+                        card.click();
+                    }
+                });
+            }, 100);
+
+            showMessage('success', 'Pressure injury example data loaded');
+        }
+
+        // Quick fill - Surgical Wound
+        function fillSurgicalWound() {
+            document.getElementById('woundType').value = 'Surgical';
+            document.getElementById('location').value = 'Abdominal midline incision';
+
+            // Navigate to step 2 and fill measurements
+            setTimeout(() => {
+                document.getElementById('length').value = '15';
+                document.getElementById('width').value = '0.5';
+                document.getElementById('depth').value = '0';
+                validateMeasurements();
+            }, 100);
+
+            // Set drainage type
+            setTimeout(() => {
+                document.getElementById('drainage').value = 'Serosanguinous';
+            }, 100);
+
+            showMessage('success', 'Surgical wound example data loaded');
+        }
+
+        // Handle photo upload
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    showMessage('success', 'Photo uploaded: ' + file.name);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Clear photo
+        function clearPhoto() {
+            document.getElementById('photoInput').value = '';
+            document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('previewImage').src = '';
+            showMessage('info', 'Photo removed');
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        type === 'info' ? 'fa-info-circle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>

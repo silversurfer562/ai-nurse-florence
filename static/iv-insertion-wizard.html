@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IV Insertion Documentation Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #059669;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .iv-header {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .site-selector {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .site-selector:hover {
+            background-color: #e0f2fe;
+            transform: scale(1.02);
+        }
+        .site-selector.selected {
+            background-color: #bfdbfe;
+            border-color: #3b82f6;
+            border-width: 2px;
+        }
+        .attempt-counter {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #059669;
+        }
+        .badge-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="iv-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-syringe text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-green-200 text-sm">IV Insertion Documentation Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <span id="attemptDisplay" class="font-semibold">Attempts: <span id="headerAttemptCount">0</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-green-50 border-l-4 border-green-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-green-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-green-800">IV Insertion Documentation</h3>
+                    <p class="text-sm text-green-700">Complete all steps to document the IV insertion procedure, from site selection through patient education.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-green-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">IV Insertion Documentation</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to document the IV insertion</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-green-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-20">Site Selection</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Insertion</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Complications</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Documentation</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Site Selection & Assessment -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-crosshairs text-green-600 mr-2"></i>
+                    Site Selection & Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Select the IV insertion site and assess vein quality and site condition.</p>
+
+                <div class="space-y-6">
+                    <!-- Body Diagram Site Selection -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-hand-pointer text-green-600 mr-2"></i>
+                            IV Insertion Site <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="site-selector border border-gray-300 rounded p-3" onclick="selectSite(this, 'Left forearm - cephalic vein')">
+                                <div class="font-semibold text-gray-900"><i class="fas fa-hand-paper mr-2"></i>Left Forearm</div>
+                                <div class="text-xs text-gray-600">Cephalic vein</div>
+                            </div>
+                            <div class="site-selector border border-gray-300 rounded p-3" onclick="selectSite(this, 'Right forearm - cephalic vein')">
+                                <div class="font-semibold text-gray-900"><i class="fas fa-hand-paper mr-2"></i>Right Forearm</div>
+                                <div class="text-xs text-gray-600">Cephalic vein</div>
+                            </div>
+                            <div class="site-selector border border-gray-300 rounded p-3" onclick="selectSite(this, 'Left hand - dorsal')">
+                                <div class="font-semibold text-gray-900"><i class="fas fa-hand-rock mr-2"></i>Left Hand</div>
+                                <div class="text-xs text-gray-600">Dorsal metacarpal</div>
+                            </div>
+                            <div class="site-selector border border-gray-300 rounded p-3" onclick="selectSite(this, 'Right hand - dorsal')">
+                                <div class="font-semibold text-gray-900"><i class="fas fa-hand-rock mr-2"></i>Right Hand</div>
+                                <div class="text-xs text-gray-600">Dorsal metacarpal</div>
+                            </div>
+                            <div class="site-selector border border-gray-300 rounded p-3" onclick="selectSite(this, 'Left antecubital - median')">
+                                <div class="font-semibold text-gray-900"><i class="fas fa-ellipsis-h mr-2"></i>Left AC</div>
+                                <div class="text-xs text-gray-600">Antecubital median</div>
+                            </div>
+                            <div class="site-selector border border-gray-300 rounded p-3" onclick="selectSite(this, 'Right antecubital - median')">
+                                <div class="font-semibold text-gray-900"><i class="fas fa-ellipsis-h mr-2"></i>Right AC</div>
+                                <div class="text-xs text-gray-600">Antecubital median</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedSite" value="">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Click to select the IV insertion site
+                        </p>
+                    </div>
+
+                    <!-- Vein Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="veinAssessment" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-search-plus text-green-600 mr-2"></i>
+                            Vein Assessment <span class="text-red-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="veinPalpable" class="mr-2 h-4 w-4 text-green-600">
+                                <span class="text-sm">Palpable</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="veinVisible" class="mr-2 h-4 w-4 text-green-600">
+                                <span class="text-sm">Visible</span>
+                            </label>
+                        </div>
+                        <select id="veinQuality" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                            <option value="">Select vein quality...</option>
+                            <option value="Excellent - bouncy, large">Excellent - bouncy, large</option>
+                            <option value="Good - firm, adequate">Good - firm, adequate</option>
+                            <option value="Fair - small, soft">Fair - small, soft</option>
+                            <option value="Poor - fragile">Poor - fragile, difficult access</option>
+                        </select>
+                    </div>
+
+                    <!-- Site Condition -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-stethoscope text-green-600 mr-2"></i>
+                            Site Condition
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="siteIntact" class="mr-2 h-4 w-4 text-green-600" checked>
+                                <span class="text-sm">Intact skin</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="siteNoRedness" class="mr-2 h-4 w-4 text-green-600" checked>
+                                <span class="text-sm">No redness</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="siteNoSwelling" class="mr-2 h-4 w-4 text-green-600" checked>
+                                <span class="text-sm">No swelling</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="siteNoLesions" class="mr-2 h-4 w-4 text-green-600" checked>
+                                <span class="text-sm">No lesions</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Fill Buttons -->
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fas fa-magic text-blue-600 mr-3 mt-1"></i>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-semibold text-blue-900">Quick Fill</h4>
+                            <div class="flex space-x-2 mt-2">
+                                <button onclick="fillSuccessfulInsertion()" class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                                    Successful Insertion
+                                </button>
+                                <button onclick="fillDifficultAccess()" class="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700">
+                                    Difficult Access
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Insertion Procedure -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-syringe text-green-600 mr-2"></i>
+                    Insertion Procedure
+                </h3>
+                <p class="text-gray-700 mb-6">Document catheter details and insertion attempts.</p>
+
+                <div class="space-y-6">
+                    <!-- Catheter Gauge Selection -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="catheterGauge" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-ruler text-green-600 mr-2"></i>
+                            Catheter Gauge <span class="text-red-500">*</span>
+                        </label>
+                        <select id="catheterGauge" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                            <option value="">Select catheter gauge...</option>
+                            <option value="14G">14G - Trauma, rapid transfusion</option>
+                            <option value="16G">16G - Surgery, major blood loss</option>
+                            <option value="18G">18G - Blood products, most adults</option>
+                            <option value="20G">20G - Most adults, standard IV therapy</option>
+                            <option value="22G">22G - Elderly, fragile veins</option>
+                            <option value="24G">24G - Pediatrics, neonatal</option>
+                        </select>
+
+                        <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs mt-3">
+                            <strong>Gauge Selection Guide:</strong>
+                            <ul class="mt-2 space-y-1">
+                                <li><i class="fas fa-circle text-blue-600 mr-1" style="font-size: 4px; vertical-align: middle;"></i> 14-16G: Trauma, surgery, rapid transfusion</li>
+                                <li><i class="fas fa-circle text-blue-600 mr-1" style="font-size: 4px; vertical-align: middle;"></i> 18-20G: Most adults, blood products</li>
+                                <li><i class="fas fa-circle text-blue-600 mr-1" style="font-size: 4px; vertical-align: middle;"></i> 22-24G: Pediatrics, elderly, fragile veins</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Insertion Attempts Tracker -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-tally text-green-600 mr-2"></i>
+                            Insertion Attempts
+                        </label>
+                        <div class="flex items-center justify-between">
+                            <div class="text-center flex-1">
+                                <div class="attempt-counter" id="attemptCount">0</div>
+                                <div class="text-sm text-gray-600">Attempts</div>
+                            </div>
+                            <div class="flex-1 flex flex-col space-y-2">
+                                <button onclick="recordAttempt(false)" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700" id="attemptBtn">
+                                    <i class="fas fa-plus mr-2"></i>Record Attempt
+                                </button>
+                                <button onclick="recordAttempt(true)" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" id="successBtn">
+                                    <i class="fas fa-check mr-2"></i>Successful Insertion
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="successBadge" class="hidden mt-4 badge-success text-white p-3 rounded-lg text-center">
+                            <i class="fas fa-check-circle mr-2"></i>IV Successfully Inserted!
+                        </div>
+
+                        <div id="consultAlert" class="hidden mt-4 message-warning p-3 rounded-lg">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Consider consulting with senior staff after 2 attempts
+                        </div>
+                    </div>
+
+                    <!-- Blood Return Confirmation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="bloodReturn" class="mr-3 h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <div>
+                                <div class="font-bold text-gray-900">
+                                    <i class="fas fa-tint text-red-600 mr-2"></i>Blood Return Confirmed
+                                </div>
+                                <div class="text-sm text-gray-600">Positive flashback observed upon insertion</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Catheter Length -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="catheterLength" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-arrows-alt-h text-green-600 mr-2"></i>
+                            Catheter Length
+                        </label>
+                        <select id="catheterLength" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                            <option value="">Select catheter length...</option>
+                            <option value="1.0 inch">1.0 inch (2.5 cm)</option>
+                            <option value="1.16 inch">1.16 inch (3.0 cm)</option>
+                            <option value="1.25 inch">1.25 inch (3.2 cm)</option>
+                            <option value="1.88 inch">1.88 inch (4.8 cm)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Complications & Troubleshooting -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-exclamation-triangle text-green-600 mr-2"></i>
+                    Complications & Troubleshooting
+                </h3>
+                <p class="text-gray-700 mb-6">Document any complications encountered and interventions performed.</p>
+
+                <div class="space-y-6">
+                    <!-- Complication Selection -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-heartbeat text-green-600 mr-2"></i>
+                            Complications Observed
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" id="compNone" class="mt-1 mr-3 h-5 w-5 text-green-600 rounded" checked onchange="handleComplicationNone(this)">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900 group-hover:text-green-700">
+                                        <i class="fas fa-check-circle text-green-600 mr-2"></i>None
+                                    </div>
+                                    <div class="text-sm text-gray-600">No complications observed</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" id="compInfiltration" class="mt-1 mr-3 h-5 w-5 text-yellow-600 rounded" onchange="handleComplicationCheck()">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900 group-hover:text-yellow-700">
+                                        <i class="fas fa-droplet text-yellow-600 mr-2"></i>Infiltration
+                                    </div>
+                                    <div class="text-sm text-gray-600">Fluid leakage into tissues</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" id="compHematoma" class="mt-1 mr-3 h-5 w-5 text-purple-600 rounded" onchange="handleComplicationCheck()">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900 group-hover:text-purple-700">
+                                        <i class="fas fa-circle text-purple-600 mr-2"></i>Hematoma
+                                    </div>
+                                    <div class="text-sm text-gray-600">Bruising at insertion site</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" id="compMultipleAttempts" class="mt-1 mr-3 h-5 w-5 text-orange-600 rounded" onchange="handleComplicationCheck()">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900 group-hover:text-orange-700">
+                                        <i class="fas fa-redo text-orange-600 mr-2"></i>Multiple Attempts
+                                    </div>
+                                    <div class="text-sm text-gray-600">Required more than 2 attempts</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" id="compPhlebitis" class="mt-1 mr-3 h-5 w-5 text-red-600 rounded" onchange="handleComplicationCheck()">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900 group-hover:text-red-700">
+                                        <i class="fas fa-fire text-red-600 mr-2"></i>Phlebitis
+                                    </div>
+                                    <div class="text-sm text-gray-600">Vein inflammation</div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start cursor-pointer group">
+                                <input type="checkbox" id="compOther" class="mt-1 mr-3 h-5 w-5 text-gray-600 rounded" onchange="handleComplicationCheck()">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900 group-hover:text-gray-700">
+                                        <i class="fas fa-ellipsis-h text-gray-600 mr-2"></i>Other
+                                    </div>
+                                    <div class="text-sm text-gray-600">Other complication</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Intervention Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="interventionNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-green-600 mr-2"></i>
+                            Intervention & Response Notes
+                        </label>
+                        <textarea id="interventionNotes"
+                                  rows="4"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                  placeholder="Document any interventions performed, patient response, and actions taken..."></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Include any corrective actions, patient comfort measures, or consultations
+                        </p>
+                    </div>
+
+                    <!-- Patient Pain Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="painLevel" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-sad-tear text-green-600 mr-2"></i>
+                            Patient Pain Level (0-10)
+                        </label>
+                        <div class="flex items-center space-x-4">
+                            <input type="range"
+                                   id="painLevel"
+                                   min="0"
+                                   max="10"
+                                   value="0"
+                                   class="flex-1"
+                                   oninput="updatePainDisplay(this.value)">
+                            <div class="w-16 text-center">
+                                <div id="painDisplay" class="text-2xl font-bold text-green-600">0</div>
+                                <div class="text-xs text-gray-600">Pain</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>No Pain</span>
+                            <span>Worst Pain</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Documentation & Patient Education -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-green-600 mr-2"></i>
+                    Documentation & Patient Education
+                </h3>
+                <p class="text-gray-700 mb-6">Complete the documentation with dressing details and patient education confirmation.</p>
+
+                <div class="space-y-6">
+                    <!-- Dressing Type -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="dressingType" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-band-aid text-green-600 mr-2"></i>
+                            Dressing Type <span class="text-red-500">*</span>
+                        </label>
+                        <select id="dressingType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                            <option value="">Select dressing type...</option>
+                            <option value="Transparent semipermeable">Transparent semipermeable (Tegaderm)</option>
+                            <option value="Gauze and tape">Gauze and tape</option>
+                            <option value="Bordered foam">Bordered foam dressing</option>
+                            <option value="Sterile gauze">Sterile gauze</option>
+                        </select>
+                    </div>
+
+                    <!-- Securement Method -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="securementMethod" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-lock text-green-600 mr-2"></i>
+                            Securement Method <span class="text-red-500">*</span>
+                        </label>
+                        <select id="securementMethod" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                            <option value="">Select securement method...</option>
+                            <option value="Engineered stabilization device">Engineered stabilization device (StatLock)</option>
+                            <option value="Sterile tape">Sterile tape</option>
+                            <option value="Transparent dressing only">Transparent dressing only</option>
+                            <option value="Combination - device and tape">Combination - device and tape</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Engineered stabilization devices are preferred to reduce complications
+                        </p>
+                    </div>
+
+                    <!-- Flush Solution -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="flushSolution" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-vial text-green-600 mr-2"></i>
+                            Flush Solution
+                        </label>
+                        <select id="flushSolution" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                            <option value="">Select flush solution...</option>
+                            <option value="Normal saline (0.9% NaCl)">Normal saline (0.9% NaCl)</option>
+                            <option value="Heparinized saline">Heparinized saline</option>
+                            <option value="Not flushed - connected to infusion">Not flushed - connected to infusion</option>
+                        </select>
+                    </div>
+
+                    <!-- Patient Education -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-graduation-cap text-green-600 mr-2"></i>
+                            Patient Education Provided
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="eduKeepDry" class="mr-2 h-4 w-4 text-green-600">
+                                <span class="text-sm">Keep site dry and clean</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="eduReportSymptoms" class="mr-2 h-4 w-4 text-green-600">
+                                <span class="text-sm">Report pain, redness, swelling</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="eduAvoidTension" class="mr-2 h-4 w-4 text-green-600">
+                                <span class="text-sm">Avoid pulling or tension on tubing</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="eduMobilityPrecautions" class="mr-2 h-4 w-4 text-green-600">
+                                <span class="text-sm">Mobility precautions discussed</span>
+                            </label>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-t border-gray-100">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="patientEducationConfirmed" class="mr-3 h-5 w-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                                <span class="font-semibold text-gray-900">Patient verbalized understanding</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Next Dressing Change -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="nextChangeDate" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar-alt text-green-600 mr-2"></i>
+                            Next Dressing Change Date <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date"
+                               id="nextChangeDate"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Transparent dressings typically changed every 7 days or when soiled
+                        </p>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-alt text-green-600 mr-2"></i>
+                            Additional Documentation Notes
+                        </label>
+                        <textarea id="additionalNotes"
+                                  rows="4"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                                  placeholder="Any additional observations, patient preferences, or special considerations..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="mt-6 bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                        <div>
+                            <h4 class="text-sm font-semibold text-green-900">Documentation Complete</h4>
+                            <p class="text-sm text-green-800">Click "Complete Documentation" to finalize and save this IV insertion record to the patient's chart.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Documentation
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {}
+        };
+
+        // Insertion tracking
+        let attemptCount = 0;
+        let insertionSuccessful = false;
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('IV Insertion Documentation Wizard loaded');
+            updateWizardUI();
+            setDefaultNextChangeDate();
+        });
+
+        // Set default next change date to 7 days from now
+        function setDefaultNextChangeDate() {
+            const today = new Date();
+            const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
+            const dateStr = nextWeek.toISOString().split('T')[0];
+            document.getElementById('nextChangeDate').value = dateStr;
+        }
+
+        // Record insertion attempt
+        function recordAttempt(success) {
+            attemptCount++;
+            document.getElementById('attemptCount').textContent = attemptCount;
+            document.getElementById('headerAttemptCount').textContent = attemptCount;
+
+            if (success) {
+                insertionSuccessful = true;
+                document.getElementById('successBadge').classList.remove('hidden');
+                document.getElementById('attemptBtn').disabled = true;
+                document.getElementById('successBtn').disabled = true;
+                showMessage('success', 'IV insertion successful!');
+            }
+
+            if (attemptCount >= 2 && !success) {
+                document.getElementById('consultAlert').classList.remove('hidden');
+                showMessage('warning', 'Multiple attempts recorded. Consider consulting with senior staff.');
+            }
+
+            // Store in wizard state
+            wizardState.data.attempt_count = attemptCount;
+            wizardState.data.insertion_successful = insertionSuccessful;
+        }
+
+        // Quick fill functions
+        function fillSuccessfulInsertion() {
+            // Step 1
+            const leftForearm = document.querySelector('.site-selector:first-child');
+            selectSite(leftForearm, 'Left forearm - cephalic vein');
+            document.getElementById('veinPalpable').checked = true;
+            document.getElementById('veinVisible').checked = true;
+            document.getElementById('veinQuality').value = 'Good - firm, adequate';
+
+            // Step 2
+            document.getElementById('catheterGauge').value = '20G';
+            document.getElementById('bloodReturn').checked = true;
+            document.getElementById('catheterLength').value = '1.16 inch';
+
+            // Step 4
+            document.getElementById('dressingType').value = 'Transparent semipermeable';
+            document.getElementById('securementMethod').value = 'Engineered stabilization device';
+            document.getElementById('flushSolution').value = 'Normal saline (0.9% NaCl)';
+
+            // Simulate 1 successful attempt
+            if (attemptCount === 0) {
+                recordAttempt(true);
+            }
+
+            showMessage('success', 'Form pre-filled with successful insertion data');
+        }
+
+        function fillDifficultAccess() {
+            // Step 1
+            const rightHand = document.querySelectorAll('.site-selector')[3];
+            selectSite(rightHand, 'Right hand - dorsal');
+            document.getElementById('veinPalpable').checked = false;
+            document.getElementById('veinVisible').checked = true;
+            document.getElementById('veinQuality').value = 'Poor - fragile';
+
+            // Step 2
+            document.getElementById('catheterGauge').value = '22G';
+            document.getElementById('catheterLength').value = '1.0 inch';
+
+            // Step 3
+            document.getElementById('compNone').checked = false;
+            document.getElementById('compMultipleAttempts').checked = true;
+            document.getElementById('compHematoma').checked = true;
+            document.getElementById('interventionNotes').value = 'Multiple attempts required due to fragile veins. Applied pressure to minimize hematoma. Patient tolerated procedure well.';
+
+            // Simulate 2 attempts
+            if (attemptCount === 0) {
+                recordAttempt(false);
+                setTimeout(() => recordAttempt(true), 500);
+            }
+
+            showMessage('warning', 'Form pre-filled with difficult access scenario');
+        }
+
+        // Site selection
+        function selectSite(element, siteName) {
+            document.querySelectorAll('.site-selector').forEach(s => s.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('selectedSite').value = siteName;
+            wizardState.data.selected_site = siteName;
+        }
+
+        // Handle complication checkboxes
+        function handleComplicationNone(checkbox) {
+            if (checkbox.checked) {
+                document.querySelectorAll('[id^="comp"]:not(#compNone)').forEach(cb => cb.checked = false);
+            }
+        }
+
+        function handleComplicationCheck() {
+            // If any complication is checked, uncheck "None"
+            const anyChecked = Array.from(document.querySelectorAll('[id^="comp"]:not(#compNone)')).some(cb => cb.checked);
+            if (anyChecked) {
+                document.getElementById('compNone').checked = false;
+            }
+        }
+
+        // Update pain display
+        function updatePainDisplay(value) {
+            const display = document.getElementById('painDisplay');
+            display.textContent = value;
+
+            // Color coding
+            if (value == 0) {
+                display.className = 'text-2xl font-bold text-green-600';
+            } else if (value <= 3) {
+                display.className = 'text-2xl font-bold text-yellow-600';
+            } else if (value <= 6) {
+                display.className = 'text-2xl font-bold text-orange-600';
+            } else {
+                display.className = 'text-2xl font-bold text-red-600';
+            }
+
+            wizardState.data.pain_level = value;
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum < 1 || stepNum > 4) return;
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect current step data
+            collectCurrentStepData();
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            if (wizardState.current_step < 4) {
+                wizardState.current_step++;
+                updateWizardUI();
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            switch (wizardState.current_step) {
+                case 1: // Site Selection
+                    wizardState.data.selected_site = document.getElementById('selectedSite').value;
+                    wizardState.data.vein_palpable = document.getElementById('veinPalpable').checked;
+                    wizardState.data.vein_visible = document.getElementById('veinVisible').checked;
+                    wizardState.data.vein_quality = document.getElementById('veinQuality').value;
+                    wizardState.data.site_intact = document.getElementById('siteIntact').checked;
+                    wizardState.data.site_no_redness = document.getElementById('siteNoRedness').checked;
+                    wizardState.data.site_no_swelling = document.getElementById('siteNoSwelling').checked;
+                    wizardState.data.site_no_lesions = document.getElementById('siteNoLesions').checked;
+                    break;
+
+                case 2: // Insertion Procedure
+                    wizardState.data.catheter_gauge = document.getElementById('catheterGauge').value;
+                    wizardState.data.blood_return = document.getElementById('bloodReturn').checked;
+                    wizardState.data.catheter_length = document.getElementById('catheterLength').value;
+                    break;
+
+                case 3: // Complications
+                    wizardState.data.complications = {
+                        none: document.getElementById('compNone').checked,
+                        infiltration: document.getElementById('compInfiltration').checked,
+                        hematoma: document.getElementById('compHematoma').checked,
+                        multiple_attempts: document.getElementById('compMultipleAttempts').checked,
+                        phlebitis: document.getElementById('compPhlebitis').checked,
+                        other: document.getElementById('compOther').checked
+                    };
+                    wizardState.data.intervention_notes = document.getElementById('interventionNotes').value;
+                    wizardState.data.pain_level = document.getElementById('painLevel').value;
+                    break;
+
+                case 4: // Documentation
+                    wizardState.data.dressing_type = document.getElementById('dressingType').value;
+                    wizardState.data.securement_method = document.getElementById('securementMethod').value;
+                    wizardState.data.flush_solution = document.getElementById('flushSolution').value;
+                    wizardState.data.patient_education = {
+                        keep_dry: document.getElementById('eduKeepDry').checked,
+                        report_symptoms: document.getElementById('eduReportSymptoms').checked,
+                        avoid_tension: document.getElementById('eduAvoidTension').checked,
+                        mobility_precautions: document.getElementById('eduMobilityPrecautions').checked,
+                        confirmed: document.getElementById('patientEducationConfirmed').checked
+                    };
+                    wizardState.data.next_change_date = document.getElementById('nextChangeDate').value;
+                    wizardState.data.additional_notes = document.getElementById('additionalNotes').value;
+                    break;
+            }
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+
+            showMessage('success', 'IV insertion documentation completed successfully!');
+
+            // Display summary
+            console.log('IV Insertion Documentation:', wizardState.data);
+
+            setTimeout(() => {
+                if (confirm('Documentation complete! Return to dashboard?')) {
+                    window.location.href = '/';
+                }
+            }, 1000);
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 4) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>

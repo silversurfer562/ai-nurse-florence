@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fall Risk Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .epic-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #6366f1;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .risk-badge-low {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        .risk-badge-medium {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+        .risk-badge-high {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        .morse-item {
+            transition: all 0.2s ease;
+        }
+        .morse-item:hover {
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="epic-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-indigo-200 text-sm">Fall Risk Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="riskScoreHeader" class="text-sm font-semibold bg-white bg-opacity-20 px-4 py-2 rounded-lg">
+                        Risk Score: <span id="headerScore">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-indigo-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-indigo-800">Morse Fall Scale Assessment</h3>
+                    <p class="text-sm text-indigo-700">Complete all steps to assess patient fall risk using the Morse Fall Scale (0-125 points). Score: Low Risk <25, Medium Risk 25-45, High Risk >45.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-indigo-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Fall Risk Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to calculate patient fall risk</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-indigo-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Morse Scale</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Environment</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Interventions</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Review</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Morse Fall Scale Assessment -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-list text-indigo-600 mr-2"></i>
+                    Morse Fall Scale Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's fall risk using the Morse Fall Scale criteria. Select one option for each category.</p>
+
+                <div class="space-y-4">
+                    <!-- History of Falling -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-history text-indigo-600 mr-2"></i>
+                            History of Falling (immediate or within 3 months)
+                        </label>
+                        <div class="space-y-2">
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="fallHistory" value="0" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">No (0 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="fallHistory" value="25" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Yes (25 points)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Diagnosis -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-notes-medical text-indigo-600 mr-2"></i>
+                            Secondary Diagnosis (more than one medical diagnosis)
+                        </label>
+                        <div class="space-y-2">
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="secondaryDx" value="0" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">No (0 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="secondaryDx" value="15" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Yes (15 points)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Ambulatory Aid -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-walking text-indigo-600 mr-2"></i>
+                            Ambulatory Aid
+                        </label>
+                        <div class="space-y-2">
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="ambulatoryAid" value="0" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">None / Bed rest / Nurse assist (0 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="ambulatoryAid" value="15" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Crutches / Cane / Walker (15 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="ambulatoryAid" value="30" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Furniture (30 points)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- IV/Heparin Lock -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-syringe text-indigo-600 mr-2"></i>
+                            IV Therapy / Heparin Lock
+                        </label>
+                        <div class="space-y-2">
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="ivAccess" value="0" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">No (0 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="ivAccess" value="20" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Yes (20 points)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Gait -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-shoe-prints text-indigo-600 mr-2"></i>
+                            Gait / Transferring
+                        </label>
+                        <div class="space-y-2">
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="gait" value="0" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Normal / Bed rest / Immobile (0 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="gait" value="10" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Weak (10 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="gait" value="20" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Impaired (20 points)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Mental Status -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-brain text-indigo-600 mr-2"></i>
+                            Mental Status
+                        </label>
+                        <div class="space-y-2">
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="mentalStatus" value="0" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Oriented to own ability (0 points)</span>
+                            </label>
+                            <label class="morse-item flex items-center cursor-pointer p-3 bg-gray-50 rounded-lg hover:bg-indigo-50">
+                                <input type="radio" name="mentalStatus" value="15" class="mr-3 h-4 w-4 text-indigo-600" onchange="calculateFallRisk()">
+                                <span class="text-sm text-gray-700">Forgets limitations (15 points)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Current Score Display -->
+                    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-semibold text-indigo-900">Current Morse Fall Scale Score</h4>
+                                <p class="text-xs text-indigo-700 mt-1">Score updates automatically as you select options</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-3xl font-bold text-indigo-600" id="currentScore">0</div>
+                                <div class="text-xs text-indigo-700">points</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Fill Options -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-yellow-600 mt-1 mr-3"></i>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-yellow-900 mb-2">Quick Fill Options (for testing)</h4>
+                                <div class="space-x-2">
+                                    <button onclick="fillHighRisk()" class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">
+                                        High Risk Example (95 pts)
+                                    </button>
+                                    <button onclick="fillMediumRisk()" class="px-3 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700">
+                                        Medium Risk Example (40 pts)
+                                    </button>
+                                    <button onclick="fillLowRisk()" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">
+                                        Low Risk Example (0 pts)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Environmental Assessment -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-home text-indigo-600 mr-2"></i>
+                    Environmental Assessment
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's environment for fall hazards. Check all items that apply.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" id="envBedLow" class="env-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-bed text-indigo-600 mr-2"></i>Bed in Low Position
+                                </div>
+                                <div class="text-sm text-gray-600">Hospital bed is in lowest position with wheels locked</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" id="envCallLight" class="env-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-bell text-indigo-600 mr-2"></i>Call Light Within Reach
+                                </div>
+                                <div class="text-sm text-gray-600">Call bell/light is accessible and patient knows how to use it</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" id="envPathwayClear" class="env-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-route text-indigo-600 mr-2"></i>Pathway Clear of Obstacles
+                                </div>
+                                <div class="text-sm text-gray-600">Area around bed and path to bathroom is clear and unobstructed</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" id="envLighting" class="env-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-lightbulb text-indigo-600 mr-2"></i>Adequate Lighting
+                                </div>
+                                <div class="text-sm text-gray-600">Room has adequate lighting; night light available if needed</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" id="envFootwear" class="env-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-socks text-indigo-600 mr-2"></i>Non-Slip Footwear Available
+                                </div>
+                                <div class="text-sm text-gray-600">Patient has access to non-slip socks or appropriate footwear</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-indigo-300 transition-colors">
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" id="envBathroom" class="env-checkbox mt-1 mr-4 h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500">
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900 mb-1 group-hover:text-indigo-700">
+                                    <i class="fas fa-bath text-indigo-600 mr-2"></i>Bathroom Safety Features
+                                </div>
+                                <div class="text-sm text-gray-600">Grab bars, non-slip mats, and raised toilet seat if needed</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-600 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-blue-900 mb-1">Environmental Safety</p>
+                            <p class="text-sm text-blue-800">Environmental modifications are essential for fall prevention regardless of risk score. Unchecked items should be addressed before proceeding.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Interventions & Precautions -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-shield-alt text-indigo-600 mr-2"></i>
+                    Interventions & Precautions
+                </h3>
+                <p class="text-gray-700 mb-6">Based on the calculated risk level, select appropriate interventions to implement.</p>
+
+                <!-- Risk Level Display -->
+                <div id="riskLevelCard" class="mb-6 p-6 rounded-lg border-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-lg font-bold text-gray-900 mb-1">Calculated Risk Level</h4>
+                            <p class="text-sm text-gray-600">Based on Morse Fall Scale score</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold mb-1" id="riskLevelDisplay">Not Calculated</div>
+                            <div class="text-sm" id="riskScoreDisplay">Score: 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Universal Interventions -->
+                <div class="mb-6">
+                    <h4 class="text-md font-bold text-gray-800 mb-3">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>Universal Interventions (All Patients)
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-green-600 rounded" checked disabled>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Orient patient to room and call system</div>
+                                    <div class="text-sm text-gray-600">Standard for all patients</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-green-600 rounded" checked disabled>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Keep bed in low position with brakes locked</div>
+                                    <div class="text-sm text-gray-600">Standard for all patients</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-green-600 rounded" checked disabled>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Ensure adequate lighting</div>
+                                    <div class="text-sm text-gray-600">Standard for all patients</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Risk Interventions -->
+                <div id="lowRiskInterventions" class="mb-6 hidden">
+                    <h4 class="text-md font-bold text-gray-800 mb-3">
+                        <i class="fas fa-info-circle text-green-600 mr-2"></i>Low Risk Interventions (Score <25)
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intLowRoundingLow" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-indigo-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Hourly rounding</div>
+                                    <div class="text-sm text-gray-600">Check on patient every hour</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intLowEducation" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-indigo-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Patient/family education on fall prevention</div>
+                                    <div class="text-sm text-gray-600">Provide safety information and instructions</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medium Risk Interventions -->
+                <div id="mediumRiskInterventions" class="mb-6 hidden">
+                    <h4 class="text-md font-bold text-gray-800 mb-3">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>Medium Risk Interventions (Score 25-45)
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="bg-white border border-yellow-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intMedArmbands" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-yellow-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Yellow fall risk armband/sign</div>
+                                    <div class="text-sm text-gray-600">Visual identifier for all staff</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-yellow-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intMedRounding" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-yellow-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Increase rounding frequency (every 30-60 minutes)</div>
+                                    <div class="text-sm text-gray-600">More frequent patient checks</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-yellow-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intMedAssistance" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-yellow-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Assisted ambulation</div>
+                                    <div class="text-sm text-gray-600">Patient requires assistance with mobility</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-yellow-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intMedBedAlarm" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-yellow-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Bed/chair alarm</div>
+                                    <div class="text-sm text-gray-600">Alert staff when patient attempts to get up</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High Risk Interventions -->
+                <div id="highRiskInterventions" class="mb-6 hidden">
+                    <h4 class="text-md font-bold text-gray-800 mb-3">
+                        <i class="fas fa-exclamation-circle text-red-600 mr-2"></i>High Risk Interventions (Score >45)
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="bg-white border border-red-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intHighArmbands" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Red fall risk armband/sign</div>
+                                    <div class="text-sm text-gray-600">High visibility identifier</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intHighConstant" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Constant observation / Sitter</div>
+                                    <div class="text-sm text-gray-600">1:1 monitoring if available and appropriate</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intHighBedLow" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Low bed / Floor bed</div>
+                                    <div class="text-sm text-gray-600">Minimize distance to floor</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intHighMats" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Floor mats at bedside</div>
+                                    <div class="text-sm text-gray-600">Cushion potential falls</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intHighAlarms" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Multiple alarm systems</div>
+                                    <div class="text-sm text-gray-600">Bed alarm, chair alarm, door alarm</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 shadow-sm">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="intHighRoom" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-red-600 rounded">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Room close to nursing station</div>
+                                    <div class="text-sm text-gray-600">Facilitate frequent monitoring</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-red-900 mb-1">Critical Reminder</p>
+                            <p class="text-sm text-red-800">High risk patients require immediate implementation of interventions and may need physician notification. Document all interventions and communicate to care team.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Review & Risk Score -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-indigo-600 mr-2"></i>
+                    Review & Risk Score Summary
+                </h3>
+                <p class="text-gray-700 mb-6">Review the complete fall risk assessment and finalize your interventions.</p>
+
+                <!-- Total Risk Score -->
+                <div id="finalRiskCard" class="mb-6 p-8 rounded-lg border-4 text-center">
+                    <h4 class="text-2xl font-bold text-gray-900 mb-4">Final Fall Risk Assessment</h4>
+                    <div class="mb-4">
+                        <div class="text-6xl font-bold mb-2" id="finalTotalScore">0</div>
+                        <div class="text-lg text-gray-600">Morse Fall Scale Score</div>
+                    </div>
+                    <div id="finalRiskBadge" class="inline-block px-8 py-4 rounded-lg text-2xl font-bold">
+                        Not Calculated
+                    </div>
+                </div>
+
+                <!-- Morse Scale Summary -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Morse Fall Scale Breakdown</h4>
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="text-gray-700">History of Falling:</span>
+                                <span class="font-semibold" id="reviewFallHistory">--</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="text-gray-700">Secondary Diagnosis:</span>
+                                <span class="font-semibold" id="reviewSecondaryDx">--</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="text-gray-700">Ambulatory Aid:</span>
+                                <span class="font-semibold" id="reviewAmbulatoryAid">--</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="text-gray-700">IV/Heparin Lock:</span>
+                                <span class="font-semibold" id="reviewIvAccess">--</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-100">
+                                <span class="text-gray-700">Gait:</span>
+                                <span class="font-semibold" id="reviewGait">--</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span class="text-gray-700">Mental Status:</span>
+                                <span class="font-semibold" id="reviewMentalStatus">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environmental Summary -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Environmental Safety Checklist</h4>
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <div id="reviewEnvironment" class="space-y-2 text-sm">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interventions Summary -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Selected Interventions</h4>
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <div id="reviewInterventions" class="space-y-2 text-sm">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mr-3 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-green-900 mb-1">Assessment Complete</p>
+                            <p class="text-sm text-green-800">Review all information above. Click "Complete Assessment" to save this fall risk assessment to the patient's record. Ensure all interventions are implemented and documented.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishAssessment()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {
+                morseScore: 0,
+                riskLevel: 'Not Calculated',
+                fallHistory: 0,
+                secondaryDx: 0,
+                ambulatoryAid: 0,
+                ivAccess: 0,
+                gait: 0,
+                mentalStatus: 0,
+                environment: [],
+                interventions: []
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Fall Risk Assessment Wizard loaded');
+            updateWizardUI();
+        });
+
+        // Calculate Fall Risk Score
+        function calculateFallRisk() {
+            const history = parseInt(document.querySelector('input[name="fallHistory"]:checked')?.value) || 0;
+            const diagnosis = parseInt(document.querySelector('input[name="secondaryDx"]:checked')?.value) || 0;
+            const aid = parseInt(document.querySelector('input[name="ambulatoryAid"]:checked')?.value) || 0;
+            const iv = parseInt(document.querySelector('input[name="ivAccess"]:checked')?.value) || 0;
+            const gait = parseInt(document.querySelector('input[name="gait"]:checked')?.value) || 0;
+            const mental = parseInt(document.querySelector('input[name="mentalStatus"]:checked')?.value) || 0;
+
+            const total = history + diagnosis + aid + iv + gait + mental;
+
+            // Update current score display
+            document.getElementById('currentScore').textContent = total;
+            document.getElementById('headerScore').textContent = total;
+
+            // Store in state
+            wizardState.data.morseScore = total;
+            wizardState.data.fallHistory = history;
+            wizardState.data.secondaryDx = diagnosis;
+            wizardState.data.ambulatoryAid = aid;
+            wizardState.data.ivAccess = iv;
+            wizardState.data.gait = gait;
+            wizardState.data.mentalStatus = mental;
+
+            // Calculate risk level
+            let riskLevel, color;
+            if (total < 25) {
+                riskLevel = 'Low Risk';
+                color = 'green';
+            } else if (total <= 45) {
+                riskLevel = 'Medium Risk';
+                color = 'yellow';
+            } else {
+                riskLevel = 'High Risk';
+                color = 'red';
+            }
+
+            wizardState.data.riskLevel = riskLevel;
+            wizardState.data.riskColor = color;
+        }
+
+        // Quick fill functions
+        function fillHighRisk() {
+            document.querySelector('input[name="fallHistory"][value="25"]').checked = true;
+            document.querySelector('input[name="secondaryDx"][value="15"]').checked = true;
+            document.querySelector('input[name="ambulatoryAid"][value="30"]').checked = true;
+            document.querySelector('input[name="ivAccess"][value="20"]').checked = true;
+            document.querySelector('input[name="gait"][value="0"]').checked = true;
+            document.querySelector('input[name="mentalStatus"][value="15"]').checked = true;
+            calculateFallRisk();
+        }
+
+        function fillMediumRisk() {
+            document.querySelector('input[name="fallHistory"][value="25"]').checked = true;
+            document.querySelector('input[name="secondaryDx"][value="15"]').checked = true;
+            document.querySelector('input[name="ambulatoryAid"][value="0"]').checked = true;
+            document.querySelector('input[name="ivAccess"][value="0"]').checked = true;
+            document.querySelector('input[name="gait"][value="0"]').checked = true;
+            document.querySelector('input[name="mentalStatus"][value="0"]').checked = true;
+            calculateFallRisk();
+        }
+
+        function fillLowRisk() {
+            document.querySelector('input[name="fallHistory"][value="0"]').checked = true;
+            document.querySelector('input[name="secondaryDx"][value="0"]').checked = true;
+            document.querySelector('input[name="ambulatoryAid"][value="0"]').checked = true;
+            document.querySelector('input[name="ivAccess"][value="0"]').checked = true;
+            document.querySelector('input[name="gait"][value="0"]').checked = true;
+            document.querySelector('input[name="mentalStatus"][value="0"]').checked = true;
+            calculateFallRisk();
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                return;
+            }
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+            handleStepSpecificLogic();
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+            handleStepSpecificLogic();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect current step data
+            collectCurrentStepData();
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+
+            updateWizardUI();
+            handleStepSpecificLogic();
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            switch (wizardState.current_step) {
+                case 1: // Morse Scale
+                    calculateFallRisk();
+                    break;
+
+                case 2: // Environment
+                    const envChecks = [];
+                    document.querySelectorAll('.env-checkbox:checked').forEach(cb => {
+                        envChecks.push(cb.id);
+                    });
+                    wizardState.data.environment = envChecks;
+                    break;
+
+                case 3: // Interventions
+                    const interventions = [];
+                    document.querySelectorAll('.intervention-checkbox:checked').forEach(cb => {
+                        if (!cb.disabled) {
+                            interventions.push(cb.id);
+                        }
+                    });
+                    wizardState.data.interventions = interventions;
+                    break;
+            }
+        }
+
+        // Handle step-specific logic
+        function handleStepSpecificLogic() {
+            if (wizardState.current_step === 3) {
+                // Update risk level display and show appropriate interventions
+                updateInterventionsStep();
+            } else if (wizardState.current_step === 4) {
+                // Populate review content
+                populateReviewContent();
+            }
+        }
+
+        // Update interventions step
+        function updateInterventionsStep() {
+            const score = wizardState.data.morseScore;
+            const riskLevel = wizardState.data.riskLevel;
+            const color = wizardState.data.riskColor;
+
+            // Update risk level card
+            const riskLevelCard = document.getElementById('riskLevelCard');
+            riskLevelCard.className = `mb-6 p-6 rounded-lg border-2 risk-badge-${color}`;
+
+            document.getElementById('riskLevelDisplay').textContent = riskLevel;
+            document.getElementById('riskScoreDisplay').textContent = `Score: ${score}`;
+
+            // Show/hide intervention sections based on risk level
+            document.getElementById('lowRiskInterventions').classList.toggle('hidden', score >= 25);
+            document.getElementById('mediumRiskInterventions').classList.toggle('hidden', score < 25 || score > 45);
+            document.getElementById('highRiskInterventions').classList.toggle('hidden', score <= 45);
+        }
+
+        // Populate review content
+        function populateReviewContent() {
+            const data = wizardState.data;
+
+            // Update final risk card
+            document.getElementById('finalTotalScore').textContent = data.morseScore;
+
+            const finalRiskBadge = document.getElementById('finalRiskBadge');
+            finalRiskBadge.textContent = data.riskLevel;
+            finalRiskBadge.className = `inline-block px-8 py-4 rounded-lg text-2xl font-bold risk-badge-${data.riskColor}`;
+
+            const finalRiskCard = document.getElementById('finalRiskCard');
+            finalRiskCard.className = `mb-6 p-8 rounded-lg border-4 text-center risk-badge-${data.riskColor}`;
+
+            // Morse Scale Breakdown
+            document.getElementById('reviewFallHistory').textContent = `${data.fallHistory} points`;
+            document.getElementById('reviewSecondaryDx').textContent = `${data.secondaryDx} points`;
+            document.getElementById('reviewAmbulatoryAid').textContent = `${data.ambulatoryAid} points`;
+            document.getElementById('reviewIvAccess').textContent = `${data.ivAccess} points`;
+            document.getElementById('reviewGait').textContent = `${data.gait} points`;
+            document.getElementById('reviewMentalStatus').textContent = `${data.mentalStatus} points`;
+
+            // Environment Summary
+            const envDiv = document.getElementById('reviewEnvironment');
+            const envLabels = {
+                'envBedLow': 'Bed in Low Position',
+                'envCallLight': 'Call Light Within Reach',
+                'envPathwayClear': 'Pathway Clear of Obstacles',
+                'envLighting': 'Adequate Lighting',
+                'envFootwear': 'Non-Slip Footwear Available',
+                'envBathroom': 'Bathroom Safety Features'
+            };
+
+            if (data.environment.length === 0) {
+                envDiv.innerHTML = '<p class="text-gray-500">No environmental checks completed</p>';
+            } else {
+                envDiv.innerHTML = data.environment.map(id => `
+                    <div class="flex items-center py-2 border-b border-gray-100">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        <span class="text-gray-700">${envLabels[id]}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Interventions Summary
+            const intDiv = document.getElementById('reviewInterventions');
+            const intLabels = {
+                'intLowRoundingLow': 'Hourly rounding',
+                'intLowEducation': 'Patient/family education on fall prevention',
+                'intMedArmbands': 'Yellow fall risk armband/sign',
+                'intMedRounding': 'Increase rounding frequency (every 30-60 minutes)',
+                'intMedAssistance': 'Assisted ambulation',
+                'intMedBedAlarm': 'Bed/chair alarm',
+                'intHighArmbands': 'Red fall risk armband/sign',
+                'intHighConstant': 'Constant observation / Sitter',
+                'intHighBedLow': 'Low bed / Floor bed',
+                'intHighMats': 'Floor mats at bedside',
+                'intHighAlarms': 'Multiple alarm systems',
+                'intHighRoom': 'Room close to nursing station'
+            };
+
+            const universalInterventions = [
+                'Orient patient to room and call system',
+                'Keep bed in low position with brakes locked',
+                'Ensure adequate lighting'
+            ];
+
+            let intHTML = universalInterventions.map(label => `
+                <div class="flex items-center py-2 border-b border-gray-100">
+                    <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                    <span class="text-gray-700">${label} (Universal)</span>
+                </div>
+            `).join('');
+
+            if (data.interventions.length > 0) {
+                intHTML += data.interventions.map(id => `
+                    <div class="flex items-center py-2 border-b border-gray-100">
+                        <i class="fas fa-check-circle text-indigo-600 mr-2"></i>
+                        <span class="text-gray-700">${intLabels[id]}</span>
+                    </div>
+                `).join('');
+            }
+
+            intDiv.innerHTML = intHTML;
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 4) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Finish assessment
+        function finishAssessment() {
+            const data = wizardState.data;
+
+            // Show success message
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.innerHTML = `
+                <div class="message-success p-4 rounded-lg mb-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-600 mr-3 mt-1"></i>
+                        <div>
+                            <h4 class="font-semibold text-green-900">Fall Risk Assessment Complete</h4>
+                            <p class="text-sm text-green-800">Morse Fall Scale Score: ${data.morseScore} - ${data.riskLevel}</p>
+                            <p class="text-sm text-green-800 mt-1">Assessment has been saved to patient record. Ensure all selected interventions are implemented.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            messagesArea.scrollIntoView({ behavior: 'smooth' });
+
+            // Optionally redirect after a delay
+            setTimeout(() => {
+                // window.location.href = '/';
+                console.log('Assessment completed:', data);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

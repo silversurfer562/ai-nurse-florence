@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handoff Report Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #6366f1;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .handoff-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #6366f1;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            padding-bottom: 20px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            bottom: -20px;
+            width: 2px;
+            background: #e5e7eb;
+        }
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #6366f1;
+        }
+        .ipass-preview {
+            font-family: 'Courier New', monospace;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="handoff-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-indigo-200 text-sm">Handoff Report Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm">
+                        <i class="fas fa-clock mr-2"></i>
+                        <span id="currentTime"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-indigo-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-indigo-800">I-PASS Handoff Report Generator</h3>
+                    <p class="text-sm text-indigo-700">Create comprehensive shift handoff reports using the I-PASS framework (Illness severity, Patient summary, Action list, Situation awareness, Synthesis).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-indigo-600 h-full" style="width: 0%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Handoff Report Wizard</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete all steps to generate I-PASS handoff report</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-indigo-600" id="progressPercent">0%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-10">Patient</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Status</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Actions</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-10">Review</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Step 1: Patient Summary -->
+            <div id="step1" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-user-circle text-indigo-600 mr-2"></i>
+                    Patient Summary
+                </h3>
+                <p class="text-gray-700 mb-6">Enter basic patient information and status.</p>
+
+                <div class="space-y-6">
+                    <!-- Quick Fill Buttons -->
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-indigo-600 mt-1 mr-3"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-indigo-900 mb-2">Quick Fill Templates</p>
+                                <div class="flex space-x-2">
+                                    <button onclick="fillICUHandoff()" class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
+                                        <i class="fas fa-heartbeat mr-1"></i> ICU Patient
+                                    </button>
+                                    <button onclick="fillMedSurgHandoff()" class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
+                                        <i class="fas fa-hospital-user mr-1"></i> Med-Surg Patient
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient ID -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="patientId" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-id-badge text-indigo-600 mr-2"></i>
+                            Patient ID / MRN <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="patientId"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                               placeholder="Enter patient medical record number"
+                               required>
+                    </div>
+
+                    <!-- Patient Summary -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="patientSummary" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-indigo-600 mr-2"></i>
+                            Patient Summary <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            id="patientSummary"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Age, gender, primary diagnosis, post-op day, etc."
+                            required></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Brief description of patient (e.g., "72 y/o M, POD#2 CABG x4")
+                        </p>
+                    </div>
+
+                    <!-- Code Status -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="codeStatus" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-heart-pulse text-indigo-600 mr-2"></i>
+                            Code Status <span class="text-red-500">*</span>
+                        </label>
+                        <select id="codeStatus" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select code status</option>
+                            <option value="Full Code">Full Code</option>
+                            <option value="DNR">DNR (Do Not Resuscitate)</option>
+                            <option value="DNR/DNI">DNR/DNI (Do Not Intubate)</option>
+                            <option value="Comfort Care">Comfort Care</option>
+                        </select>
+                    </div>
+
+                    <!-- Isolation Precautions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-shield-virus text-indigo-600 mr-2"></i>
+                            Isolation Precautions
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="isolation-checkbox mr-3 h-4 w-4 text-indigo-600 rounded" value="Contact">
+                                <span class="text-sm text-gray-700">Contact Precautions</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="isolation-checkbox mr-3 h-4 w-4 text-indigo-600 rounded" value="Droplet">
+                                <span class="text-sm text-gray-700">Droplet Precautions</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="isolation-checkbox mr-3 h-4 w-4 text-indigo-600 rounded" value="Airborne">
+                                <span class="text-sm text-gray-700">Airborne Precautions</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="isolation-checkbox mr-3 h-4 w-4 text-indigo-600 rounded" value="Neutropenic">
+                                <span class="text-sm text-gray-700">Neutropenic Precautions</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Current Status & Events -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-list text-indigo-600 mr-2"></i>
+                    Current Status & Events
+                </h3>
+                <p class="text-gray-700 mb-6">Document illness severity, shift events, and current vitals.</p>
+
+                <div class="space-y-6">
+                    <!-- Illness Severity -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="illnessSeverity" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-exclamation-triangle text-indigo-600 mr-2"></i>
+                            Illness Severity <span class="text-red-500">*</span>
+                        </label>
+                        <select id="illnessSeverity" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Select illness severity</option>
+                            <option value="Stable - routine monitoring">Stable - routine monitoring</option>
+                            <option value="Stable - ICU monitoring">Stable - ICU monitoring</option>
+                            <option value="Watcher - potential for deterioration">Watcher - potential for deterioration</option>
+                            <option value="Unstable - requires close monitoring">Unstable - requires close monitoring</option>
+                            <option value="Critical - unstable">Critical - unstable</option>
+                        </select>
+                    </div>
+
+                    <!-- Current Vitals -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-heartbeat text-indigo-600 mr-2"></i>
+                            Current Vitals
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="vitalBP" class="block text-xs text-gray-600 mb-1">BP</label>
+                                <input type="text" id="vitalBP" placeholder="120/80" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label for="vitalHR" class="block text-xs text-gray-600 mb-1">HR</label>
+                                <input type="text" id="vitalHR" placeholder="72" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label for="vitalTemp" class="block text-xs text-gray-600 mb-1">Temp (F)</label>
+                                <input type="text" id="vitalTemp" placeholder="98.6" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            </div>
+                            <div>
+                                <label for="vitalO2" class="block text-xs text-gray-600 mb-1">SpO2 (%)</label>
+                                <input type="text" id="vitalO2" placeholder="98" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shift Events Timeline -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-timeline text-indigo-600 mr-2"></i>
+                            Shift Events Timeline
+                        </label>
+                        <div id="eventTimeline" class="space-y-3 max-h-64 overflow-y-auto">
+                            <!-- Timeline items will be added here -->
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <input type="time" id="eventTime" class="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <input type="text" id="eventDescription" placeholder="Event description" class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <button onclick="addTimelineEvent()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+                                <i class="fas fa-plus mr-1"></i> Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Labs/Procedures -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="recentLabs" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-flask text-indigo-600 mr-2"></i>
+                            Recent Labs & Procedures
+                        </label>
+                        <textarea
+                            id="recentLabs"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Lab results, imaging, procedures performed this shift"></textarea>
+                    </div>
+
+                    <!-- Current Medications -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="currentMeds" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-pills text-indigo-600 mr-2"></i>
+                            Current Medications Review
+                        </label>
+                        <textarea
+                            id="currentMeds"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Key medications, drips, recent changes"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Action Items & Pending Tasks -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-tasks text-indigo-600 mr-2"></i>
+                    Action Items & Pending Tasks
+                </h3>
+                <p class="text-gray-700 mb-6">Document outstanding orders and anticipated needs for the next shift.</p>
+
+                <div class="space-y-6">
+                    <!-- Outstanding Orders -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-file-medical text-indigo-600 mr-2"></i>
+                            Outstanding Orders & Pending Tasks
+                        </label>
+                        <div class="space-y-2" id="actionItemsChecklist">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="action-item mr-3 h-4 w-4 text-indigo-600 rounded" value="Pending lab draw at 0600">
+                                <span class="text-sm text-gray-700">Pending lab draw at 0600</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="action-item mr-3 h-4 w-4 text-indigo-600 rounded" value="IV site change due">
+                                <span class="text-sm text-gray-700">IV site change due</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="action-item mr-3 h-4 w-4 text-indigo-600 rounded" value="Pain reassessment needed">
+                                <span class="text-sm text-gray-700">Pain reassessment needed</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="action-item mr-3 h-4 w-4 text-indigo-600 rounded" value="Awaiting consult response">
+                                <span class="text-sm text-gray-700">Awaiting consult response</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" class="action-item mr-3 h-4 w-4 text-indigo-600 rounded" value="Medication due at change of shift">
+                                <span class="text-sm text-gray-700">Medication due at change of shift</span>
+                            </label>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <input type="text" id="customActionItem" placeholder="Add custom action item" class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <button onclick="addCustomActionItem()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+                                <i class="fas fa-plus mr-1"></i> Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Anticipated Needs -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="anticipatedChanges" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-lightbulb text-indigo-600 mr-2"></i>
+                            Anticipated Changes & Situation Awareness <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            id="anticipatedChanges"
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="What might happen? What to watch for? Contingency plans?"
+                            required></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Examples: "May need additional pain control", "Watch for signs of infection", "Family requesting update"
+                        </p>
+                    </div>
+
+                    <!-- Family/Communication Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="familyNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-users text-indigo-600 mr-2"></i>
+                            Family & Communication Notes
+                        </label>
+                        <textarea
+                            id="familyNotes"
+                            rows="2"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Family concerns, communication preferences, etc."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Review Handoff -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-indigo-600 mr-2"></i>
+                    Review Handoff Report
+                </h3>
+                <p class="text-gray-700 mb-6">Review your I-PASS format handoff report before finalizing.</p>
+
+                <div class="space-y-6">
+                    <!-- I-PASS Preview -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <label class="block text-sm font-bold text-gray-800">
+                                <i class="fas fa-file-alt text-indigo-600 mr-2"></i>
+                                I-PASS Handoff Report
+                            </label>
+                            <button onclick="generateIPASS()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
+                                <i class="fas fa-sync mr-1"></i> Refresh Preview
+                            </button>
+                        </div>
+                        <div id="ipassPreview" class="ipass-preview">
+                            Click "Refresh Preview" to generate your I-PASS handoff report.
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-tools text-indigo-600 mr-2"></i>
+                            Quick Actions
+                        </label>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="copyIPASSToClipboard()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                                <i class="fas fa-copy mr-1"></i> Copy to Clipboard
+                            </button>
+                            <button onclick="printHandoff()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                                <i class="fas fa-print mr-1"></i> Print
+                            </button>
+                            <button onclick="exportHandoff()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm">
+                                <i class="fas fa-download mr-1"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-indigo-600 mr-3 mt-1"></i>
+                            <div>
+                                <h4 class="text-sm font-semibold text-indigo-900">Handoff Summary</h4>
+                                <div class="text-sm text-indigo-800 mt-2 space-y-1">
+                                    <div><i class="fas fa-check-circle mr-2"></i>Patient: <span id="summaryPatient">Not entered</span></div>
+                                    <div><i class="fas fa-check-circle mr-2"></i>Severity: <span id="summarySeverity">Not entered</span></div>
+                                    <div><i class="fas fa-check-circle mr-2"></i>Action Items: <span id="summaryActions">0 items</span></div>
+                                    <div><i class="fas fa-check-circle mr-2"></i>Timeline Events: <span id="summaryEvents">0 events</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Handoff
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            data: {
+                events: []
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Handoff Report Wizard loaded');
+            updateWizardUI();
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step + 1 && !wizardState.completed_steps.includes(stepNum)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            if (stepNum === 4) {
+                updateSummaryStats();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            if (wizardState.current_step < 4) {
+                wizardState.current_step++;
+                updateWizardUI();
+
+                if (wizardState.current_step === 4) {
+                    generateIPASS();
+                    updateSummaryStats();
+                }
+            }
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const progressPercent = Math.floor((wizardState.current_step / 4) * 100);
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = wizardState.current_step;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === wizardState.current_step) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === wizardState.current_step) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = wizardState.current_step === 1;
+
+            if (wizardState.current_step === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Fill ICU handoff template
+        function fillICUHandoff() {
+            document.getElementById('patientId').value = 'MRN-123456';
+            document.getElementById('patientSummary').value = '72 y/o M, POD#2 CABG x4, stable overnight';
+            document.getElementById('illnessSeverity').value = 'Stable - ICU monitoring';
+            document.getElementById('codeStatus').value = 'Full Code';
+            fillVitals('125/75', '68', '98.2', '96');
+            document.getElementById('anticipatedChanges').value = 'Plan to wean sedation this AM. Monitor for post-op bleeding. Family requesting update at 10am.';
+            showMessage('success', 'ICU template applied successfully');
+        }
+
+        // Fill Med-Surg handoff template
+        function fillMedSurgHandoff() {
+            document.getElementById('patientId').value = 'MRN-789012';
+            document.getElementById('patientSummary').value = '58 y/o F, CHF exacerbation, improving with diuresis';
+            document.getElementById('illnessSeverity').value = 'Stable - routine monitoring';
+            document.getElementById('codeStatus').value = 'Full Code';
+            fillVitals('135/85', '78', '98.6', '94');
+            document.getElementById('anticipatedChanges').value = 'Continue diuresis. Monitor I&O closely. PT consult pending.';
+            showMessage('success', 'Med-Surg template applied successfully');
+        }
+
+        // Fill vitals helper
+        function fillVitals(bp, hr, temp, o2) {
+            document.getElementById('vitalBP').value = bp;
+            document.getElementById('vitalHR').value = hr;
+            document.getElementById('vitalTemp').value = temp;
+            document.getElementById('vitalO2').value = o2;
+        }
+
+        // Add timeline event
+        function addTimelineEvent() {
+            const time = document.getElementById('eventTime').value;
+            const description = document.getElementById('eventDescription').value;
+
+            if (!time || !description) {
+                showMessage('warning', 'Please enter both time and description');
+                return;
+            }
+
+            const timeline = document.getElementById('eventTimeline');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'timeline-item';
+            eventDiv.innerHTML = `
+                <div class="timeline-dot"></div>
+                <div class="bg-gray-50 rounded p-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-semibold text-indigo-600">${time}</span>
+                            <p class="text-sm text-gray-700 mt-1">${description}</p>
+                        </div>
+                        <button onclick="this.closest('.timeline-item').remove()" class="text-gray-400 hover:text-red-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            timeline.appendChild(eventDiv);
+
+            // Store event
+            wizardState.data.events.push({ time, description });
+
+            // Clear inputs
+            document.getElementById('eventTime').value = '';
+            document.getElementById('eventDescription').value = '';
+        }
+
+        // Add custom action item
+        function addCustomActionItem() {
+            const customItem = document.getElementById('customActionItem').value;
+            if (!customItem) {
+                showMessage('warning', 'Please enter an action item');
+                return;
+            }
+
+            const checklist = document.getElementById('actionItemsChecklist');
+            const itemDiv = document.createElement('label');
+            itemDiv.className = 'flex items-center cursor-pointer';
+            itemDiv.innerHTML = `
+                <input type="checkbox" class="action-item mr-3 h-4 w-4 text-indigo-600 rounded" value="${customItem}">
+                <span class="text-sm text-gray-700">${customItem}</span>
+            `;
+            checklist.appendChild(itemDiv);
+
+            document.getElementById('customActionItem').value = '';
+        }
+
+        // Collect action items
+        function collectActionItems() {
+            const items = [];
+            document.querySelectorAll('.action-item:checked').forEach(cb => {
+                items.push(cb.value);
+            });
+            return items;
+        }
+
+        // Generate I-PASS format handoff
+        function generateIPASS() {
+            const patientId = document.getElementById('patientId').value || 'Not entered';
+            const patientSummary = document.getElementById('patientSummary').value || 'Not entered';
+            const codeStatus = document.getElementById('codeStatus').value || 'Not specified';
+            const illness = document.getElementById('illnessSeverity').value || 'Not specified';
+            const actions = collectActionItems();
+            const situation = document.getElementById('anticipatedChanges').value || 'None documented';
+
+            // Collect isolation precautions
+            const isolations = [];
+            document.querySelectorAll('.isolation-checkbox:checked').forEach(cb => {
+                isolations.push(cb.value);
+            });
+            const isolationText = isolations.length > 0 ? isolations.join(', ') : 'None';
+
+            // Collect vitals
+            const bp = document.getElementById('vitalBP').value || 'N/A';
+            const hr = document.getElementById('vitalHR').value || 'N/A';
+            const temp = document.getElementById('vitalTemp').value || 'N/A';
+            const o2 = document.getElementById('vitalO2').value || 'N/A';
+
+            const labs = document.getElementById('recentLabs').value || 'None documented';
+            const meds = document.getElementById('currentMeds').value || 'None documented';
+            const family = document.getElementById('familyNotes').value || 'None documented';
+
+            const ipass = `
+═══════════════════════════════════════════════════════════
+                    I-PASS HANDOFF REPORT
+═══════════════════════════════════════════════════════════
+
+PATIENT: ${patientId}
+CODE STATUS: ${codeStatus}
+ISOLATION: ${isolationText}
+
+═══════════════════════════════════════════════════════════
+I - ILLNESS SEVERITY
+═══════════════════════════════════════════════════════════
+${illness}
+
+Current Vitals: BP ${bp} | HR ${hr} | Temp ${temp}°F | SpO2 ${o2}%
+
+═══════════════════════════════════════════════════════════
+P - PATIENT SUMMARY
+═══════════════════════════════════════════════════════════
+${patientSummary}
+
+Recent Labs/Procedures:
+${labs}
+
+Current Medications:
+${meds}
+
+═══════════════════════════════════════════════════════════
+A - ACTION LIST
+═══════════════════════════════════════════════════════════
+${actions.length > 0 ? actions.map((item, i) => `${i + 1}. ${item}`).join('\n') : 'No outstanding action items'}
+
+═══════════════════════════════════════════════════════════
+S - SITUATION AWARENESS & CONTINGENCY PLANNING
+═══════════════════════════════════════════════════════════
+${situation}
+
+Family/Communication Notes:
+${family}
+
+═══════════════════════════════════════════════════════════
+S - SYNTHESIS BY RECEIVER
+═══════════════════════════════════════════════════════════
+Ready for handoff. Please confirm understanding and ask
+questions for clarification.
+
+═══════════════════════════════════════════════════════════
+Generated: ${new Date().toLocaleString()}
+            `.trim();
+
+            document.getElementById('ipassPreview').textContent = ipass;
+            wizardState.data.ipassReport = ipass;
+        }
+
+        // Update summary stats
+        function updateSummaryStats() {
+            const patientId = document.getElementById('patientId').value || 'Not entered';
+            const illness = document.getElementById('illnessSeverity').value || 'Not entered';
+            const actionCount = collectActionItems().length;
+            const eventCount = wizardState.data.events.length;
+
+            document.getElementById('summaryPatient').textContent = patientId;
+            document.getElementById('summarySeverity').textContent = illness;
+            document.getElementById('summaryActions').textContent = `${actionCount} items`;
+            document.getElementById('summaryEvents').textContent = `${eventCount} events`;
+        }
+
+        // Copy I-PASS to clipboard
+        function copyIPASSToClipboard() {
+            if (!wizardState.data.ipassReport) {
+                generateIPASS();
+            }
+
+            navigator.clipboard.writeText(wizardState.data.ipassReport).then(() => {
+                showMessage('success', 'Handoff report copied to clipboard!');
+            }).catch(err => {
+                showMessage('error', 'Failed to copy to clipboard');
+            });
+        }
+
+        // Print handoff
+        function printHandoff() {
+            if (!wizardState.data.ipassReport) {
+                generateIPASS();
+            }
+
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>I-PASS Handoff Report</title>');
+            printWindow.document.write('<style>body { font-family: "Courier New", monospace; white-space: pre-wrap; padding: 20px; }</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(wizardState.data.ipassReport);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Export handoff
+        function exportHandoff() {
+            if (!wizardState.data.ipassReport) {
+                generateIPASS();
+            }
+
+            const blob = new Blob([wizardState.data.ipassReport], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `handoff-report-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            showMessage('success', 'Handoff report exported successfully!');
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            generateIPASS();
+            showMessage('success', 'Handoff report completed! You can now copy, print, or export the report.');
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>
