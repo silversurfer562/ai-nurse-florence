@@ -6,6 +6,7 @@
     <title>Restraint Assessment Wizard - AI Nurse Florence</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/static/js/wizardPersistence.js"></script>
     <style>
         .wizard-container {
             max-width: 4xl;
@@ -925,6 +926,127 @@
                 }
             }, 1500);
         }
+    
+        // ===== PERSISTENCE FUNCTIONS =====
+
+        const WIZARD_ID = 'restraint-assessment-wizard';
+
+        // Check for saved draft on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (WizardPersistence.hasSavedDraft(WIZARD_ID)) {
+                WizardPersistence.showResumeDraftModal(
+                    WIZARD_ID,
+                    () => resumeDraft(),
+                    () => console.log('Starting fresh')
+                );
+            }
+        });
+
+        // Auto-save on next step
+        const originalNextStep = nextStep;
+        function nextStep() {
+            autosaveDraft();
+            originalNextStep();
+        }
+
+        // Auto-save draft
+        function autosaveDraft() {
+            const formData = {};
+            const currentStepNum = parseInt(document.querySelector('.step.active')?.dataset.step || '1');
+
+            // Collect data from all steps
+            document.querySelectorAll('.step').forEach((step, index) => {
+                const stepNum = index + 1;
+                const stepData = {};
+
+                step.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.id) {
+                        if (input.type === 'checkbox') {
+                            stepData[input.id] = input.checked;
+                        } else if (input.type === 'radio') {
+                            if (input.checked) {
+                                stepData[input.name] = input.value;
+                            }
+                        } else {
+                            stepData[input.id] = input.value;
+                        }
+                    }
+                });
+
+                if (Object.keys(stepData).length > 0) {
+                    formData[`step${stepNum}`] = stepData;
+                }
+            });
+
+            WizardPersistence.saveWizardState(WIZARD_ID, currentStepNum, formData);
+
+            // Show save button
+            const saveBtn = document.getElementById('saveDraftBtn');
+            if (saveBtn && currentStepNum > 1) {
+                saveBtn.style.display = 'inline-block';
+            }
+        }
+
+        // Manual save
+        function saveDraft() {
+            autosaveDraft();
+            alert('Draft saved successfully!');
+        }
+
+        // Resume draft
+        function resumeDraft() {
+            const savedState = WizardPersistence.loadWizardState(WIZARD_ID);
+            if (!savedState) return;
+
+            // Restore to saved step
+            const targetStep = savedState.currentStep;
+
+            // Restore form data
+            if (savedState.formData) {
+                Object.keys(savedState.formData).forEach(stepKey => {
+                    const stepData = savedState.formData[stepKey];
+                    Object.keys(stepData).forEach(fieldId => {
+                        const input = document.getElementById(fieldId);
+                        if (input) {
+                            if (input.type === 'checkbox') {
+                                input.checked = stepData[fieldId];
+                            } else if (input.type === 'radio') {
+                                const radio = document.querySelector(`input[name="${fieldId}"][value="${stepData[fieldId]}"]`);
+                                if (radio) radio.checked = true;
+                            } else {
+                                input.value = stepData[fieldId];
+                            }
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+            }
+
+            // Navigate to saved step
+            document.querySelectorAll('.step').forEach((s, i) => {
+                s.classList.remove('active');
+                if (i + 1 === targetStep) {
+                    s.classList.add('active');
+                }
+                if (i + 1 < targetStep) {
+                    document.querySelector(`[data-step="${i+1}"]`)?.classList.add('completed');
+                }
+            });
+
+            currentStep = targetStep;
+            updateProgress();
+
+            const lastSave = WizardPersistence.getLastSaveTime(WIZARD_ID);
+            alert(`Draft restored from ${lastSave}`);
+        }
+
+        // Clear draft on completion
+        const originalCompleteWizard = window.completeWizard || function() {};
+        window.completeWizard = function() {
+            WizardPersistence.clearWizardState(WIZARD_ID);
+            originalCompleteWizard();
+        };
+
     </script>
 </body>
 </html>

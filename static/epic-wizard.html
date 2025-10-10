@@ -6,6 +6,7 @@
     <title>Epic Integration Wizard - AI Nurse Florence</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/static/js/wizardPersistence.js"></script>
     <style>
         .wizard-container {
             max-width: 4xl;
@@ -654,12 +655,17 @@
                 <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
                     <i class="fas fa-arrow-left mr-2"></i>Back
                 </button>
-                <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
-                    Next<i class="fas fa-arrow-right ml-2"></i>
-                </button>
-                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
-                    <i class="fas fa-check mr-2"></i>Complete Setup
-                </button>
+                <div class="flex items-center space-x-3">
+                    <button id="saveDraftBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300" onclick="saveDraft()" style="display: none;">
+                        <i class="fas fa-save mr-2"></i>Save Draft
+                    </button>
+                    <button id="nextBtn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateNext()">
+                        Next<i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                        <i class="fas fa-check mr-2"></i>Complete Setup
+                    </button>
+                </div>
             </div>
         </div>
     </main>
@@ -677,10 +683,23 @@
         // API Base URL
         const API_BASE = '/api/v1/wizard';
 
+        // Wizard ID for persistence
+        const WIZARD_ID = 'epic-wizard';
+
         // Initialize wizard on page load
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('Epic Integration Wizard loaded');
-            await startWizard();
+
+            // Check for saved draft
+            if (WizardPersistence.hasSavedDraft(WIZARD_ID)) {
+                WizardPersistence.showResumeDraftModal(
+                    WIZARD_ID,
+                    () => resumeDraft(),
+                    () => startWizard()
+                );
+            } else {
+                await startWizard();
+            }
         });
 
         // Start wizard
@@ -795,6 +814,9 @@
             });
 
             handleStepSpecificLogic({state_data: wizardState.data});
+
+            // Auto-save draft after navigation
+            autosaveDraft();
         }
 
         // Handle step-specific UI population
@@ -1405,6 +1427,164 @@
                 element.type = 'password';
                 eyeIcon.className = 'fas fa-eye';
             }
+        }
+
+        // ===== PERSISTENCE FUNCTIONS =====
+
+        // Auto-save draft
+        function autosaveDraft() {
+            const formData = {};
+
+            // Collect all form data from all steps
+            for (let step = 1; step <= 7; step++) {
+                const stepData = collectStepData(step);
+                if (Object.keys(stepData).length > 0) {
+                    formData[`step${step}`] = stepData;
+                }
+            }
+
+            WizardPersistence.saveWizardState(
+                WIZARD_ID,
+                wizardState.current_step,
+                formData
+            );
+
+            // Show save draft button after step 1
+            if (wizardState.current_step > 1) {
+                document.getElementById('saveDraftBtn').style.display = 'block';
+            }
+        }
+
+        // Manual save draft
+        function saveDraft() {
+            autosaveDraft();
+            showMessage('success', 'Draft saved successfully!');
+        }
+
+        // Resume from saved draft
+        function resumeDraft() {
+            const savedState = WizardPersistence.loadWizardState(WIZARD_ID);
+            if (!savedState) {
+                startWizard();
+                return;
+            }
+
+            // Restore wizard state
+            wizardState.current_step = savedState.currentStep;
+            wizardState.data = savedState.formData || {};
+
+            // Mark previous steps as completed
+            wizardState.completed_steps = [];
+            for (let i = 1; i < savedState.currentStep; i++) {
+                wizardState.completed_steps.push(i);
+            }
+
+            // Update UI
+            updateWizardUI({
+                current_step: wizardState.current_step,
+                completed_steps: wizardState.completed_steps,
+                total_steps: 7,
+                progress_percent: Math.floor((wizardState.current_step / 7) * 100),
+                step_name: 'Epic Integration Setup',
+                step_description: 'Configure your Epic FHIR connection',
+                can_proceed: true,
+                errors: [],
+                warnings: [],
+                messages: [],
+                state_data: savedState.formData
+            });
+
+            // Restore form data for current step
+            setTimeout(() => {
+                restoreAllStepData(savedState.formData);
+                handleStepSpecificLogic({state_data: savedState.formData});
+            }, 100);
+
+            showMessage('success', `Draft restored from ${WizardPersistence.getLastSaveTime(WIZARD_ID)}`);
+        }
+
+        // Collect data from a specific step
+        function collectStepData(stepNum) {
+            const stepData = {};
+            const stepElement = document.getElementById(`step${stepNum}`);
+            if (!stepElement) return stepData;
+
+            const inputs = stepElement.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (input.id) {
+                    if (input.type === 'checkbox') {
+                        stepData[input.id] = input.checked;
+                    } else if (input.type === 'radio') {
+                        if (input.checked) {
+                            stepData[input.name] = input.value;
+                        }
+                    } else {
+                        stepData[input.id] = input.value;
+                    }
+                }
+            });
+
+            return stepData;
+        }
+
+        // Restore all step data from saved state
+        function restoreAllStepData(formData) {
+            if (!formData) return;
+
+            for (let step = 1; step <= 7; step++) {
+                const stepKey = `step${step}`;
+                if (formData[stepKey]) {
+                    restoreStepDataByNumber(step, formData[stepKey]);
+                }
+            }
+        }
+
+        // Restore data for a specific step
+        function restoreStepDataByNumber(stepNum, stepData) {
+            if (!stepData) return;
+
+            Object.keys(stepData).forEach(fieldId => {
+                const input = document.getElementById(fieldId);
+                if (input) {
+                    if (input.type === 'checkbox') {
+                        input.checked = stepData[fieldId];
+                    } else if (input.type === 'radio') {
+                        const radio = document.querySelector(`input[name="${fieldId}"][value="${stepData[fieldId]}"]`);
+                        if (radio) radio.checked = true;
+                    } else {
+                        input.value = stepData[fieldId];
+                    }
+
+                    // Trigger change events for calculated fields
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
+
+        // Clear draft when wizard is completed
+        function finishWizard() {
+            // Clear the saved draft
+            WizardPersistence.clearWizardState(WIZARD_ID);
+
+            // Update connection status
+            updateConnectionStatus('connected', 'Connected to Epic FHIR');
+            showMessage('success', 'Epic integration setup completed successfully!');
+
+            // Navigate to final step
+            wizardState.current_step = 7;
+            updateWizardUI({
+                current_step: 7,
+                completed_steps: [1, 2, 3, 4, 5, 6],
+                total_steps: 7,
+                progress_percent: 100,
+                step_name: 'Epic Integration Setup',
+                step_description: 'Setup complete!',
+                can_proceed: false,
+                errors: [],
+                warnings: [],
+                messages: [],
+                state_data: wizardState.data
+            });
         }
     </script>
 </body>
