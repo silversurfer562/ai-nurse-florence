@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiac Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/static/js/wizardPersistence.js"></script>
+    <script src="/static/js/careSettings.js"></script>
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .cardiac-header {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .stemi-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 3px solid #dc2626;
+            animation: pulse-alert 2s infinite;
+        }
+        @keyframes pulse-alert {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        }
+        .heart-score-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        .risk-low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .risk-moderate {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .risk-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .quality-checkbox {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .quality-checkbox:checked {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="cardiac-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-red-200 text-sm">Cardiac Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-heart-pulse text-red-200"></i>
+                        <span class="text-sm">HEART Score & STEMI Assessment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-red-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-red-800">Comprehensive Cardiac Assessment</h3>
+                    <p class="text-sm text-red-700">This wizard guides you through cardiac chest pain evaluation using HEART score for MACE risk stratification and STEMI criteria assessment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-red-600 h-full" style="width: 20%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Cardiac Assessment Wizard</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete comprehensive cardiac assessment with HEART score</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-red-600" id="progressPercent">20%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator active rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-20">Chief Complaint</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">HEART Score</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">ECG Findings</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Labs & Meds</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Disposition</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Quick Fill Buttons -->
+            <div class="px-6 pt-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-magic text-blue-600 mr-3"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold">Quick Fill Example:</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="fillChestPain()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-heart-pulse mr-1"></i>Chest Pain Scenario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Chief Complaint & Vital Signs -->
+            <div id="step1" class="step-content active p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-stethoscope text-red-600 mr-2"></i>
+                    Chief Complaint & Vital Signs
+                </h3>
+                <p class="text-gray-700 mb-6">Document the patient's chief complaint and current vital signs.</p>
+
+                <div class="space-y-6">
+                    <!-- Chief Complaint -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="chiefComplaint" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-red-600 mr-2"></i>
+                            Chief Complaint <span class="text-red-500">*</span>
+                        </label>
+                        <select id="chiefComplaint"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                required>
+                            <option value="">Select chief complaint...</option>
+                            <option value="Chest pain">Chest pain</option>
+                            <option value="Shortness of breath">Shortness of breath</option>
+                            <option value="Palpitations">Palpitations</option>
+                            <option value="Syncope">Syncope</option>
+                            <option value="Dizziness">Dizziness</option>
+                            <option value="Other cardiac symptoms">Other cardiac symptoms</option>
+                        </select>
+                    </div>
+
+                    <!-- Pain Characteristics -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                            Pain Location
+                        </label>
+                        <select id="painLocation"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm">
+                            <option value="">Select location...</option>
+                            <option value="Substernal">Substernal</option>
+                            <option value="Left chest">Left chest</option>
+                            <option value="Right chest">Right chest</option>
+                            <option value="Radiating to left arm">Radiating to left arm</option>
+                            <option value="Radiating to jaw">Radiating to jaw</option>
+                            <option value="Radiating to back">Radiating to back</option>
+                            <option value="Epigastric">Epigastric</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-notes-medical text-red-600 mr-2"></i>
+                            Pain Quality (Select all that apply)
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Crushing">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-hand-fist mr-1"></i>Crushing
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Sharp">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-bolt mr-1"></i>Sharp
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Pressure">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-compress mr-1"></i>Pressure
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Burning">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-fire mr-1"></i>Burning
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Heaviness">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-weight-hanging mr-1"></i>Heaviness
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Tightness">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-grip-lines mr-1"></i>Tightness
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pain Duration -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="painDuration" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-red-600 mr-2"></i>
+                            Pain Duration (minutes)
+                        </label>
+                        <input type="number"
+                               id="painDuration"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="e.g., 30"
+                               min="0">
+                    </div>
+
+                    <!-- Associated Symptoms -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list-check text-red-600 mr-2"></i>
+                            Associated Symptoms (Select all that apply)
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Diaphoresis">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-droplet mr-1"></i>Diaphoresis
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Nausea">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-face-dizzy mr-1"></i>Nausea
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Dyspnea">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-lungs mr-1"></i>Dyspnea
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Lightheadedness">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-head-side-virus mr-1"></i>Lightheadedness
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Vomiting">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-disease mr-1"></i>Vomiting
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Palpitations">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-heartbeat mr-1"></i>Palpitations
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Vital Signs -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-thermometer text-red-600 mr-2"></i>
+                            Current Vital Signs <span class="text-red-500">*</span>
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="heartRate" class="block text-xs font-medium text-gray-700 mb-1">Heart Rate (bpm)</label>
+                                <input type="number"
+                                       id="heartRate"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                       placeholder="e.g., 78"
+                                       required>
+                            </div>
+                            <div>
+                                <label for="bloodPressure" class="block text-xs font-medium text-gray-700 mb-1">Blood Pressure (systolic/diastolic)</label>
+                                <input type="text"
+                                       id="bloodPressure"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                       placeholder="e.g., 140/90"
+                                       required>
+                            </div>
+                            <div>
+                                <label for="respiratoryRate" class="block text-xs font-medium text-gray-700 mb-1">Respiratory Rate</label>
+                                <input type="number"
+                                       id="respiratoryRate"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                       placeholder="e.g., 16"
+                                       required>
+                            </div>
+                            <div>
+                                <label for="o2Saturation" class="block text-xs font-medium text-gray-700 mb-1">O2 Saturation (%)</label>
+                                <input type="number"
+                                       id="o2Saturation"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                       placeholder="e.g., 98"
+                                       min="0"
+                                       max="100"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: HEART Score Calculator -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-calculator text-red-600 mr-2"></i>
+                    HEART Score Calculator
+                </h3>
+                <p class="text-gray-700 mb-6">Calculate HEART score to predict 6-week MACE (Major Adverse Cardiac Event) risk.</p>
+
+                <div class="space-y-6">
+                    <!-- HEART Score Display -->
+                    <div id="heartScoreDisplay" class="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 rounded-lg p-6 text-center">
+                        <div class="text-sm font-medium text-gray-600 mb-2">HEART Score</div>
+                        <div class="text-6xl font-bold text-gray-800 mb-2">
+                            <span id="heartScoreValue">0</span><span class="text-3xl text-gray-500">/10</span>
+                        </div>
+                        <div id="heartRiskBadge" class="heart-score-badge inline-block mt-2">
+                            Calculating...
+                        </div>
+                        <div id="heartRiskText" class="text-sm text-gray-600 mt-3"></div>
+                    </div>
+
+                    <!-- History -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="historyScore" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-h-square text-red-600 mr-2"></i>
+                            History (clinical suspicion) <span class="text-red-500">*</span>
+                        </label>
+                        <select id="historyScore"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                onchange="calculateHeartScore()"
+                                required>
+                            <option value="">Select...</option>
+                            <option value="0">0 - Slightly suspicious</option>
+                            <option value="1">1 - Moderately suspicious</option>
+                            <option value="2">2 - Highly suspicious</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Based on clinical presentation and history
+                        </p>
+                    </div>
+
+                    <!-- EKG -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="ekgScore" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-wave-square text-red-600 mr-2"></i>
+                            EKG Findings <span class="text-red-500">*</span>
+                        </label>
+                        <select id="ekgScore"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                onchange="calculateHeartScore()"
+                                required>
+                            <option value="">Select...</option>
+                            <option value="0">0 - Normal</option>
+                            <option value="1">1 - Non-specific repolarization disturbance</option>
+                            <option value="2">2 - Significant ST deviation</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Initial EKG interpretation
+                        </p>
+                    </div>
+
+                    <!-- Age -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="patientAge" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar text-red-600 mr-2"></i>
+                            Age (years) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number"
+                               id="patientAge"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="e.g., 55"
+                               min="0"
+                               max="120"
+                               oninput="calculateHeartScore()"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Score: <45 years (0), 45-64 years (1), ≥65 years (2)
+                        </p>
+                    </div>
+
+                    <!-- Risk Factors -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                            Risk Factors (Select all that apply)
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="HTN" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">Hypertension</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Hyperlipidemia" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">Hyperlipidemia</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Diabetes" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">Diabetes</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Smoking" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">Current/Former Smoker</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Obesity" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">Obesity (BMI >30)</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="FamilyHistory" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">Family History of CAD</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="risk-factor-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Atherosclerosis" onchange="calculateHeartScore()">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">History of Atherosclerosis</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Score: No risk factors (0), 1-2 risk factors (1), ≥3 or atherosclerosis history (2) - <strong id="riskFactorCount">0 selected</strong>
+                        </p>
+                    </div>
+
+                    <!-- Troponin -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="troponinScore" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-vial text-red-600 mr-2"></i>
+                            Troponin Level <span class="text-red-500">*</span>
+                        </label>
+                        <select id="troponinScore"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                onchange="calculateHeartScore()"
+                                required>
+                            <option value="">Select...</option>
+                            <option value="0">0 - Normal (≤ normal limit)</option>
+                            <option value="1">1 - 1-3x normal limit</option>
+                            <option value="2">2 - >3x normal limit</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Based on initial or serial troponin levels
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: 12-Lead ECG Findings -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-heart-pulse text-red-600 mr-2"></i>
+                    12-Lead ECG Findings
+                </h3>
+                <p class="text-gray-700 mb-6">Document detailed ECG findings and assess for STEMI criteria.</p>
+
+                <!-- STEMI Alert Banner -->
+                <div id="stemiAlert" class="stemi-alert rounded-lg p-6 mb-6 hidden">
+                    <div class="flex items-center">
+                        <i class="fas fa-triangle-exclamation text-red-600 text-3xl mr-4"></i>
+                        <div>
+                            <h4 class="text-xl font-bold text-red-900">STEMI ALERT</h4>
+                            <p class="text-red-800 mt-1">ST elevation detected in 2+ contiguous leads. Activate cath lab immediately!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- ECG Performed -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="ecgPerformed" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-file-waveform text-red-600 mr-2"></i>
+                            ECG Performed <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex space-x-4 mb-3">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="ecgPerformed" value="yes" class="mr-2" onchange="toggleEcgFields(true)" required>
+                                <span class="text-sm font-medium text-gray-700">Yes</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="ecgPerformed" value="no" class="mr-2" onchange="toggleEcgFields(false)">
+                                <span class="text-sm font-medium text-gray-700">No</span>
+                            </label>
+                        </div>
+                        <input type="time"
+                               id="ecgTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="ECG time">
+                    </div>
+
+                    <div id="ecgDetailsSection" class="space-y-6" style="display: none;">
+                        <!-- Rhythm -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                            <label for="ecgRhythm" class="block text-sm font-bold text-gray-800 mb-2">
+                                <i class="fas fa-heartbeat text-red-600 mr-2"></i>
+                                Rhythm
+                            </label>
+                            <select id="ecgRhythm"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm">
+                                <option value="">Select rhythm...</option>
+                                <option value="Normal sinus rhythm">Normal sinus rhythm</option>
+                                <option value="Sinus tachycardia">Sinus tachycardia</option>
+                                <option value="Sinus bradycardia">Sinus bradycardia</option>
+                                <option value="Atrial fibrillation">Atrial fibrillation</option>
+                                <option value="Atrial flutter">Atrial flutter</option>
+                                <option value="Ventricular tachycardia">Ventricular tachycardia</option>
+                                <option value="Ventricular fibrillation">Ventricular fibrillation</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <!-- ST Segment Changes -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-800 mb-4">
+                                <i class="fas fa-chart-line text-red-600 mr-2"></i>
+                                ST Segment Changes
+                            </label>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="flex items-center cursor-pointer mb-2">
+                                        <input type="checkbox" id="stElevation" class="mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" onchange="checkStemiCriteria()">
+                                        <span class="text-sm font-medium text-gray-700">ST Elevation</span>
+                                    </label>
+                                    <input type="text"
+                                           id="stElevationLeads"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                           placeholder="Which leads? (e.g., V2, V3, V4)"
+                                           onchange="checkStemiCriteria()">
+                                </div>
+                                <div>
+                                    <label class="flex items-center cursor-pointer mb-2">
+                                        <input type="checkbox" id="stDepression" class="mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                        <span class="text-sm font-medium text-gray-700">ST Depression</span>
+                                    </label>
+                                    <input type="text"
+                                           id="stDepressionLeads"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                           placeholder="Which leads?">
+                                </div>
+                                <div>
+                                    <label class="flex items-center cursor-pointer mb-2">
+                                        <input type="checkbox" id="tWaveInversion" class="mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                        <span class="text-sm font-medium text-gray-700">T-wave Inversions</span>
+                                    </label>
+                                    <input type="text"
+                                           id="tWaveLeads"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                           placeholder="Which leads?">
+                                </div>
+                                <div>
+                                    <label class="flex items-center cursor-pointer mb-2">
+                                        <input type="checkbox" id="qWaves" class="mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500">
+                                        <span class="text-sm font-medium text-gray-700">Pathological Q Waves</span>
+                                    </label>
+                                    <input type="text"
+                                           id="qWaveLeads"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                           placeholder="Which leads?">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEMI Criteria -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                            <label class="block text-sm font-bold text-gray-800 mb-4">
+                                <i class="fas fa-clipboard-check text-red-600 mr-2"></i>
+                                STEMI Criteria Met?
+                            </label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="stemiCriteria" id="stemiYes" value="yes" class="mr-2" onchange="updateStemiAlert()">
+                                    <span class="text-sm font-medium text-red-700">Yes - STEMI</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="stemiCriteria" id="stemiNo" value="no" class="mr-2" onchange="updateStemiAlert()">
+                                    <span class="text-sm font-medium text-gray-700">No</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                STEMI: ST elevation in 2+ contiguous leads (≥2.5mm in V2-V3 for men <40, ≥2mm for men ≥40, ≥1.5mm for women, ≥1mm in other leads)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Labs & Interventions -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-flask text-red-600 mr-2"></i>
+                    Labs & Interventions
+                </h3>
+                <p class="text-gray-700 mb-6">Document laboratory results and medications administered.</p>
+
+                <div class="space-y-6">
+                    <!-- Labs Ordered -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-vial text-red-600 mr-2"></i>
+                            Laboratory Results
+                        </label>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="troponinValue" class="block text-xs font-medium text-gray-700 mb-1">Troponin (ng/mL)</label>
+                                    <input type="text"
+                                           id="troponinValue"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                           placeholder="e.g., 0.02">
+                                </div>
+                                <div>
+                                    <label for="troponinTime" class="block text-xs font-medium text-gray-700 mb-1">Time Drawn</label>
+                                    <input type="time"
+                                           id="troponinTime"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="bnpValue" class="block text-xs font-medium text-gray-700 mb-1">BNP / NT-proBNP</label>
+                                <input type="text"
+                                       id="bnpValue"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                       placeholder="e.g., 250 pg/mL">
+                            </div>
+                            <div>
+                                <label for="bmpResults" class="block text-xs font-medium text-gray-700 mb-1">Basic Metabolic Panel</label>
+                                <textarea id="bmpResults"
+                                          rows="2"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                          placeholder="e.g., Na 140, K 4.2, Cl 102, HCO3 24, BUN 18, Cr 1.0, Glucose 95"></textarea>
+                            </div>
+                            <div>
+                                <label for="cbcResults" class="block text-xs font-medium text-gray-700 mb-1">Complete Blood Count</label>
+                                <textarea id="cbcResults"
+                                          rows="2"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                          placeholder="e.g., WBC 8.5, Hgb 14.2, Hct 42, Plt 250"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Medications Administered -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-pills text-red-600 mr-2"></i>
+                            Medications Administered (Select all that apply)
+                        </label>
+                        <div class="grid grid-cols-1 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Aspirin 324mg">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-tablet mr-1"></i>Aspirin 324mg PO
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Nitroglycerin SL">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-capsules mr-1"></i>Nitroglycerin 0.4mg SL
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Morphine for pain">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-syringe mr-1"></i>Morphine for pain
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Oxygen">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-wind mr-1"></i>Oxygen (if SpO2 <90%)
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Heparin">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-droplet mr-1"></i>Heparin
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-red-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded focus:ring-2 focus:ring-red-500" value="Clopidogrel">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-red-600">
+                                    <i class="fas fa-tablets mr-1"></i>Clopidogrel / Plavix
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Additional Medication Details -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="medicationNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-notes-medical text-red-600 mr-2"></i>
+                            Additional Medication Details
+                        </label>
+                        <textarea id="medicationNotes"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="Include specific doses, times, and patient response..."></textarea>
+                    </div>
+
+                    <!-- Cath Lab / Cardiology -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="cathLabTime" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-red-600 mr-2"></i>
+                            Time to Cath Lab / Cardiology Consult
+                        </label>
+                        <input type="datetime-local"
+                               id="cathLabTime"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            If STEMI or high-risk patient
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Disposition & Review -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-file-medical text-red-600 mr-2"></i>
+                    Disposition & Review
+                </h3>
+                <p class="text-gray-700 mb-6">Review the cardiac assessment and determine disposition.</p>
+
+                <div class="space-y-6">
+                    <!-- Assessment Summary -->
+                    <div class="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-600 rounded-lg p-6 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-clipboard-check text-red-600 mr-2"></i>
+                            Cardiac Assessment Summary
+                        </h4>
+                        <div id="summaryContent" class="space-y-4">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Disposition Decision -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="disposition" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-hospital-user text-red-600 mr-2"></i>
+                            Disposition Decision <span class="text-red-500">*</span>
+                        </label>
+                        <select id="disposition"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                required>
+                            <option value="">Select disposition...</option>
+                            <option value="Discharge home">Discharge home (Low HEART score <3)</option>
+                            <option value="Observation unit">Observation unit (Moderate HEART score 4-6)</option>
+                            <option value="Admit to telemetry">Admit to telemetry (High HEART score ≥7)</option>
+                            <option value="Admit to CCU">Admit to CCU (STEMI or unstable)</option>
+                            <option value="Transfer to cath lab">Transfer to cath lab (Emergent intervention)</option>
+                        </select>
+                        <div id="dispositionRecommendation" class="mt-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            <span>Recommendation will appear here based on HEART score</span>
+                        </div>
+                    </div>
+
+                    <!-- Discharge Instructions / Admission Orders -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="dispositionInstructions" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-list-ul text-red-600 mr-2"></i>
+                            Discharge Instructions / Admission Orders
+                        </label>
+                        <textarea id="dispositionInstructions"
+                                  rows="5"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="Include follow-up plan, medications, precautions, or admission orders..."></textarea>
+                    </div>
+
+                    <!-- Additional Clinical Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-red-600 mr-2"></i>
+                            Additional Clinical Notes
+                        </label>
+                        <textarea id="additionalNotes"
+                                  rows="5"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                                  placeholder="Add any additional clinical observations, patient responses, or care plan modifications..."></textarea>
+                    </div>
+
+                    <!-- Nurse Signature -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="nurseSignature" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-signature text-red-600 mr-2"></i>
+                            Nurse Signature <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="nurseSignature"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                               placeholder="Enter your name to sign assessment"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            By entering your name, you certify the accuracy of this assessment
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {
+                chiefComplaint: '',
+                painLocation: '',
+                painQualities: [],
+                painDuration: '',
+                associatedSymptoms: [],
+                heartRate: '',
+                bloodPressure: '',
+                respiratoryRate: '',
+                o2Saturation: '',
+                heartScore: 0,
+                historyScore: '',
+                ekgScore: '',
+                patientAge: '',
+                riskFactors: [],
+                troponinScore: '',
+                ecgPerformed: '',
+                ecgTime: '',
+                ecgRhythm: '',
+                stChanges: {},
+                stemiCriteria: '',
+                labs: {},
+                medicationsGiven: [],
+                medicationNotes: '',
+                cathLabTime: '',
+                disposition: '',
+                dispositionInstructions: '',
+                additionalNotes: '',
+                nurseSignature: ''
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Cardiac Assessment Wizard loaded');
+            calculateHeartScore();
+
+            // Initialize care setting framework
+            CareSettings.init({
+                showOnboardingIfNew: false,
+                injectBadge: true,
+                headerSelector: 'header'
+            });
+        });
+
+        // Calculate HEART score
+        function calculateHeartScore() {
+            let score = 0;
+
+            // History
+            const history = parseInt(document.getElementById('historyScore').value) || 0;
+            score += history;
+
+            // EKG
+            const ekg = parseInt(document.getElementById('ekgScore').value) || 0;
+            score += ekg;
+
+            // Age
+            const age = parseInt(document.getElementById('patientAge').value) || 0;
+            let ageScore = 0;
+            if (age >= 65) ageScore = 2;
+            else if (age >= 45) ageScore = 1;
+            score += ageScore;
+
+            // Risk factors
+            const riskFactorCheckboxes = document.querySelectorAll('.risk-factor-checkbox:checked');
+            const riskFactorCount = riskFactorCheckboxes.length;
+            document.getElementById('riskFactorCount').textContent = `${riskFactorCount} selected`;
+
+            let riskScore = 0;
+            const hasAtherosclerosis = Array.from(riskFactorCheckboxes).some(cb => cb.value === 'Atherosclerosis');
+            if (hasAtherosclerosis || riskFactorCount >= 3) {
+                riskScore = 2;
+            } else if (riskFactorCount >= 1) {
+                riskScore = 1;
+            }
+            score += riskScore;
+
+            // Troponin
+            const troponin = parseInt(document.getElementById('troponinScore').value) || 0;
+            score += troponin;
+
+            wizardState.data.heartScore = score;
+
+            // Update display
+            document.getElementById('heartScoreValue').textContent = score;
+            updateHeartRiskBadge(score);
+        }
+
+        // Update HEART risk badge
+        function updateHeartRiskBadge(score) {
+            const badge = document.getElementById('heartRiskBadge');
+            const riskText = document.getElementById('heartRiskText');
+
+            badge.classList.remove('risk-low', 'risk-moderate', 'risk-high');
+
+            if (score <= 3) {
+                badge.classList.add('risk-low');
+                badge.textContent = 'Low Risk';
+                riskText.textContent = '1.7% risk of 6-week MACE';
+            } else if (score <= 6) {
+                badge.classList.add('risk-moderate');
+                badge.textContent = 'Moderate Risk';
+                riskText.textContent = '16.6% risk of 6-week MACE';
+            } else {
+                badge.classList.add('risk-high');
+                badge.textContent = 'High Risk';
+                riskText.textContent = '50-65% risk of 6-week MACE';
+            }
+
+            // Update disposition recommendation
+            updateDispositionRecommendation(score);
+        }
+
+        // Update disposition recommendation
+        function updateDispositionRecommendation(score) {
+            const recommendationDiv = document.getElementById('dispositionRecommendation');
+            if (!recommendationDiv) return;
+
+            let recommendation = '';
+            if (score <= 3) {
+                recommendation = 'Recommendation: Consider discharge home with outpatient follow-up (Low HEART score)';
+            } else if (score <= 6) {
+                recommendation = 'Recommendation: Consider observation unit for serial troponins and monitoring (Moderate HEART score)';
+            } else {
+                recommendation = 'Recommendation: Admit to telemetry or CCU for further management (High HEART score)';
+            }
+
+            if (wizardState.data.stemiCriteria === 'yes') {
+                recommendation = 'CRITICAL: STEMI criteria met - Immediate cath lab activation required!';
+                recommendationDiv.classList.remove('bg-blue-50', 'text-blue-800');
+                recommendationDiv.classList.add('bg-red-100', 'text-red-900', 'font-bold');
+            } else {
+                recommendationDiv.classList.remove('bg-red-100', 'text-red-900', 'font-bold');
+                recommendationDiv.classList.add('bg-blue-50', 'text-blue-800');
+            }
+
+            recommendationDiv.innerHTML = `<i class="fas fa-lightbulb mr-2"></i><span>${recommendation}</span>`;
+        }
+
+        // Toggle ECG fields
+        function toggleEcgFields(show) {
+            const section = document.getElementById('ecgDetailsSection');
+            section.style.display = show ? 'block' : 'none';
+        }
+
+        // Check STEMI criteria
+        function checkStemiCriteria() {
+            const stElevation = document.getElementById('stElevation').checked;
+            const leads = document.getElementById('stElevationLeads').value.trim();
+
+            // Simple check: if ST elevation is marked and at least 2 leads mentioned
+            if (stElevation && leads) {
+                const leadArray = leads.split(',').map(l => l.trim()).filter(l => l);
+                if (leadArray.length >= 2) {
+                    // Auto-check STEMI criteria
+                    document.getElementById('stemiYes').checked = true;
+                    updateStemiAlert();
+                }
+            }
+        }
+
+        // Update STEMI alert
+        function updateStemiAlert() {
+            const stemiAlert = document.getElementById('stemiAlert');
+            const stemiYes = document.getElementById('stemiYes').checked;
+
+            if (stemiYes) {
+                stemiAlert.classList.remove('hidden');
+                wizardState.data.stemiCriteria = 'yes';
+            } else {
+                stemiAlert.classList.add('hidden');
+                wizardState.data.stemiCriteria = 'no';
+            }
+
+            updateDispositionRecommendation(wizardState.data.heartScore);
+        }
+
+        // Quick fill function
+        function fillChestPain() {
+            // Step 1
+            document.getElementById('chiefComplaint').value = 'Chest pain';
+            document.getElementById('painLocation').value = 'Substernal';
+
+            const painQualities = ['Crushing', 'Pressure'];
+            document.querySelectorAll('#step1 .quality-checkbox').forEach(cb => {
+                cb.checked = painQualities.includes(cb.value);
+            });
+
+            document.getElementById('painDuration').value = '45';
+
+            const symptoms = ['Diaphoresis', 'Nausea', 'Dyspnea'];
+            document.querySelectorAll('#step1 .quality-checkbox').forEach(cb => {
+                if (symptoms.includes(cb.value)) cb.checked = true;
+            });
+
+            document.getElementById('heartRate').value = '88';
+            document.getElementById('bloodPressure').value = '145/92';
+            document.getElementById('respiratoryRate').value = '18';
+            document.getElementById('o2Saturation').value = '96';
+
+            // Step 2
+            document.getElementById('historyScore').value = '2';
+            document.getElementById('ekgScore').value = '1';
+            document.getElementById('patientAge').value = '62';
+            document.getElementById('troponinScore').value = '1';
+
+            // Check some risk factors
+            const riskFactorsToCheck = ['HTN', 'Hyperlipidemia', 'Smoking'];
+            document.querySelectorAll('.risk-factor-checkbox').forEach(cb => {
+                cb.checked = riskFactorsToCheck.includes(cb.value);
+            });
+
+            calculateHeartScore();
+
+            showMessage('success', 'Chest pain scenario populated');
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step && !wizardState.completed_steps.includes(stepNum - 1)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            // Populate summary if on step 5
+            if (stepNum === 5) {
+                populateSummary();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect current step data
+            collectCurrentStepData();
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+
+            updateWizardUI();
+
+            // Populate summary if on step 5
+            if (wizardState.current_step === 5) {
+                populateSummary();
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            switch (wizardState.current_step) {
+                case 1:
+                    wizardState.data.chiefComplaint = document.getElementById('chiefComplaint').value;
+                    wizardState.data.painLocation = document.getElementById('painLocation').value;
+
+                    const qualities = [];
+                    document.querySelectorAll('#step1 .quality-checkbox:checked').forEach(cb => {
+                        qualities.push(cb.value);
+                    });
+                    wizardState.data.painQualities = qualities;
+
+                    wizardState.data.painDuration = document.getElementById('painDuration').value;
+
+                    const symptoms = [];
+                    document.querySelectorAll('#step1 .quality-checkbox:checked').forEach(cb => {
+                        if (['Diaphoresis', 'Nausea', 'Dyspnea', 'Lightheadedness', 'Vomiting', 'Palpitations'].includes(cb.value)) {
+                            symptoms.push(cb.value);
+                        }
+                    });
+                    wizardState.data.associatedSymptoms = symptoms;
+
+                    wizardState.data.heartRate = document.getElementById('heartRate').value;
+                    wizardState.data.bloodPressure = document.getElementById('bloodPressure').value;
+                    wizardState.data.respiratoryRate = document.getElementById('respiratoryRate').value;
+                    wizardState.data.o2Saturation = document.getElementById('o2Saturation').value;
+                    break;
+
+                case 2:
+                    wizardState.data.historyScore = document.getElementById('historyScore').value;
+                    wizardState.data.ekgScore = document.getElementById('ekgScore').value;
+                    wizardState.data.patientAge = document.getElementById('patientAge').value;
+
+                    const riskFactors = [];
+                    document.querySelectorAll('.risk-factor-checkbox:checked').forEach(cb => {
+                        riskFactors.push(cb.value);
+                    });
+                    wizardState.data.riskFactors = riskFactors;
+
+                    wizardState.data.troponinScore = document.getElementById('troponinScore').value;
+                    break;
+
+                case 3:
+                    const ecgPerformedRadio = document.querySelector('input[name="ecgPerformed"]:checked');
+                    wizardState.data.ecgPerformed = ecgPerformedRadio ? ecgPerformedRadio.value : '';
+                    wizardState.data.ecgTime = document.getElementById('ecgTime').value;
+                    wizardState.data.ecgRhythm = document.getElementById('ecgRhythm').value;
+
+                    wizardState.data.stChanges = {
+                        stElevation: document.getElementById('stElevation').checked,
+                        stElevationLeads: document.getElementById('stElevationLeads').value,
+                        stDepression: document.getElementById('stDepression').checked,
+                        stDepressionLeads: document.getElementById('stDepressionLeads').value,
+                        tWaveInversion: document.getElementById('tWaveInversion').checked,
+                        tWaveLeads: document.getElementById('tWaveLeads').value,
+                        qWaves: document.getElementById('qWaves').checked,
+                        qWaveLeads: document.getElementById('qWaveLeads').value
+                    };
+
+                    const stemiRadio = document.querySelector('input[name="stemiCriteria"]:checked');
+                    wizardState.data.stemiCriteria = stemiRadio ? stemiRadio.value : '';
+                    break;
+
+                case 4:
+                    wizardState.data.labs = {
+                        troponinValue: document.getElementById('troponinValue').value,
+                        troponinTime: document.getElementById('troponinTime').value,
+                        bnpValue: document.getElementById('bnpValue').value,
+                        bmpResults: document.getElementById('bmpResults').value,
+                        cbcResults: document.getElementById('cbcResults').value
+                    };
+
+                    const medications = [];
+                    document.querySelectorAll('#step4 .quality-checkbox:checked').forEach(cb => {
+                        medications.push(cb.value);
+                    });
+                    wizardState.data.medicationsGiven = medications;
+
+                    wizardState.data.medicationNotes = document.getElementById('medicationNotes').value;
+                    wizardState.data.cathLabTime = document.getElementById('cathLabTime').value;
+                    break;
+
+                case 5:
+                    wizardState.data.disposition = document.getElementById('disposition').value;
+                    wizardState.data.dispositionInstructions = document.getElementById('dispositionInstructions').value;
+                    wizardState.data.additionalNotes = document.getElementById('additionalNotes').value;
+                    wizardState.data.nurseSignature = document.getElementById('nurseSignature').value;
+                    break;
+            }
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const progressPercent = Math.floor((currentStep / 5) * 100);
+
+            // Update progress
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Populate summary
+        function populateSummary() {
+            const data = wizardState.data;
+            const summaryContent = document.getElementById('summaryContent');
+
+            summaryContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-comment-medical text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Chief Complaint</span>
+                        </div>
+                        <div class="text-sm text-gray-900">${data.chiefComplaint || 'Not specified'}</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-calculator text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">HEART Score</span>
+                        </div>
+                        <div class="text-3xl font-bold text-red-600">${data.heartScore}/10</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-thermometer text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Vital Signs</span>
+                        </div>
+                        <div class="text-sm text-gray-900">
+                            HR: ${data.heartRate || 'N/A'} | BP: ${data.bloodPressure || 'N/A'}<br>
+                            RR: ${data.respiratoryRate || 'N/A'} | SpO2: ${data.o2Saturation || 'N/A'}%
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-heart-pulse text-red-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">STEMI Status</span>
+                        </div>
+                        <div class="text-sm text-gray-900 font-bold ${data.stemiCriteria === 'yes' ? 'text-red-600' : ''}">
+                            ${data.stemiCriteria === 'yes' ? 'STEMI CRITERIA MET' : 'No STEMI'}
+                        </div>
+                    </div>
+                </div>
+
+                ${data.painQualities.length > 0 ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-notes-medical text-red-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Pain Characteristics</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${data.painQualities.join(', ')}</div>
+                </div>
+                ` : ''}
+
+                ${data.associatedSymptoms.length > 0 ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-list-check text-red-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Associated Symptoms</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${data.associatedSymptoms.join(', ')}</div>
+                </div>
+                ` : ''}
+
+                ${data.medicationsGiven.length > 0 ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-pills text-red-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Medications Administered</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${data.medicationsGiven.join(', ')}</div>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+
+            // Validate required fields
+            if (!wizardState.data.nurseSignature) {
+                showMessage('error', 'Please provide your signature to complete the assessment.');
+                return;
+            }
+
+            showMessage('success', 'Cardiac assessment completed successfully!');
+
+            // In production, this would save to the database
+            console.log('Cardiac Assessment Data:', wizardState.data);
+
+            // Show completion message
+            setTimeout(() => {
+                alert('Cardiac assessment documented successfully!\n\nAssessment ID: CA-' + Date.now() + '\nNurse: ' + wizardState.data.nurseSignature + '\nHEART Score: ' + wizardState.data.heartScore);
+                // Optionally redirect to dashboard
+                // window.location.href = '/';
+            }, 500);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // ===== PERSISTENCE FUNCTIONS =====
+
+        const WIZARD_ID = 'cardiac-assessment-wizard';
+
+        // Check for saved draft on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (WizardPersistence.hasSavedDraft(WIZARD_ID)) {
+                WizardPersistence.showResumeDraftModal(
+                    WIZARD_ID,
+                    () => resumeDraft(),
+                    () => console.log('Starting fresh')
+                );
+            }
+        });
+
+        // Auto-save on next step
+        const originalNavigateNext = navigateNext;
+        function navigateNextWithSave() {
+            autosaveDraft();
+            originalNavigateNext();
+        }
+
+        // Auto-save draft
+        function autosaveDraft() {
+            const formData = {};
+            const currentStepNum = wizardState.current_step;
+
+            // Collect data from all steps
+            document.querySelectorAll('.step-content').forEach((step, index) => {
+                const stepNum = index + 1;
+                const stepData = {};
+
+                step.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.id) {
+                        if (input.type === 'checkbox') {
+                            stepData[input.id] = input.checked;
+                        } else if (input.type === 'radio') {
+                            if (input.checked) {
+                                stepData[input.name] = input.value;
+                            }
+                        } else {
+                            stepData[input.id] = input.value;
+                        }
+                    }
+                });
+
+                if (Object.keys(stepData).length > 0) {
+                    formData[`step${stepNum}`] = stepData;
+                }
+            });
+
+            WizardPersistence.saveWizardState(WIZARD_ID, currentStepNum, formData);
+        }
+
+        // Manual save
+        function saveDraft() {
+            autosaveDraft();
+            showMessage('success', 'Draft saved successfully!');
+        }
+
+        // Resume draft
+        function resumeDraft() {
+            const savedState = WizardPersistence.loadWizardState(WIZARD_ID);
+            if (!savedState) return;
+
+            // Restore to saved step
+            const targetStep = savedState.currentStep;
+
+            // Restore form data
+            if (savedState.formData) {
+                Object.keys(savedState.formData).forEach(stepKey => {
+                    const stepData = savedState.formData[stepKey];
+                    Object.keys(stepData).forEach(fieldId => {
+                        const input = document.getElementById(fieldId);
+                        if (input) {
+                            if (input.type === 'checkbox') {
+                                input.checked = stepData[fieldId];
+                            } else if (input.type === 'radio') {
+                                const radio = document.querySelector(`input[name="${fieldId}"][value="${stepData[fieldId]}"]`);
+                                if (radio) radio.checked = true;
+                            } else {
+                                input.value = stepData[fieldId];
+                            }
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+            }
+
+            // Navigate to saved step
+            wizardState.current_step = targetStep;
+            updateWizardUI();
+
+            const lastSave = WizardPersistence.getLastSaveTime(WIZARD_ID);
+            showMessage('success', `Draft restored from ${lastSave}`);
+        }
+
+        // Clear draft on completion
+        const originalFinishWizard = finishWizard;
+        finishWizard = function() {
+            WizardPersistence.clearWizardState(WIZARD_ID);
+            originalFinishWizard();
+        };
+    </script>
+</body>
+</html>

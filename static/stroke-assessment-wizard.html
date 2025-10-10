@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroke Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/static/js/wizardPersistence.js"></script>
+    <script src="/static/js/careSettings.js"></script>
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #ea580c;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stroke-header {
+            background: linear-gradient(135deg, #ea580c 0%, #fb923c 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #ea580c;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .stroke-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 3px solid #dc2626;
+            animation: alertPulse 2s infinite;
+        }
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        }
+        .nihss-calculator {
+            position: sticky;
+            top: 20px;
+            background: white;
+            border: 2px solid #ea580c;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .nihss-score-display {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .nihss-score-minor { color: #10b981; }
+        .nihss-score-moderate { color: #f59e0b; }
+        .nihss-score-severe { color: #ea580c; }
+        .nihss-score-critical { color: #dc2626; }
+        .time-display {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            color: #dc2626;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            background-color: #1f2937;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+        }
+        .radio-option {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .radio-option:hover {
+            background: #fff7ed !important;
+            border-color: #ea580c !important;
+        }
+        .radio-option input:checked + label {
+            background: #ffedd5;
+            border-color: #ea580c;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="stroke-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-orange-200 text-sm">Stroke Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-brain text-orange-200"></i>
+                        <span class="text-sm">NIHSS Stroke Scale</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-orange-50 border-l-4 border-orange-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-orange-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-orange-800">Comprehensive Stroke Assessment (NIHSS)</h3>
+                    <p class="text-sm text-orange-700">Complete Cincinnati Stroke Scale screening and NIH Stroke Scale assessment with tPA eligibility determination.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-orange-600 h-full" style="width: 20%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Stroke Assessment Wizard</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">NIHSS Scale & tPA Eligibility</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-orange-600" id="progressPercent">20%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator active rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-20">Cincinnati</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">NIHSS 1</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">NIHSS 2</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">NIHSS 3</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Treatment</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Quick Fill Buttons -->
+            <div class="px-6 pt-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-magic text-blue-600 mr-3"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold">Quick Fill Examples:</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="fillSevereStroke()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-brain mr-1"></i>Severe Stroke
+                            </button>
+                            <button onclick="fillMinorStroke()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-hand mr-1"></i>Minor Stroke
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Cincinnati Stroke Scale & Onset -->
+            <div id="step1" class="step-content active p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clock text-orange-600 mr-2"></i>
+                    Cincinnati Stroke Scale & Onset Time
+                </h3>
+                <p class="text-gray-700 mb-6">Document last known well time and perform quick stroke screen.</p>
+
+                <div class="space-y-6">
+                    <!-- Stroke Alert Banner (hidden by default) -->
+                    <div id="strokeAlertBanner" class="stroke-alert rounded-lg p-6 hidden">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-3xl mr-4"></i>
+                            <div>
+                                <h4 class="text-xl font-bold text-red-900">STROKE ALERT</h4>
+                                <p class="text-red-700 font-semibold">Cincinnati criteria positive - Activate stroke protocol immediately</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Last Known Well Time -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="lastKnownWell" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calendar-clock text-orange-600 mr-2"></i>
+                            Last Known Well Time <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local"
+                               id="lastKnownWell"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                               required
+                               onchange="updateTimeFromOnset()">
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            CRITICAL for tPA window (4.5 hours from onset)
+                        </p>
+                        <div id="timeFromOnsetDisplay" class="mt-3 p-3 bg-orange-50 rounded hidden">
+                            <div class="time-display" id="timeFromOnset">-- minutes</div>
+                            <p class="text-center text-sm text-gray-600 mt-1">since last known well</p>
+                        </div>
+                    </div>
+
+                    <!-- Cincinnati Stroke Scale -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list-check text-orange-600 mr-2"></i>
+                            Cincinnati Stroke Scale (Quick Screen)
+                        </h4>
+
+                        <!-- Facial Droop -->
+                        <div class="mb-4 pb-4 border-b">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                1. Facial Droop <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                    <input type="radio" name="cincinnatiDroop" value="absent" class="mr-3" onchange="checkCincinnati()">
+                                    <span class="text-sm font-medium">Absent (Normal)</span>
+                                </label>
+                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                    <input type="radio" name="cincinnatiDroop" value="present" class="mr-3" onchange="checkCincinnati()">
+                                    <span class="text-sm font-medium text-red-600">Present (Abnormal)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Arm Drift -->
+                        <div class="mb-4 pb-4 border-b">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                2. Arm Drift <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                    <input type="radio" name="cincinnatiDrift" value="absent" class="mr-3" onchange="checkCincinnati()">
+                                    <span class="text-sm font-medium">Absent (Normal)</span>
+                                </label>
+                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                    <input type="radio" name="cincinnatiDrift" value="present" class="mr-3" onchange="checkCincinnati()">
+                                    <span class="text-sm font-medium text-red-600">Present (Abnormal)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Speech Abnormality -->
+                        <div class="mb-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">
+                                3. Speech Abnormality <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                    <input type="radio" name="cincinnatiSpeech" value="absent" class="mr-3" onchange="checkCincinnati()">
+                                    <span class="text-sm font-medium">Absent (Normal)</span>
+                                </label>
+                                <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                    <input type="radio" name="cincinnatiSpeech" value="present" class="mr-3" onchange="checkCincinnati()">
+                                    <span class="text-sm font-medium text-red-600">Present (Abnormal)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: NIHSS Part 1 (Consciousness) -->
+            <div id="step2" class="step-content p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                            <i class="fas fa-brain text-orange-600 mr-2"></i>
+                            NIHSS Part 1: Level of Consciousness
+                        </h3>
+                        <p class="text-gray-700 mb-6">Assess consciousness, questions, and commands.</p>
+
+                        <div class="space-y-6">
+                            <!-- 1a. Level of Consciousness -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        1a. Level of Consciousness <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Alert and responsive vs drowsy/obtunded/coma</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1a" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Alert, keenly responsive</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1a" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Not alert, but arousable with minimal stimulation</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1a" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Not alert, requires repeated stimulation (obtunded)</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1a" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - Unresponsive or only reflex responses (coma)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 1b. LOC Questions -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        1b. LOC Questions (Month & Age) <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Ask: "What month is it?" and "How old are you?"</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1b" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Answers both correctly</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1b" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Answers one correctly</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1b" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Answers neither correctly</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 1c. LOC Commands -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        1c. LOC Commands (Open/Close Eyes, Grip) <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Ask: "Open and close your eyes" and "Make a fist"</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1c" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Performs both tasks correctly</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1c" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Performs one task correctly</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss1c" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Performs neither task</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 2. Best Gaze -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        2. Best Gaze <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Test horizontal eye movements</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss2" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Normal horizontal movements</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss2" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Partial gaze palsy</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss2" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Forced deviation or total gaze paresis</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 3. Visual Fields -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        3. Visual Fields <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Test visual fields by confrontation</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss3" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No visual field loss</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss3" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Partial hemianopia</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss3" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Complete hemianopia</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss3" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - Bilateral hemianopia</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NIHSS Calculator Sidebar -->
+                    <div class="lg:col-span-1">
+                        <div class="nihss-calculator">
+                            <h4 class="text-lg font-bold text-orange-600 mb-4 text-center">
+                                <i class="fas fa-calculator mr-2"></i>
+                                NIHSS Score
+                            </h4>
+                            <div class="nihss-score-display" id="nihssScoreDisplay">0</div>
+                            <p class="text-center text-sm text-gray-600 mb-4">out of 42</p>
+                            <div id="nihssInterpretation" class="text-center p-3 bg-gray-100 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-700">No stroke symptoms</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: NIHSS Part 2 (Motor/Sensory) -->
+            <div id="step3" class="step-content p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                            <i class="fas fa-hand text-orange-600 mr-2"></i>
+                            NIHSS Part 2: Motor & Sensory Function
+                        </h3>
+                        <p class="text-gray-700 mb-6">Assess facial palsy, limb motor function, ataxia, and sensation.</p>
+
+                        <div class="space-y-6">
+                            <!-- 4. Facial Palsy -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        4. Facial Palsy <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Ask patient to show teeth or smile</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss4" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Normal symmetrical movements</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss4" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Minor paralysis (flattened nasolabial fold)</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss4" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Partial paralysis (lower face)</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss4" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - Complete paralysis (upper and lower face)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 5a. Left Arm Motor -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        5a. Left Arm Motor <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Extend arm 90° (sitting) or 45° (supine) for 10 seconds</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5a" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No drift for 10 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5a" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Drift before 10 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5a" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Some effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5a" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - No effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5a" value="4" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>4</strong> - No movement</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 5b. Right Arm Motor -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        5b. Right Arm Motor <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Extend arm 90° (sitting) or 45° (supine) for 10 seconds</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5b" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No drift for 10 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5b" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Drift before 10 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5b" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Some effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5b" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - No effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss5b" value="4" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>4</strong> - No movement</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 6a. Left Leg Motor -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        6a. Left Leg Motor <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Hold leg at 30° for 5 seconds</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6a" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No drift for 5 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6a" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Drift before 5 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6a" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Some effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6a" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - No effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6a" value="4" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>4</strong> - No movement</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 6b. Right Leg Motor -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        6b. Right Leg Motor <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Hold leg at 30° for 5 seconds</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6b" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No drift for 5 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6b" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Drift before 5 seconds</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6b" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Some effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6b" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - No effort against gravity</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss6b" value="4" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>4</strong> - No movement</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 7. Limb Ataxia -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        7. Limb Ataxia <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Finger-nose-finger and heel-shin tests</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss7" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Absent</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss7" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Present in one limb</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss7" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Present in two limbs</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 8. Sensory -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        8. Sensory <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Test sensation with pinprick on face, arms, legs</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss8" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Normal, no sensory loss</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss8" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Mild to moderate loss</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss8" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Severe to total loss</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NIHSS Calculator Sidebar -->
+                    <div class="lg:col-span-1">
+                        <div class="nihss-calculator">
+                            <h4 class="text-lg font-bold text-orange-600 mb-4 text-center">
+                                <i class="fas fa-calculator mr-2"></i>
+                                NIHSS Score
+                            </h4>
+                            <div class="nihss-score-display" id="nihssScoreDisplay2">0</div>
+                            <p class="text-center text-sm text-gray-600 mb-4">out of 42</p>
+                            <div id="nihssInterpretation2" class="text-center p-3 bg-gray-100 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-700">No stroke symptoms</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: NIHSS Part 3 & tPA Eligibility -->
+            <div id="step4" class="step-content p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                            <i class="fas fa-comments text-orange-600 mr-2"></i>
+                            NIHSS Part 3: Language & tPA Eligibility
+                        </h3>
+                        <p class="text-gray-700 mb-6">Complete final NIHSS items and assess tPA eligibility.</p>
+
+                        <div class="space-y-6">
+                            <!-- 9. Best Language -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        9. Best Language <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Describe picture, name items, read sentences</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss9" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No aphasia, normal</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss9" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Mild to moderate aphasia</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss9" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Severe aphasia</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss9" value="3" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>3</strong> - Mute, global aphasia</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 10. Dysarthria -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        10. Dysarthria <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Read list of words (mama, tip-top, fifty-fifty, etc.)</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss10" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - Normal articulation</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss10" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Mild to moderate slurring</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss10" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Severe dysarthria, unintelligible</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 11. Extinction/Inattention -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <div class="tooltip-container relative">
+                                    <label class="block text-sm font-bold text-gray-800 mb-3">
+                                        11. Extinction & Inattention (Neglect) <span class="text-red-500">*</span>
+                                        <i class="fas fa-question-circle text-gray-400 ml-1"></i>
+                                    </label>
+                                    <span class="tooltip-text">Test simultaneous stimulation (visual and tactile)</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss11" value="0" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>0</strong> - No abnormality</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss11" value="1" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>1</strong> - Visual, tactile, auditory, or personal inattention</span>
+                                    </label>
+                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-orange-50">
+                                        <input type="radio" name="nihss11" value="2" class="mr-3" onchange="calculateNIHSS()">
+                                        <span class="text-sm"><strong>2</strong> - Profound hemi-inattention (extinction to bilateral stimulation)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- tPA Contraindications -->
+                            <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                                <h4 class="text-lg font-bold text-gray-800 mb-4">
+                                    <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                                    tPA Contraindications Checklist
+                                </h4>
+                                <p class="text-sm text-gray-600 mb-4">Check all that apply (any checked item is a contraindication):</p>
+                                <div class="space-y-2">
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="time">
+                                        <span class="text-sm">Symptom onset greater than 4.5 hours ago (or unknown)</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="hemorrhage">
+                                        <span class="text-sm">Active internal bleeding or intracranial hemorrhage on CT</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="bp">
+                                        <span class="text-sm">Blood pressure > 185/110 mmHg (uncontrolled)</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="glucose">
+                                        <span class="text-sm">Blood glucose < 50 mg/dL</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="surgery">
+                                        <span class="text-sm">Recent major surgery or serious trauma (within 14 days)</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="anticoagulation">
+                                        <span class="text-sm">Current anticoagulation with INR > 1.7 or PT > 15 seconds</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="platelets">
+                                        <span class="text-sm">Platelet count < 100,000/mm³</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="seizure">
+                                        <span class="text-sm">Seizure at stroke onset</span>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="checkbox" class="contraindication-checkbox mt-1 mr-3 h-5 w-5 text-red-600" value="previous">
+                                        <span class="text-sm">Prior intracranial hemorrhage, AVM, or aneurysm</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NIHSS Calculator & tPA Eligibility Sidebar -->
+                    <div class="lg:col-span-1">
+                        <div class="nihss-calculator mb-6">
+                            <h4 class="text-lg font-bold text-orange-600 mb-4 text-center">
+                                <i class="fas fa-calculator mr-2"></i>
+                                Final NIHSS Score
+                            </h4>
+                            <div class="nihss-score-display" id="nihssScoreDisplay3">0</div>
+                            <p class="text-center text-sm text-gray-600 mb-4">out of 42</p>
+                            <div id="nihssInterpretation3" class="text-center p-3 bg-gray-100 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-700">No stroke symptoms</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border-2 border-blue-600 rounded-lg p-4">
+                            <h4 class="text-lg font-bold text-blue-600 mb-3 text-center">
+                                <i class="fas fa-syringe mr-2"></i>
+                                tPA Eligibility
+                            </h4>
+                            <div id="tpaEligibility" class="text-center p-4 bg-gray-100 rounded-lg">
+                                <p class="text-sm text-gray-600">Complete assessment to determine eligibility</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Treatment Plan & Review -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-clipboard-check text-orange-600 mr-2"></i>
+                    Treatment Plan & Review
+                </h3>
+                <p class="text-gray-700 mb-6">Final assessment summary and treatment plan.</p>
+
+                <div class="space-y-6">
+                    <!-- Assessment Summary -->
+                    <div class="bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-600 rounded-lg p-6 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-file-medical text-orange-600 mr-2"></i>
+                            Stroke Assessment Summary
+                        </h4>
+                        <div id="summaryContent" class="space-y-4">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Interventions Checklist -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4">
+                            <i class="fas fa-tasks text-orange-600 mr-2"></i>
+                            Stroke Interventions
+                        </h4>
+                        <div class="space-y-2">
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">Neurology consult called / Stroke team activated</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">Stat CT/MRI brain ordered and completed</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">Blood pressure management initiated (target < 185/110 for tPA)</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">NPO status maintained</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">IV access established (2 large bore if tPA candidate)</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">Labs drawn (CBC, BMP, coags, troponin, lipids)</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">Continuous monitoring (cardiac, neuro checks q15min)</span>
+                            </label>
+                            <label class="flex items-start cursor-pointer p-3 border rounded hover:bg-orange-50">
+                                <input type="checkbox" class="intervention-checkbox mt-1 mr-3 h-5 w-5 text-orange-600">
+                                <span class="text-sm font-medium">Family notification and consent discussion</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-orange-600 mr-2"></i>
+                            Additional Clinical Notes
+                        </label>
+                        <textarea id="additionalNotes"
+                                  rows="5"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                                  placeholder="Additional observations, treatment details, patient/family responses..."></textarea>
+                    </div>
+
+                    <!-- Nurse Signature -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="nurseSignature" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-signature text-orange-600 mr-2"></i>
+                            Nurse Signature <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="nurseSignature"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                               placeholder="Enter your name to sign assessment"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            By entering your name, you certify the accuracy of this stroke assessment
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {
+                lastKnownWell: '',
+                cincinnatiDroop: '',
+                cincinnatiDrift: '',
+                cincinnatiSpeech: '',
+                nihss1a: null, nihss1b: null, nihss1c: null,
+                nihss2: null, nihss3: null, nihss4: null,
+                nihss5a: null, nihss5b: null, nihss6a: null, nihss6b: null,
+                nihss7: null, nihss8: null, nihss9: null, nihss10: null, nihss11: null,
+                nihssScore: 0,
+                contraindications: [],
+                interventions: [],
+                additionalNotes: '',
+                nurseSignature: ''
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Stroke Assessment Wizard loaded');
+
+            // Initialize care setting framework
+            CareSettings.init({
+                showOnboardingIfNew: false,
+                injectBadge: true,
+                headerSelector: 'header'
+            });
+
+            // Set default datetime to now
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('lastKnownWell').value = now.toISOString().slice(0, 16);
+            updateTimeFromOnset();
+        });
+
+        // Update time from onset
+        function updateTimeFromOnset() {
+            const lastKnownWell = document.getElementById('lastKnownWell').value;
+            if (!lastKnownWell) return;
+
+            const onsetTime = new Date(lastKnownWell);
+            const now = new Date();
+            const diffMs = now - onsetTime;
+            const diffMins = Math.floor(diffMs / 60000);
+
+            const display = document.getElementById('timeFromOnsetDisplay');
+            const timeText = document.getElementById('timeFromOnset');
+
+            if (diffMins >= 0) {
+                display.classList.remove('hidden');
+                timeText.textContent = `${diffMins} minutes`;
+
+                // Color code based on tPA window
+                if (diffMins <= 270) { // 4.5 hours
+                    timeText.className = 'time-display text-green-600';
+                } else {
+                    timeText.className = 'time-display text-red-600';
+                }
+            }
+        }
+
+        // Check Cincinnati criteria
+        function checkCincinnati() {
+            const droop = document.querySelector('input[name="cincinnatiDroop"]:checked')?.value;
+            const drift = document.querySelector('input[name="cincinnatiDrift"]:checked')?.value;
+            const speech = document.querySelector('input[name="cincinnatiSpeech"]:checked')?.value;
+
+            const banner = document.getElementById('strokeAlertBanner');
+
+            if (droop === 'present' || drift === 'present' || speech === 'present') {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        // Calculate NIHSS score
+        function calculateNIHSS() {
+            let total = 0;
+            const fields = ['nihss1a', 'nihss1b', 'nihss1c', 'nihss2', 'nihss3', 'nihss4',
+                           'nihss5a', 'nihss5b', 'nihss6a', 'nihss6b', 'nihss7', 'nihss8',
+                           'nihss9', 'nihss10', 'nihss11'];
+
+            fields.forEach(field => {
+                const checked = document.querySelector(`input[name="${field}"]:checked`);
+                if (checked) {
+                    total += parseInt(checked.value);
+                }
+            });
+
+            wizardState.data.nihssScore = total;
+
+            // Update all score displays
+            ['nihssScoreDisplay', 'nihssScoreDisplay2', 'nihssScoreDisplay3'].forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) {
+                    elem.textContent = total;
+                    elem.className = 'nihss-score-display';
+                    if (total === 0) elem.classList.add('nihss-score-minor');
+                    else if (total <= 4) elem.classList.add('nihss-score-minor');
+                    else if (total <= 15) elem.classList.add('nihss-score-moderate');
+                    else if (total <= 20) elem.classList.add('nihss-score-severe');
+                    else elem.classList.add('nihss-score-critical');
+                }
+            });
+
+            // Update interpretations
+            const interpretation = getInterpretation(total);
+            ['nihssInterpretation', 'nihssInterpretation2', 'nihssInterpretation3'].forEach(id => {
+                const elem = document.getElementById(id);
+                if (elem) {
+                    elem.innerHTML = `<p class="text-sm font-semibold">${interpretation}</p>`;
+                    elem.className = 'text-center p-3 rounded-lg';
+                    if (total === 0) elem.classList.add('bg-gray-100');
+                    else if (total <= 4) elem.classList.add('bg-green-100');
+                    else if (total <= 15) elem.classList.add('bg-yellow-100');
+                    else if (total <= 20) elem.classList.add('bg-orange-100');
+                    else elem.classList.add('bg-red-100');
+                }
+            });
+
+            // Update tPA eligibility if on step 4
+            if (wizardState.current_step === 4) {
+                updateTPAEligibility();
+            }
+        }
+
+        // Get NIHSS interpretation
+        function getInterpretation(score) {
+            if (score === 0) return 'No stroke symptoms';
+            if (score <= 4) return 'Minor stroke';
+            if (score <= 15) return 'Moderate stroke';
+            if (score <= 20) return 'Moderate to severe stroke';
+            return 'Severe stroke';
+        }
+
+        // Update tPA eligibility
+        function updateTPAEligibility() {
+            const contraindications = document.querySelectorAll('.contraindication-checkbox:checked');
+            const tpaElem = document.getElementById('tpaEligibility');
+
+            if (!tpaElem) return;
+
+            if (contraindications.length > 0) {
+                tpaElem.innerHTML = `
+                    <div class="bg-red-100 p-4 rounded-lg">
+                        <i class="fas fa-times-circle text-red-600 text-2xl mb-2"></i>
+                        <p class="font-bold text-red-900">NOT ELIGIBLE for tPA</p>
+                        <p class="text-sm text-red-700 mt-2">${contraindications.length} contraindication(s) present</p>
+                    </div>
+                `;
+            } else {
+                tpaElem.innerHTML = `
+                    <div class="bg-green-100 p-4 rounded-lg">
+                        <i class="fas fa-check-circle text-green-600 text-2xl mb-2"></i>
+                        <p class="font-bold text-green-900">ELIGIBLE for tPA</p>
+                        <p class="text-sm text-green-700 mt-2">No contraindications identified</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Quick fill functions
+        function fillSevereStroke() {
+            // Set last known well to 90 minutes ago
+            const time = new Date();
+            time.setMinutes(time.getMinutes() - 90 - time.getTimezoneOffset());
+            document.getElementById('lastKnownWell').value = time.toISOString().slice(0, 16);
+            updateTimeFromOnset();
+
+            // Cincinnati positive
+            document.querySelector('input[name="cincinnatiDroop"][value="present"]').checked = true;
+            document.querySelector('input[name="cincinnatiDrift"][value="present"]').checked = true;
+            document.querySelector('input[name="cincinnatiSpeech"][value="present"]').checked = true;
+            checkCincinnati();
+
+            // NIHSS scores for severe stroke
+            document.querySelector('input[name="nihss1a"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss1b"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss1c"][value="1"]').checked = true;
+            document.querySelector('input[name="nihss2"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss3"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss4"][value="3"]').checked = true;
+            document.querySelector('input[name="nihss5a"][value="4"]').checked = true;
+            document.querySelector('input[name="nihss5b"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss6a"][value="4"]').checked = true;
+            document.querySelector('input[name="nihss6b"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss7"][value="1"]').checked = true;
+            document.querySelector('input[name="nihss8"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss9"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss10"][value="2"]').checked = true;
+            document.querySelector('input[name="nihss11"][value="2"]').checked = true;
+
+            calculateNIHSS();
+            showMessage('success', 'Severe stroke scenario populated (NIHSS ~29)');
+        }
+
+        function fillMinorStroke() {
+            // Set last known well to 45 minutes ago
+            const time = new Date();
+            time.setMinutes(time.getMinutes() - 45 - time.getTimezoneOffset());
+            document.getElementById('lastKnownWell').value = time.toISOString().slice(0, 16);
+            updateTimeFromOnset();
+
+            // Cincinnati - facial droop only
+            document.querySelector('input[name="cincinnatiDroop"][value="present"]').checked = true;
+            document.querySelector('input[name="cincinnatiDrift"][value="absent"]').checked = true;
+            document.querySelector('input[name="cincinnatiSpeech"][value="absent"]').checked = true;
+            checkCincinnati();
+
+            // NIHSS scores for minor stroke
+            document.querySelector('input[name="nihss1a"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss1b"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss1c"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss2"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss3"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss4"][value="1"]').checked = true;
+            document.querySelector('input[name="nihss5a"][value="1"]').checked = true;
+            document.querySelector('input[name="nihss5b"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss6a"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss6b"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss7"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss8"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss9"][value="1"]').checked = true;
+            document.querySelector('input[name="nihss10"][value="0"]').checked = true;
+            document.querySelector('input[name="nihss11"][value="0"]').checked = true;
+
+            calculateNIHSS();
+            showMessage('success', 'Minor stroke scenario populated (NIHSS 3)');
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step && !wizardState.completed_steps.includes(stepNum - 1)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            // Populate summary if on step 5
+            if (stepNum === 5) {
+                populateSummary();
+            }
+
+            // Update NIHSS calculator on steps 4
+            if (stepNum === 4) {
+                calculateNIHSS();
+                updateTPAEligibility();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            // Collect current step data
+            collectCurrentStepData();
+
+            // Mark current step as completed
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            // Advance to next step
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            updateWizardUI();
+
+            // Populate summary if on step 5
+            if (wizardState.current_step === 5) {
+                populateSummary();
+            }
+
+            // Update NIHSS calculator on step 4
+            if (wizardState.current_step === 4) {
+                calculateNIHSS();
+                updateTPAEligibility();
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            switch (wizardState.current_step) {
+                case 1:
+                    wizardState.data.lastKnownWell = document.getElementById('lastKnownWell').value;
+                    wizardState.data.cincinnatiDroop = document.querySelector('input[name="cincinnatiDroop"]:checked')?.value;
+                    wizardState.data.cincinnatiDrift = document.querySelector('input[name="cincinnatiDrift"]:checked')?.value;
+                    wizardState.data.cincinnatiSpeech = document.querySelector('input[name="cincinnatiSpeech"]:checked')?.value;
+                    break;
+
+                case 2:
+                    ['nihss1a', 'nihss1b', 'nihss1c', 'nihss2', 'nihss3'].forEach(field => {
+                        const checked = document.querySelector(`input[name="${field}"]:checked`);
+                        wizardState.data[field] = checked ? parseInt(checked.value) : null;
+                    });
+                    break;
+
+                case 3:
+                    ['nihss4', 'nihss5a', 'nihss5b', 'nihss6a', 'nihss6b', 'nihss7', 'nihss8'].forEach(field => {
+                        const checked = document.querySelector(`input[name="${field}"]:checked`);
+                        wizardState.data[field] = checked ? parseInt(checked.value) : null;
+                    });
+                    break;
+
+                case 4:
+                    ['nihss9', 'nihss10', 'nihss11'].forEach(field => {
+                        const checked = document.querySelector(`input[name="${field}"]:checked`);
+                        wizardState.data[field] = checked ? parseInt(checked.value) : null;
+                    });
+
+                    const contraindications = [];
+                    document.querySelectorAll('.contraindication-checkbox:checked').forEach(cb => {
+                        contraindications.push(cb.value);
+                    });
+                    wizardState.data.contraindications = contraindications;
+                    break;
+
+                case 5:
+                    const interventions = [];
+                    document.querySelectorAll('.intervention-checkbox:checked').forEach(cb => {
+                        interventions.push(cb.nextElementSibling.textContent);
+                    });
+                    wizardState.data.interventions = interventions;
+                    wizardState.data.additionalNotes = document.getElementById('additionalNotes').value;
+                    wizardState.data.nurseSignature = document.getElementById('nurseSignature').value;
+                    break;
+            }
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const progressPercent = Math.floor((currentStep / 5) * 100);
+
+            // Update progress
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            // Update step indicators
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            // Show/hide step content
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            // Update navigation buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Populate summary
+        function populateSummary() {
+            const data = wizardState.data;
+            const summaryContent = document.getElementById('summaryContent');
+
+            const onsetTime = new Date(data.lastKnownWell);
+            const now = new Date();
+            const diffMins = Math.floor((now - onsetTime) / 60000);
+
+            const tpaEligible = data.contraindications.length === 0 && diffMins <= 270;
+
+            summaryContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-clock text-orange-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Time from Onset</span>
+                        </div>
+                        <div class="text-2xl font-bold ${diffMins <= 270 ? 'text-green-600' : 'text-red-600'}">${diffMins} minutes</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-brain text-orange-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">NIHSS Score</span>
+                        </div>
+                        <div class="text-2xl font-bold text-orange-600">${data.nihssScore}/42</div>
+                        <div class="text-sm text-gray-600 mt-1">${getInterpretation(data.nihssScore)}</div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-stethoscope text-orange-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Cincinnati Screen</span>
+                        </div>
+                        <div class="text-sm text-gray-900">
+                            ${data.cincinnatiDroop === 'present' || data.cincinnatiDrift === 'present' || data.cincinnatiSpeech === 'present'
+                                ? '<span class="text-red-600 font-bold">POSITIVE</span>'
+                                : '<span class="text-green-600">Negative</span>'}
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 shadow-sm">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-syringe text-orange-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">tPA Eligibility</span>
+                        </div>
+                        <div class="text-sm font-bold ${tpaEligible ? 'text-green-600' : 'text-red-600'}">
+                            ${tpaEligible ? 'ELIGIBLE' : 'NOT ELIGIBLE'}
+                        </div>
+                        ${!tpaEligible && data.contraindications.length > 0 ? `<div class="text-xs text-gray-600 mt-1">${data.contraindications.length} contraindication(s)</div>` : ''}
+                    </div>
+                </div>
+
+                ${data.interventions.length > 0 ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm mt-4">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-tasks text-orange-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Interventions Completed</span>
+                    </div>
+                    <ul class="text-sm text-gray-900 list-disc list-inside">
+                        ${data.interventions.map(i => `<li>${i}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+
+            // Validate required fields
+            if (!wizardState.data.nurseSignature) {
+                showMessage('error', 'Please provide your signature to complete the assessment.');
+                return;
+            }
+
+            showMessage('success', 'Stroke assessment completed successfully!');
+
+            // In production, this would save to the database
+            console.log('Stroke Assessment Data:', wizardState.data);
+
+            // Show completion message
+            setTimeout(() => {
+                const nihssScore = wizardState.data.nihssScore;
+                const interpretation = getInterpretation(nihssScore);
+                alert(`Stroke assessment documented successfully!\n\nNIHSS Score: ${nihssScore}/42\nInterpretation: ${interpretation}\nAssessment ID: SA-${Date.now()}\nNurse: ${wizardState.data.nurseSignature}`);
+                // Optionally redirect to dashboard
+                // window.location.href = '/';
+            }, 500);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            // Auto-remove success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // Add event listener to contraindication checkboxes
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.contraindication-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateTPAEligibility);
+            });
+        });
+    </script>
+</body>
+</html>

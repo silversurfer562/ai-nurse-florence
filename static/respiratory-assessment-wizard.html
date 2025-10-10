@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Respiratory Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/static/js/wizardPersistence.js"></script>
+    <script src="/static/js/careSettings.js"></script>
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .respiratory-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #3b82f6;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .lung-diagram {
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto;
+            cursor: pointer;
+        }
+        .lung-zone {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            fill: #e5e7eb;
+            stroke: #9ca3af;
+            stroke-width: 2;
+        }
+        .lung-zone:hover {
+            fill: #bfdbfe;
+            stroke: #3b82f6;
+            stroke-width: 3;
+        }
+        .lung-zone.abnormal {
+            fill: #fecaca;
+            stroke: #ef4444;
+        }
+        .quality-checkbox {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .quality-checkbox:checked {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .vital-flag {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .pf-ratio-gauge {
+            position: relative;
+            height: 40px;
+            background: linear-gradient(to right, #ef4444 0%, #f59e0b 33%, #fbbf24 66%, #10b981 100%);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .pf-ratio-marker {
+            position: absolute;
+            top: -8px;
+            width: 3px;
+            height: 56px;
+            background: white;
+            border: 2px solid #1f2937;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .abg-interpretation {
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            margin-top: 16px;
+            font-weight: 600;
+        }
+        .abg-acidosis {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        .abg-alkalosis {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        }
+        .abg-normal {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="respiratory-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-blue-200 text-sm">Respiratory Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-lungs text-blue-200"></i>
+                        <span class="text-sm">Comprehensive Respiratory Assessment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-blue-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-blue-800">Comprehensive Respiratory Assessment</h3>
+                    <p class="text-sm text-blue-700">This wizard guides you through a complete respiratory assessment including vital signs, oxygen therapy, ABG interpretation, lung assessment, and treatment planning.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-blue-600 h-full" style="width: 25%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Respiratory Assessment Wizard</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete comprehensive respiratory assessment and documentation</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 4</div>
+                        <div class="text-lg font-semibold text-blue-600" id="progressPercent">25%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator active rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-32">Status & Vitals</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-32">O2 & ABG</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-32">Lung Assessment</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-32">Interventions</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Quick Fill Buttons -->
+            <div class="px-6 pt-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-magic text-blue-600 mr-3"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold">Quick Fill Examples:</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="fillCOPDExacerbation()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-wind mr-1"></i>COPD Exacerbation
+                            </button>
+                            <button onclick="fillPneumonia()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-lungs mr-1"></i>Pneumonia
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Respiratory Status & Vital Signs -->
+            <div id="step1" class="step-content active p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-stethoscope text-blue-600 mr-2"></i>
+                    Respiratory Status & Vital Signs
+                </h3>
+                <p class="text-gray-700 mb-6">Assess the patient's respiratory status and record vital signs.</p>
+
+                <div class="space-y-6">
+                    <!-- Chief Complaint -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="chiefComplaint" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-blue-600 mr-2"></i>
+                            Chief Complaint <span class="text-red-500">*</span>
+                        </label>
+                        <select id="chiefComplaint"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                required>
+                            <option value="">Select chief complaint...</option>
+                            <option value="Dyspnea">Dyspnea (Shortness of breath)</option>
+                            <option value="Cough">Cough</option>
+                            <option value="Wheezing">Wheezing</option>
+                            <option value="Chest tightness">Chest tightness</option>
+                            <option value="Hemoptysis">Hemoptysis (Coughing up blood)</option>
+                            <option value="Chest pain">Chest pain with breathing</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Onset and Duration -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="onsetDuration" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-blue-600 mr-2"></i>
+                            Onset and Duration <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="onsetDuration"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                               placeholder="e.g., Started 2 days ago, worsening over past 6 hours"
+                               required>
+                    </div>
+
+                    <!-- Vital Signs Grid -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-heart-pulse text-blue-600 mr-2"></i>
+                            Vital Signs <span class="text-red-500">*</span>
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Respiratory Rate -->
+                            <div>
+                                <label for="respiratoryRate" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Respiratory Rate (breaths/min)
+                                </label>
+                                <input type="number"
+                                       id="respiratoryRate"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="12-20"
+                                       min="0"
+                                       max="60"
+                                       oninput="checkVitalFlags()"
+                                       required>
+                                <div id="rrFlag" class="text-xs mt-1 vital-flag hidden">
+                                    <i class="fas fa-exclamation-triangle"></i> Abnormal
+                                </div>
+                            </div>
+
+                            <!-- SpO2 -->
+                            <div>
+                                <label for="spo2" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    SpO2 (%)
+                                </label>
+                                <input type="number"
+                                       id="spo2"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="94-100"
+                                       min="0"
+                                       max="100"
+                                       oninput="checkVitalFlags()"
+                                       required>
+                                <div id="spo2Flag" class="text-xs mt-1 vital-flag hidden">
+                                    <i class="fas fa-exclamation-triangle"></i> Low O2
+                                </div>
+                            </div>
+
+                            <!-- Heart Rate -->
+                            <div>
+                                <label for="heartRate" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Heart Rate (bpm)
+                                </label>
+                                <input type="number"
+                                       id="heartRate"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="60-100"
+                                       min="0"
+                                       max="250"
+                                       required>
+                            </div>
+
+                            <!-- Blood Pressure -->
+                            <div>
+                                <label for="bloodPressure" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Blood Pressure
+                                </label>
+                                <input type="text"
+                                       id="bloodPressure"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="120/80"
+                                       required>
+                            </div>
+
+                            <!-- Temperature -->
+                            <div>
+                                <label for="temperature" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Temperature
+                                </label>
+                                <input type="text"
+                                       id="temperature"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="98.6°F or 37°C"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Work of Breathing Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-lungs text-blue-600 mr-2"></i>
+                            Work of Breathing Assessment
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Accessory Muscles -->
+                            <div>
+                                <label for="accessoryMuscles" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Use of Accessory Muscles
+                                </label>
+                                <select id="accessoryMuscles"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                                    <option value="None">None</option>
+                                    <option value="Mild">Mild</option>
+                                    <option value="Moderate">Moderate</option>
+                                    <option value="Severe">Severe</option>
+                                </select>
+                            </div>
+
+                            <!-- Retractions -->
+                            <div>
+                                <label for="retractions" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Retractions
+                                </label>
+                                <select id="retractions"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                                    <option value="None">None</option>
+                                    <option value="Intercostal">Intercostal</option>
+                                    <option value="Subcostal">Subcostal</option>
+                                    <option value="Suprasternal">Suprasternal</option>
+                                </select>
+                            </div>
+
+                            <!-- Nasal Flaring -->
+                            <div>
+                                <label for="nasalFlaring" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Nasal Flaring
+                                </label>
+                                <select id="nasalFlaring"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                                    <option value="Absent">Absent</option>
+                                    <option value="Present">Present</option>
+                                </select>
+                            </div>
+
+                            <!-- Tripod Positioning -->
+                            <div>
+                                <label for="tripodPositioning" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Tripod Positioning
+                                </label>
+                                <select id="tripodPositioning"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                                    <option value="Absent">Absent</option>
+                                    <option value="Present">Present</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Oxygen Therapy & ABG Results -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-wind text-blue-600 mr-2"></i>
+                    Oxygen Therapy & ABG Results
+                </h3>
+                <p class="text-gray-700 mb-6">Document oxygen support and arterial blood gas findings.</p>
+
+                <div class="space-y-6">
+                    <!-- Oxygen Support -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-wind text-blue-600 mr-2"></i>
+                            Current Oxygen Support <span class="text-red-500">*</span>
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Oxygen Device -->
+                            <div class="md:col-span-2">
+                                <label for="oxygenDevice" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Oxygen Delivery Device
+                                </label>
+                                <select id="oxygenDevice"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                        onchange="updateOxygenFields()"
+                                        required>
+                                    <option value="">Select device...</option>
+                                    <option value="Room air">Room air</option>
+                                    <option value="Nasal cannula">Nasal cannula</option>
+                                    <option value="Simple mask">Simple mask</option>
+                                    <option value="Non-rebreather">Non-rebreather mask</option>
+                                    <option value="CPAP">CPAP</option>
+                                    <option value="BiPAP">BiPAP</option>
+                                    <option value="High-flow nasal cannula">High-flow nasal cannula</option>
+                                    <option value="Ventilator">Mechanical ventilator</option>
+                                </select>
+                            </div>
+
+                            <!-- Flow Rate -->
+                            <div>
+                                <label for="flowRate" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Flow Rate (L/min)
+                                </label>
+                                <input type="number"
+                                       id="flowRate"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="2-15"
+                                       min="0"
+                                       max="100">
+                            </div>
+
+                            <!-- FiO2 -->
+                            <div>
+                                <label for="fio2" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    FiO2 (%)
+                                </label>
+                                <input type="number"
+                                       id="fio2"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="21-100"
+                                       min="21"
+                                       max="100"
+                                       oninput="calculatePFRatio()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ABG Results -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-vial text-blue-600 mr-2"></i>
+                            Arterial Blood Gas (ABG) - If Obtained
+                        </h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- pH -->
+                            <div>
+                                <label for="ph" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    pH
+                                </label>
+                                <input type="number"
+                                       id="ph"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="7.35-7.45"
+                                       step="0.01"
+                                       min="6.8"
+                                       max="7.8"
+                                       oninput="interpretABG()">
+                            </div>
+
+                            <!-- PaCO2 -->
+                            <div>
+                                <label for="paco2" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    PaCO2 (mmHg)
+                                </label>
+                                <input type="number"
+                                       id="paco2"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="35-45"
+                                       min="10"
+                                       max="150"
+                                       oninput="interpretABG()">
+                            </div>
+
+                            <!-- PaO2 -->
+                            <div>
+                                <label for="pao2" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    PaO2 (mmHg)
+                                </label>
+                                <input type="number"
+                                       id="pao2"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="80-100"
+                                       min="30"
+                                       max="600"
+                                       oninput="interpretABG(); calculatePFRatio()">
+                            </div>
+
+                            <!-- HCO3 -->
+                            <div>
+                                <label for="hco3" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    HCO3 (mEq/L)
+                                </label>
+                                <input type="number"
+                                       id="hco3"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                       placeholder="22-26"
+                                       min="5"
+                                       max="50"
+                                       oninput="interpretABG()">
+                            </div>
+                        </div>
+
+                        <!-- ABG Interpretation -->
+                        <div id="abgInterpretation" class="hidden mt-4">
+                            <div class="abg-interpretation" id="abgResult">
+                                <i class="fas fa-flask mr-2"></i>
+                                <span id="abgResultText">ABG Interpretation will appear here</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- P/F Ratio Calculator -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-calculator text-blue-600 mr-2"></i>
+                            P/F Ratio (PaO2/FiO2) - ARDS Severity
+                        </h4>
+                        <div id="pfRatioResult" class="hidden">
+                            <div class="text-3xl font-bold text-gray-900 text-center my-3">
+                                <span id="pfRatioValue">--</span>
+                            </div>
+                            <div class="pf-ratio-gauge">
+                                <div id="pfRatioMarker" class="pf-ratio-marker" style="left: 50%;"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-600 mt-2">
+                                <span>Severe<br>&lt;100</span>
+                                <span>Moderate<br>100-200</span>
+                                <span>Mild<br>200-300</span>
+                                <span>Normal<br>&gt;300</span>
+                            </div>
+                            <div class="text-center mt-3">
+                                <span class="text-sm font-semibold" id="pfRatioCategory">--</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            P/F Ratio requires both PaO2 and FiO2 values
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Lung Assessment & Imaging -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-lungs text-blue-600 mr-2"></i>
+                    Lung Assessment & Imaging
+                </h3>
+                <p class="text-gray-700 mb-6">Document lung sounds and imaging findings.</p>
+
+                <div class="space-y-6">
+                    <!-- Interactive Lung Diagram -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-lungs text-blue-600 mr-2"></i>
+                            Lung Sounds Assessment (Click zones to select findings)
+                        </h4>
+                        <div class="lung-diagram">
+                            <svg viewBox="0 0 400 300" class="w-full border border-gray-300 rounded-lg bg-gray-50">
+                                <!-- Right Upper Lobe -->
+                                <path id="RUL" class="lung-zone" d="M 200 30 Q 250 30 270 60 L 270 90 Q 250 80 220 85 L 200 60 Z" onclick="selectLungZone('RUL')"/>
+                                <text x="235" y="65" font-size="12" fill="#4b5563" pointer-events="none">RUL</text>
+
+                                <!-- Right Middle Lobe -->
+                                <path id="RML" class="lung-zone" d="M 220 85 Q 250 80 270 90 L 270 130 Q 250 125 220 125 Z" onclick="selectLungZone('RML')"/>
+                                <text x="235" y="110" font-size="12" fill="#4b5563" pointer-events="none">RML</text>
+
+                                <!-- Right Lower Lobe -->
+                                <path id="RLL" class="lung-zone" d="M 220 125 Q 250 125 270 130 L 270 200 Q 240 210 210 200 L 220 125 Z" onclick="selectLungZone('RLL')"/>
+                                <text x="235" y="165" font-size="12" fill="#4b5563" pointer-events="none">RLL</text>
+
+                                <!-- Left Upper Lobe -->
+                                <path id="LUL" class="lung-zone" d="M 200 30 Q 150 30 130 60 L 130 100 Q 150 85 180 85 L 200 60 Z" onclick="selectLungZone('LUL')"/>
+                                <text x="155" y="65" font-size="12" fill="#4b5563" pointer-events="none">LUL</text>
+
+                                <!-- Left Lower Lobe -->
+                                <path id="LLL" class="lung-zone" d="M 180 85 Q 150 85 130 100 L 130 200 Q 160 210 190 200 L 180 85 Z" onclick="selectLungZone('LLL')"/>
+                                <text x="155" y="145" font-size="12" fill="#4b5563" pointer-events="none">LLL</text>
+
+                                <!-- Bases -->
+                                <path id="Bases" class="lung-zone" d="M 130 200 Q 160 210 190 200 L 210 200 Q 240 210 270 200 L 270 240 Q 200 260 130 240 Z" onclick="selectLungZone('Bases')"/>
+                                <text x="180" y="230" font-size="12" fill="#4b5563" pointer-events="none">Bases</text>
+                            </svg>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3 text-center">
+                            <i class="fas fa-hand-pointer mr-1"></i>
+                            Click on lung zones to document findings
+                        </p>
+                    </div>
+
+                    <!-- Selected Zone Details -->
+                    <div id="lungZoneDetails" class="bg-blue-50 border border-blue-200 rounded-lg p-5 shadow-sm hidden">
+                        <h4 class="text-sm font-bold text-gray-800 mb-3">
+                            <span id="selectedZone">--</span> - Lung Sounds
+                        </h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Clear" class="mr-2">
+                                <span class="text-sm">Clear</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Diminished" class="mr-2">
+                                <span class="text-sm">Diminished</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Crackles" class="mr-2">
+                                <span class="text-sm">Crackles</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Wheezes" class="mr-2">
+                                <span class="text-sm">Wheezes</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Rhonchi" class="mr-2">
+                                <span class="text-sm">Rhonchi</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Stridor" class="mr-2">
+                                <span class="text-sm">Stridor</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-2 rounded hover:bg-blue-100">
+                                <input type="radio" name="lungSound" value="Absent" class="mr-2">
+                                <span class="text-sm">Absent</span>
+                            </label>
+                        </div>
+                        <button onclick="saveLungSound()" class="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-check mr-1"></i>Save Finding
+                        </button>
+                    </div>
+
+                    <!-- Cough Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-head-side-cough text-blue-600 mr-2"></i>
+                            Cough Assessment
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="coughType" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Cough Type
+                                </label>
+                                <select id="coughType"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                        onchange="toggleSputumFields()">
+                                    <option value="None">No cough</option>
+                                    <option value="Nonproductive">Nonproductive (dry)</option>
+                                    <option value="Productive">Productive</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="sputumFields" class="mt-4 hidden">
+                            <label for="sputumCharacteristics" class="block text-xs font-semibold text-gray-700 mb-2">
+                                Sputum Characteristics (color, consistency, amount)
+                            </label>
+                            <textarea id="sputumCharacteristics"
+                                      rows="2"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                      placeholder="e.g., Yellow-green, thick, moderate amount"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Imaging Findings -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-x-ray text-blue-600 mr-2"></i>
+                            Chest X-ray / CT Findings
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="imagingFindings" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Findings
+                                </label>
+                                <select id="imagingFindings"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                        multiple size="5">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Infiltrates">Infiltrates</option>
+                                    <option value="Consolidation">Consolidation</option>
+                                    <option value="Pleural effusion">Pleural effusion</option>
+                                    <option value="Pneumothorax">Pneumothorax</option>
+                                    <option value="Atelectasis">Atelectasis</option>
+                                    <option value="Cardiomegaly">Cardiomegaly</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd for multiple selections</p>
+                            </div>
+
+                            <div>
+                                <label for="imagingLocation" class="block text-xs font-semibold text-gray-700 mb-2">
+                                    Location of Findings
+                                </label>
+                                <textarea id="imagingLocation"
+                                          rows="4"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                          placeholder="e.g., RLL consolidation, bilateral infiltrates"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Interventions & Treatment Plan -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-hand-holding-medical text-blue-600 mr-2"></i>
+                    Interventions & Treatment Plan
+                </h3>
+                <p class="text-gray-700 mb-6">Document respiratory interventions and create treatment plan.</p>
+
+                <div class="space-y-6">
+                    <!-- Respiratory Interventions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-briefcase-medical text-blue-600 mr-2"></i>
+                            Respiratory Interventions (Select all that apply)
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="O2 titration">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-wind mr-1"></i>Supplemental O2 titrated to SpO2 &gt;92%
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="Nebulizer">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-spray-can mr-1"></i>Nebulizer treatments (albuterol/ipratropium)
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="Incentive spirometry">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-lungs-virus mr-1"></i>Incentive spirometry
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="Chest PT">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-hands mr-1"></i>Chest physiotherapy
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="HOB elevation">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-bed mr-1"></i>Positioning (HOB &gt;30°)
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="Prone positioning">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-arrows-rotate mr-1"></i>Prone positioning (if ARDS)
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="Suction">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-pump-medical mr-1"></i>Suction PRN
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-blue-50">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-blue-600 rounded" value="Deep breathing">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-wind mr-1"></i>Deep breathing/coughing exercises
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Medications -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="medicationsAdministered" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-pills text-blue-600 mr-2"></i>
+                            Medications Administered
+                        </label>
+                        <textarea id="medicationsAdministered"
+                                  rows="3"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                  placeholder="e.g., Albuterol 2.5mg nebulizer, Methylprednisolone 125mg IV, Azithromycin 500mg PO"></textarea>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Include bronchodilators, steroids, antibiotics, diuretics
+                        </p>
+                    </div>
+
+                    <!-- Escalation Criteria -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-bell text-red-600 mr-2"></i>
+                            Escalation Criteria - Notify Provider If:
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-white p-3 rounded hover:bg-red-100">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded" value="Low SpO2">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-triangle-exclamation mr-1"></i>SpO2 &lt;90% on current O2
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-3 rounded hover:bg-red-100">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded" value="RR abnormal">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-triangle-exclamation mr-1"></i>RR &gt;30 or &lt;10
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-3 rounded hover:bg-red-100">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded" value="Increased WOB">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-triangle-exclamation mr-1"></i>Increased work of breathing
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-white p-3 rounded hover:bg-red-100">
+                                <input type="checkbox" class="quality-checkbox mr-3 h-5 w-5 text-red-600 rounded" value="Mental status">
+                                <span class="text-sm font-medium text-gray-700">
+                                    <i class="fas fa-triangle-exclamation mr-1"></i>Change in mental status
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Assessment Summary -->
+                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-600 rounded-lg p-6 shadow-sm">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-clipboard-check text-blue-600 mr-2"></i>
+                            Respiratory Assessment Summary
+                        </h4>
+                        <div id="summaryContent" class="space-y-4">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-blue-600 mr-2"></i>
+                            Additional Clinical Notes
+                        </label>
+                        <textarea id="additionalNotes"
+                                  rows="5"
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                  placeholder="Add any additional clinical observations, patient responses, or care plan modifications..."></textarea>
+                    </div>
+
+                    <!-- Nurse Signature -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="nurseSignature" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-signature text-blue-600 mr-2"></i>
+                            Nurse Signature <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="nurseSignature"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                               placeholder="Enter your name to sign assessment"
+                               required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            By entering your name, you certify the accuracy of this assessment
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 4,
+            lungSounds: {},
+            data: {}
+        };
+
+        let currentSelectedZone = null;
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Respiratory Assessment Wizard loaded');
+
+            // Initialize care setting framework
+            CareSettings.init({
+                showOnboardingIfNew: false,
+                injectBadge: true,
+                headerSelector: 'header'
+            });
+
+            // Check for saved draft
+            if (WizardPersistence.hasSavedDraft(WIZARD_ID)) {
+                WizardPersistence.showResumeDraftModal(
+                    WIZARD_ID,
+                    () => resumeDraft(),
+                    () => console.log('Starting fresh')
+                );
+            }
+        });
+
+        // Check vital sign flags
+        function checkVitalFlags() {
+            const rr = parseInt(document.getElementById('respiratoryRate').value);
+            const spo2 = parseInt(document.getElementById('spo2').value);
+
+            const rrFlag = document.getElementById('rrFlag');
+            const spo2Flag = document.getElementById('spo2Flag');
+
+            if (rr > 20 || rr < 12) {
+                rrFlag.classList.remove('hidden');
+            } else {
+                rrFlag.classList.add('hidden');
+            }
+
+            if (spo2 < 94) {
+                spo2Flag.classList.remove('hidden');
+            } else {
+                spo2Flag.classList.add('hidden');
+            }
+        }
+
+        // Update oxygen fields based on device
+        function updateOxygenFields() {
+            const device = document.getElementById('oxygenDevice').value;
+            const flowRate = document.getElementById('flowRate');
+            const fio2 = document.getElementById('fio2');
+
+            if (device === 'Room air') {
+                flowRate.value = '';
+                flowRate.disabled = true;
+                fio2.value = '21';
+            } else {
+                flowRate.disabled = false;
+            }
+        }
+
+        // Interpret ABG
+        function interpretABG() {
+            const ph = parseFloat(document.getElementById('ph').value);
+            const paco2 = parseFloat(document.getElementById('paco2').value);
+            const pao2 = parseFloat(document.getElementById('pao2').value);
+            const hco3 = parseFloat(document.getElementById('hco3').value);
+
+            if (!ph || !paco2 || !hco3) return;
+
+            const interpretation = document.getElementById('abgInterpretation');
+            const result = document.getElementById('abgResult');
+            const resultText = document.getElementById('abgResultText');
+
+            let text = '';
+            let classType = 'abg-normal';
+
+            // Determine primary disorder
+            if (ph < 7.35) {
+                // Acidosis
+                if (paco2 > 45) {
+                    text = 'Respiratory Acidosis';
+                    classType = 'abg-acidosis';
+                } else if (hco3 < 22) {
+                    text = 'Metabolic Acidosis';
+                    classType = 'abg-acidosis';
+                }
+            } else if (ph > 7.45) {
+                // Alkalosis
+                if (paco2 < 35) {
+                    text = 'Respiratory Alkalosis';
+                    classType = 'abg-alkalosis';
+                } else if (hco3 > 26) {
+                    text = 'Metabolic Alkalosis';
+                    classType = 'abg-alkalosis';
+                }
+            } else {
+                text = 'Normal pH';
+
+                // Check for compensation
+                if (paco2 < 35 || paco2 > 45 || hco3 < 22 || hco3 > 26) {
+                    text += ' (Compensated)';
+                }
+                classType = 'abg-normal';
+            }
+
+            // Check oxygenation
+            if (pao2 && pao2 < 80) {
+                text += ' with Hypoxemia';
+            }
+
+            result.className = 'abg-interpretation ' + classType;
+            resultText.textContent = text;
+            interpretation.classList.remove('hidden');
+        }
+
+        // Calculate P/F Ratio
+        function calculatePFRatio() {
+            const pao2 = parseFloat(document.getElementById('pao2').value);
+            const fio2 = parseFloat(document.getElementById('fio2').value);
+
+            if (!pao2 || !fio2) return;
+
+            const pfRatio = Math.round((pao2 / (fio2 / 100)));
+
+            const resultDiv = document.getElementById('pfRatioResult');
+            const valueSpan = document.getElementById('pfRatioValue');
+            const categorySpan = document.getElementById('pfRatioCategory');
+            const marker = document.getElementById('pfRatioMarker');
+
+            valueSpan.textContent = pfRatio;
+
+            let category = '';
+            let markerPosition = 50;
+
+            if (pfRatio < 100) {
+                category = 'Severe ARDS';
+                markerPosition = 10;
+            } else if (pfRatio < 200) {
+                category = 'Moderate ARDS';
+                markerPosition = 30;
+            } else if (pfRatio < 300) {
+                category = 'Mild ARDS';
+                markerPosition = 60;
+            } else {
+                category = 'Normal Oxygenation';
+                markerPosition = 85;
+            }
+
+            categorySpan.textContent = category;
+            marker.style.left = markerPosition + '%';
+            resultDiv.classList.remove('hidden');
+        }
+
+        // Select lung zone
+        function selectLungZone(zoneId) {
+            currentSelectedZone = zoneId;
+            document.getElementById('lungZoneDetails').classList.remove('hidden');
+            document.getElementById('selectedZone').textContent = zoneId;
+
+            // Load existing sound if available
+            if (wizardState.lungSounds[zoneId]) {
+                const radios = document.querySelectorAll('input[name="lungSound"]');
+                radios.forEach(radio => {
+                    radio.checked = radio.value === wizardState.lungSounds[zoneId];
+                });
+            } else {
+                const radios = document.querySelectorAll('input[name="lungSound"]');
+                radios.forEach(radio => radio.checked = false);
+            }
+        }
+
+        // Save lung sound
+        function saveLungSound() {
+            const selected = document.querySelector('input[name="lungSound"]:checked');
+            if (!selected || !currentSelectedZone) return;
+
+            wizardState.lungSounds[currentSelectedZone] = selected.value;
+
+            // Visual feedback
+            const zone = document.getElementById(currentSelectedZone);
+            if (selected.value !== 'Clear') {
+                zone.classList.add('abnormal');
+            } else {
+                zone.classList.remove('abnormal');
+            }
+
+            showMessage('success', `${currentSelectedZone}: ${selected.value} documented`);
+            document.getElementById('lungZoneDetails').classList.add('hidden');
+        }
+
+        // Toggle sputum fields
+        function toggleSputumFields() {
+            const coughType = document.getElementById('coughType').value;
+            const sputumFields = document.getElementById('sputumFields');
+
+            if (coughType === 'Productive') {
+                sputumFields.classList.remove('hidden');
+            } else {
+                sputumFields.classList.add('hidden');
+            }
+        }
+
+        // Quick fill functions
+        function fillCOPDExacerbation() {
+            document.getElementById('chiefComplaint').value = 'Dyspnea';
+            document.getElementById('onsetDuration').value = 'Gradual worsening over 3 days';
+            document.getElementById('respiratoryRate').value = '28';
+            document.getElementById('spo2').value = '88';
+            document.getElementById('heartRate').value = '105';
+            document.getElementById('bloodPressure').value = '145/88';
+            document.getElementById('temperature').value = '98.8°F';
+            document.getElementById('accessoryMuscles').value = 'Moderate';
+            document.getElementById('tripodPositioning').value = 'Present';
+
+            checkVitalFlags();
+
+            // Step 2
+            document.getElementById('oxygenDevice').value = 'Nasal cannula';
+            document.getElementById('flowRate').value = '4';
+            document.getElementById('fio2').value = '36';
+            document.getElementById('ph').value = '7.32';
+            document.getElementById('paco2').value = '58';
+            document.getElementById('pao2').value = '62';
+            document.getElementById('hco3').value = '30';
+
+            interpretABG();
+            calculatePFRatio();
+
+            // Step 3
+            document.getElementById('coughType').value = 'Productive';
+            toggleSputumFields();
+            document.getElementById('sputumCharacteristics').value = 'Yellow-green, thick, moderate amount';
+
+            showMessage('success', 'COPD exacerbation scenario populated');
+        }
+
+        function fillPneumonia() {
+            document.getElementById('chiefComplaint').value = 'Cough';
+            document.getElementById('onsetDuration').value = 'Started 5 days ago with fever';
+            document.getElementById('respiratoryRate').value = '24';
+            document.getElementById('spo2').value = '91';
+            document.getElementById('heartRate').value = '98';
+            document.getElementById('bloodPressure').value = '128/76';
+            document.getElementById('temperature').value = '101.2°F';
+            document.getElementById('accessoryMuscles').value = 'Mild';
+
+            checkVitalFlags();
+
+            // Step 2
+            document.getElementById('oxygenDevice').value = 'Nasal cannula';
+            document.getElementById('flowRate').value = '3';
+            document.getElementById('fio2').value = '32';
+
+            // Step 3
+            document.getElementById('coughType').value = 'Productive';
+            toggleSputumFields();
+            document.getElementById('sputumCharacteristics').value = 'Rust-colored, thick, large amount';
+            document.getElementById('imagingLocation').value = 'RLL infiltrate with air bronchograms';
+
+            showMessage('success', 'Pneumonia scenario populated');
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step && !wizardState.completed_steps.includes(stepNum - 1)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            if (stepNum === 4) {
+                populateSummary();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            collectCurrentStepData();
+
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 4);
+            updateWizardUI();
+
+            if (wizardState.current_step === 4) {
+                populateSummary();
+            }
+
+            // Auto-save
+            autosaveDraft();
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            wizardState.data[`step${wizardState.current_step}`] = {};
+            const stepDiv = document.getElementById(`step${wizardState.current_step}`);
+
+            stepDiv.querySelectorAll('input, select, textarea').forEach(input => {
+                if (input.id) {
+                    if (input.type === 'checkbox') {
+                        wizardState.data[`step${wizardState.current_step}`][input.id] = input.checked;
+                    } else {
+                        wizardState.data[`step${wizardState.current_step}`][input.id] = input.value;
+                    }
+                }
+            });
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const progressPercent = Math.floor((currentStep / 4) * 100);
+
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 4) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Populate summary
+        function populateSummary() {
+            const summaryContent = document.getElementById('summaryContent');
+
+            const step1 = wizardState.data.step1 || {};
+            const step2 = wizardState.data.step2 || {};
+
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+
+            // Vital Signs
+            html += `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-heart-pulse text-blue-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Vital Signs</span>
+                    </div>
+                    <div class="text-sm text-gray-900">
+                        RR: ${step1.respiratoryRate || '--'}/min, SpO2: ${step1.spo2 || '--'}%,
+                        HR: ${step1.heartRate || '--'} bpm
+                    </div>
+                </div>
+            `;
+
+            // Chief Complaint
+            html += `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-comment-medical text-blue-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Chief Complaint</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${step1.chiefComplaint || 'Not specified'}</div>
+                </div>
+            `;
+
+            // Oxygen Support
+            html += `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-wind text-blue-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Oxygen Support</span>
+                    </div>
+                    <div class="text-sm text-gray-900">
+                        ${step2.oxygenDevice || 'Not specified'}
+                        ${step2.flowRate ? ` @ ${step2.flowRate}L/min` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Lung Sounds
+            const lungSoundsCount = Object.keys(wizardState.lungSounds).length;
+            html += `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-lungs text-blue-600 mr-2"></i>
+                        <span class="text-sm font-semibold text-gray-700">Lung Sounds</span>
+                    </div>
+                    <div class="text-sm text-gray-900">${lungSoundsCount} zones documented</div>
+                </div>
+            `;
+
+            html += '</div>';
+
+            // ABG interpretation if available
+            if (step2.ph) {
+                const abgText = document.getElementById('abgResultText')?.textContent || 'See ABG results';
+                html += `
+                    <div class="bg-white rounded-lg p-4 shadow-sm mt-4">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-flask text-blue-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">ABG Interpretation</span>
+                        </div>
+                        <div class="text-sm text-gray-900">${abgText}</div>
+                    </div>
+                `;
+            }
+
+            // Interventions
+            const interventions = [];
+            document.querySelectorAll('#step4 .quality-checkbox:checked').forEach(cb => {
+                interventions.push(cb.value);
+            });
+
+            if (interventions.length > 0) {
+                html += `
+                    <div class="bg-white rounded-lg p-4 shadow-sm mt-4">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-briefcase-medical text-blue-600 mr-2"></i>
+                            <span class="text-sm font-semibold text-gray-700">Interventions</span>
+                        </div>
+                        <div class="text-sm text-gray-900">${interventions.join(', ')}</div>
+                    </div>
+                `;
+            }
+
+            summaryContent.innerHTML = html;
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+
+            if (!document.getElementById('nurseSignature').value) {
+                showMessage('error', 'Please provide your signature to complete the assessment.');
+                return;
+            }
+
+            showMessage('success', 'Respiratory assessment completed successfully!');
+
+            console.log('Respiratory Assessment Data:', wizardState);
+
+            // Clear draft
+            WizardPersistence.clearWizardState(WIZARD_ID);
+
+            setTimeout(() => {
+                alert('Respiratory assessment documented successfully!\n\nAssessment ID: RA-' + Date.now() + '\nNurse: ' + document.getElementById('nurseSignature').value);
+            }, 500);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+
+        // ===== PERSISTENCE FUNCTIONS =====
+        const WIZARD_ID = 'respiratory-assessment-wizard';
+
+        function autosaveDraft() {
+            const formData = {};
+            const currentStepNum = wizardState.current_step;
+
+            document.querySelectorAll('.step-content').forEach((step, index) => {
+                const stepNum = index + 1;
+                const stepData = {};
+
+                step.querySelectorAll('input, select, textarea').forEach(input => {
+                    if (input.id) {
+                        if (input.type === 'checkbox') {
+                            stepData[input.id] = input.checked;
+                        } else if (input.type === 'radio') {
+                            if (input.checked) {
+                                stepData[input.name] = input.value;
+                            }
+                        } else {
+                            stepData[input.id] = input.value;
+                        }
+                    }
+                });
+
+                if (Object.keys(stepData).length > 0) {
+                    formData[`step${stepNum}`] = stepData;
+                }
+            });
+
+            // Save lung sounds
+            formData.lungSounds = wizardState.lungSounds;
+
+            WizardPersistence.saveWizardState(WIZARD_ID, currentStepNum, formData);
+        }
+
+        function resumeDraft() {
+            const savedState = WizardPersistence.loadWizardState(WIZARD_ID);
+            if (!savedState) return;
+
+            const targetStep = savedState.currentStep;
+
+            if (savedState.formData) {
+                Object.keys(savedState.formData).forEach(stepKey => {
+                    if (stepKey === 'lungSounds') {
+                        wizardState.lungSounds = savedState.formData[stepKey];
+                        return;
+                    }
+
+                    const stepData = savedState.formData[stepKey];
+                    Object.keys(stepData).forEach(fieldId => {
+                        const input = document.getElementById(fieldId);
+                        if (input) {
+                            if (input.type === 'checkbox') {
+                                input.checked = stepData[fieldId];
+                            } else if (input.type === 'radio') {
+                                const radio = document.querySelector(`input[name="${fieldId}"][value="${stepData[fieldId]}"]`);
+                                if (radio) radio.checked = true;
+                            } else {
+                                input.value = stepData[fieldId];
+                            }
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+            }
+
+            wizardState.current_step = targetStep;
+            for (let i = 1; i < targetStep; i++) {
+                if (!wizardState.completed_steps.includes(i)) {
+                    wizardState.completed_steps.push(i);
+                }
+            }
+            updateWizardUI();
+
+            const lastSave = WizardPersistence.getLastSaveTime(WIZARD_ID);
+            alert(`Draft restored from ${lastSave}`);
+        }
+    </script>
+</body>
+</html>

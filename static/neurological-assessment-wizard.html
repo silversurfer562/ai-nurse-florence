@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neurological Assessment Wizard - AI Nurse Florence</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/static/js/wizardPersistence.js"></script>
+    <script src="/static/js/careSettings.js"></script>
+    <style>
+        .wizard-container {
+            max-width: 4xl;
+            margin: 0 auto;
+        }
+        .step-indicator {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .step-indicator.active {
+            background: #8b5cf6;
+            color: white;
+            transform: scale(1.1);
+        }
+        .step-indicator.completed {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .neuro-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+        }
+        .form-field {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid #8b5cf6;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .message-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 4px solid #10b981;
+        }
+        .message-error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .message-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .gcs-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        .gcs-severe { background: #dc2626; }
+        .gcs-moderate { background: #f59e0b; }
+        .gcs-mild { background: #10b981; }
+        .pupil-circle {
+            display: inline-block;
+            border-radius: 50%;
+            border: 2px solid #6b7280;
+            background: #1f2937;
+        }
+        .body-diagram-neuro {
+            max-width: 400px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .motor-marker {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #8b5cf6;
+            background: white;
+            border: 2px solid #8b5cf6;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .critical-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 3px solid #dc2626;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="neuro-header text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <i class="fas fa-hospital text-2xl"></i>
+                        <div>
+                            <h1 class="text-xl font-bold">AI Nurse Florence</h1>
+                            <p class="text-purple-200 text-sm">Neurological Assessment Wizard</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-brain text-purple-200"></i>
+                        <span class="text-sm">Comprehensive Neuro Assessment</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Information Banner -->
+    <div class="bg-purple-50 border-l-4 border-purple-400 p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center">
+                <i class="fas fa-info-circle text-purple-400 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-medium text-purple-800">Comprehensive Neurological Assessment</h3>
+                    <p class="text-sm text-purple-700">This wizard includes Glasgow Coma Scale, pupil assessment, cranial nerves, motor/sensory function, and safety protocols.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="wizard-container bg-white rounded-lg shadow-xl">
+            <!-- Progress Bar -->
+            <div class="bg-gray-200 h-2 rounded-t-lg overflow-hidden">
+                <div id="progressBar" class="progress-bar bg-purple-600 h-full" style="width: 20%"></div>
+            </div>
+
+            <!-- Wizard Header -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900" id="wizardTitle">Neurological Assessment</h2>
+                        <p class="text-gray-600 mt-1" id="wizardDescription">Complete comprehensive neurological assessment with GCS</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Step <span id="currentStepNum">1</span> of 5</div>
+                        <div class="text-lg font-semibold text-purple-600" id="progressPercent">20%</div>
+                    </div>
+                </div>
+
+                <!-- Step Indicators -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="step-indicator active rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="1" onclick="navigateToStep(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="2" onclick="navigateToStep(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="3" onclick="navigateToStep(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="4" onclick="navigateToStep(4)">
+                        <span>4</span>
+                    </div>
+                    <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
+                    <div class="step-indicator pending rounded-full w-10 h-10 flex items-center justify-center font-semibold" data-step="5" onclick="navigateToStep(5)">
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <!-- Step Labels -->
+                <div class="flex justify-between items-center mt-2 text-xs text-gray-600">
+                    <div class="text-center w-20">LOC & GCS</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Pupils & CN</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Motor/Sensory</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Special Neuro</div>
+                    <div class="flex-1"></div>
+                    <div class="text-center w-20">Safety Plan</div>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="messagesArea" class="px-6 pt-4"></div>
+
+            <!-- Quick Fill Buttons -->
+            <div class="px-6 pt-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-magic text-blue-600 mr-3"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold">Quick Fill Examples:</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="fillTBI()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-head-side-virus mr-1"></i>TBI Patient
+                            </button>
+                            <button onclick="fillStroke()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-brain mr-1"></i>Stroke Patient
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Level of Consciousness & Glasgow Coma Scale -->
+            <div id="step1" class="step-content active p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-head-side-brain text-purple-600 mr-2"></i>
+                    Level of Consciousness & Glasgow Coma Scale
+                </h3>
+                <p class="text-gray-700 mb-6">Assess level of consciousness and calculate GCS score.</p>
+
+                <div class="space-y-6">
+                    <!-- GCS Calculator -->
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-purple-600 rounded-lg p-6 shadow-lg">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-calculator text-purple-600 mr-2"></i>
+                            Glasgow Coma Scale Auto-Calculator
+                        </h4>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <!-- Eye Opening -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <label for="eyeOpening" class="block text-sm font-bold text-gray-800 mb-2">
+                                    <i class="fas fa-eye text-purple-600 mr-2"></i>
+                                    Eye Opening <span class="text-red-500">*</span>
+                                </label>
+                                <select id="eyeOpening" onchange="calculateGCS()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="4">4 - Spontaneous</option>
+                                    <option value="3">3 - To verbal command</option>
+                                    <option value="2">2 - To pain</option>
+                                    <option value="1">1 - None</option>
+                                </select>
+                            </div>
+
+                            <!-- Verbal Response -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <label for="verbalResponse" class="block text-sm font-bold text-gray-800 mb-2">
+                                    <i class="fas fa-comment text-purple-600 mr-2"></i>
+                                    Best Verbal Response <span class="text-red-500">*</span>
+                                </label>
+                                <select id="verbalResponse" onchange="calculateGCS()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="5">5 - Oriented</option>
+                                    <option value="4">4 - Confused</option>
+                                    <option value="3">3 - Inappropriate words</option>
+                                    <option value="2">2 - Incomprehensible sounds</option>
+                                    <option value="1">1 - None</option>
+                                </select>
+                            </div>
+
+                            <!-- Motor Response -->
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <label for="motorResponse" class="block text-sm font-bold text-gray-800 mb-2">
+                                    <i class="fas fa-hand text-purple-600 mr-2"></i>
+                                    Best Motor Response <span class="text-red-500">*</span>
+                                </label>
+                                <select id="motorResponse" onchange="calculateGCS()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="6">6 - Obeys commands</option>
+                                    <option value="5">5 - Localizes pain</option>
+                                    <option value="4">4 - Withdraws from pain</option>
+                                    <option value="3">3 - Flexion to pain (decorticate)</option>
+                                    <option value="2">2 - Extension to pain (decerebrate)</option>
+                                    <option value="1">1 - None</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- GCS Total Display -->
+                        <div class="bg-white rounded-lg p-6 text-center shadow-md">
+                            <div class="flex items-center justify-center space-x-8">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-2">Total GCS Score</p>
+                                    <div id="gcsDisplay" class="gcs-badge gcs-mild">--</div>
+                                </div>
+                                <div class="text-left">
+                                    <div id="gcsInterpretation" class="text-lg font-bold text-gray-800">Select values to calculate</div>
+                                    <div id="gcsRecommendation" class="text-sm text-gray-600 mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orientation -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-compass text-purple-600 mr-2"></i>
+                            Orientation Assessment
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="orientPerson" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    <i class="fas fa-user mr-1"></i>Person
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="orientPlace" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    <i class="fas fa-location-dot mr-1"></i>Place
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="orientTime" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    <i class="fas fa-clock mr-1"></i>Time
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="orientSituation" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    <i class="fas fa-info-circle mr-1"></i>Situation
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Pupil Assessment & Cranial Nerves -->
+            <div id="step2" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-eye text-purple-600 mr-2"></i>
+                    Pupil Assessment & Cranial Nerves
+                </h3>
+                <p class="text-gray-700 mb-6">Assess pupil response and perform cranial nerve screening.</p>
+
+                <div class="space-y-6">
+                    <!-- Critical Alert Area -->
+                    <div id="pupilAlert" class="hidden critical-alert rounded-lg p-4 text-center">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-3xl mb-2"></i>
+                        <p class="text-xl font-bold text-red-900">CRITICAL: Blown Pupil Detected</p>
+                        <p class="text-sm text-red-800 mt-1">Fixed dilated pupil - notify provider immediately!</p>
+                    </div>
+
+                    <!-- Pupil Size Visual Guide -->
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <p class="text-sm font-bold text-gray-800 mb-3 text-center">
+                            <i class="fas fa-ruler text-purple-600 mr-2"></i>
+                            Pupil Size Reference Guide (mm)
+                        </p>
+                        <div class="flex justify-around items-end py-4">
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 10px; height: 10px;"></div>
+                                <p class="text-xs mt-1">1mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 20px; height: 20px;"></div>
+                                <p class="text-xs mt-1">2mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 30px; height: 30px;"></div>
+                                <p class="text-xs mt-1">3mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 40px; height: 40px;"></div>
+                                <p class="text-xs mt-1">4mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 50px; height: 50px;"></div>
+                                <p class="text-xs mt-1">5mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 60px; height: 60px;"></div>
+                                <p class="text-xs mt-1">6mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 70px; height: 70px;"></div>
+                                <p class="text-xs mt-1">7mm</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="pupil-circle" style="width: 80px; height: 80px;"></div>
+                                <p class="text-xs mt-1">8mm</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pupil Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-eye-dropper text-purple-600 mr-2"></i>
+                            Detailed Pupil Examination
+                        </h4>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Right Pupil -->
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h5 class="font-bold text-blue-900 mb-3">Right Pupil</h5>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label for="rightPupilSize" class="block text-sm font-medium text-gray-700 mb-1">Size (mm) <span class="text-red-500">*</span></label>
+                                        <select id="rightPupilSize" onchange="checkPupils()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                            <option value="">Select...</option>
+                                            <option value="1">1mm</option>
+                                            <option value="2">2mm</option>
+                                            <option value="3">3mm</option>
+                                            <option value="4">4mm</option>
+                                            <option value="5">5mm</option>
+                                            <option value="6">6mm</option>
+                                            <option value="7">7mm</option>
+                                            <option value="8">8mm</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="rightPupilReactivity" class="block text-sm font-medium text-gray-700 mb-1">Reactivity <span class="text-red-500">*</span></label>
+                                        <select id="rightPupilReactivity" onchange="checkPupils()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                            <option value="">Select...</option>
+                                            <option value="brisk">Brisk</option>
+                                            <option value="sluggish">Sluggish</option>
+                                            <option value="fixed">Fixed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Left Pupil -->
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h5 class="font-bold text-blue-900 mb-3">Left Pupil</h5>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label for="leftPupilSize" class="block text-sm font-medium text-gray-700 mb-1">Size (mm) <span class="text-red-500">*</span></label>
+                                        <select id="leftPupilSize" onchange="checkPupils()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                            <option value="">Select...</option>
+                                            <option value="1">1mm</option>
+                                            <option value="2">2mm</option>
+                                            <option value="3">3mm</option>
+                                            <option value="4">4mm</option>
+                                            <option value="5">5mm</option>
+                                            <option value="6">6mm</option>
+                                            <option value="7">7mm</option>
+                                            <option value="8">8mm</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="leftPupilReactivity" class="block text-sm font-medium text-gray-700 mb-1">Reactivity <span class="text-red-500">*</span></label>
+                                        <select id="leftPupilReactivity" onchange="checkPupils()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                            <option value="">Select...</option>
+                                            <option value="brisk">Brisk</option>
+                                            <option value="sluggish">Sluggish</option>
+                                            <option value="fixed">Fixed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pupil Shape and Equality -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="pupilShape" class="block text-sm font-medium text-gray-700 mb-1">Pupil Shape <span class="text-red-500">*</span></label>
+                                <select id="pupilShape" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                    <option value="round">Round</option>
+                                    <option value="irregular">Irregular</option>
+                                    <option value="oval">Oval</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Equality</label>
+                                <div id="pupilEquality" class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium">
+                                    Not calculated
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cranial Nerve Quick Screen -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list-check text-purple-600 mr-2"></i>
+                            Cranial Nerve Quick Screen
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="cn2" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    CN II: Visual fields intact
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="cn346" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    CN III, IV, VI: EOMs intact
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="cn5" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    CN V: Facial sensation intact
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="cn7" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    CN VII: Facial symmetry
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="cn910" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    CN IX, X: Gag reflex present
+                                </span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="cn12" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    CN XII: Tongue midline
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Motor & Sensory Function -->
+            <div id="step3" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-hand-fist text-purple-600 mr-2"></i>
+                    Motor & Sensory Function
+                </h3>
+                <p class="text-gray-700 mb-6">Assess motor strength, reflexes, sensation, and coordination.</p>
+
+                <div class="space-y-6">
+                    <!-- Motor Asymmetry Alert -->
+                    <div id="motorAsymmetryAlert" class="hidden message-warning rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 mr-3"></i>
+                            <span class="font-bold">Motor asymmetry detected - document and monitor closely</span>
+                        </div>
+                    </div>
+
+                    <!-- Motor Strength Assessment -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-dumbbell text-purple-600 mr-2"></i>
+                            Motor Strength Assessment (0-5 Scale)
+                        </h4>
+                        <p class="text-xs text-gray-600 mb-4">
+                            0=No movement, 1=Trace, 2=Gravity eliminated, 3=Against gravity, 4=Against some resistance, 5=Normal
+                        </p>
+
+                        <!-- Body Diagram with Motor Markers -->
+                        <div class="body-diagram-neuro mb-6">
+                            <svg viewBox="0 0 200 400" class="w-full border border-gray-300 rounded-lg bg-gray-50">
+                                <!-- Simple body outline -->
+                                <ellipse cx="100" cy="40" rx="30" ry="35" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <rect x="75" y="70" width="50" height="80" rx="10" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <!-- Right arm -->
+                                <rect x="40" y="75" width="35" height="60" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <!-- Left arm -->
+                                <rect x="125" y="75" width="35" height="60" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <!-- Right leg -->
+                                <rect x="75" y="150" width="20" height="100" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                                <!-- Left leg -->
+                                <rect x="105" y="150" width="20" height="100" rx="8" fill="#e5e7eb" stroke="#9ca3af" stroke-width="2"/>
+                            </svg>
+                            <div id="motorStrengthMarkers">
+                                <div class="motor-marker" style="top: 20%; left: 15%;" id="rueMarker">-</div>
+                                <div class="motor-marker" style="top: 20%; right: 15%;" id="lueMarker">-</div>
+                                <div class="motor-marker" style="bottom: 25%; left: 30%;" id="rleMarker">-</div>
+                                <div class="motor-marker" style="bottom: 25%; right: 30%;" id="lleMarker">-</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="motorRUE" class="block text-sm font-medium text-gray-700 mb-1">Right Upper Extremity <span class="text-red-500">*</span></label>
+                                <select id="motorRUE" onchange="updateMotorDiagram(); checkMotorAsymmetry()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="0">0 - No movement</option>
+                                    <option value="1">1 - Trace contraction</option>
+                                    <option value="2">2 - Movement without gravity</option>
+                                    <option value="3">3 - Against gravity</option>
+                                    <option value="4">4 - Against some resistance</option>
+                                    <option value="5">5 - Normal strength</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="motorLUE" class="block text-sm font-medium text-gray-700 mb-1">Left Upper Extremity <span class="text-red-500">*</span></label>
+                                <select id="motorLUE" onchange="updateMotorDiagram(); checkMotorAsymmetry()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="0">0 - No movement</option>
+                                    <option value="1">1 - Trace contraction</option>
+                                    <option value="2">2 - Movement without gravity</option>
+                                    <option value="3">3 - Against gravity</option>
+                                    <option value="4">4 - Against some resistance</option>
+                                    <option value="5">5 - Normal strength</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="motorRLE" class="block text-sm font-medium text-gray-700 mb-1">Right Lower Extremity <span class="text-red-500">*</span></label>
+                                <select id="motorRLE" onchange="updateMotorDiagram(); checkMotorAsymmetry()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="0">0 - No movement</option>
+                                    <option value="1">1 - Trace contraction</option>
+                                    <option value="2">2 - Movement without gravity</option>
+                                    <option value="3">3 - Against gravity</option>
+                                    <option value="4">4 - Against some resistance</option>
+                                    <option value="5">5 - Normal strength</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="motorLLE" class="block text-sm font-medium text-gray-700 mb-1">Left Lower Extremity <span class="text-red-500">*</span></label>
+                                <select id="motorLLE" onchange="updateMotorDiagram(); checkMotorAsymmetry()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="0">0 - No movement</option>
+                                    <option value="1">1 - Trace contraction</option>
+                                    <option value="2">2 - Movement without gravity</option>
+                                    <option value="3">3 - Against gravity</option>
+                                    <option value="4">4 - Against some resistance</option>
+                                    <option value="5">5 - Normal strength</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deep Tendon Reflexes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-bolt text-purple-600 mr-2"></i>
+                            Deep Tendon Reflexes (0-4+ Scale)
+                        </label>
+                        <p class="text-xs text-gray-600 mb-4">0=Absent, 1+=Diminished, 2+=Normal, 3+=Increased, 4+=Hyperactive with clonus</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                                <label for="reflexBiceps" class="block text-xs font-medium text-gray-700 mb-1">Biceps</label>
+                                <select id="reflexBiceps" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                    <option value="2+">2+ Normal</option>
+                                    <option value="0">0 Absent</option>
+                                    <option value="1+">1+ Diminished</option>
+                                    <option value="3+">3+ Increased</option>
+                                    <option value="4+">4+ Hyperactive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="reflexTriceps" class="block text-xs font-medium text-gray-700 mb-1">Triceps</label>
+                                <select id="reflexTriceps" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                    <option value="2+">2+ Normal</option>
+                                    <option value="0">0 Absent</option>
+                                    <option value="1+">1+ Diminished</option>
+                                    <option value="3+">3+ Increased</option>
+                                    <option value="4+">4+ Hyperactive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="reflexPatellar" class="block text-xs font-medium text-gray-700 mb-1">Patellar</label>
+                                <select id="reflexPatellar" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                    <option value="2+">2+ Normal</option>
+                                    <option value="0">0 Absent</option>
+                                    <option value="1+">1+ Diminished</option>
+                                    <option value="3+">3+ Increased</option>
+                                    <option value="4+">4+ Hyperactive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="reflexAchilles" class="block text-xs font-medium text-gray-700 mb-1">Achilles</label>
+                                <select id="reflexAchilles" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                    <option value="2+">2+ Normal</option>
+                                    <option value="0">0 Absent</option>
+                                    <option value="1+">1+ Diminished</option>
+                                    <option value="3+">3+ Increased</option>
+                                    <option value="4+">4+ Hyperactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sensory Function -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-hand-dots text-purple-600 mr-2"></i>
+                            Sensory Function
+                        </label>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                                <span class="text-sm font-medium text-gray-700">Light touch intact</span>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="lightTouch" value="yes" class="mr-2">
+                                        <span class="text-sm">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="lightTouch" value="no" class="mr-2">
+                                        <span class="text-sm">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                                <span class="text-sm font-medium text-gray-700">Pain sensation intact</span>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="painSensation" value="yes" class="mr-2">
+                                        <span class="text-sm">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="painSensation" value="no" class="mr-2">
+                                        <span class="text-sm">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                                <span class="text-sm font-medium text-gray-700">Proprioception intact</span>
+                                <div class="flex space-x-4">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="proprioception" value="yes" class="mr-2">
+                                        <span class="text-sm">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="proprioception" value="no" class="mr-2">
+                                        <span class="text-sm">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="sensoryDeficit" class="block text-sm font-medium text-gray-700 mb-1">Location of sensory deficit (if any)</label>
+                                <input type="text" id="sensoryDeficit" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="e.g., Right arm, Left leg below knee">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coordination -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-bullseye text-purple-600 mr-2"></i>
+                            Coordination Assessment
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="fingerToNose" class="block text-sm font-medium text-gray-700 mb-1">Finger-to-nose test</label>
+                                <select id="fingerToNose" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="normal">Normal</option>
+                                    <option value="impaired">Impaired</option>
+                                    <option value="unable">Unable to perform</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="heelToShin" class="block text-sm font-medium text-gray-700 mb-1">Heel-to-shin test</label>
+                                <select id="heelToShin" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="normal">Normal</option>
+                                    <option value="impaired">Impaired</option>
+                                    <option value="unable">Unable to perform</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label for="gait" class="block text-sm font-medium text-gray-700 mb-1">Gait (if ambulatory)</label>
+                            <select id="gait" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="normal">Normal</option>
+                                <option value="ataxic">Ataxic</option>
+                                <option value="hemiplegic">Hemiplegic</option>
+                                <option value="unable">Unable to ambulate</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Special Neuro Assessments -->
+            <div id="step4" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-microscope text-purple-600 mr-2"></i>
+                    Special Neurological Assessments
+                </h3>
+                <p class="text-gray-700 mb-6">Additional specialized neuro assessments and monitoring.</p>
+
+                <div class="space-y-6">
+                    <!-- ICP Alert -->
+                    <div id="icpAlert" class="hidden critical-alert rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-red-600 text-2xl mr-3"></i>
+                            <div>
+                                <p class="font-bold text-red-900">CRITICAL: Elevated ICP Detected</p>
+                                <p class="text-sm text-red-800">ICP >20 mmHg - implement ICP management protocol immediately</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meningeal Signs -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-user-injured text-purple-600 mr-2"></i>
+                            Meningeal Signs
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="nuchalRigidity" class="block text-sm font-medium text-gray-700 mb-1">Nuchal rigidity</label>
+                                <select id="nuchalRigidity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="absent">Absent</option>
+                                    <option value="present">Present</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="kernigSign" class="block text-sm font-medium text-gray-700 mb-1">Kernig sign</label>
+                                <select id="kernigSign" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="negative">Negative</option>
+                                    <option value="positive">Positive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="brudzinskiSign" class="block text-sm font-medium text-gray-700 mb-1">Brudzinski sign</label>
+                                <select id="brudzinskiSign" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="negative">Negative</option>
+                                    <option value="positive">Positive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pathological Reflexes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-shoe-prints text-purple-600 mr-2"></i>
+                            Pathological Reflexes
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="babinski" class="block text-sm font-medium text-gray-700 mb-1">Babinski sign</label>
+                                <select id="babinski" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="negative">Negative (normal)</option>
+                                    <option value="positive-right">Positive - Right</option>
+                                    <option value="positive-left">Positive - Left</option>
+                                    <option value="positive-bilateral">Positive - Bilateral</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="clonus" class="block text-sm font-medium text-gray-700 mb-1">Clonus</label>
+                                <select id="clonus" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    <option value="absent">Absent</option>
+                                    <option value="present">Present</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seizure Activity -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-wave-square text-purple-600 mr-2"></i>
+                            Seizure Activity
+                        </label>
+                        <div class="mb-3">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="seizureWitnessed" onchange="toggleSeizureDetails()" class="mr-3 h-5 w-5 text-purple-600 rounded">
+                                <span class="text-sm font-medium text-gray-700">Seizure witnessed during assessment</span>
+                            </label>
+                        </div>
+                        <div id="seizureDetails" class="hidden space-y-3">
+                            <div>
+                                <label for="seizureType" class="block text-sm font-medium text-gray-700 mb-1">Seizure type</label>
+                                <input type="text" id="seizureType" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="e.g., Tonic-clonic, Focal, Absence">
+                            </div>
+                            <div>
+                                <label for="seizureDuration" class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                                <input type="text" id="seizureDuration" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="e.g., 2 minutes">
+                            </div>
+                            <div>
+                                <label for="postIctal" class="block text-sm font-medium text-gray-700 mb-1">Post-ictal state</label>
+                                <textarea id="postIctal" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Describe post-ictal state and recovery"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ICP Monitoring -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-gauge-high text-purple-600 mr-2"></i>
+                            ICP Monitoring (if applicable)
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="icpValue" class="block text-sm font-medium text-gray-700 mb-1">ICP value (mmHg)</label>
+                                <input type="number" id="icpValue" onchange="checkICP()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Normal: 5-15 mmHg" min="0" max="100">
+                                <p class="text-xs text-gray-500 mt-1">Alert if >20 mmHg</p>
+                            </div>
+                            <div>
+                                <label for="mapValue" class="block text-sm font-medium text-gray-700 mb-1">MAP (mmHg) - optional</label>
+                                <input type="number" id="mapValue" onchange="calculateCPP()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Mean Arterial Pressure" min="0" max="200">
+                            </div>
+                        </div>
+                        <div id="cppDisplay" class="mt-4 p-3 bg-blue-50 rounded-lg hidden">
+                            <p class="text-sm font-medium text-blue-900">
+                                <i class="fas fa-calculator mr-2"></i>
+                                Calculated CPP (Cerebral Perfusion Pressure): <span id="cppValue" class="font-bold">--</span> mmHg
+                            </p>
+                            <p class="text-xs text-blue-700 mt-1">CPP = MAP - ICP (Goal: 60-70 mmHg)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Safety & Monitoring Plan -->
+            <div id="step5" class="step-content p-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">
+                    <i class="fas fa-shield-halved text-purple-600 mr-2"></i>
+                    Safety & Monitoring Plan
+                </h3>
+                <p class="text-gray-700 mb-6">Establish neuro check frequency and safety precautions.</p>
+
+                <div class="space-y-6">
+                    <!-- Fall Risk Alert -->
+                    <div id="fallRiskAlert" class="hidden message-warning rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-triangle-exclamation text-yellow-600 text-2xl mr-3"></i>
+                            <div>
+                                <p class="font-bold text-yellow-900">HIGH FALL RISK IDENTIFIED</p>
+                                <p class="text-sm text-yellow-800">Implement fall precautions based on GCS <13 or motor weakness</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Neuro Checks Frequency -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="neuroCheckFreq" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-clock text-purple-600 mr-2"></i>
+                            Neuro Checks Frequency <span class="text-red-500">*</span>
+                        </label>
+                        <select id="neuroCheckFreq" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm" required>
+                            <option value="">Select frequency...</option>
+                            <option value="Q15min">Every 15 minutes</option>
+                            <option value="Q30min">Every 30 minutes</option>
+                            <option value="Q1h">Every 1 hour</option>
+                            <option value="Q2h">Every 2 hours</option>
+                            <option value="Q4h">Every 4 hours</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            More frequent checks for acute changes or low GCS
+                        </p>
+                    </div>
+
+                    <!-- Seizure Precautions -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-3">
+                            <i class="fas fa-bed-pulse text-purple-600 mr-2"></i>
+                            Seizure Precautions Needed
+                        </label>
+                        <div class="flex items-center space-x-6 mb-4">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="seizurePrecautions" id="seizurePrecautionsYes" value="yes" onchange="toggleSeizurePrecautionsList()" class="mr-2">
+                                <span class="text-sm font-medium">Yes</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="seizurePrecautions" id="seizurePrecautionsNo" value="no" onchange="toggleSeizurePrecautionsList()" class="mr-2">
+                                <span class="text-sm font-medium">No</span>
+                            </label>
+                        </div>
+                        <div id="seizurePrecautionsList" class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <p class="text-sm font-semibold text-yellow-900 mb-2">Seizure precautions include:</p>
+                            <ul class="text-sm text-yellow-800 space-y-1">
+                                <li><i class="fas fa-check mr-2"></i>Padded bed rails up</li>
+                                <li><i class="fas fa-check mr-2"></i>Suction at bedside and functional</li>
+                                <li><i class="fas fa-check mr-2"></i>Oxygen available</li>
+                                <li><i class="fas fa-check mr-2"></i>Emergency medications accessible</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- HOB Positioning -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="hobPosition" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-angle-up text-purple-600 mr-2"></i>
+                            Head of Bed (HOB) Position
+                        </label>
+                        <select id="hobPosition" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm">
+                            <option value="30">30 degrees (ICP management)</option>
+                            <option value="45">45 degrees</option>
+                            <option value="flat">Flat</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Elevate HOB 30° for ICP management
+                        </p>
+                    </div>
+
+                    <!-- Interventions Checklist -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label class="block text-sm font-bold text-gray-800 mb-4">
+                            <i class="fas fa-list-check text-purple-600 mr-2"></i>
+                            Nursing Interventions Checklist
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-start cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="intervention1" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 mt-0.5">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    Perform neuro checks as ordered and document changes
+                                </span>
+                            </label>
+                            <label class="flex items-start cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="intervention2" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 mt-0.5">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    Maintain HOB elevation as ordered
+                                </span>
+                            </label>
+                            <label class="flex items-start cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="intervention3" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 mt-0.5">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    Avoid Valsalva maneuvers (straining, coughing)
+                                </span>
+                            </label>
+                            <label class="flex items-start cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="intervention4" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 mt-0.5">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    Maintain normothermia (avoid hyperthermia)
+                                </span>
+                            </label>
+                            <label class="flex items-start cursor-pointer group bg-gray-50 p-3 rounded hover:bg-purple-50">
+                                <input type="checkbox" id="intervention5" class="mr-3 h-5 w-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 mt-0.5">
+                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-600">
+                                    Notify provider for GCS change ≥2 points
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Assessment Summary -->
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-purple-600 rounded-lg p-6 shadow-lg">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">
+                            <i class="fas fa-clipboard-check text-purple-600 mr-2"></i>
+                            Neurological Assessment Summary
+                        </h4>
+                        <div id="finalSummary" class="space-y-3">
+                            <!-- Summary will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="additionalNotes" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-comment-medical text-purple-600 mr-2"></i>
+                            Additional Clinical Notes
+                        </label>
+                        <textarea id="additionalNotes" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Add any additional observations, patient responses, or clinical concerns..."></textarea>
+                    </div>
+
+                    <!-- Nurse Signature -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                        <label for="nurseSignature" class="block text-sm font-bold text-gray-800 mb-2">
+                            <i class="fas fa-signature text-purple-600 mr-2"></i>
+                            Nurse Signature <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="nurseSignature" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Enter your name to sign assessment" required>
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            By entering your name, you certify the accuracy of this assessment
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="border-t border-gray-200 p-6 flex justify-between">
+                <button id="backBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="navigateBack()" disabled>
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+                <button id="nextBtn" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors" onclick="navigateNext()">
+                    Next<i class="fas fa-arrow-right ml-2"></i>
+                </button>
+                <button id="finishBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors hidden" onclick="finishWizard()">
+                    <i class="fas fa-check mr-2"></i>Complete Assessment
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Wizard State
+        let wizardState = {
+            current_step: 1,
+            completed_steps: [],
+            total_steps: 5,
+            data: {
+                // Step 1
+                eyeOpening: '',
+                verbalResponse: '',
+                motorResponse: '',
+                gcsTotal: 0,
+                orientation: {
+                    person: false,
+                    place: false,
+                    time: false,
+                    situation: false
+                },
+                // Step 2
+                pupils: {
+                    right: { size: '', reactivity: '' },
+                    left: { size: '', reactivity: '' },
+                    shape: 'round',
+                    equality: ''
+                },
+                cranialNerves: {},
+                // Step 3
+                motorStrength: {
+                    rue: '', lue: '', rle: '', lle: ''
+                },
+                reflexes: {},
+                sensory: {},
+                coordination: {},
+                // Step 4
+                meningeal: {},
+                pathological: {},
+                seizure: {},
+                icp: {},
+                // Step 5
+                safety: {}
+            }
+        };
+
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Neurological Assessment Wizard loaded');
+            updateWizardUI();
+
+            // Initialize care settings
+            CareSettings.init({
+                showOnboardingIfNew: false,
+                injectBadge: true,
+                headerSelector: 'header'
+            });
+        });
+
+        // Calculate GCS
+        function calculateGCS() {
+            const eye = parseInt(document.getElementById('eyeOpening').value) || 0;
+            const verbal = parseInt(document.getElementById('verbalResponse').value) || 0;
+            const motor = parseInt(document.getElementById('motorResponse').value) || 0;
+            const total = eye + verbal + motor;
+
+            wizardState.data.gcsTotal = total;
+
+            const display = document.getElementById('gcsDisplay');
+            const interpretation = document.getElementById('gcsInterpretation');
+            const recommendation = document.getElementById('gcsRecommendation');
+
+            if (total > 0) {
+                display.textContent = total;
+
+                // Update styling and interpretation
+                display.classList.remove('gcs-mild', 'gcs-moderate', 'gcs-severe');
+                if (total >= 13) {
+                    display.classList.add('gcs-mild');
+                    interpretation.innerHTML = '<span class="text-green-600">Mild Brain Injury</span>';
+                    recommendation.textContent = 'Monitor for changes. Standard neuro checks.';
+                } else if (total >= 9) {
+                    display.classList.add('gcs-moderate');
+                    interpretation.innerHTML = '<span class="text-yellow-600">Moderate Brain Injury</span>';
+                    recommendation.textContent = 'Frequent neuro checks required. Close monitoring.';
+                } else {
+                    display.classList.add('gcs-severe');
+                    interpretation.innerHTML = '<span class="text-red-600">Severe Brain Injury</span>';
+                    recommendation.innerHTML = '<strong class="text-red-600">CRITICAL: Consider intubation. ICU level care.</strong>';
+                }
+
+                // Auto-calculate fall risk
+                if (total < 13) {
+                    document.getElementById('fallRiskAlert')?.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Check pupil status
+        function checkPupils() {
+            const rightSize = parseInt(document.getElementById('rightPupilSize').value);
+            const leftSize = parseInt(document.getElementById('leftPupilSize').value);
+            const rightReact = document.getElementById('rightPupilReactivity').value;
+            const leftReact = document.getElementById('leftPupilReactivity').value;
+
+            // Check for blown pupil (fixed and dilated >6mm)
+            const blownPupil = (rightReact === 'fixed' && rightSize >= 6) ||
+                              (leftReact === 'fixed' && leftSize >= 6);
+
+            const alert = document.getElementById('pupilAlert');
+            if (blownPupil) {
+                alert.classList.remove('hidden');
+            } else {
+                alert.classList.add('hidden');
+            }
+
+            // Check equality
+            if (rightSize && leftSize) {
+                const diff = Math.abs(rightSize - leftSize);
+                const equalityDisplay = document.getElementById('pupilEquality');
+
+                if (diff === 0) {
+                    equalityDisplay.textContent = 'Equal';
+                    equalityDisplay.className = 'px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium';
+                } else if (diff === 1) {
+                    equalityDisplay.textContent = 'Equal (within 1mm)';
+                    equalityDisplay.className = 'px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm font-medium';
+                } else {
+                    equalityDisplay.textContent = `Unequal (${diff}mm difference)`;
+                    equalityDisplay.className = 'px-3 py-2 bg-red-100 text-red-800 rounded-lg text-sm font-medium';
+                }
+            }
+        }
+
+        // Update motor diagram
+        function updateMotorDiagram() {
+            const markers = {
+                rue: document.getElementById('rueMarker'),
+                lue: document.getElementById('lueMarker'),
+                rle: document.getElementById('rleMarker'),
+                lle: document.getElementById('lleMarker')
+            };
+
+            const values = {
+                rue: document.getElementById('motorRUE').value,
+                lue: document.getElementById('motorLUE').value,
+                rle: document.getElementById('motorRLE').value,
+                lle: document.getElementById('motorLLE').value
+            };
+
+            Object.keys(markers).forEach(key => {
+                if (values[key]) {
+                    markers[key].textContent = values[key];
+                    markers[key].style.background = getMotorColor(values[key]);
+                }
+            });
+        }
+
+        function getMotorColor(value) {
+            const val = parseInt(value);
+            if (val === 5) return '#10b981';
+            if (val >= 3) return '#f59e0b';
+            return '#ef4444';
+        }
+
+        // Check motor asymmetry
+        function checkMotorAsymmetry() {
+            const rue = parseInt(document.getElementById('motorRUE').value) || 0;
+            const lue = parseInt(document.getElementById('motorLUE').value) || 0;
+            const rle = parseInt(document.getElementById('motorRLE').value) || 0;
+            const lle = parseInt(document.getElementById('motorLLE').value) || 0;
+
+            const upperDiff = Math.abs(rue - lue);
+            const lowerDiff = Math.abs(rle - lle);
+
+            const alert = document.getElementById('motorAsymmetryAlert');
+            if (upperDiff >= 2 || lowerDiff >= 2) {
+                alert.classList.remove('hidden');
+            } else {
+                alert.classList.add('hidden');
+            }
+        }
+
+        // Toggle seizure details
+        function toggleSeizureDetails() {
+            const checkbox = document.getElementById('seizureWitnessed');
+            const details = document.getElementById('seizureDetails');
+
+            if (checkbox.checked) {
+                details.classList.remove('hidden');
+            } else {
+                details.classList.add('hidden');
+            }
+        }
+
+        // Check ICP
+        function checkICP() {
+            const icpValue = parseFloat(document.getElementById('icpValue').value);
+            const alert = document.getElementById('icpAlert');
+
+            if (icpValue > 20) {
+                alert.classList.remove('hidden');
+            } else {
+                alert.classList.add('hidden');
+            }
+
+            calculateCPP();
+        }
+
+        // Calculate CPP
+        function calculateCPP() {
+            const icp = parseFloat(document.getElementById('icpValue').value);
+            const map = parseFloat(document.getElementById('mapValue').value);
+
+            if (icp && map) {
+                const cpp = map - icp;
+                document.getElementById('cppValue').textContent = cpp.toFixed(1);
+                document.getElementById('cppDisplay').classList.remove('hidden');
+            }
+        }
+
+        // Toggle seizure precautions list
+        function toggleSeizurePrecautionsList() {
+            const yesRadio = document.getElementById('seizurePrecautionsYes');
+            const list = document.getElementById('seizurePrecautionsList');
+
+            if (yesRadio.checked) {
+                list.classList.remove('hidden');
+            } else {
+                list.classList.add('hidden');
+            }
+        }
+
+        // Quick fill functions
+        function fillTBI() {
+            // Step 1
+            document.getElementById('eyeOpening').value = '3';
+            document.getElementById('verbalResponse').value = '4';
+            document.getElementById('motorResponse').value = '5';
+            calculateGCS();
+            document.getElementById('orientPerson').checked = true;
+            document.getElementById('orientPlace').checked = true;
+            document.getElementById('orientTime').checked = false;
+
+            // Step 2
+            document.getElementById('rightPupilSize').value = '4';
+            document.getElementById('rightPupilReactivity').value = 'sluggish';
+            document.getElementById('leftPupilSize').value = '3';
+            document.getElementById('leftPupilReactivity').value = 'brisk';
+            checkPupils();
+
+            showMessage('success', 'TBI patient scenario populated');
+        }
+
+        function fillStroke() {
+            // Step 1
+            document.getElementById('eyeOpening').value = '4';
+            document.getElementById('verbalResponse').value = '3';
+            document.getElementById('motorResponse').value = '4';
+            calculateGCS();
+            document.getElementById('orientPerson').checked = true;
+            document.getElementById('orientPlace').checked = true;
+
+            // Step 2
+            document.getElementById('rightPupilSize').value = '3';
+            document.getElementById('rightPupilReactivity').value = 'brisk';
+            document.getElementById('leftPupilSize').value = '3';
+            document.getElementById('leftPupilReactivity').value = 'brisk';
+            checkPupils();
+
+            // Step 3
+            document.getElementById('motorRUE').value = '2';
+            document.getElementById('motorLUE').value = '5';
+            document.getElementById('motorRLE').value = '3';
+            document.getElementById('motorLLE').value = '5';
+            updateMotorDiagram();
+            checkMotorAsymmetry();
+
+            showMessage('success', 'Stroke patient scenario populated');
+        }
+
+        // Navigate to specific step
+        function navigateToStep(stepNum) {
+            if (stepNum > wizardState.current_step && !wizardState.completed_steps.includes(stepNum - 1)) {
+                showMessage('warning', 'Please complete the current step before proceeding.');
+                return;
+            }
+
+            wizardState.current_step = stepNum;
+            updateWizardUI();
+
+            if (stepNum === 5) {
+                populateFinalSummary();
+            }
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (wizardState.current_step <= 1) return;
+            wizardState.current_step--;
+            updateWizardUI();
+        }
+
+        // Navigate next
+        function navigateNext() {
+            collectCurrentStepData();
+
+            if (!wizardState.completed_steps.includes(wizardState.current_step)) {
+                wizardState.completed_steps.push(wizardState.current_step);
+            }
+
+            wizardState.current_step = Math.min(wizardState.current_step + 1, 5);
+            updateWizardUI();
+
+            if (wizardState.current_step === 5) {
+                populateFinalSummary();
+            }
+        }
+
+        // Collect current step data
+        function collectCurrentStepData() {
+            // Data collection logic here
+            console.log('Collecting step data for step', wizardState.current_step);
+        }
+
+        // Update wizard UI
+        function updateWizardUI() {
+            const currentStep = wizardState.current_step;
+            const progressPercent = Math.floor((currentStep / 5) * 100);
+
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('currentStepNum').textContent = currentStep;
+
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed', 'pending');
+
+                if (stepNum === currentStep) {
+                    indicator.classList.add('active');
+                } else if (wizardState.completed_steps.includes(stepNum)) {
+                    indicator.classList.add('completed');
+                } else {
+                    indicator.classList.add('pending');
+                }
+            });
+
+            document.querySelectorAll('.step-content').forEach((content, index) => {
+                content.classList.remove('active');
+                if (index + 1 === currentStep) {
+                    content.classList.add('active');
+                }
+            });
+
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            backBtn.disabled = currentStep === 1;
+
+            if (currentStep === 5) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        // Populate final summary
+        function populateFinalSummary() {
+            const gcs = wizardState.data.gcsTotal || document.getElementById('gcsDisplay').textContent;
+            const rightPupil = document.getElementById('rightPupilSize').value + 'mm ' + document.getElementById('rightPupilReactivity').value;
+            const leftPupil = document.getElementById('leftPupilSize').value + 'mm ' + document.getElementById('leftPupilReactivity').value;
+
+            const motorDeficits = [];
+            ['motorRUE', 'motorLUE', 'motorRLE', 'motorLLE'].forEach(id => {
+                const val = document.getElementById(id).value;
+                if (val && parseInt(val) < 5) {
+                    const label = id.replace('motor', '');
+                    motorDeficits.push(`${label}: ${val}/5`);
+                }
+            });
+
+            const summary = document.getElementById('finalSummary');
+            summary.innerHTML = `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold text-gray-700">Glasgow Coma Scale</span>
+                        <span class="text-2xl font-bold text-purple-600">${gcs}</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <span class="text-sm font-semibold text-gray-700">Pupils:</span>
+                    <p class="text-sm text-gray-900 mt-1">Right: ${rightPupil} | Left: ${leftPupil}</p>
+                </div>
+                ${motorDeficits.length > 0 ? `
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <span class="text-sm font-semibold text-gray-700">Motor Deficits:</span>
+                    <p class="text-sm text-gray-900 mt-1">${motorDeficits.join(', ')}</p>
+                </div>
+                ` : ''}
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <span class="text-sm font-semibold text-gray-700">Neuro Check Frequency:</span>
+                    <p class="text-sm text-gray-900 mt-1">${document.getElementById('neuroCheckFreq').value || 'Not set'}</p>
+                </div>
+            `;
+        }
+
+        // Finish wizard
+        function finishWizard() {
+            collectCurrentStepData();
+
+            if (!document.getElementById('nurseSignature').value) {
+                showMessage('error', 'Please provide your signature to complete the assessment.');
+                return;
+            }
+
+            showMessage('success', 'Neurological assessment completed successfully!');
+
+            console.log('Neuro Assessment Data:', wizardState.data);
+
+            setTimeout(() => {
+                alert('Neurological assessment documented successfully!\n\nAssessment ID: NA-' + Date.now() + '\nNurse: ' + document.getElementById('nurseSignature').value);
+            }, 500);
+        }
+
+        // Show message
+        function showMessage(type, text) {
+            const messagesArea = document.getElementById('messagesArea');
+            const messageClass = `message-${type}`;
+            const icon = type === 'error' ? 'fa-times-circle' :
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-check-circle';
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${messageClass} p-4 rounded-lg mb-2`;
+            messageDiv.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas ${icon} mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <span>${text}</span>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-600 hover:text-gray-800 flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            messagesArea.appendChild(messageDiv);
+
+            if (type === 'success') {
+                setTimeout(() => messageDiv.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>
