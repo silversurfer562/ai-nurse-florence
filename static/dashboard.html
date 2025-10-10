@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Nurse Florence - Clinical Wizards</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .dashboard-container {
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .wizard-btn {
+            background: white;
+            border-radius: 8px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-left: 3px solid #6366f1;
+            text-align: center;
+        }
+        .wizard-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .category-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            border-radius: 6px;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+        .badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg mb-4 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        <i class="fas fa-heartbeat text-red-500 mr-2"></i>
+                        AI Nurse Florence
+                    </h1>
+                    <p class="text-gray-600 text-sm">Clinical Wizards Dashboard</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-indigo-600">18</div>
+                    <div class="text-xs text-gray-500">Wizards</div>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="mt-3">
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search wizards..."
+                        class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                        onkeyup="filterWizards()"
+                    >
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Documentation & Patient Flow -->
+        <div class="mb-4">
+            <div class="category-header">
+                <h2 class="font-bold flex items-center">
+                    <i class="fas fa-clipboard-list mr-2"></i>
+                    Core Documentation
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="wizard-btn" onclick="openWizard('epic-wizard.html')" title="Connect to Epic EHR via FHIR API for seamless data integration">
+                    <i class="fas fa-plug text-indigo-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Epic Integration</div>
+                    <div class="mt-1"><span class="badge bg-indigo-100 text-indigo-700">7 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" onclick="openWizard('sbar-wizard.html')" title="Streamline clinical handoffs using Situation, Background, Assessment, Recommendation framework">
+                    <i class="fas fa-comments text-blue-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">SBAR Report</div>
+                    <div class="mt-1"><span class="badge bg-blue-100 text-blue-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" onclick="openWizard('medication-reconciliation-wizard.html')" title="Prevent medication errors by comparing home vs hospital medications with automated discrepancy detection">
+                    <i class="fas fa-pills text-orange-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Med Reconciliation</div>
+                    <div class="mt-1"><span class="badge bg-orange-100 text-orange-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" onclick="openWizard('discharge-summary-wizard.html')" title="Accelerate patient discharge with multi-language education materials and comprehensive care instructions">
+                    <i class="fas fa-home text-green-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Discharge Summary</div>
+                    <div class="mt-1"><span class="badge bg-green-100 text-green-700">6 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" onclick="openWizard('admission-assessment-wizard.html')" title="Complete thorough patient admission assessments covering demographics, vitals, medical history, and psychosocial factors">
+                    <i class="fas fa-user-plus text-teal-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Admission</div>
+                    <div class="mt-1"><span class="badge bg-teal-100 text-teal-700">5 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" onclick="openWizard('handoff-report-wizard.html')" title="Deliver structured shift handoffs using I-PASS format (Illness, Patient, Action, Situation, Synthesis) for continuity of care">
+                    <i class="fas fa-hand-holding-medical text-cyan-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Handoff Report</div>
+                    <div class="mt-1"><span class="badge bg-cyan-100 text-cyan-700">4 steps</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Safety & Risk -->
+        <div class="mb-4">
+            <div class="category-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <h2 class="font-bold flex items-center">
+                    <i class="fas fa-shield-alt mr-2"></i>
+                    Safety & Risk
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="wizard-btn" style="border-left-color: #f59e0b;" onclick="openWizard('pain-assessment-wizard.html')" title="Document pain assessments with visual 0-10 pain scales, intervention tracking, and reassessment workflows">
+                    <i class="fas fa-thermometer-half text-red-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Pain Assessment</div>
+                    <div class="mt-1"><span class="badge bg-red-100 text-red-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #f59e0b;" onclick="openWizard('fall-risk-assessment-wizard.html')" title="Calculate Morse Fall Scale scores automatically and implement evidence-based fall prevention strategies">
+                    <i class="fas fa-person-falling text-yellow-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Fall Risk</div>
+                    <div class="mt-1"><span class="badge bg-yellow-100 text-yellow-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #f59e0b;" onclick="openWizard('wound-assessment-wizard.html')" title="Track wound healing with automated measurements, pressure injury staging (I-IV), and photo documentation">
+                    <i class="fas fa-band-aid text-red-700 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Wound Assessment</div>
+                    <div class="mt-1"><span class="badge bg-red-100 text-red-700">5 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #f59e0b;" onclick="openWizard('pressure-injury-prevention-wizard.html')" title="Calculate Braden Scale scores (6 subscales) and implement risk-based intervention bundles to prevent pressure injuries">
+                    <i class="fas fa-bed text-orange-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Pressure Injury</div>
+                    <div class="mt-1"><span class="badge bg-orange-100 text-orange-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #f59e0b;" onclick="openWizard('restraint-assessment-wizard.html')" title="Document least restrictive alternatives, maintain Q15min monitoring, and track order expiration alerts for patient safety">
+                    <i class="fas fa-user-lock text-purple-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Restraint</div>
+                    <div class="mt-1"><span class="badge bg-purple-100 text-purple-700">5 steps</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Procedures -->
+        <div class="mb-4">
+            <div class="category-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <h2 class="font-bold flex items-center">
+                    <i class="fas fa-syringe mr-2"></i>
+                    Procedures
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="wizard-btn" style="border-left-color: #10b981;" onclick="openWizard('iv-insertion-wizard.html')" title="Document IV insertions with site selection guidance, attempt tracking, and complication monitoring">
+                    <i class="fas fa-iv-bottle text-green-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">IV Insertion</div>
+                    <div class="mt-1"><span class="badge bg-green-100 text-green-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #10b981;" onclick="openWizard('blood-transfusion-wizard.html')" title="Ensure transfusion safety with two-person verification protocol, Q15min vitals monitoring, and reaction tracking">
+                    <i class="fas fa-tint text-red-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Transfusion</div>
+                    <div class="mt-1"><span class="badge bg-red-100 text-red-700">6 steps</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Perioperative -->
+        <div class="mb-4">
+            <div class="category-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                <h2 class="font-bold flex items-center">
+                    <i class="fas fa-user-md mr-2"></i>
+                    Perioperative
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="wizard-btn" style="border-left-color: #3b82f6;" onclick="openWizard('preop-checklist-wizard.html')" title="Complete WHO Surgical Safety Checklist with NPO compliance verification and site marking confirmation">
+                    <i class="fas fa-clipboard-check text-blue-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Pre-Op Checklist</div>
+                    <div class="mt-1"><span class="badge bg-blue-100 text-blue-700">5 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #3b82f6;" onclick="openWizard('postop-assessment-wizard.html')" title="Monitor PACU recovery with automated Aldrete Score calculation (5 categories) for discharge readiness">
+                    <i class="fas fa-procedures text-teal-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Post-Op</div>
+                    <div class="mt-1"><span class="badge bg-teal-100 text-teal-700">5 steps</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Critical Care -->
+        <div class="mb-4">
+            <div class="category-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);">
+                <h2 class="font-bold flex items-center">
+                    <i class="fas fa-hospital mr-2"></i>
+                    Critical Care
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="wizard-btn" style="border-left-color: #dc2626;" onclick="openWizard('code-blue-wizard.html')" title="Capture critical resuscitation events with real-time running timer, intervention timeline, and medication/defibrillation logs">
+                    <i class="fas fa-heartbeat text-red-700 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Code Blue</div>
+                    <div class="mt-1"><span class="badge bg-red-100 text-red-700">4 steps</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Specialized -->
+        <div class="mb-4">
+            <div class="category-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                <h2 class="font-bold flex items-center">
+                    <i class="fas fa-brain mr-2"></i>
+                    Specialized
+                </h2>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div class="wizard-btn" style="border-left-color: #8b5cf6;" onclick="openWizard('nutrition-screening-wizard.html')" title="Screen for malnutrition with automated BMI calculation and MST (Malnutrition Screening Tool) scoring for timely dietitian referrals">
+                    <i class="fas fa-utensils text-green-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Nutrition</div>
+                    <div class="mt-1"><span class="badge bg-green-100 text-green-700">4 steps</span></div>
+                </div>
+
+                <div class="wizard-btn" style="border-left-color: #8b5cf6;" onclick="openWizard('mental-status-exam-wizard.html')" title="Conduct structured psychiatric assessments with Mini-Cog dementia screening and SI/HI safety evaluations">
+                    <i class="fas fa-head-side-virus text-purple-600 text-xl mb-1"></i>
+                    <div class="font-semibold text-gray-900 text-sm">Mental Status</div>
+                    <div class="mt-1"><span class="badge bg-purple-100 text-purple-700">5 steps</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-white rounded-lg shadow-lg p-4 text-center text-sm">
+            <p class="text-gray-600">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                Quick-fill samples • Auto-calculators • Works offline
+            </p>
+            <p class="text-xs text-gray-500 mt-1">Tablet-Optimized Design</p>
+        </div>
+    </div>
+
+    <script>
+        function openWizard(wizardUrl) {
+            window.location.href = wizardUrl;
+        }
+
+        function filterWizards() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const allCards = document.querySelectorAll('.wizard-btn');
+
+            allCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const title = card.getAttribute('title')?.toLowerCase() || '';
+                if (text.includes(searchTerm) || title.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
