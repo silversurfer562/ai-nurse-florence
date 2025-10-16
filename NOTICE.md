@@ -50,7 +50,18 @@ Website: [www.deepstudyai.com]
 
 This notice is provided in accordance with our commitment to operate as a public benefit corporation, balancing stakeholder interests including healthcare professionals, patients, communities, and the broader public health ecosystem.
 
+## Organizational Transition
+
+This repository is in the process of transitioning from a personal GitHub account to the official Deep Study AI organization account. This organizational structure:
+
+- Reinforces our commitment to corporate responsibility and accountability
+- Provides better access control and team collaboration capabilities
+- Ensures long-term project sustainability and governance
+- Aligns repository ownership with the legal entity responsible for development
+
+For details about this transition, see [TRANSFER_GUIDE.md](./TRANSFER_GUIDE.md).
+
 ---
 
-*Last Updated: September 19, 2025*  
+*Last Updated: October 16, 2025*  
 *Effective Date: [Date of LLC Amendment]*

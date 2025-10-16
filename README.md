@@ -1,5 +1,7 @@
 # AI Nurse Florence — Healthcare AI Assistant
 
+> **📢 Repository Transition Notice**: This repository is preparing for transfer to the official Deep Study AI organization on GitHub. See [TRANSFER_GUIDE.md](./TRANSFER_GUIDE.md) for details. All functionality and support will continue uninterrupted.
+
 **Who This Is For**: Healthcare professionals (nurses, nurse practitioners, physician assistants), medical students, and developers building clinical information systems. If you provide patient care or develop healthcare technology, this platform supports your evidence-based practice with live medical data and clinical documentation tools.
 
 **🚀 Production-Ready Platform with Live Medical APIs**
@@ -241,7 +243,7 @@ AI Nurse Florence is a public benefit technology initiative that improves health
 ### 💖 How to Support
 - ⭐ **Star this repository** to show your support
 - 🐛 **Report bugs** and suggest features
-- 💰 **Financial support** via [GitHub Sponsors](https://github.com/sponsors/silversurfer562)
+- 💰 **Financial support** via [GitHub Sponsors](https://github.com/sponsors/silversurfer562) *(Transitioning to Deep Study AI organization)*
 - 🤝 **Contribute code** - see [CONTRIBUTING.md](CONTRIBUTING.md)
 - 📢 **Share** with healthcare networks and colleagues
 

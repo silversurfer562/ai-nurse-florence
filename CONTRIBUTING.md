@@ -2,6 +2,8 @@
 
 Welcome to the AI Nurse Florence project! We're excited that you're interested in contributing to our public benefit healthcare technology initiative.
 
+> **Note**: This repository is preparing for transfer to the official Deep Study AI organization on GitHub. Your contributions and all project history will be preserved during this transition. See [TRANSFER_GUIDE.md](./TRANSFER_GUIDE.md) for details.
+
 ## 🏥 Our Public Benefit Mission
 
 Deep Study AI, LLC is committed to advancing healthcare accessibility and quality through responsible AI technology. All contributions should align with our mission of empowering healthcare professionals with evidence-based information tools while prioritizing patient safety, data privacy, and equitable access to medical knowledge.
